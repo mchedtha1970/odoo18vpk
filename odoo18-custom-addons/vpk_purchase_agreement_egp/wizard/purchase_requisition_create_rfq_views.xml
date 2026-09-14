@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_requisition_create_rfq_form" model="ir.ui.view">
+        <field name="name">purchase.requisition.create.rfq.form</field>
+        <field name="model">purchase.requisition.create.rfq</field>
+        <field name="arch" type="xml">
+            <form string="สร้าง RFQ/PO สำหรับผู้ชนะ">
+                <group>
+                    <field name="requisition_id"/>
+                    <field name="partner_id" readonly="1"/>
+                    <field name="egp_bid_reference" placeholder="e-GP bid or quotation reference"/>
+                </group>
+                <footer>
+                    <button
+                        name="action_create_rfq"
+                        string="สร้าง RFQ/PO ผู้ชนะ"
+                        type="object"
+                        class="btn-primary"
+                        data-hotkey="q"
+                    />
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

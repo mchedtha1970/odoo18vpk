@@ -1,0 +1,463 @@
+// Form fields — 4-sided boxed borders (Spiffy-like), scoped to editable form sheet only.
+body.o_web_client.o_vpk_sidebar_menu {
+    .o_form_view .o_form_statusbar .o_field_widget {
+        width: auto !important;
+        max-width: none !important;
+    }
+
+    .o_form_view .o_form_editable .o_form_sheet {
+        .o_inner_group > tbody > tr > td.o_td_label,
+        .o_wrap_field .o_wrap_label,
+        .o_wrap_field .o_cell:not(.o_wrap_label) {
+            vertical-align: middle !important;
+        }
+
+        // Inline row fields (dates in label+div rows, picking_type, etc.)
+        .o_form_sheet .o_row,
+        .o_wrap_input > .o_row {
+            display: flex !important;
+            flex-wrap: wrap;
+            align-items: center;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box;
+
+            .o_field_widget {
+                width: auto !important;
+                max-width: 100% !important;
+                flex: 0 1 auto;
+                display: inline-flex !important;
+            }
+
+            input.o_input,
+            select.o_input,
+            .o_input_dropdown,
+            .o_datepicker {
+                width: auto !important;
+                min-width: 8rem;
+                max-width: 100% !important;
+            }
+
+            .o_field_many2one .o_field_many2one_selection {
+                width: auto !important;
+                max-width: 100% !important;
+            }
+
+            // Odoo 18 date/datetime: plain input inside .d-flex (not .o_datepicker)
+            .o_field_date,
+            .o_field_datetime,
+            .o_field_daterange {
+                > .d-flex {
+                    width: auto !important;
+                    min-width: 12rem;
+                    max-width: 100% !important;
+                    height: var(--vpk-field-height, 36px) !important;
+                    min-height: var(--vpk-field-height, 36px) !important;
+                    border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                    border-radius: var(--vpk-border-radius-md, 4px) !important;
+                    background-color: #fff !important;
+                    box-sizing: border-box !important;
+                    padding: 0 8px !important;
+
+                    input.o_input {
+                        border: none !important;
+                        border-radius: 0 !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                        height: 100% !important;
+                        min-height: 0 !important;
+                        padding: 0 !important;
+                        line-height: calc(var(--vpk-field-height, 36px) - 2px) !important;
+                    }
+
+                    &:hover,
+                    &:focus-within {
+                        border-color: var(--vpk-sidebar-bg-end) !important;
+                    }
+                }
+            }
+        }
+
+        &:not(.o_field_highlight) {
+            .o_field_widget:not(.o_readonly_modifier):not(.o_field_invalid):not(.o_field_highlight) {
+                input.o_input:not(:hover):not(:focus),
+                textarea.o_input:not(:hover):not(:focus),
+                select.o_input:not(:hover):not(:focus) {
+                    --o-input-border-color: var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                }
+            }
+        }
+
+        .o_wrap_input > .o_field_widget:not(.o_readonly_modifier):not(.o_field_boolean):not(.o_field_boolean_toggle):not(.o_field_radio):not(.o_field_image):not(.o_field_image_url):not(.o_field_priority):not(.o_field_statusbar):not(.o_field_statusbar_duration):not(.o_field_many2many_tags):not(.o_field_text) {
+            --o-input-border-color: var(--vpk-field-border-color, var(--vpk-sidebar-bg-start));
+            --o-caret-color: var(--vpk-field-border-color, var(--vpk-sidebar-bg-start));
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box;
+
+            input.o_input,
+            select.o_input {
+                display: block;
+                width: 100% !important;
+                max-width: 100% !important;
+                height: var(--vpk-field-height, 36px) !important;
+                min-height: var(--vpk-field-height, 36px) !important;
+                max-height: var(--vpk-field-height, 36px) !important;
+                border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                border-radius: var(--vpk-border-radius-md, 4px) !important;
+                padding: 0 8px !important;
+                line-height: calc(var(--vpk-field-height, 36px) - 2px) !important;
+                background-color: #fff !important;
+                box-sizing: border-box !important;
+            }
+
+            input.o_input:hover,
+            input.o_input:focus,
+            select.o_input:hover,
+            select.o_input:focus {
+                border-color: var(--vpk-sidebar-bg-end) !important;
+                box-shadow: none !important;
+                outline: none !important;
+            }
+
+            select.o_input {
+                cursor: pointer;
+                appearance: auto;
+            }
+
+            textarea.o_input {
+                display: block;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-height: 80px !important;
+                max-height: none !important;
+                border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                border-radius: var(--vpk-border-radius-md, 4px) !important;
+                padding: 8px !important;
+                line-height: 1.45 !important;
+                background-color: #fff !important;
+                box-sizing: border-box !important;
+                resize: vertical;
+
+                &:hover,
+                &:focus {
+                    border-color: var(--vpk-sidebar-bg-end) !important;
+                    box-shadow: none !important;
+                    outline: none !important;
+                }
+            }
+
+            // Odoo 18 date/datetime — input inside .d-flex (not legacy .o_datepicker)
+            &.o_field_date,
+            &.o_field_datetime,
+            &.o_field_daterange {
+                > .d-flex {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    height: var(--vpk-field-height, 36px) !important;
+                    min-height: var(--vpk-field-height, 36px) !important;
+                    border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                    border-radius: var(--vpk-border-radius-md, 4px) !important;
+                    background-color: #fff !important;
+                    box-sizing: border-box !important;
+                    padding: 0 8px !important;
+                    align-items: center !important;
+
+                    input.o_input {
+                        flex: 1 1 auto;
+                        min-width: 0;
+                        width: auto !important;
+                        height: 100% !important;
+                        min-height: 0 !important;
+                        max-height: none !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                        line-height: calc(var(--vpk-field-height, 36px) - 2px) !important;
+                        padding: 0 !important;
+                    }
+
+                    &:hover,
+                    &:focus-within {
+                        border-color: var(--vpk-sidebar-bg-end) !important;
+                    }
+                }
+            }
+
+            .o_input_dropdown,
+            .o_datepicker {
+                width: 100% !important;
+                max-width: 100% !important;
+                height: var(--vpk-field-height, 36px) !important;
+                min-height: var(--vpk-field-height, 36px) !important;
+                max-height: var(--vpk-field-height, 36px) !important;
+                border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                border-radius: var(--vpk-border-radius-md, 4px) !important;
+                background-color: #fff !important;
+                box-sizing: border-box !important;
+                display: flex !important;
+                align-items: center !important;
+                position: relative;
+                padding: 0 !important;
+
+                input.o_input,
+                .o_input {
+                    width: 100% !important;
+                    height: 100% !important;
+                    min-height: 0 !important;
+                    max-height: none !important;
+                    border: none !important;
+                    border-radius: 0 !important;
+                    background: transparent !important;
+                    box-shadow: none !important;
+                    line-height: calc(var(--vpk-field-height, 36px) - 2px) !important;
+                    padding: 0 28px 0 8px !important;
+                }
+
+                .o_dropdown_button,
+                .o_datepicker_button {
+                    top: 50% !important;
+                    transform: translateY(-50%);
+                    right: 8px !important;
+                }
+
+                &:hover,
+                &:focus-within {
+                    border-color: var(--vpk-sidebar-bg-end) !important;
+                }
+            }
+
+            &.o_field_many2one,
+            &.o_field_many2one_avatar {
+                .o_field_many2one_selection {
+                    display: flex !important;
+                    align-items: stretch !important;
+                    gap: 0;
+                    width: 100% !important;
+                    height: var(--vpk-field-height, 36px) !important;
+                    min-height: var(--vpk-field-height, 36px) !important;
+                    max-height: var(--vpk-field-height, 36px) !important;
+                    border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                    border-radius: var(--vpk-border-radius-md, 4px) !important;
+                    background-color: #fff !important;
+                    box-sizing: border-box !important;
+                    overflow: visible;
+
+                    .o_input_dropdown {
+                        flex: 1 1 auto;
+                        min-width: 0;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        height: 100% !important;
+                        min-height: 0 !important;
+                        max-height: none !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                        background: transparent !important;
+
+                        .o-autocomplete {
+                            width: 100% !important;
+                        }
+                    }
+
+                    .o_external_button,
+                    .o_dropdown_button_tree {
+                        flex: 0 0 auto;
+                        height: auto !important;
+                        align-self: stretch;
+                        margin: 0 !important;
+                        padding: 0 8px !important;
+                        border: none !important;
+                        border-left: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                        border-radius: 0 !important;
+                        background: transparent !important;
+                    }
+
+                    &:hover,
+                    &:focus-within {
+                        border-color: var(--vpk-sidebar-bg-end) !important;
+                    }
+                }
+            }
+        }
+
+        // Inline fields inside .o_row — keep natural width
+        .o_row .o_field_widget:not(.o_readonly_modifier):not(.o_field_boolean):not(.o_field_boolean_toggle) {
+            width: auto !important;
+            max-width: 100% !important;
+
+            input.o_input,
+            select.o_input {
+                display: inline-block !important;
+                width: auto !important;
+                min-width: 8rem;
+                max-width: 100% !important;
+            }
+
+            .o_input_dropdown,
+            .o_datepicker {
+                width: auto !important;
+                min-width: 8rem;
+                max-width: 100% !important;
+            }
+
+            &.o_field_many2one .o_field_many2one_selection {
+                width: auto !important;
+                max-width: 100% !important;
+            }
+
+            // Odoo 18 date/datetime in .o_row (e.g. PO date_planned — often outside .o_wrap_input)
+            &.o_field_date,
+            &.o_field_datetime,
+            &.o_field_daterange {
+                > .d-flex {
+                    width: auto !important;
+                    min-width: 12rem;
+                    max-width: 100% !important;
+                    height: var(--vpk-field-height, 36px) !important;
+                    min-height: var(--vpk-field-height, 36px) !important;
+                    border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                    border-radius: var(--vpk-border-radius-md, 4px) !important;
+                    background-color: #fff !important;
+                    box-sizing: border-box !important;
+                    padding: 0 8px !important;
+                    align-items: center !important;
+
+                    input.o_input {
+                        flex: 1 1 auto;
+                        min-width: 0;
+                        width: auto !important;
+                        height: 100% !important;
+                        min-height: 0 !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                        line-height: calc(var(--vpk-field-height, 36px) - 2px) !important;
+                        padding: 0 !important;
+                    }
+
+                    &:hover,
+                    &:focus-within {
+                        border-color: var(--vpk-sidebar-bg-end) !important;
+                    }
+                }
+            }
+        }
+    }
+
+    // Many2one / autocomplete dropdown — styling only (position handled by Odoo + JS patch)
+    .o-autocomplete--dropdown-menu.ui-widget.ui-autocomplete.ui-widget-content,
+    .o-autocomplete .dropdown-menu.ui-autocomplete {
+        min-width: 0 !important;
+        border-radius: var(--vpk-border-radius-md, 4px) !important;
+        box-shadow: var(--vpk-box-shadow-common, 0 4px 10px rgba(0, 0, 0, 0.03)) !important;
+        box-sizing: border-box;
+        z-index: $zindex-modal + 2;
+
+        .ui-menu-item > a.dropdown-item {
+            display: block;
+            padding: 0.4rem 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ui-menu-item > a.ui-state-active {
+            background-color: var(--vpk-sidebar-bg-start) !important;
+            color: var(--vpk-sidebar-text, #fff) !important;
+        }
+    }
+
+    .o_form_view .o-autocomplete--dropdown-menu.dropdown-menu {
+        --bs-dropdown-min-width: 0;
+        min-width: 0 !important;
+    }
+
+    // Do not expand to longest label (Odoo default max 600px)
+    .o_form_view .o-autocomplete--dropdown-menu.ui-widget.ui-autocomplete {
+        max-width: unset !important;
+    }
+
+    .o_form_view .o-autocomplete--dropdown-menu.ui-widget.ui-autocomplete {
+        max-width: unset !important;
+    }
+
+    // Multiline Text — user-resizable (override Odoo resize:none + fixed autoresize height)
+    .o_form_view .o_form_editable .o_form_sheet {
+        .o_field_text {
+            width: 100% !important;
+            display: block !important;
+
+            > div {
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+            }
+
+            > div > textarea.o_input {
+                display: block !important;
+                width: 100% !important;
+                min-height: 80px !important;
+                max-height: none !important;
+                resize: vertical !important;
+                overflow-y: auto !important;
+                border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                border-radius: var(--vpk-border-radius-md, 4px) !important;
+                padding: 8px !important;
+                line-height: 1.45 !important;
+                background-color: #fff !important;
+                box-sizing: border-box !important;
+
+                &:hover,
+                &:focus {
+                    border-color: var(--vpk-sidebar-bg-end) !important;
+                    box-shadow: none !important;
+                    outline: none !important;
+                }
+            }
+        }
+
+        .o_list_renderer .o_field_text > div > textarea.o_input {
+            min-height: 36px !important;
+        }
+    }
+
+    // Readonly — standard Odoo bottom border only
+    .o_form_view .o_form_readonly .o_form_sheet {
+        .o_field_widget {
+            input.o_input,
+            textarea.o_input,
+            select.o_input {
+                border: none !important;
+                border-width: 0 0 1px 0 !important;
+                border-color: transparent !important;
+                background: transparent !important;
+                min-height: auto !important;
+                height: auto !important;
+                max-height: none !important;
+                border-radius: 0 !important;
+            }
+        }
+
+        .o_input_dropdown,
+        .o_datepicker {
+            border: none !important;
+            background: transparent !important;
+            height: auto !important;
+        }
+
+        .o_field_date,
+        .o_field_datetime,
+        .o_field_daterange {
+            > .d-flex {
+                border: none !important;
+                background: transparent !important;
+                height: auto !important;
+                padding: 0 !important;
+            }
+        }
+    }
+}

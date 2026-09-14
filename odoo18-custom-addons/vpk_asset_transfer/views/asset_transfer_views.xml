@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_asset_transfer_form" model="ir.ui.view">
+        <field name="name">vpk.asset.transfer.form</field>
+        <field name="model">vpk.asset.transfer</field>
+        <field name="arch" type="xml">
+            <form string="ใบโอนทรัพย์สิน">
+                <header>
+                    <button
+                        name="action_request"
+                        type="object"
+                        string="ขอโอน"
+                        class="oe_highlight"
+                        invisible="state != 'draft'"
+                        groups="vpk_asset_transfer.group_asset_transfer_user"
+                    />
+                    <button
+                        name="action_receive"
+                        type="object"
+                        string="รับโอน"
+                        class="oe_highlight"
+                        invisible="not can_receive"
+                        groups="vpk_asset_transfer.group_asset_transfer_receiver"
+                    />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="ยกเลิก"
+                        invisible="state not in ('draft', 'request', 'in_progress')"
+                        groups="vpk_asset_transfer.group_asset_transfer_user"
+                    />
+                    <button
+                        name="action_draft"
+                        type="object"
+                        string="ตั้งเป็นร่าง"
+                        invisible="state != 'cancel'"
+                        groups="vpk_asset_transfer.group_asset_transfer_manager"
+                    />
+                    <field name="validation_status" invisible="1"/>
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,request,in_progress,approved,received"
+                    />
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="requester_id" readonly="state != 'draft'"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                            <field name="approved_date" invisible="not approved_date"/>
+                            <field name="receiver_id" invisible="not receiver_id"/>
+                            <field name="received_date" invisible="not received_date"/>
+                        </group>
+                        <group>
+                            <field
+                                name="source_analytic_account_id"
+                                options="{'no_create': True}"
+                                readonly="state != 'draft'"
+                            />
+                            <field
+                                name="dest_analytic_account_id"
+                                options="{'no_create': True}"
+                                readonly="state != 'draft'"
+                            />
+                            <field name="can_receive" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="รายการทรัพย์สิน" name="lines">
+                            <div class="alert alert-info" role="alert" invisible="source_analytic_account_id">
+                                กรุณาเลือกหน่วยงานต้นทางก่อน เพื่อแสดงทรัพย์สินของหน่วยงานนั้น
+                            </div>
+                            <field
+                                name="line_ids"
+                                readonly="state != 'draft'"
+                                context="{
+                                    'default_company_id': company_id,
+                                }"
+                            >
+                                <list editable="bottom">
+                                    <field name="company_id" column_invisible="1"/>
+                                    <field name="source_analytic_account_id" column_invisible="1"/>
+                                    <field
+                                        name="asset_id"
+                                        string="ทรัพย์สิน"
+                                        options="{'no_create': True, 'no_create_edit': True}"
+                                        domain="[
+                                            ('company_id', '=', parent.company_id),
+                                            ('state', '!=', 'removed'),
+                                            ('owning_analytic_account_id', '=', parent.source_analytic_account_id),
+                                        ]"
+                                        context="{
+                                            'list_view_ref': 'vpk_asset_transfer.view_account_asset_transfer_select_list',
+                                            'search_view_ref': 'vpk_asset_transfer.view_account_asset_transfer_select_search',
+                                            'form_view_ref': 'account_asset_management.account_asset_view_form',
+                                        }"
+                                    />
+                                    <field name="asset_number" string="เลขทรัพย์สิน" optional="show"/>
+                                    <field name="asset_name" string="ชื่อ" optional="show"/>
+                                    <field name="asset_code" optional="hide"/>
+                                    <field name="profile_id" optional="show"/>
+                                    <field name="owning_analytic_account_id" optional="show"/>
+                                    <field name="from_analytic_account_id" optional="hide"/>
+                                    <field name="to_analytic_account_id" optional="hide"/>
+                                    <field name="note" optional="show"/>
+                                    <button
+                                        name="action_open_asset"
+                                        type="object"
+                                        string="เปิดบัตร"
+                                        icon="fa-external-link"
+                                        title="เปิดบัตรทรัพย์สิน"
+                                    />
+                                </list>
+                            </field>
+                        </page>
+                        <page string="หมายเหตุ" name="notes">
+                            <field name="note" readonly="state != 'draft'" placeholder="รายละเอียดเพิ่มเติม..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_asset_transfer_list" model="ir.ui.view">
+        <field name="name">vpk.asset.transfer.list</field>
+        <field name="model">vpk.asset.transfer</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="requester_id"/>
+                <field name="source_analytic_account_id"/>
+                <field name="dest_analytic_account_id"/>
+                <field name="line_count"/>
+                <field name="validation_status" optional="show"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state in ('draft', 'request')"
+                    decoration-warning="state == 'in_progress'"
+                    decoration-success="state in ('approved', 'received')"
+                    decoration-muted="state == 'cancel'"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_asset_transfer_search" model="ir.ui.view">
+        <field name="name">vpk.asset.transfer.search</field>
+        <field name="model">vpk.asset.transfer</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="requester_id"/>
+                <field name="source_analytic_account_id"/>
+                <field name="dest_analytic_account_id"/>
+                <filter string="ร่าง" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="ขอโอน" name="request" domain="[('state', '=', 'request')]"/>
+                <filter string="ดำเนินการ" name="in_progress" domain="[('state', '=', 'in_progress')]"/>
+                <filter string="อนุมัติ" name="approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="รับโอน" name="received" domain="[('state', '=', 'received')]"/>
+                <filter string="ยกเลิก" name="cancel" domain="[('state', '=', 'cancel')]"/>
+                <separator/>
+                <filter
+                    string="รอฉันอนุมัติ"
+                    name="needs_review"
+                    domain="[('reviewer_ids', 'in', uid), ('state', 'in', ('request', 'in_progress'))]"
+                />
+                <filter string="ของฉัน" name="my" domain="[('requester_id', '=', uid)]"/>
+                <group>
+                    <filter string="หน่วยงานต้นทาง" name="group_source" context="{'group_by': 'source_analytic_account_id'}"/>
+                    <filter string="หน่วยงานปลายทาง" name="group_dest" context="{'group_by': 'dest_analytic_account_id'}"/>
+                    <filter string="สถานะ" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="วันที่เอกสาร" name="group_date" context="{'group_by': 'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_asset_transfer" model="ir.actions.act_window">
+        <field name="name">ใบโอนทรัพย์สิน</field>
+        <field name="res_model">vpk.asset.transfer</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_vpk_asset_transfer_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                สร้างใบโอนทรัพย์สินระหว่างหน่วยงาน
+            </p>
+            <p>
+                กำหนดลำดับอนุมัติที่เมนู การอนุมัติตามลำดับ → กำหนดลำดับการอนุมัติ
+            </p>
+        </field>
+    </record>
+</odoo>

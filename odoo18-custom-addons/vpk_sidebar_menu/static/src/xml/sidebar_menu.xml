@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-inherit="web.NavBar" t-inherit-mode="extension">
+        <xpath expr="//header[hasclass('o_navbar')]" position="replace">
+            <header class="o_navbar o_vpk_sidebar_header" t-ref="root">
+                <button
+                    t-if="ui.isSmall"
+                    class="o_vpk_mobile_toggle btn btn-link d-md-none"
+                    t-on-click="toggleMobileSidebar"
+                    title="Menu"
+                >
+                    <i class="fa fa-bars"/>
+                </button>
+
+                <aside
+                    t-attf-class="o_vpk_sidebar_primary {{ sidebarState.mobileOpen ? 'o_vpk_sidebar_open' : '' }} {{ sidebarState.collapsed ? 'o_vpk_sidebar_collapsed' : '' }}"
+                >
+                    <div class="o_vpk_sidebar_logo">
+                        <img
+                            t-if="companyLogoUrl"
+                            t-att-src="companyLogoUrl"
+                            alt="Company Logo"
+                            class="o_vpk_logo_full"
+                        />
+                        <img
+                            t-if="companyLogoUrl"
+                            t-att-src="companyLogoUrl"
+                            alt="Company Logo"
+                            class="o_vpk_logo_icon"
+                        />
+                        <span t-else="" class="o_vpk_logo_text" t-esc="currentCompany?.name"/>
+                    </div>
+
+                    <div class="o_vpk_sidebar_user">
+                        <Dropdown position="'right-start'" menuClass="'o_vpk_user_dropdown_menu'">
+                            <button type="button" class="o_vpk_user_dropdown_toggle" title="User menu">
+                                <div class="o_vpk_user_avatar_wrap">
+                                    <img class="o_vpk_user_avatar" t-att-src="userAvatar" alt="User"/>
+                                </div>
+                                <div class="o_vpk_user_info">
+                                    <span class="o_vpk_user_name" t-esc="userName"/>
+                                    <span class="o_vpk_user_greeting" t-esc="greeting"/>
+                                </div>
+                            </button>
+                            <t t-set-slot="content">
+                                <div class="o_vpk_user_menu_header" t-esc="userMenuResourcesTitle"/>
+                                <t t-foreach="getUserMenuElements()" t-as="element" t-key="element_index">
+                                    <t t-if="!element.hide">
+                                        <DropdownItem
+                                            t-if="element.type == 'item' || element.type == 'switch'"
+                                            attrs="{ href: element.href, 'data-menu': element.id }"
+                                            onSelected="element.callback"
+                                        >
+                                            <div class="d-flex justify-content-between p-0 w-100">
+                                                <t t-out="element.description"/>
+                                                <CheckBox
+                                                    t-if="element.type == 'switch'"
+                                                    value="element.isChecked"
+                                                    className="'form-switch ms-2'"
+                                                    onChange="element.callback"
+                                                />
+                                            </div>
+                                        </DropdownItem>
+                                        <div
+                                            t-if="element.type == 'separator'"
+                                            role="separator"
+                                            class="dropdown-divider"
+                                        />
+                                    </t>
+                                </t>
+                            </t>
+                        </Dropdown>
+                    </div>
+
+                    <div class="o_vpk_sidebar_systray">
+                        <div class="o_menu_systray o_vpk_systray_primary" role="menu">
+                            <t t-set="companyItem" t-value="getSystrayItemByKey('SwitchCompanyMenu')"/>
+                            <div t-if="companyItem" class="o_vpk_systray_item o_switch_company_menu company_selections">
+                                <ErrorHandler onError="error => this.handleItemError(error, companyItem)">
+                                    <t t-component="companyItem.Component" t-props="companyItem.props"/>
+                                </ErrorHandler>
+                            </div>
+                            <div t-if="env.debug" class="o_vpk_systray_item debug_activator">
+                                <a class="activate_debug toggle" href="#" title="Debug" role="button" t-on-click.prevent="onQuickDebug">
+                                    <span class="ri ri-code-box-line"/>
+                                </a>
+                            </div>
+                            <div class="o_vpk_systray_item theme_selector list-unstyled">
+                                <a class="theme-edit" href="#" title="Theme Setting" role="button" t-on-click.prevent="openThemePanel">
+                                    <span class="ri ri-paint-brush-line" aria-label="Themes Configuration"/>
+                                </a>
+                            </div>
+                            <div class="o_vpk_systray_item sidebar_size_selector list-unstyled">
+                                <a class="sidebar-size-edit" href="#" title="Sidebar Size" role="button" t-on-click.prevent="openSidebarSizePanel">
+                                    <span class="ri ri-side-bar-line" aria-label="Sidebar Size"/>
+                                </a>
+                            </div>
+                            <div class="o_vpk_systray_item vertical_sidemenu_behaviour">
+                                <a class="pin_sidebar" href="#" title="Pin Sidebar" role="button"
+                                    t-att-class="{ 'pinned': !sidebarState.collapsed }"
+                                    t-on-click.prevent="toggleSidebarCollapse">
+                                    <span class="ri ri-lock-unlock-line"/>
+                                </a>
+                            </div>
+                            <div class="o_vpk_systray_item header_to_do_list">
+                                <a href="#" title="Notes" role="button" t-on-click.prevent="onQuickNotes">
+                                    <span class="ri ri-sticky-note-line"/>
+                                </a>
+                            </div>
+                            <div class="o_vpk_systray_item o_vpk_systray_tips">
+                                <a href="#" title="Tips" role="button" t-on-click.prevent="openThemePanel">
+                                    <span class="ri ri-lightbulb-flash-line"/>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="o_menu_systray o_vpk_systray_secondary" role="menu">
+                            <t t-foreach="secondarySystraySlots" t-as="slot" t-key="slot.key">
+                                <div t-if="slot.empty" class="o_vpk_systray_item o_vpk_systray_placeholder" aria-hidden="true"/>
+                                <div t-elif="slot.isEdit" class="o_vpk_systray_item o_vpk_systray_edit">
+                                    <a href="#" title="My Profile" role="button" t-on-click.prevent="onQuickEdit">
+                                        <span class="ri ri-edit-box-line"/>
+                                    </a>
+                                </div>
+                                <div t-else="" class="o_vpk_systray_item" t-att-data-systray-key="slot.key">
+                                    <ErrorHandler onError="error => this.handleItemError(error, slot)">
+                                        <t t-component="slot.Component" t-props="slot.props"/>
+                                    </ErrorHandler>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                    <nav class="o_vpk_sidebar_apps">
+                        <ul class="o_vpk_apps_list list-unstyled mb-0">
+                            <t t-foreach="apps" t-as="app" t-key="app.id">
+                                <t t-call="vpk_sidebar_menu.AppMenuItem">
+                                    <t t-set="app" t-value="app"/>
+                                </t>
+                            </t>
+                        </ul>
+                    </nav>
+
+                    <button
+                        t-if="!ui.isSmall"
+                        class="o_vpk_collapse_btn"
+                        t-on-click="toggleSidebarCollapse"
+                        title="Collapse sidebar"
+                    >
+                        <i t-attf-class="fa {{ sidebarState.collapsed ? 'fa-angle-double-right' : 'fa-angle-double-left' }}"/>
+                    </button>
+                </aside>
+
+                <div
+                    t-if="ui.isSmall and sidebarState.mobileOpen"
+                    class="o_vpk_sidebar_backdrop"
+                    t-on-click="closeMobileSidebar"
+                />
+
+                <ThemeConfigPanel
+                    t-if="sidebarState.themePanelOpen"
+                    close.bind="closeThemePanel"
+                    initialTab="sidebarState.themePanelTab"
+                />
+
+                <nav class="o_main_navbar d-none" data-command-category="disabled"/>
+            </header>
+        </xpath>
+    </t>
+
+    <!-- Root app with nested sub-menus -->
+    <t t-name="vpk_sidebar_menu.AppMenuItem">
+        <li
+            t-attf-class="o_vpk_app_item {{ isAppActive(app) ? 'active' : '' }} {{ isMenuExpanded(app.id) ? 'expanded' : '' }}"
+        >
+            <a
+                href="#"
+                class="o_vpk_app_link"
+                t-att-data-menu-xmlid="app.xmlid"
+                t-att-data-menu-id="app.id"
+                t-on-click="(ev) => this.onRootAppClick(app, ev)"
+            >
+                <span class="o_vpk_app_icon">
+                    <img t-if="app.webIconData" t-att-src="app.webIconData" alt=""/>
+                    <i t-else="" class="oi oi-apps"/>
+                </span>
+                <span class="o_vpk_app_name" t-esc="app.name"/>
+                <i
+                    t-if="appHasSubMenus(app)"
+                    t-attf-class="ri o_vpk_app_arrow {{ isMenuExpanded(app.id) ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line' }}"
+                />
+            </a>
+            <ul
+                t-if="appHasSubMenus(app) and isMenuExpanded(app.id)"
+                class="o_vpk_app_children list-unstyled mb-0"
+            >
+                <t t-foreach="getAppChildren(app)" t-as="child" t-key="child.id">
+                    <t t-call="vpk_sidebar_menu.SubMenuItem">
+                        <t t-set="menu" t-value="child"/>
+                        <t t-set="depth" t-value="1"/>
+                    </t>
+                </t>
+            </ul>
+        </li>
+    </t>
+
+    <!-- Recursive sub-menu item nested under root app -->
+    <t t-name="vpk_sidebar_menu.SubMenuItem">
+        <li
+            t-attf-class="o_vpk_sub_item {{ menu.childrenTree.length ? 'has-children' : '' }} {{ isMenuExpanded(menu.id) ? 'expanded' : '' }}"
+        >
+            <t t-if="menu.childrenTree.length">
+                <a
+                    href="#"
+                    class="o_vpk_sub_link"
+                    t-att-data-menu-xmlid="menu.xmlid"
+                    t-on-click="(ev) => this.onSubMenuToggle(menu, ev)"
+                >
+                    <span t-esc="menu.name"/>
+                    <i
+                        t-attf-class="ri o_vpk_sub_arrow {{ isMenuExpanded(menu.id) ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line' }}"
+                    />
+                </a>
+                <ul
+                    t-if="isMenuExpanded(menu.id)"
+                    class="o_vpk_sub_children list-unstyled mb-0"
+                >
+                    <t t-foreach="menu.childrenTree" t-as="child" t-key="child.id">
+                        <t t-call="vpk_sidebar_menu.SubMenuItem">
+                            <t t-set="menu" t-value="child"/>
+                            <t t-set="depth" t-value="depth + 1"/>
+                        </t>
+                    </t>
+                </ul>
+            </t>
+            <t t-else="">
+                <a
+                    href="#"
+                    class="o_vpk_sub_link"
+                    t-att-data-menu-xmlid="menu.xmlid"
+                    t-on-click="(ev) => this.onSubMenuClick(menu, ev)"
+                    t-esc="menu.name"
+                />
+            </t>
+        </li>
+    </t>
+
+</templates>

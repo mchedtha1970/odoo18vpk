@@ -1,0 +1,285 @@
+@mixin vpk-themed-primary-btn {
+    background: var(--vpk-sidebar-bg-gradient) !important;
+    border-color: var(--vpk-sidebar-bg-end) !important;
+    color: var(--vpk-sidebar-text) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+    &:hover,
+    &:focus,
+    &:active,
+    &.active,
+    &.show {
+        background: var(--vpk-sidebar-bg-gradient) !important;
+        border-color: var(--vpk-sidebar-bg-end) !important;
+        color: var(--vpk-sidebar-text) !important;
+        filter: brightness(1.06);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    &:disabled,
+    &.disabled {
+        background: var(--vpk-sidebar-bg-gradient) !important;
+        border-color: var(--vpk-sidebar-bg-end) !important;
+        color: var(--vpk-sidebar-text) !important;
+        opacity: 0.65;
+        filter: none;
+        box-shadow: none;
+    }
+}
+
+// Primary buttons aligned with sidebar gradient theme
+body.o_web_client.o_vpk_sidebar_menu {
+    // Page must not scroll horizontally; sidebar stays fixed width
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+
+    &:not(.o_fullscreen) > .o_action_manager {
+        overflow-x: hidden !important;
+        overflow-y: hidden !important;
+    }
+
+    .o_navbar.o_vpk_sidebar_header,
+    .o_vpk_sidebar_primary,
+    .o_vpk_sidebar_systray,
+    .o_vpk_sidebar_apps {
+        overflow-x: hidden !important;
+        max-width: 100%;
+    }
+
+    // Override base_accounting_kit: overflow:auto causes horizontal page scroll
+    &:not(.o_fullscreen) > .o_action_manager {
+        overflow-x: clip !important;
+        overflow-y: hidden !important;
+    }
+
+    // Content-area text links only (exclude sidebar navigation)
+    .o_action_manager,
+    .modal-dialog {
+        a:not(.btn):not(.dropdown-item):not(.nav-link):not(.o_app):not(.oe_stat_button):not(.o_vpk_app_link):not(.o_vpk_sub_link) {
+            color: var(--vpk-sidebar-bg-start);
+
+            &:hover {
+                color: var(--vpk-sidebar-bg-end);
+            }
+        }
+
+        .btn-link,
+        .btn.btn-link,
+        .btn.text-action {
+            color: var(--vpk-sidebar-bg-start) !important;
+
+            &:hover,
+            &:focus,
+            &:active {
+                color: var(--vpk-sidebar-bg-end) !important;
+            }
+        }
+    }
+
+    // Global primary buttons (form, list, modal, chatter, control panel)
+    .btn.btn-primary,
+    .btn-fill-primary {
+        @include vpk-themed-primary-btn;
+    }
+
+    .btn-outline-primary {
+        color: var(--vpk-sidebar-bg-end) !important;
+        border-color: var(--vpk-sidebar-bg-start) !important;
+        background: transparent !important;
+
+        &:hover,
+        &:focus,
+        &:active,
+        &.active {
+            @include vpk-themed-primary-btn;
+        }
+    }
+
+    // Form view header action buttons (Confirm, Approve, etc.)
+    .o_form_view {
+        .o_form_statusbar {
+            .o_statusbar_buttons .btn.btn-primary {
+                @include vpk-themed-primary-btn;
+            }
+        }
+
+        // Statusbar workflow chevrons (Draft / Approved / Done)
+        .o_field_statusbar > .o_statusbar_status {
+            --o-statusbar-background-active: var(--vpk-sidebar-bg-start);
+            --o-statusbar-border-active: var(--vpk-sidebar-bg-end);
+            --o-statusbar-background-hover: rgba(0, 168, 132, 0.12);
+
+            > .o_arrow_button.btn.btn-secondary {
+                &.o_arrow_button_current,
+                &:active:not(.o_last) {
+                    background-color: var(--vpk-sidebar-bg-start) !important;
+                    color: var(--vpk-sidebar-text) !important;
+                }
+            }
+        }
+
+        .o_form_uri,
+        .oe_title {
+            color: var(--vpk-sidebar-bg-start) !important;
+        }
+
+        // Form notebook tabs (สินค้า, คณะกรรมการ, etc.)
+        .o_notebook {
+            --notebook-link-border-color-active-accent: var(--vpk-sidebar-bg-start);
+
+            .nav-link {
+                font-family: var(--vpk-font-family, inherit) !important;
+                font-size: var(--vpk-font-size-md, inherit);
+                color: var(--vpk-sidebar-bg-start) !important;
+                background: transparent !important;
+                transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+
+                &:hover,
+                &:focus {
+                    color: var(--vpk-sidebar-bg-end) !important;
+                    border-color: var(--vpk-sidebar-bg-hover) !important;
+                }
+
+                &.active {
+                    background: var(--vpk-sidebar-bg-gradient) !important;
+                    color: var(--vpk-sidebar-text) !important;
+                    font-weight: 600;
+                    border-color: var(--vpk-sidebar-bg-end) !important;
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+                    &, &:hover, &:focus, &:active {
+                        background: var(--vpk-sidebar-bg-gradient) !important;
+                        color: var(--vpk-sidebar-text) !important;
+                        border-top-color: var(--vpk-sidebar-bg-start) !important;
+                        border-bottom-color: #fff !important;
+                    }
+                }
+            }
+        }
+
+        // Section separators (group titles inside form)
+        .o_horizontal_separator {
+            font-family: var(--vpk-font-family, inherit) !important;
+            font-size: var(--vpk-font-size-md, inherit);
+        }
+    }
+
+    // Tabs outside form sheet (settings, dialogs, etc.)
+    .o_action_manager .nav.nav-tabs:not(.o_vpk_theme_tabs) {
+        .nav-item .nav-link {
+            color: var(--vpk-sidebar-bg-start) !important;
+            background: transparent !important;
+            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+
+            &:hover,
+            &:focus {
+                color: var(--vpk-sidebar-bg-end) !important;
+            }
+
+            &.active {
+                background: var(--vpk-sidebar-bg-gradient) !important;
+                color: var(--vpk-sidebar-text) !important;
+                font-weight: 600;
+                border-color: var(--vpk-sidebar-bg-end) !important;
+                border-top-color: var(--vpk-sidebar-bg-start) !important;
+                border-bottom-color: #fff !important;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+                &, &:hover, &:focus, &:active {
+                    background: var(--vpk-sidebar-bg-gradient) !important;
+                    color: var(--vpk-sidebar-text) !important;
+                }
+            }
+        }
+    }
+
+    // Chatter (Send message, Log note, mail composer)
+    .o-mail-Chatter,
+    .o-mail-Form-chatter,
+    .o-mail-ChatterContainer {
+        font-family: var(--vpk-font-family, inherit) !important;
+        font-size: var(--vpk-font-size-md, inherit);
+
+        .o-mail-Chatter-topbar,
+        .o-mail-Chatter-content,
+        .o-mail-Composer,
+        .o-mail-Message,
+        .o-mail-Message-content,
+        .o-mail-Thread {
+            font-family: var(--vpk-font-family, inherit) !important;
+            font-size: var(--vpk-font-size-md, inherit);
+        }
+
+        .o-mail-Chatter-topbar {
+            .btn.btn-primary,
+            .o_mail_send,
+            .dropdown-toggle-split {
+                @include vpk-themed-primary-btn;
+            }
+        }
+    }
+
+    .text-primary,
+    .text-action {
+        color: var(--vpk-sidebar-bg-start) !important;
+    }
+
+    .o_vpk_sidebar_primary {
+        .o_vpk_app_link,
+        .o_vpk_sub_link,
+        .o_vpk_app_name {
+            color: var(--vpk-sidebar-text) !important;
+
+            &:hover,
+            &:focus,
+            &:active {
+                color: var(--vpk-sidebar-text) !important;
+            }
+        }
+
+        .o_vpk_app_arrow,
+        .o_vpk_sub_arrow {
+            color: var(--vpk-sidebar-text) !important;
+            opacity: 0.9;
+        }
+    }
+
+    .badge.text-bg-primary,
+    .badge-primary {
+        background: var(--vpk-sidebar-bg-start) !important;
+        color: var(--vpk-sidebar-text) !important;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--vpk-sidebar-bg-start) !important;
+        border-color: var(--vpk-sidebar-bg-start) !important;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--vpk-sidebar-bg-start);
+        box-shadow: 0 0 0 0.2rem rgba(0, 168, 132, 0.2);
+    }
+
+    input[type="range"] {
+        accent-color: var(--vpk-sidebar-bg-start);
+    }
+
+    .o_field_widget .o_input_dropdown .o_dropdown_button::after,
+    .o_field_widget .o_datepicker_button::after {
+        color: var(--vpk-sidebar-bg-start);
+    }
+
+    // Form field name labels use selected theme font
+    .o_action_manager .o_form_view {
+        .o_form_label,
+        .o_wrap_label,
+        .o_wrap_label .o_form_label,
+        .o_inner_group .o_form_label,
+        label.o_form_label {
+            font-family: var(--vpk-font-family, inherit) !important;
+            font-size: var(--vpk-font-size-md, inherit);
+        }
+    }
+}

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_tree_tier_approvers" model="ir.ui.view">
+        <field name="name">purchase.request.list.tier.approvers</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_tree"/>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <field name="company_id" position="attributes">
+                <attribute name="string">Organization</attribute>
+            </field>
+            <field name="origin" position="after">
+                <field name="tier_approver_names" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_tree_hide_assigned_to" model="ir.ui.view">
+        <field name="name">purchase.request.list.hide.assigned.to</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="l10n_th_gov_purchase_request.view_purchase_request_tree"/>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <field name="assigned_to" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_form_tier_approvers" model="ir.ui.view">
+        <field name="name">purchase.request.form.tier.approvers</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+        <field name="arch" type="xml">
+            <field name="assigned_to" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+            <field name="assigned_to" position="after">
+                <field name="tier_approver_names" readonly="1"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_form_hide_gov_verify_approve" model="ir.ui.view">
+        <field name="name">purchase.request.form.hide.gov.verify.approve</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="l10n_th_gov_purchase_request.view_purchase_request_form"/>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <field name="verified_by" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+            <field name="date_verified" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+            <field name="approved_by" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+            <field name="date_approved" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_form_confirm_label" model="ir.ui.view">
+        <field name="name">purchase.request.form.confirm.label</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+        <field name="priority">80</field>
+        <field name="arch" type="xml">
+            <button name="button_approved" position="attributes">
+                <attribute name="string">ยืนยันขอซื้อ</attribute>
+            </button>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_form_send_to_procurement" model="ir.ui.view">
+        <field name="name">purchase.request.form.send.to.procurement</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <button name="button_to_approve" position="after">
+                <button
+                    name="action_send_to_procurement"
+                    type="object"
+                    string="ส่งพัสดุ"
+                    class="oe_highlight"
+                    invisible="state != 'draft'"
+                />
+            </button>
+            <button name="button_draft" position="attributes">
+                <attribute name="invisible">state not in ('sent_to_procurement','to_approve','approved','rejected','in_progress','done')</attribute>
+            </button>
+            <field name="state" position="attributes">
+                <attribute name="statusbar_visible">draft,sent_to_procurement,approved,done</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_tree_send_to_procurement" model="ir.ui.view">
+        <field name="name">purchase.request.list.send.to.procurement</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_tree"/>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list position="attributes">
+                <attribute name="decoration-info">state in ('draft','to_approve','sent_to_procurement')</attribute>
+            </list>
+            <field name="state" position="attributes">
+                <attribute name="decoration-info">state == 'sent_to_procurement'</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_search_send_to_procurement" model="ir.ui.view">
+        <field name="name">purchase.request.search.send.to.procurement</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_search"/>
+        <field name="arch" type="xml">
+            <filter name="state_draft" position="after">
+                <filter
+                    name="state_sent_to_procurement"
+                    string="ส่งพัสดุแล้ว"
+                    domain="[('state','=','sent_to_procurement')]"
+                    help="ใบขอซื้อที่หน่วยงานส่งให้พัสดุแล้ว"
+                />
+            </filter>
+        </field>
+    </record>
+
+    <!-- พัสดุต้องเห็นใบของหน่วยงาน ไม่กรองเฉพาะใบของตนเอง -->
+    <record id="purchase_request.purchase_request_form_action" model="ir.actions.act_window">
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_purchase_request_sent_to_procurement" model="ir.actions.act_window">
+        <field name="name">รอรับจากหน่วยงาน</field>
+        <field name="res_model">purchase.request</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('state', '=', 'sent_to_procurement')]</field>
+        <field name="context">{}</field>
+        <field name="search_view_id" ref="purchase_request.view_purchase_request_search"/>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                ยังไม่มีใบขอซื้อที่หน่วยงานส่งให้พัสดุ
+            </p>
+            <p>
+                เมื่อหน่วยงานกดปุ่ม ส่งพัสดุ ใบขอซื้อจะปรากฏที่นี่ สถานะ ส่งพัสดุแล้ว
+            </p>
+        </field>
+    </record>
+
+    <menuitem
+        id="menu_purchase_request_sent_to_procurement"
+        name="รอรับจากหน่วยงาน"
+        parent="purchase_request.menu_purchase_request"
+        action="action_purchase_request_sent_to_procurement"
+        sequence="5"
+        groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+    />
+
+    <menuitem
+        id="menu_purchase_request_sent_to_procurement_purchase"
+        name="รอรับจากหน่วยงาน"
+        parent="vpk_th_purchase_menu.menu_purchase_request_data_root"
+        action="action_purchase_request_sent_to_procurement"
+        sequence="5"
+        groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+    />
+</odoo>

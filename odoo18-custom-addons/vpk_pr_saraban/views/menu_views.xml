@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_saraban_root"
+              name="สารบรรณ"
+              parent="purchase.menu_procurement_management"
+              sequence="28"/>
+
+    <menuitem id="menu_saraban_document"
+              name="งานสารบรรณ"
+              parent="menu_saraban_root"
+              action="action_saraban_document"
+              sequence="10"/>
+</odoo>

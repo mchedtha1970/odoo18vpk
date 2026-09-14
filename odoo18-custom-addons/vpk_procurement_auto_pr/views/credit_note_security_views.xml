@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_move_form_credit_note_security_vpk"
+            model="ir.ui.view">
+        <field name="name">account.move.form.credit.note.security.vpk</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <button name="action_reverse" position="attributes">
+                <attribute name="groups">
+                    vpk_procurement_auto_pr.group_credit_note_creator
+                </attribute>
+            </button>
+
+            <xpath expr="//sheet" position="before">
+                <field name="can_edit_credit_note" invisible="1"/>
+                <field name="can_create_credit_note" invisible="1"/>
+                <div class="alert alert-warning w-100"
+                     role="alert"
+                     invisible="move_type not in ('out_refund', 'in_refund') or can_edit_credit_note">
+                    <strong>เอกสารนี้เป็นแบบอ่านอย่างเดียว</strong>
+                    — ผู้ใช้งานไม่มีสิทธิ์แก้ไขเอกสารลดหนี้
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

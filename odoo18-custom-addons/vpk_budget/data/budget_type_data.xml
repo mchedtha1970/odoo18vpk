@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="budget_type_supplies" model="vpk.budget.type">
+        <field name="name">วัสดุ</field>
+        <field name="code">supplies_budget</field>
+        <field name="section_key">material</field>
+        <field name="sequence">10</field>
+    </record>
+
+    <record id="budget_type_asset" model="vpk.budget.type">
+        <field name="name">ครุภัณฑ์</field>
+        <field name="code">asset_budget</field>
+        <field name="section_key">asset</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <record id="budget_type_construction" model="vpk.budget.type">
+        <field name="name">ก่อสร้าง</field>
+        <field name="code">construction_budget</field>
+        <field name="section_key">construction</field>
+        <field name="sequence">30</field>
+    </record>
+
+    <record id="budget_type_project" model="vpk.budget.type">
+        <field name="name">โครงการ</field>
+        <field name="code">project_budget</field>
+        <field name="section_key">project</field>
+        <field name="sequence">40</field>
+    </record>
+</odoo>

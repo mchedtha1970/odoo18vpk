@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="payment_method_cash" model="vpk.his.payment.method.map">
+        <field name="name">เงินสด</field>
+        <field name="code">cash</field>
+        <field name="journal_type">cash</field>
+        <field name="create_payment" eval="True"/>
+    </record>
+    <record id="payment_method_transfer" model="vpk.his.payment.method.map">
+        <field name="name">โอนเงิน</field>
+        <field name="code">transfer</field>
+        <field name="journal_type">bank</field>
+        <field name="create_payment" eval="True"/>
+    </record>
+    <record id="payment_method_credit_card" model="vpk.his.payment.method.map">
+        <field name="name">บัตรเครดิต</field>
+        <field name="code">credit_card</field>
+        <field name="journal_type">bank</field>
+        <field name="create_payment" eval="True"/>
+    </record>
+    <record id="payment_method_ar_claim" model="vpk.his.payment.method.map">
+        <field name="name">ลูกหนี้สิทธิ์</field>
+        <field name="code">ar_claim</field>
+        <field name="is_entitlement" eval="True"/>
+        <field name="create_payment" eval="False"/>
+    </record>
+    <record id="payment_method_sso" model="vpk.his.payment.method.map">
+        <field name="name">สิทธิ์ประกันสังคม</field>
+        <field name="code">sso</field>
+        <field name="is_entitlement" eval="True"/>
+        <field name="create_payment" eval="False"/>
+    </record>
+    <record id="payment_method_uc" model="vpk.his.payment.method.map">
+        <field name="name">สิทธิ์ UC / บัตรทอง</field>
+        <field name="code">uc</field>
+        <field name="is_entitlement" eval="True"/>
+        <field name="create_payment" eval="False"/>
+    </record>
+    <record id="payment_method_csmbs" model="vpk.his.payment.method.map">
+        <field name="name">สิทธิ์เบิกจ่ายตรง</field>
+        <field name="code">csmbs</field>
+        <field name="is_entitlement" eval="True"/>
+        <field name="create_payment" eval="False"/>
+    </record>
+    <record id="payment_method_advance" model="vpk.his.payment.method.map">
+        <field name="name">ตัดเงินล่วงหน้า</field>
+        <field name="code">advance</field>
+        <field name="journal_type">bank</field>
+        <field name="is_entitlement" eval="False"/>
+        <field name="create_payment" eval="True"/>
+    </record>
+    <record id="payment_method_advance_in" model="vpk.his.payment.method.map">
+        <field name="name">รับเงินล่วงหน้า</field>
+        <field name="code">advance_in</field>
+        <field name="journal_type">cash</field>
+        <field name="is_entitlement" eval="False"/>
+        <field name="create_payment" eval="False"/>
+    </record>
+</odoo>

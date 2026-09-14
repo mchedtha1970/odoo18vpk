@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_picking_form_maintenance_request" model="ir.ui.view">
+        <field name="name">stock.picking.form.maintenance.request</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='origin']" position="after">
+                <field name="maintenance_request_id" readonly="1"/>
+                <field name="can_validate_receipt" invisible="1"/>
+                <field name="can_cancel_receipt" invisible="1"/>
+                <field name="has_short_shelf_life_drug" invisible="1"/>
+                <field name="short_shelf_life_line_count" invisible="1"/>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-danger text-center mb-0"
+                     role="alert"
+                     invisible="not has_short_shelf_life_drug">
+                    <strong>
+                        <i class="fa fa-exclamation-triangle me-1"/>
+                        พบยาอายุต่ำกว่าเกณฑ์
+                    </strong>
+                    — กรุณาตรวจสอบวันหมดอายุและแนบใบรับรองการเปลี่ยนยา
+                    ก่อนยืนยันรับสินค้า
+                </div>
+            </xpath>
+            <xpath expr="//button[@name='button_validate']" position="attributes">
+                <attribute name="invisible"
+                           add="picking_type_code == 'incoming' and not can_validate_receipt"
+                           separator=" or "/>
+            </xpath>
+            <xpath expr="//button[@name='button_validate'][2]" position="attributes">
+                <attribute name="invisible"
+                           add="picking_type_code == 'incoming' and not can_validate_receipt"
+                           separator=" or "/>
+            </xpath>
+            <xpath expr="//button[@name='action_cancel']" position="attributes">
+                <attribute name="invisible"
+                           add="picking_type_code == 'incoming' and not can_cancel_receipt"
+                           separator=" or "/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="สิทธิและประวัติการรับ"
+                      name="receipt_permission_audit"
+                      invisible="picking_type_code != 'incoming'">
+                    <group>
+                        <group string="การรับสินค้า">
+                            <field name="can_validate_receipt"/>
+                            <field name="receipt_validated_by_id"/>
+                            <field name="receipt_validated_at"/>
+                        </group>
+                        <group string="การยกเลิกการรับ">
+                            <field name="can_cancel_receipt"/>
+                            <field name="receipt_cancelled_by_id"/>
+                            <field name="receipt_cancelled_at"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Detailed Operations tab for LOT entry -->
+    <record id="view_picking_form_detailed_operations" model="ir.ui.view">
+        <field name="name">stock.picking.form.detailed.operations</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='operations']" position="after">
+                <page string="รายละเอียดการรับ (LOT)" name="detailed_operations">
+                    <field name="move_line_ids_without_package"
+                        readonly="state == 'done' and is_locked"
+                        context="{'default_picking_id': id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id, 'default_company_id': company_id, 'vpk_detailed_lot_entry': True}">
+                        <list editable="bottom"
+                              decoration-danger="is_short_shelf_life">
+                            <field name="company_id" column_invisible="True"/>
+                            <field name="move_id" column_invisible="True"/>
+                            <field name="product_id"
+                                readonly="move_id"
+                                options="{'no_create': True}"/>
+                            <field name="lot_id"
+                                context="{'default_product_id': product_id, 'default_company_id': company_id}"
+                                groups="stock.group_production_lot"
+                                optional="show"/>
+                            <field name="lot_name"
+                                groups="stock.group_production_lot"
+                                optional="show"/>
+                            <field name="expiration_date"
+                                string="วันหมดอายุ"
+                                optional="show"/>
+                            <field name="minimum_receipt_shelf_life_days"
+                                string="เกณฑ์ขั้นต่ำ (วัน)"
+                                optional="show"/>
+                            <field name="receipt_shelf_life_days"
+                                string="อายุคงเหลือ (วัน)"
+                                optional="show"/>
+                            <field name="is_short_shelf_life"
+                                string="ต่ำกว่าเกณฑ์"
+                                optional="show"/>
+                            <field name="replacement_certificate_filename"
+                                column_invisible="True"/>
+                            <field name="replacement_certificate"
+                                filename="replacement_certificate_filename"
+                                string="ใบรับรองการเปลี่ยนยา"
+                                invisible="not is_short_shelf_life"
+                                optional="show"/>
+                            <field name="short_shelf_life_note"
+                                string="หมายเหตุ"
+                                invisible="not is_short_shelf_life"
+                                optional="show"/>
+                            <field name="location_id"
+                                groups="stock.group_stock_multi_locations"
+                                optional="hide"/>
+                            <field name="location_dest_id"
+                                groups="stock.group_stock_multi_locations"
+                                optional="hide"/>
+                            <field name="package_id"
+                                groups="stock.group_tracking_lot"
+                                optional="hide"/>
+                            <field name="result_package_id"
+                                groups="stock.group_tracking_lot"
+                                optional="hide"/>
+                            <field name="owner_id"
+                                groups="stock.group_tracking_owner"
+                                optional="hide"/>
+                            <field name="quantity" string="จำนวนรับ"/>
+                            <field name="product_uom_id"
+                                groups="uom.group_uom"
+                                optional="show"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

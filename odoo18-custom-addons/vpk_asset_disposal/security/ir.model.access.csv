@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_asset_disposal_user,vpk.asset.disposal user,model_vpk_asset_disposal,group_asset_disposal_user,1,1,1,0
+access_vpk_asset_disposal_approver,vpk.asset.disposal approver,model_vpk_asset_disposal,group_asset_disposal_approver,1,1,1,0
+access_vpk_asset_disposal_manager,vpk.asset.disposal manager,model_vpk_asset_disposal,group_asset_disposal_manager,1,1,1,1
+access_vpk_asset_disposal_line_user,vpk.asset.disposal.line user,model_vpk_asset_disposal_line,group_asset_disposal_user,1,1,1,1
+access_vpk_asset_disposal_line_manager,vpk.asset.disposal.line manager,model_vpk_asset_disposal_line,group_asset_disposal_manager,1,1,1,1

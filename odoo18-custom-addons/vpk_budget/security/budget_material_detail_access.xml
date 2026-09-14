@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_departmental_budget_request_material_detail_department" model="ir.model.access">
+        <field name="name">departmental.budget.request.material.detail department</field>
+        <field name="model_id" ref="model_departmental_budget_request_material_detail"/>
+        <field name="group_id" ref="group_budget_request_department_user"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_departmental_budget_request_material_detail_budget_unit" model="ir.model.access">
+        <field name="name">departmental.budget.request.material.detail budget unit</field>
+        <field name="model_id" ref="model_departmental_budget_request_material_detail"/>
+        <field name="group_id" ref="group_budget_request_budget_unit"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+</odoo>

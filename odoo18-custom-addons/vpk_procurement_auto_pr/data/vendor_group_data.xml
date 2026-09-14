@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+    <record id="vendor_group_general" model="procurement.vendor.group">
+        <field name="sequence">10</field>
+        <field name="code">GENERAL</field>
+        <field name="name">กลุ่มผู้จำหน่ายทั่วไป</field>
+    </record>
+
+    <record id="vendor_group_innovative_chemical"
+            model="procurement.vendor.group">
+        <field name="sequence">20</field>
+        <field name="code">INNOVATIVE-CHEM</field>
+        <field name="name">กลุ่มยานวัตกรรม (เคมี)</field>
+    </record>
+
+    <record id="vendor_group_innovative_biologic"
+            model="procurement.vendor.group">
+        <field name="sequence">30</field>
+        <field name="code">INNOVATIVE-BIO</field>
+        <field name="name">กลุ่มยานวัตกรรม (ชีววัตถุ)</field>
+    </record>
+
+    <record id="vendor_group_gpo" model="procurement.vendor.group">
+        <field name="sequence">40</field>
+        <field name="code">GPO</field>
+        <field name="name">กลุ่มยาองค์การเภสัชกรรม</field>
+    </record>
+
+    <record id="vendor_group_red_cross" model="procurement.vendor.group">
+        <field name="sequence">50</field>
+        <field name="code">RED-CROSS</field>
+        <field name="name">กลุ่มยาสภากาชาด</field>
+    </record>
+
+    <record id="vendor_group_utility" model="procurement.vendor.group">
+        <field name="sequence">60</field>
+        <field name="code">UTILITY</field>
+        <field name="name">ส่วนสาธารณูปโภค</field>
+        <field name="description">ผู้ให้บริการสาธารณูปโภค เช่น ประปา ไฟฟ้า โทรคมนาคม ไปรษณีย์ เทศบาล</field>
+    </record>
+
+    <record id="vendor_group_direct" model="procurement.vendor.group">
+        <field name="sequence">70</field>
+        <field name="code">DIRECT</field>
+        <field name="name">เจ้าหนี้ตรง</field>
+        <field name="description">เจ้าหนี้จ่ายตรง เช่น หน่วยงานราชการ กองทุน โรงพยาบาล สถาบันการศึกษา องค์การมหาชน</field>
+    </record>
+</odoo>

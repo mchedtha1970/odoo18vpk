@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_form_egp" model="ir.ui.view">
+        <field name="name">purchase.request.form.egp</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="is_egp_procurement_flow" invisible="1"/>
+                <field name="can_create_egp_rfq" invisible="1"/>
+                <field name="can_send_to_egp" invisible="1"/>
+                <field name="egp_requisition_id" invisible="1"/>
+                <field
+                    name="egp_flow_stage"
+                    widget="statusbar"
+                    invisible="not is_egp_procurement_flow"
+                    statusbar_visible="pr_submit,pr_approved,draft,confirmed,egp_docs,rfq,compare,awarded,done"
+                />
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <field name="egp_flow_html" invisible="1"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page
+                    string="ขั้นตอนการทำงาน"
+                    name="egp_flow"
+                    invisible="1"
+                >
+                    <field name="egp_flow_html" nolabel="1"/>
+                </page>
+            </xpath>
+            <button name="%(purchase_request.action_purchase_request_line_make_purchase_order)d" position="attributes">
+                <attribute name="invisible">state not in ('approved', 'in_progress') or to_create == 'purchase_agreement'</attribute>
+            </button>
+            <button name="%(purchase_request.action_purchase_request_line_make_purchase_order)d" position="after">
+                <button
+                    name="action_send_to_egp"
+                    type="object"
+                    string="ส่งรายการเข้าระบบ e-GP"
+                    class="oe_highlight"
+                    groups="purchase.group_purchase_user"
+                    invisible="not can_send_to_egp"
+                />
+                <button
+                    name="action_open_create_rfq_wizard"
+                    type="object"
+                    string="สร้าง RFQ/PO ผู้ชนะ"
+                    invisible="not can_create_egp_rfq"
+                />
+            </button>
+            <xpath expr="//field[@name='to_create']" position="after">
+                <field
+                    name="egp_requisition_id"
+                    invisible="not is_egp_procurement_flow"
+                    readonly="1"
+                />
+                <field
+                    name="egp_project_reference"
+                    invisible="not egp_requisition_id"
+                    readonly="1"
+                />
+                <field
+                    name="egp_project_name"
+                    invisible="not egp_requisition_id"
+                    readonly="1"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_tree_egp_document" model="ir.ui.view">
+        <field name="name">purchase.request.list.egp.document</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_tree"/>
+        <field name="priority">55</field>
+        <field name="arch" type="xml">
+            <field name="origin" position="after">
+                <field name="egp_requisition_id" optional="show" string="เอกสาร e-GP"/>
+                <field name="egp_project_reference" optional="show"/>
+                <field name="egp_project_name" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_form_egp_tes_label" model="ir.ui.view">
+        <field name="name">purchase.request.form.egp.tes.label</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request_to_requisition.view_purchase_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='requisition_count']" position="attributes">
+                <attribute name="string">กระบวนการ e-GP</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record
+        id="view_purchase_request_line_make_purchase_requisition_egp_label"
+        model="ir.ui.view"
+    >
+        <field name="name">purchase.request.line.make.purchase.requisition.egp.label</field>
+        <field name="model">purchase.request.line.make.purchase.requisition</field>
+        <field
+            name="inherit_id"
+            ref="purchase_request_to_requisition.view_purchase_request_line_make_purchase_requisition"
+        />
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="string">กระบวนการ eGP</attribute>
+            </xpath>
+            <button name="make_purchase_requisition" position="attributes">
+                <attribute name="string">กระบวนการ eGP</attribute>
+            </button>
+            <separator position="attributes">
+                <attribute name="string">กระบวนการ eGP ฉบับร่างที่มีอยู่ (อัปเดต):</attribute>
+            </separator>
+        </field>
+    </record>
+</odoo>

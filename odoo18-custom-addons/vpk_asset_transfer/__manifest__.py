@@ -1,0 +1,30 @@
+# -*- coding: utf-8 -*-
+{
+    "name": "VPK Asset Transfer",
+    "version": "18.0.1.3.7",
+    "category": "Accounting",
+    "summary": "ใบโอนทรัพย์สินระหว่างหน่วยงาน (อนุมัติผ่าน Tier Validation)",
+    "author": "VPK",
+    "depends": [
+        "account_asset_management",
+        "account_asset_number",
+        "analytic",
+        "mail",
+        "vpk_asset_menu",
+        "base_tier_validation",
+    ],
+    "data": [
+        "security/asset_transfer_security.xml",
+        "security/ir.model.access.csv",
+        "data/ir_sequence_data.xml",
+        "data/tier_definition_data.xml",
+        "views/account_asset_views.xml",
+        "views/asset_transfer_views.xml",
+        "views/menuitem.xml",
+    ],
+    "post_init_hook": "post_init_hook",
+    "license": "LGPL-3",
+    "installable": True,
+    "application": False,
+    "auto_install": False,
+}

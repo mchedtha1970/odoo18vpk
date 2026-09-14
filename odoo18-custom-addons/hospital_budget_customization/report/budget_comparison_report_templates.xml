@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_budget_comparison">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="budget">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Budget Comparison Report</h2>
+                        <p>
+                            <strong>Budget:</strong>
+                            <span t-esc="budget.name"/>
+                        </p>
+                        <p>
+                            <strong>Period:</strong>
+                            <span t-esc="budget.date_from"/>
+                            -
+                            <span t-esc="budget.date_to"/>
+                        </p>
+                        <p t-if="filters.get('fund_source') and filters['fund_source'].id">
+                            <strong>Fund Source:</strong>
+                            <span t-esc="filters['fund_source'].name"/>
+                        </p>
+                        <p t-if="filters.get('analytic_account') and filters['analytic_account'].id">
+                            <strong>Department/Project:</strong>
+                            <span t-esc="filters['analytic_account'].display_name"/>
+                        </p>
+                        <table class="table table-sm o_main_table">
+                            <thead>
+                                <tr>
+                                    <th>Department / Project</th>
+                                    <th>Fund Source</th>
+                                    <th class="text-right">Planned</th>
+                                    <th class="text-right">Encumbrance</th>
+                                    <th class="text-right">Actual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="lines" t-as="line">
+                                    <td>
+                                        <span t-esc="line.analytic_account_id.display_name"/>
+                                    </td>
+                                    <td>
+                                        <span t-esc="line.fund_source_id.name or '-'"/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-esc="line.planned_amount"/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-esc="abs(line.po_commitment_amount or 0.0)"/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-esc="abs(line.practical_amount or 0.0)"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <report
+        id="action_report_budget_comparison"
+        model="budget.budget"
+        string="Budget Comparison Report"
+        report_type="qweb-pdf"
+        name="hospital_budget_customization.report_budget_comparison"
+        file="hospital_budget_customization.report_budget_comparison"
+    />
+</odoo>

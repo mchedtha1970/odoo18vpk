@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Keep procurement UoM (e.g. PO line UoM) on stock moves / receipts. -->
+    <record id="config_stock_propagate_uom" model="ir.config_parameter">
+        <field name="key">stock.propagate_uom</field>
+        <field name="value">1</field>
+    </record>
+</odoo>

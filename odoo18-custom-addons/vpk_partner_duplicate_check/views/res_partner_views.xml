@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_duplicate_check" model="ir.ui.view">
+        <field name="name">res.partner.form.duplicate.check</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="priority">200</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='vat']" position="after">
+                <field name="has_duplicate_warning" invisible="1"/>
+                <div invisible="not has_duplicate_warning"
+                     class="alert alert-warning mt-2 mb-2" role="alert">
+                    <strong>พบข้อมูลที่อาจซ้ำซ้อน:</strong>
+                    <field name="duplicate_vat_warning"
+                           invisible="not duplicate_vat_warning"
+                           nolabel="1" class="d-block text-danger fw-bold"/>
+                    <field name="duplicate_name_warning"
+                           invisible="not duplicate_name_warning"
+                           nolabel="1" class="d-block text-warning"/>
+                    <field name="duplicate_phone_warning"
+                           invisible="not duplicate_phone_warning"
+                           nolabel="1" class="d-block"/>
+                    <field name="duplicate_email_warning"
+                           invisible="not duplicate_email_warning"
+                           nolabel="1" class="d-block"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

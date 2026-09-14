@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Smart button + evaluation fields on partner form -->
+    <record id="view_partner_form_vendor_eval" model="ir.ui.view">
+        <field name="name">res.partner.form.vendor.evaluation</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="priority">400</field>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button name="action_view_vendor_evaluations"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-star"
+                        invisible="supplier_rank == 0">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="vendor_latest_grade"/>
+                            (<field name="vendor_avg_score" widget="float" digits="[5,1]"/>%)
+                        </span>
+                        <span class="o_stat_text">
+                            ประเมิน (<field name="vendor_evaluation_count"/>)
+                        </span>
+                    </div>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add grade to partner list view -->
+    <record id="view_partner_tree_vendor_eval" model="ir.ui.view">
+        <field name="name">res.partner.tree.vendor.eval</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='email']" position="after">
+                <field name="vendor_latest_grade" string="เกรดผู้ขาย" optional="show"/>
+                <field name="vendor_avg_score" string="คะแนนเฉลี่ย" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

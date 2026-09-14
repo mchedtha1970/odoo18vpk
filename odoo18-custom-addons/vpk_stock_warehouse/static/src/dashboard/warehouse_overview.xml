@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_stock_warehouse.LocationTreeNode">
+        <div class="o_vpk_loc_tree_node" t-att-style="'--vpk-tree-depth:' + depth">
+            <div class="o_vpk_loc_tree_row d-flex align-items-center gap-1"
+                 t-att-class="{'o_vpk_loc_tree_root': depth === 0}">
+                <button t-if="node.children and node.children.length"
+                        type="button"
+                        class="btn btn-link btn-sm p-0 o_vpk_loc_tree_toggle"
+                        t-on-click.stop="() => this.toggleExpand(node.id)">
+                    <i t-att-class="this.isExpanded(node.id) ? 'fa fa-caret-down' : 'fa fa-caret-right'"/>
+                </button>
+                <span t-else="" class="o_vpk_loc_tree_toggle_spacer"/>
+                <i t-att-class="(node.children and node.children.length)
+                    ? 'fa fa-folder-o text-warning'
+                    : 'fa fa-cube text-muted'"/>
+                <button type="button"
+                        class="btn btn-link btn-sm text-start text-decoration-none o_vpk_loc_tree_label flex-grow-1 min-w-0"
+                        t-on-click="() => this.openLocation(node.id)">
+                    <span class="fw-semibold" t-esc="node.name"/>
+                    <t t-if="node.barcode">
+                        <span class="text-muted small ms-2" t-esc="node.barcode"/>
+                    </t>
+                </button>
+                <span t-if="node.children and node.children.length"
+                      class="badge rounded-pill text-bg-light border">
+                    <t t-esc="node.children.length"/>
+                </span>
+                <span t-if="node.usage === 'internal' and node.is_empty"
+                      class="badge rounded-pill text-bg-secondary">ว่าง</span>
+            </div>
+            <t t-if="node.children and node.children.length and this.isExpanded(node.id)">
+                <div class="o_vpk_loc_tree_children">
+                    <t t-foreach="node.children" t-as="child" t-key="child.id">
+                        <t t-call="vpk_stock_warehouse.LocationTreeNode">
+                            <t t-set="node" t-value="child"/>
+                            <t t-set="depth" t-value="depth + 1"/>
+                        </t>
+                    </t>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <t t-name="vpk_stock_warehouse.WarehouseOverviewDashboard">
+        <Layout display="display" className="'o_vpk_warehouse_overview'">
+            <div class="o_vpk_warehouse_overview_body d-flex h-100">
+                <aside class="o_vpk_warehouse_overview_panel flex-shrink-0">
+                    <div class="o_vpk_warehouse_overview_panel_header">
+                        <h5 class="mb-2">คลังสินค้า</h5>
+                        <input type="search"
+                               class="form-control form-control-sm"
+                               placeholder="ค้นหาคลัง..."
+                               t-model="state.searchQuery"/>
+                    </div>
+                    <div class="o_vpk_warehouse_overview_panel_list">
+                        <t t-if="!filteredWarehouses.length">
+                            <div class="text-muted small px-2 py-3">ไม่พบคลัง</div>
+                        </t>
+                        <t t-foreach="filteredWarehouses" t-as="wh" t-key="wh.id">
+                            <button type="button"
+                                    class="o_vpk_warehouse_overview_item btn w-100 text-start"
+                                    t-att-class="{'active': state.selectedId === wh.id, 'opacity-50': !wh.active}"
+                                    t-on-click="() => this.selectWarehouse(wh.id)">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="fw-semibold text-truncate" t-esc="wh.name"/>
+                                        <div class="small text-muted">
+                                            <span t-esc="wh.code"/>
+                                            <t t-if="wh.stock_location">
+                                                · <span t-esc="wh.stock_location"/>
+                                            </t>
+                                        </div>
+                                    </div>
+                                    <span class="badge rounded-pill text-bg-secondary">
+                                        <t t-esc="wh.location_count"/>
+                                    </span>
+                                </div>
+                            </button>
+                        </t>
+                    </div>
+                </aside>
+
+                <section class="o_vpk_warehouse_overview_content flex-grow-1 d-flex flex-column min-w-0">
+                    <t t-if="selectedWarehouse">
+                        <div class="o_vpk_warehouse_overview_content_header">
+                            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                                <div class="min-w-0">
+                                    <h4 class="mb-0 text-truncate" t-esc="selectedWarehouse.name"/>
+                                    <div class="text-muted small">
+                                        ตำแหน่ง / Bin ภายใต้
+                                        <strong t-esc="selectedWarehouse.stock_location or selectedWarehouse.code"/>
+                                        (<t t-esc="selectedWarehouse.location_count"/> รายการ)
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2 flex-shrink-0 align-items-center flex-wrap">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                t-att-class="{'active': state.viewMode === 'tree'}"
+                                                t-on-click="() => this.setViewMode('tree')">
+                                            Tree
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                t-att-class="{'active': state.viewMode === 'list'}"
+                                                t-on-click="() => this.setViewMode('list')">
+                                            List
+                                        </button>
+                                    </div>
+                                    <button type="button"
+                                            class="btn btn-secondary btn-sm"
+                                            t-on-click="openWarehouseForm">
+                                        ตั้งค่าคลัง
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-primary btn-sm"
+                                            t-on-click="openAllLocations">
+                                        เปิดเต็มหน้าจอ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <div class="o_vpk_warehouse_overview_content_header">
+                            <h4 class="mb-0">เลือกคลังจาก panel ด้านซ้าย</h4>
+                        </div>
+                    </t>
+
+                    <div class="o_vpk_warehouse_overview_view flex-grow-1 min-h-0">
+                        <t t-if="state.ready and selectedWarehouse and state.viewMode === 'tree'">
+                            <div class="o_vpk_loc_tree_toolbar d-flex align-items-center gap-2 flex-wrap">
+                                <input type="search"
+                                       class="form-control form-control-sm o_vpk_loc_tree_search"
+                                       placeholder="ค้นหาตำแหน่ง / barcode..."
+                                       t-model="state.locationQuery"/>
+                                <button type="button" class="btn btn-link btn-sm" t-on-click="expandAll">ขยายทั้งหมด</button>
+                                <button type="button" class="btn btn-link btn-sm" t-on-click="collapseAll">ย่อ</button>
+                            </div>
+                            <t t-if="state.treeLoading">
+                                <div class="text-muted p-4">กำลังโหลด hierarchy...</div>
+                            </t>
+                            <t t-elif="filteredTreeRoot">
+                                <div class="o_vpk_loc_tree">
+                                    <t t-call="vpk_stock_warehouse.LocationTreeNode">
+                                        <t t-set="node" t-value="filteredTreeRoot"/>
+                                        <t t-set="depth" t-value="0"/>
+                                    </t>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <div class="text-muted p-4">
+                                    <t t-if="state.locationQuery">ไม่พบตำแหน่งที่ตรงกับคำค้น</t>
+                                    <t t-else="">คลังนี้ยังไม่มีตำแหน่งย่อย (bin)</t>
+                                </div>
+                            </t>
+                        </t>
+                        <t t-elif="state.ready and viewProps and selectedWarehouse and state.viewMode === 'list'">
+                            <View t-props="viewProps" t-key="'list-' + state.selectedId"/>
+                        </t>
+                    </div>
+                </section>
+            </div>
+        </Layout>
+    </t>
+</templates>

@@ -1,0 +1,15 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_budget_fund_source_user,vpk.budget.fund.source user,model_vpk_budget_fund_source,group_vpk_budget_user,1,1,1,0
+access_vpk_budget_fund_source_manager,vpk.budget.fund.source manager,model_vpk_budget_fund_source,group_vpk_budget_manager,1,1,1,1
+access_vpk_budget_group_user,vpk.budget.group user,model_vpk_budget_group,group_vpk_budget_user,1,1,1,0
+access_vpk_budget_group_manager,vpk.budget.group manager,model_vpk_budget_group,group_vpk_budget_manager,1,1,1,1
+access_vpk_budget_type_user,vpk.budget.type user,model_vpk_budget_type,group_vpk_budget_user,1,0,0,0
+access_vpk_budget_type_department,vpk.budget.type department,model_vpk_budget_type,group_budget_request_department_user,1,0,0,0
+access_vpk_budget_type_manager,vpk.budget.type manager,model_vpk_budget_type,group_vpk_budget_manager,1,1,1,1
+access_departmental_budget_request_department,departmental.budget.request department,model_departmental_budget_request,group_budget_request_department_user,1,1,1,0
+access_departmental_budget_request_line_department,departmental.budget.request.line department,model_departmental_budget_request_line,group_budget_request_department_user,1,1,1,0
+access_departmental_budget_request_budget_unit,departmental.budget.request budget unit,model_departmental_budget_request,group_budget_request_budget_unit,1,1,1,1
+access_departmental_budget_request_line_budget_unit,departmental.budget.request.line budget unit,model_departmental_budget_request_line,group_budget_request_budget_unit,1,1,1,1
+access_budget_budget_vpk_user,budget.budget vpk user,base_account_budget.model_budget_budget,group_vpk_budget_user,1,0,0,0
+access_account_budget_post_vpk_user,account.budget.post vpk user,base_account_budget.model_account_budget_post,group_vpk_budget_user,1,0,0,0
+access_account_analytic_account_vpk_user,account.analytic.account vpk user,analytic.model_account_analytic_account,group_vpk_budget_user,1,0,0,0

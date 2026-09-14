@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend annual plan form: action plan schedules -->
+    <record id="view_procurement_annual_plan_form_action" model="ir.ui.view">
+        <field name="name">procurement.annual.plan.form.action.plan</field>
+        <field name="model">procurement.annual.plan</field>
+        <field name="inherit_id" ref="vpk_procurement_auto_pr.view_procurement_annual_plan_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_action_schedules" type="object"
+                        class="oe_stat_button" icon="fa-calendar"
+                        invisible="not is_action_plan">
+                    <field name="action_schedule_count" widget="statinfo" string="แผนปฏิบัติการ"/>
+                </button>
+            </xpath>
+            <xpath expr="//field[@name='auto_gen_enabled']" position="before">
+                <field name="is_action_plan" widget="boolean_toggle"/>
+            </xpath>
+            <xpath expr="//page[@name='lines']//list" position="inside">
+                <field name="method_type" optional="show"
+                       column_invisible="not parent.is_action_plan"/>
+                <field name="date_approve_plan" string="อนุมัติ/ประกาศ" optional="show"
+                       column_invisible="not parent.is_action_plan"/>
+                <field name="date_commit_plan" string="ก่อหนี้ผูกพัน" optional="show"
+                       column_invisible="not parent.is_action_plan"/>
+                <field name="date_delivery_plan" string="ส่งมอบ" optional="show"
+                       column_invisible="not parent.is_action_plan"/>
+                <field name="date_disburse_plan" string="เบิกเงิน" optional="show"
+                       column_invisible="not parent.is_action_plan"/>
+                <field name="schedule_summary" optional="hide"
+                       column_invisible="not parent.is_action_plan"/>
+            </xpath>
+            <xpath expr="//page[@name='lines']" position="after">
+                <page string="แผนปฏิบัติการรายเดือน" name="action_plan_months"
+                      invisible="not is_action_plan">
+                    <p class="text-muted mb-2">
+                        สรุปแผนรายเดือนของทุกรายการ — เปิดรายการแผนเพื่อแก้ไขตารางเดือน (ต.ค.–ก.ย.)
+                        หรือใช้เมนู <strong>แผนปฏิบัติการรายเดือน</strong>
+                    </p>
+                    <button name="action_view_action_schedules" type="object"
+                            string="เปิดตารางแผนปฏิบัติการทั้งหมด" class="btn-secondary"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Plan line form with monthly schedule -->
+    <record id="view_procurement_annual_plan_line_form" model="ir.ui.view">
+        <field name="name">procurement.annual.plan.line.form.action</field>
+        <field name="model">procurement.annual.plan.line</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="plan_id"/>
+                            <field name="purchase_type"/>
+                            <field name="method_type"/>
+                            <field name="product_id"/>
+                            <field name="name"/>
+                        </group>
+                        <group>
+                            <field name="qty_planned"/>
+                            <field name="unit_price"/>
+                            <field name="amount_planned"/>
+                            <field name="partner_id"/>
+                            <field name="budget_line_id"/>
+                        </group>
+                    </group>
+                    <group string="กำหนดแผนปฏิบัติการ (วันที่หลัก)">
+                        <group>
+                            <field name="date_approve_plan"/>
+                            <field name="date_commit_plan"/>
+                        </group>
+                        <group>
+                            <field name="date_delivery_plan"/>
+                            <field name="date_disburse_plan"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="แผนปฏิบัติการรายเดือน" name="monthly">
+                            <field name="action_schedule_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="month"/>
+                                    <field name="plan_approve"/>
+                                    <field name="plan_commit"/>
+                                    <field name="plan_delivery"/>
+                                    <field name="plan_disburse"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                            <p class="text-muted">
+                                ติ๊กเดือนที่วางแผน: อนุมัติ/ประกาศ · ก่อหนี้ผูกพัน · ส่งมอบ · เบิกเงิน
+                                (ปีงบประมาณ ต.ค.–ก.ย.)
+                            </p>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_procurement_annual_plan_line_list" model="ir.ui.view">
+        <field name="name">procurement.annual.plan.line.list.action</field>
+        <field name="model">procurement.annual.plan.line</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="plan_id"/>
+                <field name="purchase_type"/>
+                <field name="name"/>
+                <field name="method_type"/>
+                <field name="amount_planned" sum="รวม"/>
+                <field name="date_approve_plan"/>
+                <field name="date_commit_plan"/>
+                <field name="date_delivery_plan"/>
+                <field name="date_disburse_plan"/>
+                <field name="schedule_summary"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_procurement_action_schedule_list" model="ir.ui.view">
+        <field name="name">procurement.action.schedule.list</field>
+        <field name="model">procurement.action.schedule</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="plan_id"/>
+                <field name="plan_line_id"/>
+                <field name="month"/>
+                <field name="plan_approve"/>
+                <field name="plan_commit"/>
+                <field name="plan_delivery"/>
+                <field name="plan_disburse"/>
+                <field name="note"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_procurement_action_schedule_form" model="ir.ui.view">
+        <field name="name">procurement.action.schedule.form</field>
+        <field name="model">procurement.action.schedule</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="plan_id"/>
+                            <field name="plan_line_id"/>
+                            <field name="month"/>
+                        </group>
+                        <group>
+                            <field name="plan_approve"/>
+                            <field name="plan_commit"/>
+                            <field name="plan_delivery"/>
+                            <field name="plan_disburse"/>
+                            <field name="note"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_procurement_action_schedule_search" model="ir.ui.view">
+        <field name="name">procurement.action.schedule.search</field>
+        <field name="model">procurement.action.schedule</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="plan_id"/>
+                <field name="plan_line_id"/>
+                <field name="month"/>
+                <filter name="filter_approve" string="มีแผนอนุมัติ/ประกาศ" domain="[('plan_approve', '=', True)]"/>
+                <filter name="filter_commit" string="มีแผนก่อหนี้" domain="[('plan_commit', '=', True)]"/>
+                <filter name="filter_delivery" string="มีแผนส่งมอบ" domain="[('plan_delivery', '=', True)]"/>
+                <filter name="filter_disburse" string="มีแผนเบิกเงิน" domain="[('plan_disburse', '=', True)]"/>
+                <filter name="group_plan_line" string="รายการแผน" context="{'group_by': 'plan_line_id'}"/>
+                <filter name="group_month" string="เดือน" context="{'group_by': 'month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_procurement_action_schedule" model="ir.actions.act_window">
+        <field name="name">แผนปฏิบัติการรายเดือน</field>
+        <field name="res_model">procurement.action.schedule</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_plan_line': 1}</field>
+    </record>
+
+    <record id="action_procurement_action_plan" model="ir.actions.act_window">
+        <field name="name">แผนปฏิบัติการจัดซื้อจัดจ้าง</field>
+        <field name="res_model">procurement.annual.plan</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_action_plan', '=', True)]</field>
+        <field name="context">{'default_is_action_plan': True}</field>
+    </record>
+</odoo>

@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vendor_eval_criteria_user,vendor.evaluation.criteria.user,model_vendor_evaluation_criteria,purchase.group_purchase_user,1,0,0,0
+access_vendor_eval_criteria_mgr,vendor.evaluation.criteria.manager,model_vendor_evaluation_criteria,purchase.group_purchase_manager,1,1,1,1
+access_vendor_eval_user,vendor.evaluation.user,model_vendor_evaluation,purchase.group_purchase_user,1,1,1,0
+access_vendor_eval_mgr,vendor.evaluation.manager,model_vendor_evaluation,purchase.group_purchase_manager,1,1,1,1
+access_vendor_eval_line_user,vendor.evaluation.line.user,model_vendor_evaluation_line,purchase.group_purchase_user,1,1,1,0
+access_vendor_eval_line_mgr,vendor.evaluation.line.manager,model_vendor_evaluation_line,purchase.group_purchase_manager,1,1,1,1

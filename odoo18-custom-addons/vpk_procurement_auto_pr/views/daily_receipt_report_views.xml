@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_stock_move_line_daily_receipt_list"
+            model="ir.ui.view">
+        <field name="name">stock.move.line.daily.receipt.list</field>
+        <field name="model">stock.move.line</field>
+        <field name="arch" type="xml">
+            <list string="รายงานการรับสินค้าประจำวัน"
+                  create="false"
+                  edit="false"
+                  delete="false"
+                  default_order="daily_receipt_date desc, picking_id, id">
+                <field name="daily_receipt_date"/>
+                <field name="picking_id" string="ใบรับสินค้า"/>
+                <field name="daily_receipt_po_id"/>
+                <field name="daily_receipt_vendor_id"/>
+                <field name="daily_receipt_category_id"/>
+                <field name="product_id" string="สินค้า"/>
+                <field name="lot_id" string="LOT/Serial"
+                       optional="show"/>
+                <field name="quantity" string="จำนวนรับ"
+                       sum="รวมจำนวนรับ"/>
+                <field name="product_uom_id" string="หน่วย"/>
+                <field name="daily_receipt_unit_price"
+                       optional="show"/>
+                <field name="daily_receipt_discount"
+                       optional="hide"/>
+                <field name="daily_receipt_order_currency_id"
+                       optional="hide"/>
+                <field name="daily_receipt_company_currency_id"
+                       column_invisible="True"/>
+                <field name="daily_receipt_amount"
+                       sum="รวมมูลค่ารับสินค้า"/>
+                <field name="company_id"
+                       groups="base.group_multi_company"
+                       optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_stock_move_line_daily_receipt_pivot"
+            model="ir.ui.view">
+        <field name="name">stock.move.line.daily.receipt.pivot</field>
+        <field name="model">stock.move.line</field>
+        <field name="arch" type="xml">
+            <pivot string="สรุปการรับสินค้าประจำวัน">
+                <field name="daily_receipt_date" type="row"/>
+                <field name="daily_receipt_vendor_id" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="daily_receipt_category_id" type="col"/>
+                <field name="quantity" type="measure"/>
+                <field name="daily_receipt_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_stock_move_line_daily_receipt_graph"
+            model="ir.ui.view">
+        <field name="name">stock.move.line.daily.receipt.graph</field>
+        <field name="model">stock.move.line</field>
+        <field name="arch" type="xml">
+            <graph string="มูลค่าการรับสินค้าประจำวัน"
+                   type="bar">
+                <field name="daily_receipt_date"/>
+                <field name="daily_receipt_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_stock_move_line_daily_receipt_search"
+            model="ir.ui.view">
+        <field name="name">stock.move.line.daily.receipt.search</field>
+        <field name="model">stock.move.line</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหารายการรับสินค้า">
+                <field name="picking_id"/>
+                <field name="daily_receipt_po_id"/>
+                <field name="daily_receipt_vendor_id"/>
+                <field name="daily_receipt_category_id"/>
+                <field name="product_id"/>
+                <field name="lot_id"/>
+                <filter string="รับวันนี้"
+                        name="receipt_today"
+                        domain="[('is_daily_receipt_today', '=', True)]"/>
+                <separator/>
+                <filter string="วันที่รับ"
+                        name="group_receipt_date"
+                        domain="[]"
+                        context="{'group_by': 'daily_receipt_date'}"/>
+                <filter string="ผู้จำหน่าย"
+                        name="group_receipt_vendor"
+                        domain="[]"
+                        context="{'group_by': 'daily_receipt_vendor_id'}"/>
+                <filter string="หมวดสินค้า"
+                        name="group_receipt_category"
+                        domain="[]"
+                        context="{'group_by': 'daily_receipt_category_id'}"/>
+                <filter string="สินค้า"
+                        name="group_receipt_product"
+                        domain="[]"
+                        context="{'group_by': 'product_id'}"/>
+                <filter string="เลขที่ PO"
+                        name="group_receipt_po"
+                        domain="[]"
+                        context="{'group_by': 'daily_receipt_po_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_daily_purchase_receipt_report"
+            model="ir.actions.act_window">
+        <field name="name">รายงานการรับสินค้าประจำวัน</field>
+        <field name="res_model">stock.move.line</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_id"
+               ref="view_stock_move_line_daily_receipt_list"/>
+        <field name="search_view_id"
+               ref="view_stock_move_line_daily_receipt_search"/>
+        <field name="domain">
+            [('state', '=', 'done'),
+             ('picking_id.picking_type_id.code', '=', 'incoming'),
+             ('daily_receipt_po_id', '!=', False),
+             ('quantity', '&gt;', 0)]
+        </field>
+        <field name="context">
+            {'search_default_receipt_today': 1}
+        </field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ไม่พบรายการรับสินค้าในวันที่เลือก
+            </p>
+        </field>
+    </record>
+
+    <record id="action_daily_purchase_receipt_list"
+            model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id"
+               ref="view_stock_move_line_daily_receipt_list"/>
+        <field name="act_window_id"
+               ref="action_daily_purchase_receipt_report"/>
+    </record>
+
+    <record id="action_daily_purchase_receipt_pivot"
+            model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">pivot</field>
+        <field name="view_id"
+               ref="view_stock_move_line_daily_receipt_pivot"/>
+        <field name="act_window_id"
+               ref="action_daily_purchase_receipt_report"/>
+    </record>
+
+    <record id="action_daily_purchase_receipt_graph"
+            model="ir.actions.act_window.view">
+        <field name="sequence">3</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id"
+               ref="view_stock_move_line_daily_receipt_graph"/>
+        <field name="act_window_id"
+               ref="action_daily_purchase_receipt_report"/>
+    </record>
+
+    <menuitem id="menu_daily_purchase_receipt_report"
+              name="รายงานการรับสินค้าประจำวัน"
+              parent="purchase.purchase_report_main"
+              action="action_daily_purchase_receipt_report"
+              sequence="32"
+              groups="purchase.group_purchase_user"/>
+</odoo>

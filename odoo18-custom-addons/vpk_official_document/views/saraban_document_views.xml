@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_saraban_document_form_official" model="ir.ui.view">
+        <field name="name">saraban.document.form.official.document</field>
+        <field name="model">saraban.document</field>
+        <field name="inherit_id" ref="vpk_pr_saraban.view_saraban_document_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_official_document" type="object"
+                        class="oe_stat_button" icon="fa-file-word-o"
+                        invisible="not official_document_id">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">หนังสือราชการ</span>
+                    </div>
+                </button>
+            </xpath>
+            <field name="purchase_request_id" position="after">
+                <field name="official_document_id"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_saraban_document_list_official" model="ir.ui.view">
+        <field name="name">saraban.document.list.official.document</field>
+        <field name="model">saraban.document</field>
+        <field name="inherit_id" ref="vpk_pr_saraban.view_saraban_document_list"/>
+        <field name="arch" type="xml">
+            <field name="purchase_request_id" position="after">
+                <field name="official_document_id" optional="show"/>
+            </field>
+        </field>
+    </record>
+</odoo>

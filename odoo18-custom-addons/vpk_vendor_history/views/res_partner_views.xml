@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_vendor_history" model="ir.ui.view">
+        <field name="name">res.partner.form.vendor.history</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="priority">500</field>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button name="action_view_vendor_purchase_lines"
+                        type="object" class="oe_stat_button" icon="fa-cubes"
+                        invisible="supplier_rank == 0">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="purchase_line_count"/>
+                        </span>
+                        <span class="o_stat_text">ประวัติซื้อรายสินค้า</span>
+                    </div>
+                </button>
+                <button name="action_view_vendor_issues"
+                        type="object" class="oe_stat_button" icon="fa-exclamation-triangle"
+                        invisible="supplier_rank == 0">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value text-danger">
+                            <field name="vendor_issue_open_count"/>
+                            / <field name="vendor_issue_count"/>
+                        </span>
+                        <span class="o_stat_text">สินค้ามีปัญหา</span>
+                    </div>
+                </button>
+            </xpath>
+
+            <xpath expr="//field[@name='vat']" position="after">
+                <field name="vendor_trade_group"
+                       invisible="supplier_rank == 0"
+                       widget="badge"
+                       decoration-success="vendor_trade_group == 'regular'"
+                       decoration-warning="vendor_trade_group == 'unselected_bidder'"/>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="ประวัติซื้อขาย / ปัญหา" name="vendor_history"
+                      invisible="supplier_rank == 0">
+                    <group>
+                        <group string="สรุปประวัติซื้อขาย">
+                            <field name="vendor_trade_group"/>
+                            <field name="purchase_order_count"/>
+                            <field name="purchase_line_count"/>
+                            <field name="purchase_order_total"/>
+                            <field name="supplier_invoice_count"/>
+                            <field name="vendor_bill_total"/>
+                        </group>
+                        <group string="สรุปสินค้าที่มีปัญหา">
+                            <field name="vendor_issue_count"/>
+                            <field name="vendor_issue_open_count"/>
+                        </group>
+                    </group>
+                    <div class="mb-2">
+                        <button name="action_view_vendor_purchase_lines"
+                                type="object" string="ดูประวัติซื้อรายสินค้า" class="btn btn-primary"/>
+                        <button name="action_view_vendor_purchase_orders"
+                                type="object" string="ดูประวัติ PO" class="btn btn-link"/>
+                        <button name="action_view_vendor_bills"
+                                type="object" string="ดูประวัติใบแจ้งหนี้" class="btn btn-link"/>
+                        <button name="action_view_vendor_issues"
+                                type="object" string="ดูรายการปัญหา" class="btn btn-link"/>
+                    </div>
+                    <separator string="รายการสินค้าที่มีปัญหา"/>
+                    <field name="vendor_issue_ids" readonly="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="issue_date"/>
+                            <field name="product_id"/>
+                            <field name="issue_type"/>
+                            <field name="severity"/>
+                            <field name="qty_affected"/>
+                            <field name="resolution"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Filter / Group by กลุ่มผู้ค้า -->
+    <record id="view_partner_search_vendor_trade_group" model="ir.ui.view">
+        <field name="name">res.partner.search.vendor.trade.group</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='supplier']" position="after">
+                <separator/>
+                <filter name="vendor_regular" string="ผู้ค้าปกติ"
+                        domain="[('vendor_trade_group', '=', 'regular'), ('supplier_rank', '&gt;', 0)]"/>
+                <filter name="vendor_unselected" string="ผู้เสนอราคาที่ไม่ได้รับการคัดเลือก"
+                        domain="[('vendor_trade_group', '=', 'unselected_bidder')]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter name="group_vendor_trade" string="กลุ่มผู้ค้า"
+                        context="{'group_by': 'vendor_trade_group'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_tree_vendor_trade_group" model="ir.ui.view">
+        <field name="name">res.partner.tree.vendor.trade.group</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='email']" position="after">
+                <field name="vendor_trade_group" string="กลุ่มผู้ค้า" optional="show"
+                       widget="badge"
+                       decoration-success="vendor_trade_group == 'regular'"
+                       decoration-warning="vendor_trade_group == 'unselected_bidder'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

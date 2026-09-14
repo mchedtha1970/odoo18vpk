@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_product_import_wizard" model="ir.ui.view">
+        <field name="name">vpk.product.import.wizard.form</field>
+        <field name="model">vpk.product.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import Product Master">
+                <group invisible="state == 'done'">
+                    <group string="File">
+                        <field name="data_file" filename="filename"/>
+                        <field name="filename" invisible="1"/>
+                    </group>
+                    <group string="Options">
+                        <field name="import_mode" widget="radio"/>
+                        <field name="update_existing" invisible="1"/>
+                        <field name="create_missing_category"/>
+                        <field name="enable_expiration_date"/>
+                        <field name="default_expiration_time"
+                               invisible="not enable_expiration_date"/>
+                        <field name="default_purchase_method"/>
+                    </group>
+                </group>
+                <div class="alert alert-info" role="alert" invisible="state == 'done'">
+                    <ol class="mb-0">
+                        <li>ดาวน์โหลด Template Excel</li>
+                        <li>กรอกข้อมูลสินค้า (รหัส, ชื่อ, หมวดหมู่, หน่วย…)</li>
+                        <li>อัปโหลดไฟล์ แล้วกด Import</li>
+                    </ol>
+                    <p class="mb-0 mt-2">
+                        ระบบจับคู่สินค้าด้วย <b>default_code</b> (รหัสสินค้า)
+                        และค้นหาหมวดหมู่จาก path เช่น
+                        <code>All / กลุ่มพัสดุ / 2.เวชภัณฑ์มิใช่ยา</code>
+                        <br/>
+                        <b>Import Mode</b>:
+                        ถ้า <code>default_code</code> มีอยู่แล้วจะ <b>Update</b>
+                        (โหมด Create new + Update existing) /
+                        หรือเลือก Update only / Create only ได้
+                        <br/>
+                        ถ้าเปิด <b>Enable Expiration Date</b> สินค้าที่เก็บสต็อกจะถูกตั้งค่าวันหมดอายุ
+                        (ถ้ายังไม่ระบุ tracking จะใช้ lot อัตโนมัติ)
+                        <br/>
+                        <b>Purchase Control Policy</b>:
+                        <code>receive</code> = ตามจำนวนที่รับ /
+                        <code>purchase</code> = ตามจำนวนที่สั่ง
+                        (ใช้เป็นค่าเริ่มต้นถ้าไม่ระบุใน Excel)
+                    </p>
+                </div>
+                <group invisible="state != 'done'">
+                    <group>
+                        <field name="created_count"/>
+                        <field name="updated_count"/>
+                    </group>
+                    <group>
+                        <field name="skipped_count"/>
+                        <field name="error_count"/>
+                    </group>
+                </group>
+                <field name="log_text" invisible="state != 'done'"
+                       widget="text" readonly="1"/>
+                <field name="state" invisible="1"/>
+                <footer>
+                    <button name="action_download_template"
+                            string="Download Template"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state == 'done'"/>
+                    <button name="action_import"
+                            string="Import"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state == 'done'"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vpk_product_import_wizard" model="ir.actions.act_window">
+        <field name="name">Import Product Master</field>
+        <field name="res_model">vpk.product.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_vpk_product_import"
+              name="Import Product Master"
+              parent="stock.menu_stock_inventory_control"
+              action="action_vpk_product_import_wizard"
+              sequence="95"
+              groups="stock.group_stock_manager"/>
+</odoo>

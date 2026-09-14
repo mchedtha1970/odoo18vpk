@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mail_template_committee_appointed" model="mail.template">
+        <field name="name">แต่งตั้งคณะกรรมการซื้อจ้าง — แจ้งกรรมการ</field>
+        <field name="model_id" ref="model_procurement_committee_appointment"/>
+        <field name="subject">แจ้งแต่งตั้งคณะกรรมการซื้อจ้าง {{ object.name }}</field>
+        <field name="email_from">{{ (object.company_id.email_formatted or user.email_formatted) }}</field>
+        <field name="description">ส่งเมื่ออนุมัติเอกสารแต่งตั้งคณะกรรมการแล้ว</field>
+        <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Arial,sans-serif;font-size:14px;color:#333;">
+    <p>เรียน ท่านคณะกรรมการที่ได้รับการแต่งตั้ง</p>
+    <p>
+        เอกสาร <strong><t t-out="object.name or ''"/></strong>
+        ได้รับการอนุมัติแต่งตั้งคณะกรรมการซื้อจ้างแล้ว
+    </p>
+    <ul>
+        <li>เรื่อง: <t t-out="object.subject or '-'"/></li>
+        <li>วันที่เอกสาร: <t t-out="object.date or '-'"/></li>
+        <li>ใบขอซื้อ/จ้าง/เช่า: <t t-out="object.request_id.name or '-'"/></li>
+        <li>หน่วยงาน: <t t-out="object.department_id.display_name or '-'"/></li>
+        <li>ผู้อนุมัติ: <t t-out="object.approved_by.display_name or '-'"/></li>
+    </ul>
+    <p><strong>รายชื่อคณะกรรมการในเอกสาร</strong></p>
+    <ul>
+        <t t-foreach="object.line_ids" t-as="line">
+            <li>
+                <t t-out="line.name or ''"/> —
+                <t t-if="line.committee_type == 'price_mid'">ราคากลาง</t>
+                <t t-elif="line.committee_type == 'procurement'">จัดซื้อจัดจ้าง</t>
+                <t t-elif="line.committee_type == 'work_acceptance'">ตรวจรับ</t>
+                <t t-else=""><t t-out="line.committee_type or ''"/></t>
+                (<t t-if="line.approve_role == 'chairman'">ประธาน</t>
+                 <t t-elif="line.approve_role == 'secretary'">เลขานุการ</t>
+                 <t t-else="">กรรมการ</t>)
+            </li>
+        </t>
+    </ul>
+    <p>กรุณาปฏิบัติหน้าที่ตามที่ได้รับแต่งตั้ง และตรวจสอบรายละเอียดในระบบ</p>
+    <p>
+        <a t-att-href="object.get_base_url() + '/odoo/procurement.committee.appointment/%s' % object.id"
+           style="background:#875A7B;color:#fff;padding:8px 16px;text-decoration:none;border-radius:4px;">
+            เปิดเอกสารแต่งตั้ง
+        </a>
+    </p>
+</div>
+        </field>
+    </record>
+</odoo>

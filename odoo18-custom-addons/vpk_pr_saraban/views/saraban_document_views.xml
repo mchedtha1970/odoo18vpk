@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_saraban_document_list" model="ir.ui.view">
+        <field name="name">saraban.document.list</field>
+        <field name="model">saraban.document</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="book_no_display"/>
+                <field name="book_no" optional="hide"/>
+                <field name="name"/>
+                <field name="purpose"/>
+                <field name="doc_type"/>
+                <field name="register_date"/>
+                <field name="purchase_request_id"/>
+                <field name="external_id" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'registered'"
+                       decoration-info="state == 'draft'"
+                       decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_saraban_document_form" model="ir.ui.view">
+        <field name="name">saraban.document.form</field>
+        <field name="model">saraban.document</field>
+        <field name="arch" type="xml">
+            <form string="งานสารบรรณ">
+                <header>
+                    <button name="action_register" type="object" string="ลงทะเบียน / ออกเลข"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="ยกเลิก"
+                            invisible="state == 'cancelled'" confirm="ยืนยันยกเลิกเอกสารสารบรรณ?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,registered"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_purchase_request" type="object"
+                                class="oe_stat_button" icon="fa-shopping-cart"
+                                invisible="not purchase_request_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">ใบขอซื้อ</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="เรื่อง..."/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="book_no_display" readonly="1"/>
+                            <field name="book_no" readonly="1"/>
+                            <field name="external_id" readonly="1"/>
+                            <field name="purpose"/>
+                            <field name="doc_type"/>
+                            <field name="register_date"/>
+                        </group>
+                        <group>
+                            <field name="org_code"/>
+                            <field name="fiscal_year_be" readonly="1"/>
+                            <field name="purchase_request_id"/>
+                            <field name="source_ref" readonly="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_saraban_document_search" model="ir.ui.view">
+        <field name="name">saraban.document.search</field>
+        <field name="model">saraban.document</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="book_no"/>
+                <field name="purchase_request_id"/>
+                <filter string="ลงทะเบียนแล้ว" name="registered" domain="[('state','=','registered')]"/>
+                <filter string="ร่าง" name="draft" domain="[('state','=','draft')]"/>
+                <filter string="มี PR" name="has_pr" domain="[('purchase_request_id','!=',False)]"/>
+                <filter string="เอกสารอนุมัติขอซื้อ" name="pr_approval" domain="[('purpose','=','pr_approval')]"/>
+                <filter string="หนังสือราชการ / คำสั่ง" name="official_document" domain="[('purpose','=','official_document')]"/>
+                <group expand="0" string="จัดกลุ่ม">
+                    <filter string="สถานะ" name="groupby_state" context="{'group_by':'state'}"/>
+                    <filter string="ใช้กับ" name="groupby_purpose" context="{'group_by':'purpose'}"/>
+                    <filter string="ประเภท" name="groupby_type" context="{'group_by':'doc_type'}"/>
+                    <filter string="เดือน" name="groupby_month" context="{'group_by':'register_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_saraban_document" model="ir.actions.act_window">
+        <field name="name">งานสารบรรณ</field>
+        <field name="res_model">saraban.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_registered': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">ยังไม่มีงานสารบรรณ</p>
+            <p>สร้างจากใบขอซื้อด้วยปุ่ม "ขอเลขสารบรรณ" หรือสร้างที่นี่โดยตรง</p>
+        </field>
+    </record>
+</odoo>

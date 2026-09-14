@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_order_cancel_vpk" model="ir.ui.view">
+        <field name="name">purchase.order.cancel.vpk</field>
+        <field name="model">purchase.order.cancel</field>
+        <field name="inherit_id"
+               ref="purchase_cancel_reason.view_purchase_order_cancel"/>
+        <field name="arch" type="xml">
+            <field name="reason_id" position="after">
+                <field name="cancellation_note"
+                       placeholder="ระบุรายละเอียดและความจำเป็นในการยกเลิก..."/>
+                <field name="replacement_required"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_form_cancellation_vpk"
+            model="ir.ui.view">
+        <field name="name">purchase.order.form.cancellation.vpk</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="priority">95</field>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_create_replacement_po"
+                        type="object"
+                        string="สร้าง PO ทดแทน"
+                        class="btn-primary"
+                        icon="fa-copy"
+                        invisible="state != 'cancel' or replacement_po_id"/>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-danger text-center mb-0"
+                     role="alert"
+                     invisible="state != 'cancel'">
+                    <strong>
+                        <i class="fa fa-ban me-1"/>
+                        PO นี้ถูกยกเลิกและล็อกการยืนยันจากผู้จำหน่ายแล้ว
+                    </strong>
+                </div>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="ข้อมูลการยกเลิก"
+                      name="vpk_cancellation"
+                      invisible="state != 'cancel' and not original_cancelled_po_id">
+                    <group>
+                        <group string="PO ที่ถูกยกเลิก">
+                            <field name="cancel_reason_id"/>
+                            <field name="cancellation_note"/>
+                            <field name="cancelled_at"/>
+                            <field name="cancelled_by_id"/>
+                        </group>
+                        <group string="การแจ้งเตือนและ PO ทดแทน">
+                            <field name="vendor_confirmation_locked"/>
+                            <field name="cancellation_department_notified"/>
+                            <field name="replacement_required"/>
+                            <field name="replacement_po_id"/>
+                            <field name="original_cancelled_po_id"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_list_cancellation_vpk"
+            model="ir.ui.view">
+        <field name="name">purchase.order.list.cancellation.vpk</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_view_tree"/>
+        <field name="priority">95</field>
+        <field name="arch" type="xml">
+            <field name="invoice_status" position="after">
+                <field name="cancel_reason_id"
+                       string="เหตุผลยกเลิก"
+                       optional="hide"/>
+                <field name="cancelled_at"
+                       string="วันที่ยกเลิก"
+                       optional="hide"/>
+                <field name="replacement_po_id"
+                       string="PO ทดแทน"
+                       optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_search_cancellation_vpk"
+            model="ir.ui.view">
+        <field name="name">purchase.order.search.cancellation.vpk</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_filter"/>
+        <field name="arch" type="xml">
+            <filter name="approved" position="after">
+                <filter name="cancelled_history"
+                        string="PO ที่ถูกยกเลิก"
+                        domain="[('state', '=', 'cancel')]"/>
+                <filter name="replacement_required"
+                        string="รอออก PO ใหม่"
+                        domain="[('state', '=', 'cancel'), ('replacement_required', '=', True)]"/>
+            </filter>
+        </field>
+    </record>
+
+    <record id="action_cancelled_purchase_orders" model="ir.actions.act_window">
+        <field name="name">ประวัติ PO ที่ถูกยกเลิก</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'cancel')]</field>
+        <field name="context">{'search_default_cancelled_history': 1}</field>
+    </record>
+
+    <menuitem id="menu_cancelled_purchase_orders"
+              name="ประวัติ PO ที่ถูกยกเลิก"
+              parent="purchase.menu_procurement_management"
+              action="action_cancelled_purchase_orders"
+              sequence="30"
+              groups="purchase.group_purchase_user"/>
+</odoo>

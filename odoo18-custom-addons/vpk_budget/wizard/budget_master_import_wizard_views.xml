@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_budget_master_import_wizard" model="ir.ui.view">
+        <field name="name">vpk.budget.master.import.wizard.form</field>
+        <field name="model">vpk.budget.master.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import Budget Master">
+                <group invisible="state == 'done'">
+                    <group string="ไฟล์">
+                        <field name="data_file" filename="filename"/>
+                        <field name="filename" invisible="1"/>
+                    </group>
+                    <group string="ตัวเลือก">
+                        <field name="import_mode" widget="radio"/>
+                        <field name="include_existing"/>
+                    </group>
+                </group>
+                <div class="alert alert-info" role="alert" invisible="state == 'done'">
+                    <ol class="mb-0">
+                        <li>ดาวน์โหลด Template Excel (มีหลายชีตตาม master งบประมาณ)</li>
+                        <li>กรอก/แก้ไขข้อมูลตามรหัส (code) ในแต่ละชีต</li>
+                        <li>อัปโหลดไฟล์ แล้วกด Import</li>
+                    </ol>
+                    <p class="mb-0 mt-2">
+                        ชีตที่รองรับ:
+                        <code>FundSource</code>,
+                        <code>BudgetGroup</code>,
+                        <code>BudgetType</code>,
+                        <code>AssetCategory</code>,
+                        <code>MaterialSubType</code>,
+                        <code>FormType</code>,
+                        <code>FormTypeLine</code>
+                        <br/>
+                        ระบบจับคู่ด้วย <b>code</b>
+                        (MaterialSubType จับคู่ร่วมกับรหัสกลุ่มงบประมาณ,
+                        FormTypeLine จับคู่ร่วมกับรหัสแบบฟอร์ม)
+                        <br/>
+                        ชีต <code>AssetCategory</code> คือกลุ่มครุภัณฑ์ของงบประมาณ
+                        ผูกหมวดสินค้าได้ที่คอลัมน์ <b>product_categ_id</b>
+                    </p>
+                </div>
+                <group invisible="state != 'done'">
+                    <group>
+                        <field name="created_count"/>
+                        <field name="updated_count"/>
+                    </group>
+                    <group>
+                        <field name="skipped_count"/>
+                        <field name="error_count"/>
+                    </group>
+                </group>
+                <field name="log_text" invisible="state != 'done'"
+                       widget="text" readonly="1"/>
+                <field name="state" invisible="1"/>
+                <footer>
+                    <button name="action_download_template"
+                            string="ดาวน์โหลด Template"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state == 'done'"/>
+                    <button name="action_import"
+                            string="Import"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state == 'done'"/>
+                    <button string="ปิด" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vpk_budget_master_import_wizard" model="ir.actions.act_window">
+        <field name="name">Import Budget Master</field>
+        <field name="res_model">vpk.budget.master.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_vpk_budget_master_import"
+        name="Import Budget Master"
+        parent="menu_vpk_budget_configuration"
+        action="action_vpk_budget_master_import_wizard"
+        sequence="95"
+        groups="group_vpk_budget_manager"
+    />
+</odoo>

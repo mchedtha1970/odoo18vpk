@@ -1,0 +1,14 @@
+body.o_web_client.o_vpk_sidebar_menu {
+    .o_tinymce_html_field {
+        width: 100%;
+
+        .tox-tinymce {
+            border-radius: var(--vpk-border-radius-md, 4px);
+            border-color: var(--vpk-field-border-color, #dee2e6);
+        }
+
+        .tox-statusbar__resize-handle {
+            cursor: ns-resize;
+        }
+    }
+}

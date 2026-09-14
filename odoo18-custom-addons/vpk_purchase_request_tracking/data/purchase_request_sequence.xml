@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="purchase.request" name="_vpk_configure_pr_sequence"/>
+</odoo>

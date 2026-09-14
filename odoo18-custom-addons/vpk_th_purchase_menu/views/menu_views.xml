@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Section under ระบบจัดซื้อจัดจ้าง -->
+    <menuitem id="menu_vendor_data_root"
+              name="ข้อมูลผู้จำหน่าย"
+              parent="purchase.menu_purchase_root"
+              sequence="8"/>
+
+    <menuitem id="menu_purchase_request_data_root"
+              name="ข้อมูลใบขอซื้อ"
+              parent="purchase.menu_purchase_root"
+              sequence="3"/>
+
+    <record id="purchase.menu_procurement_management" model="ir.ui.menu">
+        <field name="name">จัดการสั่งซื้อ</field>
+    </record>
+
+    <record id="purchase.menu_purchase_products" model="ir.ui.menu">
+        <field name="name">ข้อมูลสินค้า</field>
+    </record>
+
+    <!-- Move Vendors / ผู้จำหน่าย under the new section -->
+    <record id="purchase.menu_procurement_management_supplier_name" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_vendor_data_root"/>
+        <field name="name">ผู้จำหน่าย</field>
+        <field name="sequence">10</field>
+    </record>
+    <!-- Move Purchase Request menus under ข้อมูลใบขอซื้อ -->
+    <record id="purchase_request.menu_purchase_request_pro_mgt" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_purchase_request_data_root"/>
+        <field name="name">ใบขอซื้อ</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="purchase_request.menu_purchase_request_line" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_purchase_request_data_root"/>
+        <field name="name">รายการใบขอซื้อ</field>
+        <field name="sequence">20</field>
+    </record>
+</odoo>

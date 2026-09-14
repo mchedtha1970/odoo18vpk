@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_inventory_count_user,vpk.asset.inventory.count user,model_vpk_asset_inventory_count,group_asset_inventory_user,1,0,0,0
+access_inventory_count_officer,vpk.asset.inventory.count officer,model_vpk_asset_inventory_count,group_asset_inventory_officer,1,1,1,1
+access_inventory_sheet_user,vpk.asset.inventory.sheet user,model_vpk_asset_inventory_sheet,group_asset_inventory_user,1,1,0,0
+access_inventory_sheet_officer,vpk.asset.inventory.sheet officer,model_vpk_asset_inventory_sheet,group_asset_inventory_officer,1,1,1,1
+access_inventory_line_user,vpk.asset.inventory.line user,model_vpk_asset_inventory_line,group_asset_inventory_user,1,1,0,0
+access_inventory_line_officer,vpk.asset.inventory.line officer,model_vpk_asset_inventory_line,group_asset_inventory_officer,1,1,1,1
+access_inventory_count_portal,vpk.asset.inventory.count portal,model_vpk_asset_inventory_count,base.group_portal,1,0,0,0
+access_inventory_sheet_portal,vpk.asset.inventory.sheet portal,model_vpk_asset_inventory_sheet,base.group_portal,1,1,0,0
+access_inventory_line_portal,vpk.asset.inventory.line portal,model_vpk_asset_inventory_line,base.group_portal,1,1,0,0

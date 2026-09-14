@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_order_form_auto_close_vpk"
+            model="ir.ui.view">
+        <field name="name">purchase.order.form.auto.close.vpk</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id"
+               ref="vpk_procurement_auto_pr.view_purchase_order_form_procurement_classification"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='vpk_order_conditions']"
+                   position="inside">
+                <field name="auto_close_on_full_receipt"
+                       readonly="state in ('done', 'cancel')"/>
+                <field name="receipt_completion_percent"
+                       widget="progressbar"/>
+                <field name="auto_closed_on_receipt"
+                       invisible="not auto_closed_on_receipt"/>
+                <field name="auto_closed_at"
+                       invisible="not auto_closed_on_receipt"/>
+                <field name="auto_closed_by_id"
+                       invisible="not auto_closed_on_receipt"/>
+                <field name="auto_close_picking_id"
+                       invisible="not auto_closed_on_receipt"/>
+            </xpath>
+
+            <xpath expr="//sheet" position="inside">
+                <div class="alert alert-success text-center"
+                     role="alert"
+                     invisible="not auto_closed_on_receipt">
+                    <strong>ปิด PO อัตโนมัติแล้ว</strong>
+                    เนื่องจากรับพัสดุครบทุกรายการ
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_list_auto_close_vpk"
+            model="ir.ui.view">
+        <field name="name">purchase.order.list.auto.close.vpk</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id"
+               ref="vpk_procurement_auto_pr.view_purchase_order_main_list_urgency"/>
+        <field name="arch" type="xml">
+            <field name="procurement_fulfillment_status" position="after">
+                <field name="receipt_completion_percent"
+                       string="รับแล้ว (%)"
+                       widget="progressbar"
+                       optional="show"/>
+                <field name="auto_closed_on_receipt"
+                       string="ปิดอัตโนมัติ"
+                       optional="hide"/>
+            </field>
+        </field>
+    </record>
+</odoo>

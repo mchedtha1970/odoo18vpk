@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Search-more / SelectCreate popup: open extra-large so list columns are readable -->
+    <t t-inherit="web.SelectCreateDialog" t-inherit-mode="extension">
+        <xpath expr="//Dialog" position="attributes">
+            <attribute name="size">xl</attribute>
+        </xpath>
+    </t>
+</templates>

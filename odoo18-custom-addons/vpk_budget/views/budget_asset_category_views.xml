@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_budget_asset_category_list" model="ir.ui.view">
+        <field name="name">vpk.budget.asset.category.list</field>
+        <field name="model">vpk.budget.asset.category</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button
+                        name="action_sync_from_product_categories"
+                        type="object"
+                        string="ดึงจากหมวดสินค้าครุภัณฑ์"
+                        display="always"
+                    />
+                </header>
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="product_categ_id" optional="show"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_budget_asset_category_form" model="ir.ui.view">
+        <field name="name">vpk.budget.asset.category.form</field>
+        <field name="model">vpk.budget.asset.category</field>
+        <field name="arch" type="xml">
+            <form string="กลุ่มครุภัณฑ์">
+                <sheet>
+                    <field name="active" invisible="1"/>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name" string="ชื่อกลุ่มครุภัณฑ์"/>
+                        <h1>
+                            <field name="name" nolabel="1" placeholder="เช่น ครุภัณฑ์การแพทย์"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field
+                                name="product_categ_id"
+                                options="{'no_create': True, 'no_open': False}"
+                                placeholder="เลือกหมวดสินค้าที่ต้องการผูก เพื่อกรองรายการในแบบฟอร์ม"
+                            />
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_budget_asset_category_search" model="ir.ui.view">
+        <field name="name">vpk.budget.asset.category.search</field>
+        <field name="model">vpk.budget.asset.category</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="product_categ_id"/>
+                <filter name="active" string="ใช้งาน" domain="[('active', '=', True)]"/>
+                <filter name="archived" string="ปิดใช้งาน" domain="[('active', '=', False)]"/>
+                <filter name="linked" string="ผูกหมวดสินค้าแล้ว" domain="[('product_categ_id', '!=', False)]"/>
+                <filter name="unlinked" string="ยังไม่ผูกหมวดสินค้า" domain="[('product_categ_id', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_budget_asset_category" model="ir.actions.act_window">
+        <field name="name">กลุ่มครุภัณฑ์</field>
+        <field name="res_model">vpk.budget.asset.category</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_vpk_budget_asset_category_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                สร้างกลุ่มครุภัณฑ์ในงบประมาณ
+            </p>
+            <p>
+                กลุ่มนี้เป็น master ของโมดูลงบประมาณ ใช้ในแบบฟอร์มคำของบครุภัณฑ์
+                และผูกหมวดสินค้า (Product Category) เพื่อกรองรายการสินค้า
+            </p>
+        </field>
+    </record>
+
+    <record id="action_sync_budget_asset_category_from_product" model="ir.actions.server">
+        <field name="name">ดึงกลุ่มจากหมวดสินค้าครุภัณฑ์</field>
+        <field name="model_id" ref="model_vpk_budget_asset_category"/>
+        <field name="binding_model_id" ref="model_vpk_budget_asset_category"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = model.action_sync_from_product_categories()</field>
+    </record>
+</odoo>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Action: ใบประเมินผู้จำหน่าย -->
+    <record id="action_vendor_evaluation" model="ir.actions.act_window">
+        <field name="name">ประเมินผู้จำหน่าย</field>
+        <field name="res_model">vendor.evaluation</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                สร้างใบประเมินผู้จำหน่ายใหม่
+            </p>
+            <p>ประเมินผู้จำหน่ายตามเกณฑ์ที่กำหนด พร้อมจัดเกรดอัตโนมัติ</p>
+        </field>
+    </record>
+
+    <!-- Action: เกณฑ์ประเมิน -->
+    <record id="action_vendor_eval_criteria" model="ir.actions.act_window">
+        <field name="name">เกณฑ์ประเมิน</field>
+        <field name="res_model">vendor.evaluation.criteria</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menu: ประเมินผู้จำหน่าย (ภายใต้ Purchase) -->
+    <menuitem id="menu_vendor_evaluation_root"
+              name="ประเมินผู้จำหน่าย"
+              parent="purchase.menu_purchase_root"
+              sequence="80"/>
+
+    <menuitem id="menu_vendor_evaluation"
+              name="ใบประเมินผู้จำหน่าย"
+              parent="menu_vendor_evaluation_root"
+              action="action_vendor_evaluation"
+              sequence="10"/>
+
+    <menuitem id="menu_vendor_eval_criteria"
+              name="เกณฑ์ประเมิน"
+              parent="menu_vendor_evaluation_root"
+              action="action_vendor_eval_criteria"
+              sequence="20"
+              groups="purchase.group_purchase_manager"/>
+</odoo>

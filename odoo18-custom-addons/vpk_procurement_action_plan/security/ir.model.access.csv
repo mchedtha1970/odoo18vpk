@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_action_schedule_user,procurement.action.schedule.user,model_procurement_action_schedule,purchase.group_purchase_user,1,0,0,0
+access_action_schedule_mgr,procurement.action.schedule.manager,model_procurement_action_schedule,purchase.group_purchase_manager,1,1,1,1

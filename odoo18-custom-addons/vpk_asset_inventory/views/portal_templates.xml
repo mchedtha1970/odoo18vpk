@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="portal_my_home_asset_inventory" name="Portal My Home: Asset Inventory"
+              inherit_id="portal.portal_my_home">
+        <div id="portal_common_category" position="before">
+            <t t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/mail/static/src/img/discussion.svg'"/>
+                <t t-set="title">ตรวจนับทรัพย์สิน</t>
+                <t t-set="url" t-value="'/my/asset-inventory'"/>
+                <t t-set="text">Sheet ตรวจนับหน่วยงาน / สแกน QR</t>
+                <t t-set="placeholder_count" t-value="'asset_inventory_count'"/>
+            </t>
+        </div>
+    </template>
+
+    <template id="portal_my_home_menu_asset_inventory" name="Portal layout: Asset Inventory"
+              inherit_id="portal.portal_breadcrumbs">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name in ('asset_inventory', 'asset_inventory_sheet', 'asset_inventory_line', 'asset_inventory_scan')"
+                t-attf-class="breadcrumb-item #{'active ' if page_name == 'asset_inventory' else ''}">
+                <a t-if="page_name != 'asset_inventory'" href="/my/asset-inventory">ตรวจนับทรัพย์สิน</a>
+                <t t-else="">ตรวจนับทรัพย์สิน</t>
+            </li>
+        </xpath>
+    </template>
+
+    <!-- List sheets -->
+    <template id="portal_asset_inventory_list" name="Asset Inventory Sheets">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">ตรวจนับทรัพย์สินประจำปี</t>
+            </t>
+            <div class="mb-3">
+                <a href="/my/asset-inventory/scan" class="btn btn-primary">
+                    <i class="fa fa-qrcode"/> สแกน / คีย์เลขทรัพย์สิน
+                </a>
+            </div>
+            <t t-if="not sheets">
+                <div class="alert alert-info">ไม่มี Sheet ที่เปิดนับสำหรับหน่วยงานของคุณ</div>
+            </t>
+            <t t-else="">
+                <div class="table-responsive">
+                    <table class="table table-hover o_portal_my_doc_table">
+                        <thead>
+                            <tr>
+                                <th>รอบตรวจนับ</th>
+                                <th>หน่วยงาน</th>
+                                <th>ความคืบหน้า</th>
+                                <th/>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="sheets" t-as="sheet">
+                                <td>
+                                    <a t-attf-href="/my/asset-inventory/sheet/#{sheet.id}">
+                                        <t t-esc="sheet.count_id.name"/>
+                                    </a>
+                                    <div class="text-muted"><t t-esc="sheet.fiscal_year"/></div>
+                                </td>
+                                <td><t t-esc="sheet.analytic_account_id.display_name"/></td>
+                                <td>
+                                    <t t-esc="sheet.counted_line_count"/> / <t t-esc="sheet.line_count"/>
+                                    (<t t-esc="'%.0f' % sheet.progress"/>%)
+                                </td>
+                                <td class="text-end">
+                                    <a t-attf-href="/my/asset-inventory/sheet/#{sheet.id}" class="btn btn-sm btn-secondary">เปิด Sheet</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div t-if="pager" class="o_portal_pager text-center">
+                    <t t-call="portal.pager"/>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- Sheet detail + bulk count -->
+    <template id="portal_asset_inventory_sheet" name="Asset Inventory Sheet">
+        <t t-call="portal.portal_layout">
+            <t t-set="o_portal_fullwidth_alert" groups="base.group_user"
+               t-value="is_view_owning_company and request.env.user.has_group('vpk_asset_inventory.group_asset_inventory_officer')"/>
+            <div class="container mt-3">
+                <div class="alert alert-success" t-if="request.params.get('success')">บันทึกจำนวนนับเรียบร้อย</div>
+                <h3><t t-esc="sheet.name"/></h3>
+                <p>
+                    ความคืบหน้า:
+                    <strong><t t-esc="sheet.counted_line_count"/> / <t t-esc="sheet.line_count"/></strong>
+                    (<t t-esc="'%.0f' % sheet.progress"/>%)
+                </p>
+                <div class="mb-3 d-flex gap-2 flex-wrap">
+                    <a t-attf-href="/my/asset-inventory/scan/#{sheet.count_id.id}" class="btn btn-primary">
+                        <i class="fa fa-qrcode"/> สแกน QR
+                    </a>
+                    <a href="/my/asset-inventory" class="btn btn-link">← กลับรายการ</a>
+                </div>
+                <form t-attf-action="/my/asset-inventory/sheet/#{sheet.id}/bulk" method="post">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input t-if="access_token" type="hidden" name="access_token" t-att-value="access_token"/>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>เลขทรัพย์สิน</th>
+                                    <th>ชื่อ</th>
+                                    <th>ในระบบ</th>
+                                    <th>จำนวนนับ</th>
+                                    <th>หมายเหตุ</th>
+                                    <th/>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="lines" t-as="line" t-att-class="line.is_counted and 'table-success' or ''">
+                                    <td>
+                                        <a t-attf-href="/my/asset-inventory/line/#{line.id}#{access_token and ('?access_token=' + access_token) or ''}">
+                                            <t t-esc="line.asset_number or '-'"/>
+                                        </a>
+                                    </td>
+                                    <td><t t-esc="line.asset_name"/></td>
+                                    <td><t t-esc="line.system_qty"/></td>
+                                    <td style="max-width: 100px;">
+                                        <input type="number" step="0.01" min="0" class="form-control form-control-sm"
+                                               t-att-name="'qty_%s' % line.id"
+                                               t-att-value="line.counted_qty if line.is_counted else ''"
+                                               placeholder="ใส่จำนวน"/>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm"
+                                               t-att-name="'note_%s' % line.id"
+                                               t-att-value="line.note or ''"/>
+                                    </td>
+                                    <td>
+                                        <a t-attf-href="/my/asset-inventory/line/#{line.id}"
+                                           class="btn btn-sm btn-outline-secondary" title="หน้ารายการ + QR">
+                                            <i class="fa fa-qrcode"/>
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="submit" class="btn btn-primary" t-if="sheet.count_state == 'open'">
+                        บันทึกจำนวนที่กรอก
+                    </button>
+                </form>
+            </div>
+        </t>
+    </template>
+
+    <!-- Single line / QR landing -->
+    <template id="portal_asset_inventory_line" name="Asset Inventory Line Count">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3" style="max-width: 560px;">
+                <div class="alert alert-danger" t-if="error"><t t-esc="error"/></div>
+                <div class="alert alert-success" t-if="success or request.params.get('success')">บันทึกเรียบร้อย</div>
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <t t-if="qr_barcode_src">
+                                <img class="img-fluid" style="max-width: 180px;"
+                                     t-att-src="qr_barcode_src"
+                                     alt="QR"/>
+                                <div class="mt-2 text-muted small">QR นี้เปิดหน้านับบนมือถือได้โดยตรง</div>
+                                <div class="small text-break"><t t-esc="qr_url"/></div>
+                            </t>
+                        </div>
+                        <h4 class="card-title"><t t-esc="line.asset_number or line.asset_id.display_name"/></h4>
+                        <p class="card-text"><t t-esc="line.asset_name"/></p>
+                        <p>
+                            หน่วยงาน: <strong><t t-esc="line.analytic_account_id.display_name"/></strong><br/>
+                            จำนวนในระบบ: <strong><t t-esc="line.system_qty"/></strong>
+                        </p>
+                        <form t-attf-action="/my/asset-inventory/line/#{line.id}/submit" method="post"
+                              t-if="line.count_state == 'open'">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input t-if="access_token" type="hidden" name="access_token" t-att-value="access_token"/>
+                            <div class="mb-3">
+                                <label class="form-label">จำนวนที่นับได้</label>
+                                <input type="number" step="0.01" min="0" required="required"
+                                       class="form-control form-control-lg"
+                                       name="counted_qty"
+                                       t-att-value="line.counted_qty if line.is_counted else line.system_qty"/>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">หมายเหตุ</label>
+                                <input type="text" class="form-control" name="note" t-att-value="line.note or ''"/>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg w-100">บันทึกการนับ</button>
+                        </form>
+                        <div t-else="" class="alert alert-warning">รอบตรวจนับนี้ยังไม่เปิดนับ หรือปิดแล้ว</div>
+                        <div class="mt-3" t-if="line.is_counted">
+                            <small class="text-muted">
+                                บันทึกล่าสุด: <t t-esc="line.counted_qty"/> 
+                                โดย <t t-esc="line.counted_by.name"/> 
+                                เมื่อ <t t-esc="line.counted_date"/>
+                            </small>
+                        </div>
+                        <a t-attf-href="/my/asset-inventory/sheet/#{line.sheet_id.id}"
+                           class="btn btn-link mt-2">← กลับ Sheet</a>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Scan by number -->
+    <template id="portal_asset_inventory_scan" name="Asset Inventory Scan">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-3" style="max-width: 480px;">
+                <h3><i class="fa fa-qrcode"/> สแกน / คีย์เลขทรัพย์สิน</h3>
+                <p class="text-muted">
+                    ป้ายสินทรัพย์เดิมมักเก็บแค่เลขทรัพย์สิน — เปิดหน้านี้ก่อน แล้วใช้กล้องด้านล่าง
+                    หรือพิมพ์เลขเอง หากพิมพ์ sticker ใหม่ ให้ใช้ QR ที่เป็นลิงก์
+                    <code>/ai/เลขทรัพย์สิน</code>
+                </p>
+                <div class="alert alert-danger" t-if="error"><t t-esc="error"/></div>
+
+                <div class="mb-3">
+                    <button type="button" id="ai_start_camera" class="btn btn-outline-primary w-100 mb-2">
+                        <i class="fa fa-camera"/> เปิดกล้องสแกน QR
+                    </button>
+                    <video id="ai_scan_video" class="w-100 rounded border d-none" playsinline="playsinline"
+                           style="max-height: 320px; background: #000;"/>
+                    <div id="ai_scan_status" class="small text-muted mt-1"></div>
+                </div>
+
+                <form id="ai_scan_form" action="/my/asset-inventory/scan" method="get">
+                    <input t-if="count_id" type="hidden" name="count_id" t-att-value="count_id"/>
+                    <div class="mb-3">
+                        <label class="form-label">เลขทรัพย์สิน / URL</label>
+                        <input type="text" name="number" id="ai_scan_number"
+                               class="form-control form-control-lg"
+                               autofocus="autofocus" required="required"
+                               t-att-value="number or ''"
+                               placeholder="เช่น MED-26-07-00001"/>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">เปิดหน้านับ</button>
+                </form>
+                <a href="/my/asset-inventory" class="btn btn-link mt-3">← กลับรายการ Sheet</a>
+            </div>
+            <script>
+                (function () {
+                    var btn = document.getElementById('ai_start_camera');
+                    var video = document.getElementById('ai_scan_video');
+                    var statusEl = document.getElementById('ai_scan_status');
+                    var input = document.getElementById('ai_scan_number');
+                    var form = document.getElementById('ai_scan_form');
+                    var stream = null;
+                    var timer = null;
+                    var busy = false;
+
+                    function setStatus(msg) {
+                        if (statusEl) { statusEl.textContent = msg || ''; }
+                    }
+
+                    function normalizePayload(raw) {
+                        raw = (raw || '').trim();
+                        if (!raw) { return ''; }
+                        var markers = ['/ai/', '/asset-inventory/qr/'];
+                        for (var i = 0; i &lt; markers.length; i++) {
+                            var m = markers[i];
+                            var idx = raw.indexOf(m);
+                            if (idx !== -1) {
+                                return decodeURIComponent(raw.slice(idx + m.length).split('?')[0]);
+                            }
+                        }
+                        return raw;
+                    }
+
+                    function submitValue(raw) {
+                        if (busy) { return; }
+                        var value = normalizePayload(raw);
+                        if (!value) { return; }
+                        busy = true;
+                        setStatus('พบ: ' + value);
+                        if (timer) { clearInterval(timer); timer = null; }
+                        if (stream) {
+                            stream.getTracks().forEach(function (t) { t.stop(); });
+                            stream = null;
+                        }
+                        input.value = value;
+                        form.submit();
+                    }
+
+                    async function loopDetect(detector) {
+                        if (!video || video.readyState &lt; 2) { return; }
+                        try {
+                            var codes = await detector.detect(video);
+                            if (codes &amp;&amp; codes.length &amp;&amp; codes[0].rawValue) {
+                                submitValue(codes[0].rawValue);
+                            }
+                        } catch (e) { /* ignore frame errors */ }
+                    }
+
+                    if (btn) {
+                        btn.addEventListener('click', async function () {
+                            if (!window.isSecureContext) {
+                                setStatus('ต้องเปิดผ่าน HTTPS จึงใช้กล้องได้');
+                                return;
+                            }
+                            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                                setStatus('เบราว์เซอร์นี้ไม่รองรับกล้อง — พิมพ์เลขเอง');
+                                return;
+                            }
+                            if (!('BarcodeDetector' in window)) {
+                                setStatus('เบราว์เซอร์ไม่รองรับสแกน QR ในหน้า — ใช้กล้องโทรศัพท์สแกนลิงก์ /ai/... หรือพิมพ์เลข');
+                                return;
+                            }
+                            try {
+                                stream = await navigator.mediaDevices.getUserMedia({
+                                    video: { facingMode: { ideal: 'environment' } },
+                                    audio: false,
+                                });
+                                video.srcObject = stream;
+                                video.classList.remove('d-none');
+                                await video.play();
+                                var detector = new BarcodeDetector({ formats: ['qr_code'] });
+                                setStatus('เล็ง QR ป้ายสินทรัพย์...');
+                                timer = setInterval(function () { loopDetect(detector); }, 400);
+                            } catch (err) {
+                                setStatus('เปิดกล้องไม่ได้: ' + (err &amp;&amp; err.message ? err.message : err));
+                            }
+                        });
+                    }
+                })();
+            </script>
+        </t>
+    </template>
+
+    <template id="portal_asset_inventory_qr_not_found" name="Asset Inventory QR Not Found">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-4" style="max-width: 480px;">
+                <div class="alert alert-warning">
+                    ไม่พบเลขทรัพย์สิน
+                    <strong t-esc="number"/>
+                    ในรอบตรวจนับที่เปิดอยู่
+                </div>
+                <a href="/my/asset-inventory/scan" class="btn btn-primary">ไปหน้าสแกน</a>
+                <a href="/my/asset-inventory" class="btn btn-link">รายการ Sheet</a>
+            </div>
+        </t>
+    </template>
+</odoo>

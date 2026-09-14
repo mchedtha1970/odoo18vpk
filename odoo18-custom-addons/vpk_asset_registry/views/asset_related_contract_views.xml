@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_asset_related_contract_list" model="ir.ui.view">
+        <field name="name">asset.related.contract.list</field>
+        <field name="model">asset.related.contract</field>
+        <field name="arch" type="xml">
+            <list string="สัญญาที่เกี่ยวข้องกับสินทรัพย์"
+                  decoration-success="status == 'active'"
+                  decoration-muted="status == 'expired'"
+                  decoration-info="status == 'upcoming'">
+                <field name="contract_number"/>
+                <field name="name"/>
+                <field name="contract_type"/>
+                <field name="asset_id"/>
+                <field name="partner_id"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="remaining_days"/>
+                <field name="amount" sum="รวมมูลค่าสัญญา"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="attachment_count" string="ไฟล์"/>
+                <field name="status" widget="badge"
+                       decoration-success="status == 'active'"
+                       decoration-muted="status == 'expired'"
+                       decoration-info="status == 'upcoming'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_asset_related_contract_form" model="ir.ui.view">
+        <field name="name">asset.related.contract.form</field>
+        <field name="model">asset.related.contract</field>
+        <field name="arch" type="xml">
+            <form string="สัญญาที่เกี่ยวข้องกับสินทรัพย์">
+                <header>
+                    <field name="status" widget="statusbar"
+                           statusbar_visible="upcoming,active,expired"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name"
+                                   placeholder="เช่น สัญญาบำรุงรักษาเครื่องมือแพทย์"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="contract_type"/>
+                            <field name="contract_number"/>
+                            <field name="asset_id"/>
+                            <field name="partner_id"/>
+                        </group>
+                        <group>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="remaining_days" readonly="1"/>
+                            <field name="amount"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="ไฟล์สัญญาและเอกสารแนบ"
+                              name="contract_attachments">
+                            <field name="attachment_ids"
+                                   widget="many2many_binary"
+                                   nolabel="1"/>
+                        </page>
+                        <page string="หมายเหตุ" name="contract_note">
+                            <field name="note" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_asset_related_contract_search" model="ir.ui.view">
+        <field name="name">asset.related.contract.search</field>
+        <field name="model">asset.related.contract</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาสัญญาที่เกี่ยวข้องกับสินทรัพย์">
+                <field name="contract_number"/>
+                <field name="name"/>
+                <field name="asset_id"/>
+                <field name="partner_id"/>
+                <field name="contract_type"/>
+                <filter string="สัญญาเช่า" name="contract_lease"
+                        domain="[('contract_type', '=', 'lease')]"/>
+                <filter string="สัญญาบำรุงรักษา"
+                        name="contract_maintenance"
+                        domain="[('contract_type', '=', 'maintenance')]"/>
+                <separator/>
+                <filter string="ประเภทสัญญา" name="group_contract_type"
+                        domain="[]" context="{'group_by': 'contract_type'}"/>
+                <filter string="สินทรัพย์" name="group_contract_asset"
+                        domain="[]" context="{'group_by': 'asset_id'}"/>
+                <filter string="คู่สัญญา" name="group_contract_partner"
+                        domain="[]" context="{'group_by': 'partner_id'}"/>
+            </search>
+        </field>
+    </record>
+</odoo>

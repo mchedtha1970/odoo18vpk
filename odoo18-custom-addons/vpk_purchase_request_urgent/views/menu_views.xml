@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_purchase_request_emergency" model="ir.actions.act_window">
+        <field name="name">ขอซื้อฉุกเฉิน / เร่งด่วน</field>
+        <field name="res_model">purchase.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_urgency', '=', True)]</field>
+        <field name="context">{'search_default_filter_is_urgency': 1, 'default_urgency_level': 'emergency'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ยังไม่มีใบขอซื้อฉุกเฉิน/เร่งด่วน
+            </p>
+            <p>
+                สร้างใบขอซื้อแล้วเลือกระดับเป็น <b>เร่งด่วน</b> หรือ <b>ฉุกเฉิน</b>
+                พร้อมระบุเหตุผลและวันที่ต้องการของ
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_purchase_request_emergency"
+              name="ขอซื้อฉุกเฉิน / เร่งด่วน"
+              parent="purchase.menu_procurement_management"
+              action="action_purchase_request_emergency"
+              sequence="15"/>
+</odoo>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_requisition_form_contract" model="ir.ui.view">
+        <field name="name">purchase.requisition.form.contract</field>
+        <field name="model">purchase.requisition</field>
+        <field name="inherit_id" ref="purchase_requisition.view_purchase_requisition_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_view_purchase_contracts"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-file-text-o"
+                    invisible="requisition_type != 'egp_procurement' or contract_count == 0"
+                >
+                    <field name="contract_count" widget="statinfo" string="สัญญา"/>
+                </button>
+            </div>
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_create_purchase_contract"
+                    type="object"
+                    string="เปิดทะเบียนสัญญา"
+                    class="btn-secondary"
+                    invisible="requisition_type != 'egp_procurement' or state == 'cancel'"
+                    groups="purchase.group_purchase_manager"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Contract info on e-GP requisition form -->
+    <record id="view_purchase_requisition_form_contract_source" model="ir.ui.view">
+        <field name="name">purchase.requisition.form.contract.source</field>
+        <field name="model">purchase.requisition</field>
+        <field name="inherit_id" ref="vpk_purchase_agreement_egp.view_purchase_requisition_form_egp"/>
+        <field name="arch" type="xml">
+            <!-- Hidden helper field -->
+            <field name="is_egp_procurement" position="after">
+                <field name="is_contract_procurement" invisible="1"/>
+            </field>
+
+            <!-- Contract reference block after purchase_request_amount_total -->
+            <field name="purchase_request_amount_total" position="after">
+                <field
+                    name="source_contract_id"
+                    invisible="not is_contract_procurement"
+                    readonly="1"
+                    options="{'no_create': True, 'no_open': False}"
+                />
+                <field
+                    name="source_contract_partner"
+                    invisible="not is_contract_procurement"
+                    readonly="1"
+                />
+                <field
+                    name="source_contract_amount"
+                    invisible="not is_contract_procurement"
+                    readonly="1"
+                />
+                <field
+                    name="source_contract_remaining"
+                    invisible="not is_contract_procurement"
+                    readonly="1"
+                />
+            </field>
+
+            <!-- Banner for contract-based procurement -->
+            <xpath expr="//sheet" position="inside">
+                <div class="alert alert-info text-center"
+                     role="alert"
+                     invisible="not is_contract_procurement"
+                     style="font-size: 14px;"
+                >
+                    <strong>จัดซื้อตามสัญญา</strong> —
+                    ดึงข้อมูลคู่ค้าและรายการจากสัญญาโดยอัตโนมัติ ไม่มีขั้นตอนเปรียบเทียบราคาหาผู้ชนะ
+                </div>
+            </xpath>
+
+            <!-- Hide comparison tab for contract-linked requisitions -->
+            <page name="egp_rfqs" position="attributes">
+                <attribute name="invisible">requisition_type != 'egp_procurement' or is_contract_procurement</attribute>
+            </page>
+        </field>
+    </record>
+</odoo>

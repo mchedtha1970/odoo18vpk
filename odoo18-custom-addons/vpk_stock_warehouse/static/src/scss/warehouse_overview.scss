@@ -1,0 +1,120 @@
+.o_vpk_warehouse_overview {
+    height: 100%;
+
+    .o_content {
+        height: 100%;
+    }
+
+    .o_vpk_warehouse_overview_body {
+        min-height: calc(100vh - 120px);
+        background: var(--o-view-background-color, #f8f9fa);
+    }
+
+    .o_vpk_warehouse_overview_panel {
+        width: 320px;
+        max-width: 38vw;
+        border-right: 1px solid var(--border-color, #dee2e6);
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .o_vpk_warehouse_overview_panel_header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color, #dee2e6);
+    }
+
+    .o_vpk_warehouse_overview_panel_list {
+        overflow: auto;
+        flex: 1 1 auto;
+        padding: 0.5rem;
+    }
+
+    .o_vpk_warehouse_overview_item {
+        border: 1px solid transparent;
+        border-radius: 0.5rem;
+        margin-bottom: 0.35rem;
+        padding: 0.65rem 0.75rem;
+        background: transparent;
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        &.active {
+            background: rgba(113, 75, 103, 0.08);
+            border-color: rgba(113, 75, 103, 0.25);
+        }
+    }
+
+    .o_vpk_warehouse_overview_content {
+        background: #fff;
+    }
+
+    .o_vpk_warehouse_overview_content_header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color, #dee2e6);
+    }
+
+    .o_vpk_warehouse_overview_view {
+        overflow: auto;
+
+        .o_vpk_warehouse_overview_location_view {
+            height: 100%;
+        }
+    }
+
+    .o_vpk_loc_tree_toolbar {
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid var(--border-color, #dee2e6);
+        background: #fafafa;
+    }
+
+    .o_vpk_loc_tree_search {
+        max-width: 280px;
+    }
+
+    .o_vpk_loc_tree {
+        padding: 0.75rem 1rem 1.5rem;
+    }
+
+    .o_vpk_loc_tree_node {
+        --vpk-tree-depth: 0;
+    }
+
+    .o_vpk_loc_tree_row {
+        padding: 0.2rem 0.4rem;
+        margin-left: calc(var(--vpk-tree-depth) * 1.1rem);
+        border-radius: 0.35rem;
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        &.o_vpk_loc_tree_root {
+            background: rgba(113, 75, 103, 0.06);
+            margin-bottom: 0.25rem;
+        }
+    }
+
+    .o_vpk_loc_tree_toggle {
+        width: 1.1rem;
+        min-width: 1.1rem;
+        color: #6c757d;
+        line-height: 1;
+    }
+
+    .o_vpk_loc_tree_toggle_spacer {
+        display: inline-block;
+        width: 1.1rem;
+        min-width: 1.1rem;
+    }
+
+    .o_vpk_loc_tree_label {
+        color: inherit;
+        padding: 0.1rem 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

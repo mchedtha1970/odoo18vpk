@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_procurement_annual_plan_form" model="ir.ui.view">
+        <field name="name">procurement.annual.plan.form</field>
+        <field name="model">procurement.annual.plan</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_approve" string="อนุมัติแผน" type="object"
+                            class="btn-primary" invisible="state != 'draft'"
+                            groups="purchase.group_purchase_manager"/>
+                    <button name="action_run_auto_gen_now" string="รัน Gen Auto ทันที" type="object"
+                            class="btn-secondary"
+                            invisible="state != 'approved' or not auto_gen_enabled"/>
+                    <button name="action_close" string="ปิดแผน" type="object"
+                            invisible="state != 'approved'"/>
+                    <button name="action_cancel" string="ยกเลิก" type="object"
+                            invisible="state in ('closed', 'cancelled')"/>
+                    <button name="action_draft" string="กลับเป็นร่าง" type="object"
+                            invisible="state not in ('cancelled', 'closed')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,approved,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_lines" type="object" class="oe_stat_button" icon="fa-list">
+                            <field name="line_count" widget="statinfo" string="รายการแผน"/>
+                        </button>
+                        <button name="action_view_amendments" type="object" class="oe_stat_button" icon="fa-plus-square">
+                            <field name="amendment_count" widget="statinfo" string="ขอเพิ่มแผน"/>
+                        </button>
+                        <button name="action_view_prs" type="object" class="oe_stat_button" icon="fa-shopping-cart">
+                            <field name="pr_count" widget="statinfo" string="ใบขอซื้อ"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="แผนจัดซื้อจัดจ้าง ปีงบประมาณ..."/></h1>
+                        <h3><field name="code" readonly="1"/></h3>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="fiscal_year_start"/>
+                            <field name="fiscal_year_end"/>
+                            <field name="budget_id"/>
+                        </group>
+                        <group>
+                            <field name="auto_gen_enabled" widget="boolean_toggle"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="รายการแผน" name="lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="purchase_type"/>
+                                    <field name="product_id"/>
+                                    <field name="name"/>
+                                    <field name="contract_id" optional="show"/>
+                                    <field name="partner_id" optional="hide"/>
+                                    <field name="qty_planned"/>
+                                    <field name="uom_id" optional="show"/>
+                                    <field name="unit_price" optional="show"/>
+                                    <field name="amount_planned" sum="รวมวงเงินแผน"/>
+                                    <field name="qty_consumed" optional="show"/>
+                                    <field name="qty_remaining" optional="show"/>
+                                    <field name="budget_line_id" optional="hide"/>
+                                    <field name="active" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="หมายเหตุ" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_procurement_annual_plan_list" model="ir.ui.view">
+        <field name="name">procurement.annual.plan.list</field>
+        <field name="model">procurement.annual.plan</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="fiscal_year_start"/>
+                <field name="fiscal_year_end"/>
+                <field name="budget_id"/>
+                <field name="auto_gen_enabled" widget="boolean_toggle"/>
+                <field name="line_count"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'approved'"
+                       decoration-muted="state == 'closed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_procurement_annual_plan" model="ir.actions.act_window">
+        <field name="name">แผนจัดซื้อจัดจ้างประจำปี</field>
+        <field name="res_model">procurement.annual.plan</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

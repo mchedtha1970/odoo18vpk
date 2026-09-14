@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_change_lock_date" model="ir.ui.view">
+        <field name="name">account.change.lock.date.form</field>
+        <field name="model">account.change.lock.date</field>
+        <field name="arch" type="xml">
+            <form string="Lock Dates">
+                <group>
+                    <field name="company_id" groups="base.group_multi_company"/>
+                    <field name="fiscalyear_lock_date"/>
+                    <field name="tax_lock_date"/>
+                    <field name="hard_lock_date"/>
+                </group>
+                <footer>
+                    <button name="action_change_lock_date" type="object" string="Save" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_view_account_change_lock_date" model="ir.actions.act_window">
+        <field name="name">Lock Dates</field>
+        <field name="res_model">account.change.lock.date</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

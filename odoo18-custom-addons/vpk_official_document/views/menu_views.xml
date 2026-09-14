@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_official_document_root"
+              name="หนังสือราชการ"
+              parent="purchase.menu_purchase_root"
+              groups="purchase.group_purchase_user"
+              sequence="73"/>
+    <menuitem id="menu_official_document"
+              name="คำสั่งแต่งตั้งคณะกรรมการตรวจรับ"
+              parent="menu_official_document_root"
+              action="action_official_document"
+              groups="purchase.group_purchase_user"
+              sequence="10"/>
+    <menuitem id="menu_integrity_over_100k"
+              name="แบบแสดงความบริสุทธิ์ใจ"
+              parent="menu_official_document_root"
+              action="action_integrity_over_100k"
+              groups="purchase.group_purchase_user"
+              sequence="15"/>
+    <menuitem id="menu_spec_price_committee"
+              name="ขออนุมัติแต่งตั้งคณะกรรมการกำหนดคุณลักษณะ"
+              parent="menu_official_document_root"
+              action="action_spec_price_committee"
+              groups="purchase.group_purchase_user"
+              sequence="16"/>
+    <menuitem id="menu_specific_method_approval"
+              name="รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง"
+              parent="menu_official_document_root"
+              action="action_specific_method_approval"
+              groups="purchase.group_purchase_user"
+              sequence="17"/>
+    <menuitem id="menu_official_document_template"
+              name="แบบฟอร์มเอกสาร"
+              parent="menu_official_document_root"
+              action="action_official_document_template"
+              groups="purchase.group_purchase_manager"
+              sequence="20"/>
+</odoo>

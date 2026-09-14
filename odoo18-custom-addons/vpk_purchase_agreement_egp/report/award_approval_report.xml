@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_award_approval" model="ir.actions.report">
+        <field name="name">รายงานผลการพิจารณาและขออนุมัติ</field>
+        <field name="model">purchase.requisition.award.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_purchase_agreement_egp.report_award_approval</field>
+        <field name="report_file">vpk_purchase_agreement_egp.report_award_approval</field>
+        <field name="print_report_name">'รายงานผล-%s' % object.name</field>
+        <field name="binding_model_id"
+               ref="model_purchase_requisition_award_report"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_award_approval">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.basic_layout">
+                    <style>
+                        .vpk-award-report,
+                        .vpk-award-report * {
+                            font-family: "THSarabunNew", sans-serif !important;
+                            font-size: 16pt;
+                            line-height: 1.35;
+                        }
+                        .vpk-award-report h3 {
+                            font-family: "THSarabunNew-Bold",
+                                         "THSarabunNew", sans-serif !important;
+                            font-size: 22pt;
+                        }
+                        .vpk-award-report strong,
+                        .vpk-award-report th {
+                            font-family: "THSarabunNew-Bold",
+                                         "THSarabunNew", sans-serif !important;
+                            font-weight: bold;
+                        }
+                    </style>
+                    <div class="page vpk-award-report">
+                        <div class="text-center">
+                            <h3>บันทึกข้อความ</h3>
+                        </div>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td style="width:20%;">ส่วนราชการ</td>
+                                <td t-esc="o.company_id.name"/>
+                            </tr>
+                            <tr>
+                                <td>ที่</td>
+                                <td><strong t-esc="o.name"/></td>
+                            </tr>
+                            <tr>
+                                <td>วันที่</td>
+                                <td><span t-field="o.date"/></td>
+                            </tr>
+                            <tr>
+                                <td>เรื่อง</td>
+                                <td t-esc="o.subject"/>
+                            </tr>
+                        </table>
+
+                        <p>เรียน ผู้อำนวยการ</p>
+                        <p>
+                            ตามที่ได้ดำเนินการจัดซื้อ/จัดจ้างตามกระบวนการ eGP
+                            เลขที่ <strong t-esc="o.requisition_id.name"/>
+                            เลขที่โครงการ
+                            <strong t-esc="o.egp_reference or '-'"/>
+                            อ้างอิงใบขอซื้อ
+                            <strong t-esc="o.purchase_request_id.name or '-'"/>
+                            นั้น
+                        </p>
+                        <p>
+                            คณะกรรมการได้พิจารณาข้อเสนอเมื่อวันที่
+                            <strong><span t-field="o.committee_meeting_date"/></strong>
+                            โดยใช้เกณฑ์
+                            <strong><span t-field="o.evaluation_method"/></strong>
+                            มีผลการพิจารณาดังนี้
+                        </p>
+
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width:7%;">ลำดับ</th>
+                                    <th>ผู้เสนอราคา</th>
+                                    <th style="width:18%;">เลขที่ใบเสนอราคา</th>
+                                    <th style="width:16%;">ราคาที่เสนอ</th>
+                                    <th style="width:18%;">ผลการพิจารณา</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="o.line_ids" t-as="line">
+                                    <tr>
+                                        <td class="text-center"
+                                            t-esc="line_index + 1"/>
+                                        <td t-esc="line.partner_id.name"/>
+                                        <td t-esc="line.egp_bid_reference or '-'"/>
+                                        <td class="text-end">
+                                            <span t-field="line.amount_total"
+                                                  t-options="{'widget': 'monetary', 'display_currency': line.currency_id}"/>
+                                        </td>
+                                        <td>
+                                            <t t-if="line.result == 'winner'">
+                                                ได้รับการคัดเลือก
+                                            </t>
+                                            <t t-elif="line.result == 'disqualified'">
+                                                ไม่ผ่านคุณสมบัติ
+                                            </t>
+                                            <t t-else="">ไม่ถูกคัดเลือก</t>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <div t-if="o.result_summary"
+                             t-field="o.result_summary"/>
+                        <p>
+                            เห็นควรอนุมัติสั่งซื้อ/สั่งจ้างจาก
+                            <strong t-esc="o.winner_partner_id.name"/>
+                            เป็นจำนวนเงิน
+                            <strong>
+                                <span t-field="o.winner_amount"
+                                      t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                            </strong>
+                        </p>
+                        <div t-if="o.recommendation"
+                             t-field="o.recommendation"/>
+
+                        <div class="mt-5 text-end">
+                            <div>จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ</div>
+                            <div class="mt-5">
+                                ........................................................
+                            </div>
+                            <div>คณะกรรมการพิจารณาผล</div>
+                        </div>
+                        <div class="mt-5" t-if="o.state == 'approved'">
+                            <div><strong>ผลการอนุมัติ:</strong> อนุมัติ</div>
+                            <div>ผู้อนุมัติ:
+                                <span t-esc="o.approved_by.name"/>
+                            </div>
+                            <div>วันที่:
+                                <span t-field="o.approved_date"/>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

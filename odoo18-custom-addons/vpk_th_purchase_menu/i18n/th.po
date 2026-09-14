@@ -1,0 +1,85 @@
+# Translation of Odoo Server.
+# This file contains Thai menu label overrides for the purchase module.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-30 00:00+0000\n"
+"PO-Revision-Date: 2026-08-30 00:00+0000\n"
+"Last-Translator: VPK\n"
+"Language-Team: Thai\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: purchase
+#: model:ir.ui.menu,name:purchase.menu_purchase_root
+msgid "Purchase"
+msgstr "ระบบจัดซื้อจัดจ้าง"
+
+#. module: purchase
+#: model:ir.ui.menu,name:purchase.menu_purchase_root
+msgid "ระบบจัดซื้อจัดจ้าง"
+msgstr "ระบบจัดซื้อจัดจ้าง"
+
+#. module: purchase
+#: model:ir.ui.menu,name:purchase.menu_procurement_management
+msgid "Orders"
+msgstr "จัดการสั่งซื้อ"
+
+#. module: purchase
+#: model:ir.ui.menu,name:purchase.menu_procurement_management
+msgid "จัดการสั่งซื้อ"
+msgstr "จัดการสั่งซื้อ"
+
+#. module: purchase
+#: model:ir.ui.menu,name:purchase.menu_purchase_products
+msgid "Products"
+msgstr "ข้อมูลสินค้า"
+
+#. module: purchase
+#: model:ir.ui.menu,name:purchase.menu_purchase_products
+msgid "ข้อมูลสินค้า"
+msgstr "ข้อมูลสินค้า"
+
+#. module: vpk_th_purchase_menu
+#: model:ir.ui.menu,name:vpk_th_purchase_menu.menu_purchase_request_data_root
+msgid "ข้อมูลใบขอซื้อ"
+msgstr "ข้อมูลใบขอซื้อ"
+
+#. module: purchase_request
+#: model:ir.ui.menu,name:purchase_request.menu_purchase_request_pro_mgt
+msgid "Purchase Requests"
+msgstr "ใบขอซื้อ"
+
+#. module: purchase_request
+#: model:ir.ui.menu,name:purchase_request.menu_purchase_request_pro_mgt
+msgid "ใบขอซื้อ"
+msgstr "ใบขอซื้อ"
+
+#. module: purchase_request
+#: model:ir.ui.menu,name:purchase_request.menu_purchase_request_line
+msgid "Purchase Request Lines"
+msgstr "รายการใบขอซื้อ"
+
+#. module: purchase_request
+#: model:ir.ui.menu,name:purchase_request.menu_purchase_request_line
+msgid "รายการใบขอซื้อ"
+msgstr "รายการใบขอซื้อ"
+
+#. module: vpk_th_purchase_menu
+#: model:ir.ui.menu,name:vpk_th_purchase_menu.menu_vendor_data_root
+msgid "ข้อมูลผู้จำหน่าย"
+msgstr "ข้อมูลผู้จำหน่าย"
+
+#. module: purchase
+#: model:ir.ui.menu,name:purchase.menu_procurement_management_supplier_name
+msgid "Vendors"
+msgstr "ผู้จำหน่าย"
+
+#. module: purchase
+#: model:ir.ui.menu,name:purchase.menu_procurement_management_supplier_name
+msgid "ผู้จำหน่าย"
+msgstr "ผู้จำหน่าย"

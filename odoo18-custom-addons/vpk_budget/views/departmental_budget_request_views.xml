@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_departmental_budget_request_form" model="ir.ui.view">
+        <field name="name">departmental.budget.request.form</field>
+        <field name="model">departmental.budget.request</field>
+        <field name="arch" type="xml">
+            <form class="o_vpk_departmental_budget_request_form">
+                <header>
+                    <button
+                        name="action_print_material_budget"
+                        type="object"
+                        string="พิมพ์แบบตั้งงบวัสดุ"
+                        invisible="not show_material_lines"
+                        groups="vpk_budget.group_vpk_budget_user"
+                    />
+                    <button
+                        name="action_submit"
+                        type="object"
+                        string="ส่งใบคำขอ"
+                        class="oe_highlight"
+                        invisible="state != 'draft'"
+                        groups="vpk_budget.group_budget_request_department_user"
+                    />
+                    <button
+                        name="action_receive"
+                        type="object"
+                        string="รับเรื่อง"
+                        invisible="state != 'submitted'"
+                        groups="vpk_budget.group_budget_request_budget_unit"
+                    />
+                    <button
+                        name="action_start_review"
+                        type="object"
+                        string="เริ่มพิจารณา"
+                        invisible="state != 'received'"
+                        groups="vpk_budget.group_budget_request_budget_unit"
+                    />
+                    <button
+                        name="action_approve"
+                        type="object"
+                        string="อนุมัติ"
+                        class="oe_highlight"
+                        invisible="state not in ('review', 'received')"
+                        groups="vpk_budget.group_budget_request_budget_unit"
+                    />
+                    <button
+                        name="action_reject"
+                        type="object"
+                        string="ตีกลับ"
+                        invisible="state in ('approved', 'rejected', 'draft')"
+                        groups="vpk_budget.group_budget_request_budget_unit"
+                    />
+                    <button
+                        name="action_set_draft"
+                        type="object"
+                        string="ตั้งเป็นร่าง"
+                        invisible="state == 'draft'"
+                        groups="vpk_budget.group_budget_request_budget_unit"
+                    />
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,submitted,received,review,approved,rejected"
+                    />
+                </header>
+                <sheet>
+                    <field name="company_id" invisible="1"/>
+                    <field name="can_edit_request_content" invisible="1"/>
+                    <field name="can_edit_allocation" invisible="1"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group col="3" class="o_vpk_budget_request_header_row">
+                        <group>
+                            <field name="request_date" string="วันที่ขอ" readonly="not can_edit_request_content"/>
+                            <field name="fiscal_year" readonly="not can_edit_request_content"/>
+                            <field name="requester_id" string="ผู้ขอ" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="analytic_account_id" string="หน่วยงาน / ศูนย์ต้นทุน" readonly="not can_edit_request_content"/>
+                            <field name="annual_budget_id" readonly="not can_edit_request_content"/>
+                            <field name="form_type_id" options="{'no_create': True, 'no_open': True}" readonly="state != 'draft' or is_form_type_locked"/>
+                            <field name="is_form_type_locked" invisible="1"/>
+                            <field name="form_type_code" invisible="1"/>
+                            <field name="show_asset_lines" invisible="1"/>
+                            <field name="show_material_lines" invisible="1"/>
+                            <field name="show_construction_lines" invisible="1"/>
+                            <field name="show_project_lines" invisible="1"/>
+                            <field name="has_material_details" invisible="1"/>
+                            <field name="material_detail_total" invisible="1"/>
+                            <field name="fund_source_id" string="แหล่งเงิน" readonly="not can_edit_request_content"/>
+                        </group>
+                        <group>
+                            <field name="budget_record_id" readonly="1"/>
+                            <field name="total_amount" string="งบประมาณที่ขอ" readonly="1" force_save="1"/>
+                            <field name="total_received_budget_amount" string="งบประมาณที่ได้รับ" readonly="1" force_save="1"/>
+                        </group>
+                    </group>
+                    <group invisible="not show_material_lines">
+                        <field
+                            name="budget_group_ids"
+                            string="กลุ่มวัสดุ"
+                            widget="many2many_tags"
+                            readonly="1"
+                            colspan="2"
+                        />
+                        <field
+                            name="material_sub_type_ids"
+                            widget="many2many_tags"
+                            readonly="1"
+                            colspan="2"
+                        />
+                    </group>
+                    <group invisible="not show_asset_lines">
+                        <field
+                            name="asset_category_ids"
+                            string="กลุ่มครุภัณฑ์"
+                            widget="many2many_tags"
+                            readonly="1"
+                            colspan="2"
+                        />
+                    </group>
+                    <notebook>
+                        <page string="รายการคำของบ" invisible="form_type_id">
+                            <div class="o_vpk_budget_request_placeholder text-muted p-4">
+                                <p class="mb-0">
+                                    กรุณาเลือก <strong>แบบฟอร์มคำของบ</strong> ด้านบนเพื่อแสดงแบบฟอร์มรายการ
+                                </p>
+                            </div>
+                        </page>
+                        <page string="แบบตั้งงบครุภัณฑ์" invisible="not show_asset_lines">
+                            <field
+                                name="asset_line_ids"
+                                context="{'default_line_type': 'asset_budget'}"
+                                readonly="not can_edit_request_content and not can_edit_allocation"
+                            >
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle" readonly="not parent.can_edit_request_content"/>
+                                    <field name="company_id" column_invisible="1"/>
+                                    <field name="budget_post_id" options="{'no_create': True}" readonly="not parent.can_edit_request_content"/>
+                                    <field name="allowed_asset_categ_ids" column_invisible="1"/>
+                                    <field name="allowed_asset_product_ids" column_invisible="1"/>
+                                    <field
+                                        name="asset_categ_id"
+                                        string="กลุ่มครุภัณฑ์"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        readonly="not parent.can_edit_request_content"
+                                    />
+                                    <field
+                                        name="asset_product_id"
+                                        string="รายการ"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        readonly="not parent.can_edit_request_content"
+                                    />
+                                    <field name="item_name" column_invisible="1"/>
+                                    <field name="current_quantity" readonly="not parent.can_edit_request_content"/>
+                                    <field name="current_age_year" readonly="not parent.can_edit_request_content"/>
+                                    <field name="qty_new_purchase" readonly="not parent.can_edit_request_content"/>
+                                    <field name="qty_replacement" readonly="not parent.can_edit_request_content"/>
+                                    <field name="qty_addition" readonly="not parent.can_edit_request_content"/>
+                                    <field name="requested_quantity" readonly="1"/>
+                                    <field name="unit_price" readonly="not parent.can_edit_request_content"/>
+                                    <field
+                                        name="total_amount"
+                                        string="งบประมาณที่ขอ"
+                                        readonly="1"
+                                        sum="รวมงบประมาณที่ขอ"
+                                    />
+                                    <field
+                                        name="allocated_budget_amount"
+                                        string="งบประมาณที่ได้รับ"
+                                        sum="รวมงบประมาณที่ได้รับ"
+                                        readonly="not parent.can_edit_allocation"
+                                    />
+                                    <field name="reason" readonly="not parent.can_edit_request_content"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="แบบตั้งงบภาพรวม" invisible="not show_material_lines">
+                            <field
+                                name="material_line_ids"
+                                context="{'default_line_type': 'supplies_budget'}"
+                                readonly="not can_edit_request_content and not can_edit_allocation"
+                            >
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle" readonly="not parent.can_edit_request_content"/>
+                                    <field name="company_id" column_invisible="1"/>
+                                    <field name="budget_post_id" options="{'no_create': True}" readonly="not parent.can_edit_request_content"/>
+                                    <field name="budget_group_id" string="กลุ่มวัสดุ" readonly="not parent.can_edit_request_content"/>
+                                    <field name="allowed_material_sub_type_ids" column_invisible="1"/>
+                                    <field
+                                        name="material_sub_type_id"
+                                        context="{'material_sub_type_budget_group_id': budget_group_id}"
+                                        readonly="not budget_group_id or not parent.can_edit_request_content"
+                                        options="{'no_create': True, 'no_open': True}"
+                                    />
+                                    <field name="prior_year_plan_amount" readonly="not parent.can_edit_request_content"/>
+                                    <field name="disbursed_amount" readonly="not parent.can_edit_request_content"/>
+                                    <field name="payable_amount" readonly="not parent.can_edit_request_content"/>
+                                    <field name="committed_not_received_amount" readonly="not parent.can_edit_request_content"/>
+                                    <field name="remaining_amount" readonly="1"/>
+                                    <field name="stock_amount" readonly="not parent.can_edit_request_content"/>
+                                    <field name="allocated_budget_amount" readonly="not parent.can_edit_allocation"/>
+                                    <field
+                                        name="requested_plan_amount"
+                                        readonly="parent.has_material_details or not parent.can_edit_request_content"
+                                        sum="รวมคำขอตั้งแผน"
+                                    />
+                                    <field name="material_note" readonly="not parent.can_edit_request_content"/>
+                                    <field name="reason" readonly="not parent.can_edit_request_content"/>
+                                </list>
+                                <form string="บรรทัดแบบตั้งงบวัสดุ">
+                                    <group>
+                                        <group>
+                                            <field name="company_id" invisible="1"/>
+                                            <field name="budget_post_id" required="1" options="{'no_create': True}" readonly="not parent.can_edit_request_content"/>
+                                            <field name="budget_group_id" string="กลุ่มวัสดุ" required="1" readonly="not parent.can_edit_request_content"/>
+                                            <field name="allowed_material_sub_type_ids" invisible="1"/>
+                                            <field
+                                                name="material_sub_type_id"
+                                                required="1"
+                                                context="{'material_sub_type_budget_group_id': budget_group_id}"
+                                                readonly="not budget_group_id or not parent.can_edit_request_content"
+                                                options="{'no_create': True, 'no_open': True}"
+                                            />
+                                            <field name="prior_year_plan_amount" readonly="not parent.can_edit_request_content"/>
+                                            <field name="disbursed_amount" readonly="not parent.can_edit_request_content"/>
+                                            <field name="payable_amount" readonly="not parent.can_edit_request_content"/>
+                                            <field name="committed_not_received_amount" readonly="not parent.can_edit_request_content"/>
+                                        </group>
+                                        <group>
+                                            <field name="remaining_amount" readonly="1"/>
+                                            <field name="stock_amount" readonly="not parent.can_edit_request_content"/>
+                                            <field name="allocated_budget_amount" readonly="not parent.can_edit_allocation"/>
+                                            <field
+                                                name="requested_plan_amount"
+                                                readonly="parent.has_material_details or not parent.can_edit_request_content"
+                                            />
+                                            <field name="total_amount" readonly="1"/>
+                                            <field name="material_note" readonly="not parent.can_edit_request_content"/>
+                                        </group>
+                                    </group>
+                                    <group>
+                                        <field name="reason" readonly="not parent.can_edit_request_content"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="รายการวัสดุ" invisible="not show_material_lines">
+                            <div class="text-muted mb-2" invisible="material_line_ids">
+                                กรุณาเพิ่มบรรทัดในแท็บ <strong>แบบตั้งงบภาพรวม</strong> ให้ครบก่อน
+                                จากนั้นเพิ่มรายการสินค้าในแท็บนี้ — ยอดรวมจะถูกคำนวณไปที่
+                                <strong>คำขอตั้งแผนปีงบ</strong> ตามประเภทวัสดุอัตโนมัติ
+                            </div>
+                            <field name="usage_history_be_y3" invisible="1"/>
+                            <field name="usage_history_be_y2" invisible="1"/>
+                            <field name="usage_history_be_y1" invisible="1"/>
+                            <field name="plan_year_be" invisible="1"/>
+                            <field
+                                name="material_detail_ids"
+                                context="{'vpk_usage_fiscal_year': fiscal_year}"
+                                class="o_vpk_material_detail_lines"
+                                readonly="not can_edit_request_content and not can_edit_allocation"
+                            >
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle" readonly="not parent.can_edit_request_content"/>
+                                    <field name="company_id" column_invisible="1"/>
+                                    <field name="allowed_material_sub_type_ids" column_invisible="1"/>
+                                    <field name="sibling_product_ids" column_invisible="1"/>
+                                    <field
+                                        name="material_sub_type_id"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        optional="hide"
+                                        readonly="not parent.can_edit_request_content"
+                                    />
+                                    <field name="budget_group_id" string="กลุ่มวัสดุ" readonly="1" optional="hide"/>
+                                    <field
+                                        name="product_id"
+                                        string="รายการ"
+                                        options="{'no_create': True}"
+                                        readonly="not parent.can_edit_request_content"
+                                    />
+                                    <field name="name" optional="hide" readonly="not parent.can_edit_request_content"/>
+                                    <field
+                                        name="product_uom_id"
+                                        string="หน่วยนับ"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        readonly="not parent.can_edit_request_content"
+                                    />
+                                    <field name="usage_qty_y3" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
+                                    <field name="usage_qty_y2" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
+                                    <field name="usage_qty_y1" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
+                                    <field name="opening_qty" string="ปริมาณคงเหลือยกมา" sum="รวมปริมาณคงเหลือยกมา" readonly="not parent.can_edit_request_content"/>
+                                    <field name="opening_amount" string="มูลค่าคงเหลือยกมา" class="o_vpk_amount_right" sum="รวมมูลค่าคงเหลือยกมา" readonly="not parent.can_edit_request_content"/>
+                                    <field name="plan_usage_qty" class="o_vpk_plan_col" sum="รวมปริมาณใช้" optional="hide" readonly="not parent.can_edit_request_content"/>
+                                    <field name="quantity" class="o_vpk_plan_col" sum="รวมปริมาณที่ของบ" readonly="not parent.can_edit_request_content"/>
+                                    <field name="unit_price" string="ราคา/หน่วยนับ" class="o_vpk_plan_col" readonly="not parent.can_edit_request_content"/>
+                                    <field
+                                        name="total_amount"
+                                        string="มูลค่าที่ของบ"
+                                        class="o_vpk_plan_col o_vpk_amount_right"
+                                        readonly="1"
+                                        sum="รวมมูลค่าที่ของบ"
+                                    />
+                                    <field
+                                        name="allocated_qty"
+                                        string="ปริมาณที่จัดสรร"
+                                        class="o_vpk_plan_col o_vpk_allocated_col"
+                                        sum="รวมปริมาณที่จัดสรร"
+                                        readonly="not parent.can_edit_allocation"
+                                    />
+                                    <field
+                                        name="allocated_amount"
+                                        string="มูลค่าที่จัดสรร"
+                                        class="o_vpk_plan_col o_vpk_amount_right o_vpk_allocated_col"
+                                        readonly="1"
+                                        sum="รวมมูลค่าที่จัดสรร"
+                                    />
+                                    <field name="note" readonly="not parent.can_edit_request_content"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="แบบตั้งงบก่อสร้าง" invisible="not show_construction_lines">
+                            <field
+                                name="construction_line_ids"
+                                class="o_vpk_construction_lines"
+                                context="{'default_line_type': 'construction_budget'}"
+                                readonly="not can_edit_request_content and not can_edit_allocation"
+                            >
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle" readonly="not parent.can_edit_request_content"/>
+                                    <field name="company_id" column_invisible="1"/>
+                                    <field name="budget_post_id" options="{'no_create': True}" readonly="not parent.can_edit_request_content"/>
+                                    <field name="item_name" readonly="not parent.can_edit_request_content"/>
+                                    <field name="usage_area" readonly="not parent.can_edit_request_content"/>
+                                    <field name="construction_location" readonly="not parent.can_edit_request_content"/>
+                                    <field name="unit_name" readonly="not parent.can_edit_request_content"/>
+                                    <field name="requested_quantity" readonly="not parent.can_edit_request_content"/>
+                                    <field name="unit_price" readonly="not parent.can_edit_request_content"/>
+                                    <field
+                                        name="total_amount"
+                                        string="งบประมาณที่ขอ"
+                                        readonly="1"
+                                        sum="รวมงบประมาณที่ขอ"
+                                    />
+                                    <field
+                                        name="allocated_budget_amount"
+                                        string="งบประมาณที่ได้รับ"
+                                        sum="รวมงบประมาณที่ได้รับ"
+                                        readonly="not parent.can_edit_allocation"
+                                    />
+                                    <field name="construction_request_improvement" string="ขอปรับปรุง" readonly="not parent.can_edit_request_content"/>
+                                    <field name="construction_request_expansion" string="ขอขยาย/ต่อเติม" readonly="not parent.can_edit_request_content"/>
+                                    <field name="reason" readonly="not parent.can_edit_request_content"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="แบบตั้งงบโครงการ" invisible="not show_project_lines">
+                            <field
+                                name="project_line_ids"
+                                context="{'default_line_type': 'project_budget'}"
+                                readonly="not can_edit_request_content and not can_edit_allocation"
+                            >
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle" readonly="not parent.can_edit_request_content"/>
+                                    <field name="company_id" column_invisible="1"/>
+                                    <field name="budget_post_id" options="{'no_create': True}" readonly="not parent.can_edit_request_content"/>
+                                    <field name="item_name" readonly="not parent.can_edit_request_content"/>
+                                    <field name="item_description" readonly="not parent.can_edit_request_content"/>
+                                    <field name="duration" readonly="not parent.can_edit_request_content"/>
+                                    <field name="target_group" readonly="not parent.can_edit_request_content"/>
+                                    <field name="requested_quantity" readonly="not parent.can_edit_request_content"/>
+                                    <field name="unit_price" readonly="not parent.can_edit_request_content"/>
+                                    <field
+                                        name="total_amount"
+                                        string="งบประมาณที่ขอ"
+                                        readonly="1"
+                                        sum="รวมงบประมาณที่ขอ"
+                                    />
+                                    <field
+                                        name="allocated_budget_amount"
+                                        string="งบประมาณที่ได้รับ"
+                                        sum="รวมงบประมาณที่ได้รับ"
+                                        readonly="not parent.can_edit_allocation"
+                                    />
+                                    <field name="objective" readonly="not parent.can_edit_request_content"/>
+                                    <field name="expected_benefit" readonly="not parent.can_edit_request_content"/>
+                                    <field name="owner_name" readonly="not parent.can_edit_request_content"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="ประวัติการใช้งบประมาณ" invisible="not form_type_id">
+                            <group>
+                                <div class="text-muted" colspan="2">
+                                    แสดงประวัติการใช้งบประมาณของรายการที่บันทึกขอ
+                                    โดยดึงจากบัญชีวิเคราะห์ตามหน่วยงานและหมวดงบประมาณ
+                                    หรือจากรายละเอียดสินค้าของคำของบที่อนุมัติปีก่อน
+                                </div>
+                                <div class="o_form_label" colspan="2">ปีงบอ้างอิง (ค.ศ.)</div>
+                                <div colspan="2">
+                                    3 ปีก่อน:
+                                    <field name="usage_history_year_y3" readonly="1" class="oe_inline"/>
+                                    | 2 ปีก่อน:
+                                    <field name="usage_history_year_y2" readonly="1" class="oe_inline"/>
+                                    | 1 ปีก่อน:
+                                    <field name="usage_history_year_y1" readonly="1" class="oe_inline"/>
+                                </div>
+                            </group>
+                            <div class="mb-2">
+                                <button
+                                    name="action_create_demo_all_budget_groups"
+                                    type="object"
+                                    string="สร้างตัวอย่างครบทุกกลุ่มงบประมาณ"
+                                    class="btn-secondary"
+                                    invisible="not show_material_lines or state != 'draft'"
+                                    groups="vpk_budget.group_vpk_budget_manager"
+                                    confirm="ระบบจะสร้างรายการครบทุกประเภทวัสดุย่อยในกลุ่มงบประมาณ พร้อมประวัติการใช้งบย้อนหลัง 3 ปี และแทนที่รายการแบบตั้งงบวัสดุเดิมในคำของบนี้ ต้องการดำเนินการต่อหรือไม่?"
+                                />
+                                <button
+                                    name="action_create_demo_usage_history"
+                                    type="object"
+                                    string="สร้างข้อมูลตัวอย่างประวัติ 3 ปี"
+                                    class="btn-secondary"
+                                    invisible="state != 'draft'"
+                                    groups="vpk_budget.group_vpk_budget_manager"
+                                    confirm="ระบบจะสร้างรายการบัญชีวิเคราะห์ตัวอย่างย้อนหลัง 3 ปีสำหรับรายการในคำของบนี้ และลบตัวอย่างเดิมของหน่วยงานนี้ (ถ้ามี) ต้องการดำเนินการต่อหรือไม่?"
+                                />
+                                <button
+                                    name="action_apply_usage_history"
+                                    type="object"
+                                    string="นำข้อมูลประวัติไปใส่แบบตั้งงบวัสดุ"
+                                    class="btn-secondary"
+                                    invisible="not show_material_lines or state != 'draft'"
+                                    groups="vpk_budget.group_budget_request_department_user"
+                                />
+                            </div>
+                            <field
+                                name="material_detail_ids"
+                                readonly="1"
+                                invisible="not show_material_lines"
+                            >
+                                <list create="0" delete="0" edit="0">
+                                    <field name="product_id"/>
+                                    <field name="name" optional="hide"/>
+                                    <field name="material_sub_type_id"/>
+                                    <field name="budget_group_id" string="กลุ่มวัสดุ"/>
+                                    <field name="quantity" string="จำนวนที่ขอ"/>
+                                    <field name="product_uom_id"/>
+                                    <field name="usage_qty_y3" string="จำนวน 3 ปีก่อน" sum="รวมจำนวน 3 ปีก่อน"/>
+                                    <field name="usage_amount_y3" string="มูลค่า 3 ปีก่อน" sum="รวมมูลค่า 3 ปีก่อน"/>
+                                    <field name="usage_qty_y2" string="จำนวน 2 ปีก่อน" sum="รวมจำนวน 2 ปีก่อน"/>
+                                    <field name="usage_amount_y2" string="มูลค่า 2 ปีก่อน" sum="รวมมูลค่า 2 ปีก่อน"/>
+                                    <field name="usage_qty_y1" string="จำนวน 1 ปีก่อน" sum="รวมจำนวน 1 ปีก่อน"/>
+                                    <field name="usage_amount_y1" string="มูลค่า 1 ปีก่อน" sum="รวมมูลค่า 1 ปีก่อน"/>
+                                    <field name="usage_prior_request_name" optional="show"/>
+                                </list>
+                            </field>
+                            <field name="line_ids" readonly="1" invisible="show_material_lines">
+                                <list create="0" delete="0" edit="0">
+                                    <field name="budget_post_id" string="หมวดงบประมาณ"/>
+                                    <field name="budget_group_id" string="กลุ่มงบประมาณ"/>
+                                    <field name="usage_budget_type_name"/>
+                                    <field name="requested_quantity" string="จำนวนที่ขอ" optional="show"/>
+                                    <field name="usage_actual_y3"/>
+                                    <field name="usage_actual_y2"/>
+                                    <field name="usage_actual_y1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                    <group>
+                        <field
+                            name="request_justification"
+                            placeholder="ระบุเหตุผลประกอบคำขอตั้งงบประมาณ (หรือกรอกเหตุผลคำชี้แจงในแต่ละรายการ)"
+                            readonly="state != 'draft'"
+                        />
+                        <field name="review_note" placeholder="บันทึกข้อสังเกตจากหน่วยงบประมาณ" readonly="state in ('approved', 'rejected')"/>
+                        <field name="submission_date" readonly="1"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_departmental_budget_request_list" model="ir.ui.view">
+        <field name="name">departmental.budget.request.list</field>
+        <field name="model">departmental.budget.request</field>
+        <field name="arch" type="xml">
+            <list
+                decoration-info="state == 'draft'"
+                decoration-warning="state in ('submitted', 'review')"
+                decoration-primary="state == 'received'"
+                decoration-success="state == 'approved'"
+                decoration-danger="state == 'rejected'"
+            >
+                <field name="name" string="เลขที่เอกสาร"/>
+                <field name="request_date" string="วันที่ขอ"/>
+                <field name="fiscal_year"/>
+                <field name="analytic_account_id" string="หน่วยงาน / ศูนย์ต้นทุน"/>
+                <field name="form_type_id" string="แบบฟอร์มคำของบ"/>
+                <field
+                    name="budget_group_ids"
+                    string="กลุ่มวัสดุ"
+                    widget="many2many_tags"
+                    optional="show"
+                    column_invisible="context.get('vpk_budget_form_section') == 'asset'"
+                />
+                <field
+                    name="material_sub_type_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    column_invisible="context.get('vpk_budget_form_section') == 'asset'"
+                />
+                <field
+                    name="asset_category_ids"
+                    string="กลุ่มครุภัณฑ์"
+                    widget="many2many_tags"
+                    optional="show"
+                    column_invisible="context.get('vpk_budget_form_section') == 'material'"
+                />
+                <field name="annual_budget_id"/>
+                <field name="fund_source_id" string="แหล่งเงิน"/>
+                <field name="total_amount"/>
+                <field name="total_received_budget_amount"/>
+                <field
+                    name="state"
+                    string="สถานะ"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-warning="state == 'submitted'"
+                    decoration-primary="state in ('received', 'review')"
+                    decoration-success="state == 'approved'"
+                    decoration-danger="state == 'rejected'"
+                />
+                <field name="requester_id" string="ผู้ขอ"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_departmental_budget_request_list_by_form_type" model="ir.ui.view">
+        <field name="name">departmental.budget.request.list.by.form.type</field>
+        <field name="model">departmental.budget.request</field>
+        <field name="inherit_id" eval="False"/>
+        <field name="mode">primary</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <list
+                decoration-info="state == 'draft'"
+                decoration-warning="state in ('submitted', 'review')"
+                decoration-primary="state == 'received'"
+                decoration-success="state == 'approved'"
+                decoration-danger="state == 'rejected'"
+            >
+                <field name="name" string="เลขที่เอกสาร"/>
+                <field name="request_date" string="วันที่ขอ"/>
+                <field name="fiscal_year"/>
+                <field name="analytic_account_id" string="หน่วยงาน / ศูนย์ต้นทุน"/>
+                <field
+                    name="budget_group_ids"
+                    string="กลุ่มวัสดุ"
+                    widget="many2many_tags"
+                    optional="show"
+                    column_invisible="context.get('vpk_budget_form_section') == 'asset'"
+                />
+                <field
+                    name="material_sub_type_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    column_invisible="context.get('vpk_budget_form_section') == 'asset'"
+                />
+                <field
+                    name="asset_category_ids"
+                    string="กลุ่มครุภัณฑ์"
+                    widget="many2many_tags"
+                    optional="show"
+                    column_invisible="context.get('vpk_budget_form_section') != 'asset'"
+                />
+                <field name="annual_budget_id"/>
+                <field name="fund_source_id" string="แหล่งเงิน"/>
+                <field name="total_amount"/>
+                <field name="total_received_budget_amount"/>
+                <field
+                    name="state"
+                    string="สถานะ"
+                    widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-warning="state == 'submitted'"
+                    decoration-primary="state in ('received', 'review')"
+                    decoration-success="state == 'approved'"
+                    decoration-danger="state == 'rejected'"
+                />
+                <field name="requester_id" string="ผู้ขอ"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_departmental_budget_request_search" model="ir.ui.view">
+        <field name="name">departmental.budget.request.search</field>
+        <field name="model">departmental.budget.request</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="fiscal_year"/>
+                <field name="analytic_account_id" string="หน่วยงาน / ศูนย์ต้นทุน"/>
+                <field name="form_type_id" string="แบบฟอร์มคำของบ"/>
+                <field name="budget_group_ids" string="กลุ่มวัสดุ"/>
+                <field name="material_sub_type_ids"/>
+                <field name="annual_budget_id"/>
+                <field name="fund_source_id" string="แหล่งเงิน"/>
+                <field name="requester_id" string="ผู้ขอ"/>
+                <filter name="my_request" string="คำขอของฉัน" domain="[('requester_id', '=', uid)]"/>
+                <filter name="submitted" string="ส่งหน่วยงบประมาณ" domain="[('state', '=', 'submitted')]"/>
+                <filter name="review" string="อยู่ระหว่างพิจารณา" domain="[('state', 'in', ('received', 'review'))]"/>
+                <group expand="0" string="จัดกลุ่มตาม">
+                    <filter string="หน่วยงาน / ศูนย์ต้นทุน" name="group_department" context="{'group_by':'analytic_account_id'}"/>
+                    <filter string="แหล่งเงิน" name="group_fund" context="{'group_by':'fund_source_id'}"/>
+                    <filter string="แบบฟอร์มคำของบ" name="group_form_type" context="{'group_by':'form_type_id'}"/>
+                    <filter string="กลุ่มวัสดุ" name="group_budget_group" context="{'group_by':'budget_group_ids'}"/>
+                    <filter string="สถานะ" name="group_state" context="{'group_by':'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_departmental_budget_request" model="ir.actions.act_window">
+        <field name="name">รวบรวมคำของบ (หน่วยงบประมาณ)</field>
+        <field name="res_model">departmental.budget.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_departmental_budget_request_search"/>
+    </record>
+
+    <record id="action_departmental_budget_request_my" model="ir.actions.act_window">
+        <field name="name">ทั้งหมด</field>
+        <field name="res_model">departmental.budget.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_departmental_budget_request_search"/>
+        <field name="domain">[('requester_id', '=', uid)]</field>
+        <field name="context">{'search_default_my_request': 1}</field>
+    </record>
+
+    <menuitem
+        id="menu_departmental_budget_request_root"
+        name="บันทึกคำของบ"
+        parent="menu_vpk_budget_root"
+        sequence="15"
+        groups="vpk_budget.group_vpk_budget_user"
+    />
+
+    <menuitem
+        id="menu_departmental_budget_my"
+        name="ทั้งหมด"
+        parent="menu_departmental_budget_request_root"
+        action="action_departmental_budget_request_my"
+        sequence="1"
+        groups="vpk_budget.group_vpk_budget_user"
+    />
+
+    <menuitem
+        id="menu_departmental_budget_central"
+        name="รวบรวมคำของบ (หน่วยงบประมาณ)"
+        parent="menu_vpk_budget_root"
+        action="action_departmental_budget_request"
+        sequence="25"
+        groups="vpk_budget.group_vpk_budget_manager"
+    />
+</odoo>

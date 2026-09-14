@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Thai label for Create WA button on PO -->
+    <record id="purchase_order_form_wa_vpk" model="ir.ui.view">
+        <field name="name">purchase.order.form.wa.vpk</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase_work_acceptance.purchase_order_form_inherit"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_view_wa' and @context]" position="attributes">
+                <attribute name="string">สร้างใบตรวจรับ</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

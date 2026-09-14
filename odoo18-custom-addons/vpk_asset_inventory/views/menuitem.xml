@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_vpk_asset_inventory_root"
+        name="ตรวจนับทรัพย์สินประจำปี"
+        parent="account_asset_management.menu_finance_assets"
+        sequence="40"
+        groups="vpk_asset_inventory.group_asset_inventory_user"
+    />
+    <menuitem
+        id="menu_vpk_asset_inventory_count"
+        name="รอบตรวจนับ"
+        parent="menu_vpk_asset_inventory_root"
+        action="action_vpk_asset_inventory_count"
+        sequence="10"
+        groups="vpk_asset_inventory.group_asset_inventory_officer"
+    />
+    <menuitem
+        id="menu_vpk_asset_inventory_sheet"
+        name="Sheet ตามหน่วยงาน"
+        parent="menu_vpk_asset_inventory_root"
+        action="action_vpk_asset_inventory_sheet"
+        sequence="20"
+        groups="vpk_asset_inventory.group_asset_inventory_user"
+    />
+    <menuitem
+        id="menu_vpk_asset_inventory_line_live"
+        name="ผลการนับออนไลน์"
+        parent="menu_vpk_asset_inventory_root"
+        action="action_vpk_asset_inventory_line_live"
+        sequence="30"
+        groups="vpk_asset_inventory.group_asset_inventory_officer"
+    />
+</odoo>

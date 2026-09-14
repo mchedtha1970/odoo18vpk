@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_product_specification"
+              name="รายละเอียดคุณลักษณะพัสดุ"
+              parent="purchase.menu_purchase_root"
+              action="action_product_specification"
+              sequence="73"/>
+</odoo>

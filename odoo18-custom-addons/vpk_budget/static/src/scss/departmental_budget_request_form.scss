@@ -1,0 +1,212 @@
+.o_form_view.o_vpk_departmental_budget_request_form {
+    .o_form_sheet_bg,
+    .o_form_sheet {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .o_form_sheet {
+        min-height: 50vh;
+    }
+
+    .o_vpk_budget_request_header_row.o_group {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+        gap: 0 1rem;
+
+        > .o_inner_group {
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: none;
+            width: auto !important;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .o_vpk_budget_request_header_row.o_group {
+            flex-wrap: wrap;
+
+            > .o_inner_group {
+                flex: 1 1 100%;
+            }
+        }
+    }
+
+    .o_vpk_usage_qty_group_title,
+    .o_vpk_plan_group_title {
+        text-align: center;
+        border: 1px solid #212529;
+        border-bottom: 0;
+        padding: 4px 8px;
+        background: #f8f9fa;
+    }
+
+    .o_vpk_plan_group_title {
+        border-top: 0;
+    }
+
+    .o_vpk_material_detail_lines {
+        .o_list_table {
+            th[data-name="usage_qty_y3"],
+            th[data-name="usage_qty_y2"],
+            th[data-name="usage_qty_y1"],
+            th[data-name="opening_qty"],
+            th[data-name="opening_amount"],
+            th[data-name="plan_usage_qty"],
+            th[data-name="quantity"],
+            th[data-name="unit_price"],
+            th[data-name="total_amount"],
+            th[data-name="allocated_qty"],
+            th[data-name="allocated_amount"],
+            td[name="usage_qty_y3"],
+            td[name="usage_qty_y2"],
+            td[name="usage_qty_y1"],
+            td[name="opening_qty"],
+            td[name="opening_amount"],
+            td[name="plan_usage_qty"],
+            td[name="quantity"],
+            td[name="unit_price"],
+            td[name="total_amount"],
+            td[name="allocated_qty"],
+            td[name="allocated_amount"],
+            td[name="usage_qty_y3"] .o_field_widget,
+            td[name="usage_qty_y2"] .o_field_widget,
+            td[name="usage_qty_y1"] .o_field_widget,
+            td[name="opening_qty"] .o_field_widget,
+            td[name="opening_amount"] .o_field_widget,
+            td[name="plan_usage_qty"] .o_field_widget,
+            td[name="quantity"] .o_field_widget,
+            td[name="unit_price"] .o_field_widget,
+            td[name="total_amount"] .o_field_widget,
+            td[name="allocated_qty"] .o_field_widget,
+            td[name="allocated_amount"] .o_field_widget,
+            tfoot td[data-name="usage_qty_y3"],
+            tfoot td[data-name="usage_qty_y2"],
+            tfoot td[data-name="usage_qty_y1"],
+            tfoot td[data-name="opening_qty"],
+            tfoot td[data-name="opening_amount"],
+            tfoot td[data-name="plan_usage_qty"],
+            tfoot td[data-name="quantity"],
+            tfoot td[data-name="unit_price"],
+            tfoot td[data-name="total_amount"],
+            tfoot td[data-name="allocated_qty"],
+            tfoot td[data-name="allocated_amount"] {
+                min-width: 88px !important;
+                text-align: right !important;
+            }
+
+            th[data-name="usage_qty_y3"] .o_list_number_th,
+            th[data-name="usage_qty_y2"] .o_list_number_th,
+            th[data-name="usage_qty_y1"] .o_list_number_th,
+            th[data-name="opening_qty"] .o_list_number_th,
+            th[data-name="opening_amount"] .o_list_number_th,
+            th[data-name="plan_usage_qty"] .o_list_number_th,
+            th[data-name="quantity"] .o_list_number_th,
+            th[data-name="unit_price"] .o_list_number_th,
+            th[data-name="total_amount"] .o_list_number_th,
+            th[data-name="allocated_qty"] .o_list_number_th,
+            th[data-name="allocated_amount"] .o_list_number_th {
+                text-align: right !important;
+            }
+
+            th[data-name="usage_qty_y3"],
+            th[data-name="usage_qty_y2"],
+            th[data-name="usage_qty_y1"],
+            th[data-name="plan_usage_qty"],
+            th[data-name="quantity"],
+            th[data-name="unit_price"],
+            th[data-name="total_amount"],
+            th[data-name="allocated_qty"],
+            th[data-name="allocated_amount"] {
+                border-top: 1px solid #212529;
+            }
+
+            th[data-name="allocated_qty"],
+            th[data-name="allocated_amount"],
+            th[data-name="allocated_qty"] .o_list_number_th,
+            th[data-name="allocated_amount"] .o_list_number_th,
+            td[name="allocated_qty"],
+            td[name="allocated_amount"],
+            td[name="allocated_qty"] .o_field_widget,
+            td[name="allocated_amount"] .o_field_widget,
+            td[name="allocated_qty"] input,
+            td[name="allocated_amount"] input,
+            tfoot td[data-name="allocated_qty"],
+            tfoot td[data-name="allocated_amount"] {
+                color: #6b0f1a !important;
+                font-weight: 600;
+            }
+        }
+    }
+
+    .o_vpk_budget_request_placeholder {
+        min-height: 320px;
+    }
+
+    .o_form_label,
+    .o_wrap_label .o_form_label {
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+        line-height: 1.25;
+    }
+
+    .o_field_x2many .o_list_renderer .o_list_table thead > tr > th:not(.o_list_actions_header) {
+        height: auto !important;
+        max-height: none !important;
+        min-height: var(--vpk-list-header-height, 2.125rem) !important;
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+        white-space: normal !important;
+        vertical-align: middle !important;
+
+        &::before {
+            display: none !important;
+        }
+
+        > .d-flex {
+            display: flex !important;
+            align-items: center !important;
+            min-height: var(--vpk-list-header-height, 2.125rem) !important;
+            height: auto !important;
+            white-space: normal !important;
+        }
+
+        > .d-flex > span {
+            display: inline-block !important;
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            overflow-wrap: anywhere;
+            line-height: 1.2 !important;
+        }
+    }
+
+    .o_vpk_construction_lines {
+        .o_list_table {
+            th[data-name="construction_request_improvement"],
+            th[data-name="construction_request_expansion"],
+            td[name="construction_request_improvement"],
+            td[name="construction_request_expansion"],
+            td.o_data_cell[data-tooltip*="ขอปรับปรุง"],
+            td.o_data_cell[data-tooltip*="ขอขยาย"] {
+                min-width: 72px !important;
+                width: 72px !important;
+                text-align: center !important;
+            }
+
+            th[data-name="construction_request_expansion"],
+            td[name="construction_request_expansion"] {
+                min-width: 88px !important;
+                width: 88px !important;
+            }
+        }
+    }
+}
+
+body.o_web_client.o_vpk_sidebar_menu .o_form_view.o_vpk_departmental_budget_request_form.o_xxl_form_view {
+    .o_form_sheet_bg {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+}

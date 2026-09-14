@@ -1,0 +1,458 @@
+// Theme Settings Panel
+.o_vpk_theme_overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 2000;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.o_vpk_theme_panel {
+    position: relative;
+    width: 95vw;
+    max-width: 920px;
+    height: 100vh;
+    background: #fff;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    animation: o_vpk_slide_in 0.25s ease;
+}
+
+@keyframes o_vpk_slide_in {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+.o_vpk_theme_close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: #f0f2f5;
+    color: #555;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        background: #e2e6ea;
+    }
+}
+
+.o_vpk_theme_layout {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+}
+
+.o_vpk_theme_sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: #f8f9fa;
+    border-right: 1px solid #e9ecef;
+    padding: 24px 0;
+
+    .o_vpk_theme_title {
+        font-size: 18px;
+        font-weight: 700;
+        padding: 0 20px 16px;
+        margin: 0;
+        color: #1a5f6b;
+    }
+}
+
+.o_vpk_theme_tabs {
+    .o_vpk_theme_tab {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 12px 20px;
+        border: none;
+        background: transparent;
+        color: #495057;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+
+        &:hover {
+            background: rgba(26, 95, 107, 0.08);
+        }
+
+        &.active {
+            background: #1a5f6b;
+            color: #fff;
+            font-weight: 600;
+        }
+    }
+}
+
+.o_vpk_theme_content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 24px 28px 0;
+}
+
+.o_vpk_theme_loading {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+}
+
+.o_vpk_section_title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #212529;
+}
+
+.o_vpk_field_label {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 20px 0 10px;
+    color: #343a40;
+}
+
+.o_vpk_option_row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+
+    &.o_vpk_option_row_vertical {
+        flex-direction: column;
+    }
+}
+
+.o_vpk_option_card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    cursor: pointer;
+    min-width: 120px;
+    font-size: 13px;
+    color: #495057;
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    input[type="radio"] {
+        display: none;
+    }
+
+    .o_vpk_preview_box {
+        width: 80px;
+        height: 56px;
+        background: #f0f2f5;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+    }
+
+    &.selected {
+        border-color: #1a5f6b;
+        box-shadow: 0 0 0 1px #1a5f6b;
+        color: #1a5f6b;
+        font-weight: 600;
+    }
+
+    &:hover {
+        border-color: #1a5f6b;
+    }
+}
+
+// Preview wireframes
+.vpk_preview_style_rounded .o_vpk_preview_box { border-radius: 12px; }
+.vpk_preview_style_square .o_vpk_preview_box { border-radius: 0; }
+.vpk_preview_menu_vertical .o_vpk_preview_box {
+    background: linear-gradient(90deg, #1a5f6b 30%, #f0f2f5 30%);
+}
+.vpk_preview_menu_horizontal .o_vpk_preview_box {
+    background: linear-gradient(180deg, #1a5f6b 25%, #f0f2f5 25%);
+}
+.vpk_preview_chatter_right .o_vpk_preview_box {
+    background: linear-gradient(90deg, #f0f2f5 65%, #dee2e6 65%);
+}
+.vpk_preview_chatter_bottom .o_vpk_preview_box {
+    background: linear-gradient(180deg, #f0f2f5 65%, #dee2e6 65%);
+}
+.vpk_preview_density_compact .o_vpk_preview_box {
+    background: repeating-linear-gradient(180deg, #dee2e6 0 4px, #f8f9fa 4px 14px);
+}
+.vpk_preview_density_comfortable .o_vpk_preview_box {
+    background: repeating-linear-gradient(180deg, #dee2e6 0 4px, #f8f9fa 4px 22px);
+}
+
+.o_vpk_width_preset {
+    min-width: 110px;
+
+    .o_vpk_preset_px {
+        font-size: 11px;
+        color: #868e96;
+        font-weight: 500;
+    }
+
+    &.selected .o_vpk_preset_px {
+        color: #1a5f6b;
+    }
+}
+
+.o_vpk_preview_width_compact,
+.o_vpk_preview_width_default,
+.o_vpk_preview_width_wide,
+.o_vpk_preview_width_extra,
+.o_vpk_preview_collapsed_narrow,
+.o_vpk_preview_collapsed_default,
+.o_vpk_preview_collapsed_wide {
+    position: relative;
+    overflow: hidden;
+}
+
+.o_vpk_preview_width_compact {
+    background: linear-gradient(90deg, #1a5f6b 22%, #f0f2f5 22%);
+}
+.o_vpk_preview_width_default {
+    background: linear-gradient(90deg, #1a5f6b 32%, #f0f2f5 32%);
+}
+.o_vpk_preview_width_wide {
+    background: linear-gradient(90deg, #1a5f6b 42%, #f0f2f5 42%);
+}
+.o_vpk_preview_width_extra {
+    background: linear-gradient(90deg, #1a5f6b 52%, #f0f2f5 52%);
+}
+.o_vpk_preview_collapsed_narrow {
+    background: linear-gradient(90deg, #1a5f6b 10%, #f0f2f5 10%);
+}
+.o_vpk_preview_collapsed_default {
+    background: linear-gradient(90deg, #1a5f6b 16%, #f0f2f5 16%);
+}
+.o_vpk_preview_collapsed_wide {
+    background: linear-gradient(90deg, #1a5f6b 24%, #f0f2f5 24%);
+}
+
+.o_vpk_range_value {
+    min-width: 56px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #343a40;
+}
+
+.o_vpk_switch_row {
+    margin-bottom: 12px;
+
+    .o_vpk_switch {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        font-size: 14px;
+
+        input {
+            width: 40px;
+            height: 22px;
+            accent-color: var(--vpk-sidebar-bg-start);
+        }
+    }
+}
+
+.o_vpk_color_field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    label {
+        min-width: 160px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    input[type="color"] {
+        width: 48px;
+        height: 36px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 2px;
+        cursor: pointer;
+    }
+
+    input[type="text"] {
+        max-width: 120px;
+    }
+}
+
+.o_vpk_range_field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+
+    label {
+        min-width: 160px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    input[type="range"] {
+        flex: 1;
+        max-width: 300px;
+        accent-color: var(--vpk-sidebar-bg-start);
+    }
+}
+
+.o_vpk_font_preview_kanit { font-family: 'Kanit', sans-serif; }
+.o_vpk_font_preview_sarabun { font-family: 'Sarabun', sans-serif; }
+.o_vpk_font_preview_prompt { font-family: 'Prompt', sans-serif; }
+.o_vpk_font_preview_roboto { font-family: 'Roboto', sans-serif; }
+
+.o_vpk_theme_actions {
+    display: flex;
+    gap: 12px;
+    padding: 20px 0 24px;
+    margin-top: auto;
+    border-top: 1px solid #e9ecef;
+
+    .o_vpk_btn_apply {
+        background: var(--vpk-sidebar-bg-gradient) !important;
+        border-color: var(--vpk-sidebar-bg-end) !important;
+        color: var(--vpk-sidebar-text) !important;
+        padding: 10px 32px;
+        font-weight: 600;
+
+        &:hover {
+            filter: brightness(1.06);
+            border-color: var(--vpk-sidebar-bg-end) !important;
+        }
+    }
+
+    .o_vpk_btn_discard {
+        background: #e9ecef;
+        border-color: #e9ecef;
+        color: #495057;
+        padding: 10px 32px;
+        font-weight: 600;
+
+        &:hover {
+            background: #dee2e6;
+        }
+    }
+
+    .o_vpk_btn_defaults {
+        margin-left: auto;
+        padding: 10px 24px;
+        font-weight: 600;
+        color: #1a5f6b;
+        border-color: #1a5f6b;
+
+        &:hover,
+        &.active {
+            background: rgba(26, 95, 107, 0.08);
+            color: #1a5f6b;
+            border-color: #1a5f6b;
+        }
+    }
+}
+
+.o_vpk_default_settings_card {
+    background: #fff;
+    text-align: center;
+
+    .o_vpk_preset_px {
+        font-size: 11px;
+        color: #868e96;
+        font-weight: 500;
+    }
+
+    &.selected .o_vpk_preset_px {
+        color: #1a5f6b;
+    }
+}
+
+// Theme effect classes
+body.o_vpk_sidebar_menu {
+    &.vpk_theme_rounded {
+        .o_vpk_sidebar_primary,
+        .o_vpk_option_card {
+            border-radius: 8px;
+        }
+    }
+
+    &.vpk_theme_square {
+        .o_vpk_sidebar_primary {
+            border-radius: 0;
+        }
+    }
+
+    &.vpk_list_compact .o_list_renderer .o_data_row td {
+        padding-top: 2px !important;
+        padding-bottom: 2px !important;
+    }
+
+    &.vpk_list_sticky_header .o_list_view .o_list_table {
+        thead tr th {
+            position: sticky !important;
+            top: 0;
+            z-index: 2;
+            background-color: var(--ListRenderer-thead-bg-color);
+        }
+    }
+
+    // Font sizes — scale list header row so text is not clipped
+    &.vpk_font_size_small { font-size: 10px; }
+    &.vpk_font_size_medium { font-size: 12px; }
+    &.vpk_font_size_large { font-size: 15px; }
+
+    // Odoo pulls x2many lists up with negative margin — keep inside notebook box
+    .o_notebook > .o_notebook_content > .tab-pane > :first-child,
+    .o_notebook > .tab-content > .tab-pane > :first-child {
+        .o_field_x2many.o_field_x2many_list .o_list_renderer {
+            margin-top: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            padding-top: 0.25rem;
+        }
+    }
+
+    &.vpk_font_kanit { font-family: var(--vpk-font-family, 'Kanit', sans-serif); }
+    &.vpk_font_sarabun { font-family: var(--vpk-font-family, 'Sarabun', sans-serif); }
+    &.vpk_font_prompt { font-family: var(--vpk-font-family, 'Prompt', sans-serif); }
+    &.vpk_font_roboto { font-family: var(--vpk-font-family, 'Roboto', sans-serif); }
+
+    .o_action_manager,
+    .o_content,
+    .o_control_panel,
+    .o_form_view,
+    .o_list_view,
+    .o_kanban_view,
+    .o_field_widget,
+    .o_input,
+    .o_form_label,
+    .o_vpk_pending_review_dashboard,
+    .o_vpk_pending_review_kanban {
+        font-family: var(--vpk-font-family, inherit);
+    }
+
+    .o_action_manager .o_form_view {
+        .o_form_label,
+        .o_wrap_label .o_form_label,
+        .o_inner_group .o_form_label,
+        label.o_form_label {
+            font-family: var(--vpk-font-family, inherit) !important;
+            font-size: var(--vpk-font-size-md, inherit);
+        }
+    }
+}

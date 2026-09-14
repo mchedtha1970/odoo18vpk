@@ -1,0 +1,31 @@
+# -*- coding: utf-8 -*-
+{
+    "name": "VPK Maintenance Sub State",
+    "version": "18.0.1.6.6",
+    "category": "Manufacturing/Maintenance",
+    "summary": "สถานะย่อย เบิกอะไหล่ เปิด PR และแทงจำหน่ายจากคำขอซ่อมบำรุง",
+    "author": "VPK",
+    "depends": [
+        "maintenance",
+        "stock",
+        "purchase_request",
+        "vpk_asset_equipment",
+        "account_asset_management",
+        "l10n_th_account_asset_management",
+    ],
+    "data": [
+        "security/stock_receipt_security.xml",
+        "security/ir.model.access.csv",
+        "data/assessment_result_data.xml",
+        "data/outsource_product_data.xml",
+        "views/assessment_result_views.xml",
+        "views/maintenance_request_views.xml",
+        "views/product_template_views.xml",
+        "views/stock_picking_views.xml",
+        "views/purchase_request_views.xml",
+    ],
+    "license": "LGPL-3",
+    "installable": True,
+    "application": False,
+    "auto_install": False,
+}

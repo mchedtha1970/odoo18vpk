@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="budget_asset_type_a" model="vpk.budget.asset.type">
+        <field name="sequence">10</field>
+        <field name="code">A</field>
+        <field name="name">เพื่อช่วยชีวิต</field>
+    </record>
+    <record id="budget_asset_type_b" model="vpk.budget.asset.type">
+        <field name="sequence">20</field>
+        <field name="code">B</field>
+        <field name="name">เพื่อการรักษา</field>
+    </record>
+    <record id="budget_asset_type_c" model="vpk.budget.asset.type">
+        <field name="sequence">30</field>
+        <field name="code">C</field>
+        <field name="name">เพื่อวินิจฉัยโรค</field>
+    </record>
+    <record id="budget_asset_type_d" model="vpk.budget.asset.type">
+        <field name="sequence">40</field>
+        <field name="code">D</field>
+        <field name="name">เพื่อสนับสนุน</field>
+    </record>
+</odoo>

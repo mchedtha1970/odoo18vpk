@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- memo_html uses standard HtmlField template (floating toolbar, hidden until text selection) -->
+</templates>

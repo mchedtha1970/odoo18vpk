@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_official_document" model="ir.sequence">
+        <field name="name">หนังสือราชการ</field>
+        <field name="code">vpk.official.document</field>
+        <field name="prefix">กค/%(year)s/</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>

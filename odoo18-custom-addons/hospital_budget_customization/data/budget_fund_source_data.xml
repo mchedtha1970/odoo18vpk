@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="budget_fund_source_hospital_maintenance" model="budget.fund.source">
+        <field name="sequence">10</field>
+        <field name="code">HOSP_MAINT</field>
+        <field name="name">เงินบำรุง</field>
+    </record>
+    <record id="budget_fund_source_state_budget" model="budget.fund.source">
+        <field name="sequence">20</field>
+        <field name="code">STATE_BUDGET</field>
+        <field name="name">เงินงบประมาณ</field>
+    </record>
+    <record id="budget_fund_source_uc_fund" model="budget.fund.source">
+        <field name="sequence">30</field>
+        <field name="code">UC_FUND</field>
+        <field name="name">เงินกองทุนหลักประกันสุขภาพ (UC)</field>
+    </record>
+    <record id="budget_fund_source_donation" model="budget.fund.source">
+        <field name="sequence">40</field>
+        <field name="code">DONATION</field>
+        <field name="name">เงินบริจาค</field>
+    </record>
+</odoo>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="budget_asset_category_office" model="vpk.budget.asset.category">
+        <field name="sequence">10</field>
+        <field name="code">office</field>
+        <field name="name">ครุภัณฑ์สำนักงาน</field>
+    </record>
+    <record id="budget_asset_category_vehicle" model="vpk.budget.asset.category">
+        <field name="sequence">20</field>
+        <field name="code">vehicle</field>
+        <field name="name">ครุภัณฑ์ยานพาหนะและขนส่ง</field>
+    </record>
+    <record id="budget_asset_category_computer" model="vpk.budget.asset.category">
+        <field name="sequence">30</field>
+        <field name="code">computer</field>
+        <field name="name">ครุภัณฑ์คอมพิวเตอร์</field>
+    </record>
+    <record id="budget_asset_category_workshop" model="vpk.budget.asset.category">
+        <field name="sequence">40</field>
+        <field name="code">workshop</field>
+        <field name="name">ครุภัณฑ์งานบ้านงานครัว</field>
+    </record>
+    <record id="budget_asset_category_medical" model="vpk.budget.asset.category">
+        <field name="sequence">50</field>
+        <field name="code">medical</field>
+        <field name="name">ครุภัณฑ์การแพทย์</field>
+    </record>
+    <record id="budget_asset_category_other" model="vpk.budget.asset.category">
+        <field name="sequence">60</field>
+        <field name="code">other</field>
+        <field name="name">ครุภัณฑ์อื่นๆ</field>
+    </record>
+</odoo>

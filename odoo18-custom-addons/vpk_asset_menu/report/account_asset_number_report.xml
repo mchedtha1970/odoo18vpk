@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Asset Number label uses web.basic_layout which does NOT apply
+        company.font (.o_company_X_layout). Force Thai font so Thai text
+        renders instead of black boxes.
+    -->
+    <template
+        id="report_simple_asset_number_thai"
+        inherit_id="account_asset_number.report_simple_asset_number"
+    >
+        <xpath expr="//div[contains(@style, 'width: 32%')]" position="attributes">
+            <attribute name="style"/>
+            <attribute name="t-attf-style">
+                width: 32%; display: inline-table; height: 10rem;
+                font-family: {{ (asset.company_id.font or 'THSarabunNew') }};
+                font-size: 16px;
+            </attribute>
+        </xpath>
+        <xpath expr="//th[hasclass('table-active')]/strong" position="replace">
+            <strong
+                t-attf-style="font-family: {{ (asset.company_id.font or 'THSarabunNew') }}-Bold;"
+                t-field="asset.display_name"
+            />
+        </xpath>
+        <xpath expr="//span[hasclass('text-muted')]" position="replace">
+            <span class="text-muted">ไม่มีเลขที่สินทรัพย์</span>
+        </xpath>
+    </template>
+
+    <record id="account_asset_number.report_account_asset_number" model="ir.actions.report">
+        <field name="name">พิมพ์ป้ายสินทรัพย์ (PDF)</field>
+        <field name="print_report_name">'ป้ายสินทรัพย์ - %s' % (object.number or object.name)</field>
+    </record>
+</odoo>

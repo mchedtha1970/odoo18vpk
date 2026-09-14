@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========== COUNT ========== -->
+    <record id="view_vpk_asset_inventory_count_form" model="ir.ui.view">
+        <field name="name">vpk.asset.inventory.count.form</field>
+        <field name="model">vpk.asset.inventory.count</field>
+        <field name="arch" type="xml">
+            <form string="ตรวจนับทรัพย์สินประจำปี">
+                <header>
+                    <button name="action_generate_sheets" type="object" string="สร้าง Sheet รายการตรวจนับ"
+                            class="oe_highlight" invisible="state != 'draft'"
+                            groups="vpk_asset_inventory.group_asset_inventory_officer"/>
+                    <button name="action_open" type="object" string="เปิดนับ" class="oe_highlight"
+                            invisible="state != 'draft'"
+                            groups="vpk_asset_inventory.group_asset_inventory_officer"/>
+                    <button name="action_open_portal" type="object" string="เปิด Portal"
+                            class="btn-secondary"
+                            invisible="state != 'open'"
+                            groups="vpk_asset_inventory.group_asset_inventory_user"/>
+                    <button name="action_open_portal_scan" type="object" string="เปิด Portal สแกน QR"
+                            class="btn-secondary"
+                            invisible="state != 'open'"
+                            groups="vpk_asset_inventory.group_asset_inventory_user"/>
+                    <button name="action_done" type="object" string="ปิดนับ"
+                            invisible="state != 'open'"
+                            groups="vpk_asset_inventory.group_asset_inventory_officer"/>
+                    <button name="action_cancel" type="object" string="ยกเลิก"
+                            invisible="state not in ('draft', 'open')"
+                            groups="vpk_asset_inventory.group_asset_inventory_officer"/>
+                    <button name="action_draft" type="object" string="ตั้งเป็นร่าง"
+                            invisible="state != 'cancel'"
+                            groups="vpk_asset_inventory.group_asset_inventory_officer"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,open,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_sheets" type="object" class="oe_stat_button" icon="fa-building">
+                            <field name="sheet_count" widget="statinfo" string="Sheet"/>
+                        </button>
+                        <button name="action_open_lines" type="object" class="oe_stat_button" icon="fa-list">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="counted_line_count" class="oe_inline"/> /
+                                    <field name="line_count" class="oe_inline"/>
+                                </span>
+                                <span class="o_stat_text">นับแล้ว</span>
+                            </div>
+                        </button>
+                        <button name="action_open_portal" type="object" class="oe_stat_button" icon="fa-globe"
+                                invisible="state != 'open'">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">เปิด Portal</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="fiscal_year" readonly="state != 'draft'"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="date_start" readonly="state != 'draft'"/>
+                            <field name="date_end" readonly="state != 'draft'"/>
+                            <field name="progress" widget="progressbar"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Sheet ตามหน่วยงาน" name="sheets">
+                            <field name="sheet_ids" readonly="1">
+                                <list>
+                                    <field name="analytic_account_id"/>
+                                    <field name="counted_line_count" string="จำนวนที่นับ"/>
+                                    <field name="line_count" string="จำนวน"/>
+                                    <field name="progress" widget="progressbar"/>
+                                    <field name="user_ids" widget="many2many_tags" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="รายการตรวจนับ (ออนไลน์)" name="lines">
+                            <field name="line_ids" readonly="state == 'done'">
+                                <list
+                                    decoration-success="is_counted"
+                                    decoration-danger="is_counted and difference != 0"
+                                    decoration-muted="not is_counted"
+                                    editable="bottom"
+                                >
+                                    <field name="analytic_account_id" string="หน่วยงาน"/>
+                                    <field name="asset_number" string="เลขทรัพย์สิน"/>
+                                    <field name="asset_name" string="ชื่อทรัพย์สิน"/>
+                                    <field name="asset_id" column_invisible="1"/>
+                                    <field name="system_qty" string="จำนวนในระบบ" sum="รวม"/>
+                                    <field name="counted_qty" string="Count" sum="รวม"/>
+                                    <field name="difference" string="ผลต่าง" sum="รวม"/>
+                                    <field name="is_counted" string="นับแล้ว" optional="show"/>
+                                    <field name="counted_by" string="ผู้บันทึก" optional="show"/>
+                                    <field name="counted_date" string="วันเวลา" optional="show"/>
+                                    <field name="note" string="หมายเหตุ"/>
+                                    <button name="action_open_asset" type="object" icon="fa-external-link" title="เปิดบัตร"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="หมายเหตุ" name="notes">
+                            <field name="note" readonly="state == 'done'"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_asset_inventory_count_list" model="ir.ui.view">
+        <field name="name">vpk.asset.inventory.count.list</field>
+        <field name="model">vpk.asset.inventory.count</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="fiscal_year"/>
+                <field name="date"/>
+                <field name="sheet_count"/>
+                <field name="counted_line_count" string="จำนวนที่นับ"/>
+                <field name="line_count" string="จำนวน"/>
+                <field name="progress" widget="progressbar"/>
+                <field name="state" widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-warning="state == 'open'"
+                    decoration-success="state == 'done'"
+                    decoration-muted="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_asset_inventory_count_search" model="ir.ui.view">
+        <field name="name">vpk.asset.inventory.count.search</field>
+        <field name="model">vpk.asset.inventory.count</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="fiscal_year"/>
+                <filter string="เปิดนับ" name="open" domain="[('state', '=', 'open')]"/>
+                <filter string="ร่าง" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="ปิดนับ" name="done" domain="[('state', '=', 'done')]"/>
+                <group>
+                    <filter string="ปีงบประมาณ" name="group_year" context="{'group_by': 'fiscal_year'}"/>
+                    <filter string="สถานะ" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_asset_inventory_count" model="ir.actions.act_window">
+        <field name="name">ตรวจนับทรัพย์สินประจำปี</field>
+        <field name="res_model">vpk.asset.inventory.count</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+    </record>
+
+    <!-- ========== SHEET ========== -->
+    <record id="view_vpk_asset_inventory_sheet_form" model="ir.ui.view">
+        <field name="name">vpk.asset.inventory.sheet.form</field>
+        <field name="model">vpk.asset.inventory.sheet</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_open_portal" type="object" string="เปิด Portal"
+                            class="oe_highlight"
+                            invisible="count_state != 'open'"/>
+                    <field name="count_state" widget="statusbar"
+                             statusbar_visible="draft,open,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_portal" type="object" class="oe_stat_button" icon="fa-globe"
+                                invisible="count_state != 'open'">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">เปิด Portal</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="count_id"/>
+                            <field name="analytic_account_id"/>
+                            <field name="count_state"/>
+                        </group>
+                        <group>
+                            <field name="progress" widget="progressbar"/>
+                            <field name="counted_line_count" string="จำนวนที่นับ"/>
+                            <field name="line_count" string="จำนวน"/>
+                            <field name="user_ids" widget="many2many_tags"
+                                      groups="vpk_asset_inventory.group_asset_inventory_officer"/>
+                        </group>
+                    </group>
+                    <field name="line_ids">
+                        <list decoration-success="is_counted" decoration-danger="is_counted and difference != 0" editable="bottom">
+                            <field name="analytic_account_id" string="หน่วยงาน"/>
+                            <field name="asset_number" string="เลขทรัพย์สิน"/>
+                            <field name="asset_name" string="ชื่อทรัพย์สิน"/>
+                            <field name="system_qty" string="จำนวนในระบบ" sum="รวม"/>
+                            <field name="counted_qty" string="Count" sum="รวม"/>
+                            <field name="difference" string="ผลต่าง" sum="รวม"/>
+                            <field name="is_counted" string="นับแล้ว"/>
+                            <field name="counted_by"/>
+                            <field name="counted_date"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_asset_inventory_sheet_list" model="ir.ui.view">
+        <field name="name">vpk.asset.inventory.sheet.list</field>
+        <field name="model">vpk.asset.inventory.sheet</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="count_id"/>
+                <field name="fiscal_year"/>
+                <field name="analytic_account_id"/>
+                <field name="counted_line_count" string="จำนวนที่นับ"/>
+                <field name="line_count" string="จำนวน"/>
+                <field name="progress" widget="progressbar"/>
+                <field name="count_state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_vpk_asset_inventory_sheet" model="ir.actions.act_window">
+        <field name="name">Sheet ตามหน่วยงาน</field>
+        <field name="res_model">vpk.asset.inventory.sheet</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_count_state': 'open'}</field>
+    </record>
+
+    <!-- ========== LINE (live dashboard for central office) ========== -->
+    <record id="view_vpk_asset_inventory_line_list" model="ir.ui.view">
+        <field name="name">vpk.asset.inventory.line.list</field>
+        <field name="model">vpk.asset.inventory.line</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0"
+                  decoration-success="is_counted and difference == 0"
+                  decoration-danger="is_counted and difference != 0"
+                  decoration-muted="not is_counted">
+                <field name="count_id"/>
+                <field name="analytic_account_id" string="หน่วยงาน"/>
+                <field name="asset_number" string="เลขทรัพย์สิน"/>
+                <field name="asset_name" string="ชื่อทรัพย์สิน"/>
+                <field name="system_qty" string="จำนวนในระบบ" sum="รวม"/>
+                <field name="counted_qty" string="Count" sum="รวม"/>
+                <field name="difference" string="ผลต่าง" sum="รวม"/>
+                <field name="is_counted" string="นับแล้ว"/>
+                <field name="counted_by"/>
+                <field name="counted_date"/>
+                <field name="note"/>
+                <field name="count_state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_asset_inventory_line_search" model="ir.ui.view">
+        <field name="name">vpk.asset.inventory.line.search</field>
+        <field name="model">vpk.asset.inventory.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="asset_number"/>
+                <field name="asset_name"/>
+                <field name="analytic_account_id"/>
+                <field name="count_id"/>
+                <filter string="รอนับ" name="pending" domain="[('is_counted', '=', False)]"/>
+                <filter string="นับแล้ว" name="counted" domain="[('is_counted', '=', True)]"/>
+                <filter string="ผลต่าง" name="variance" domain="[('is_counted', '=', True), ('difference', '!=', 0)]"/>
+                <filter string="รอบเปิดนับ" name="open_count" domain="[('count_state', '=', 'open')]"/>
+                <group>
+                    <filter string="หน่วยงาน" name="group_dept" context="{'group_by': 'analytic_account_id'}"/>
+                    <filter string="รอบตรวจนับ" name="group_count" context="{'group_by': 'count_id'}"/>
+                    <filter string="สถานะนับ" name="group_counted" context="{'group_by': 'is_counted'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_vpk_asset_inventory_line_pivot" model="ir.ui.view">
+        <field name="name">vpk.asset.inventory.line.pivot</field>
+        <field name="model">vpk.asset.inventory.line</field>
+        <field name="arch" type="xml">
+            <pivot string="สรุปการตรวจนับ">
+                <field name="analytic_account_id" type="row"/>
+                <field name="is_counted" type="col"/>
+                <field name="system_qty" type="measure"/>
+                <field name="counted_qty" type="measure"/>
+                <field name="difference" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_vpk_asset_inventory_line_live" model="ir.actions.act_window">
+        <field name="name">ผลการนับออนไลน์</field>
+        <field name="res_model">vpk.asset.inventory.line</field>
+        <field name="view_mode">list,pivot,form</field>
+        <field name="context">{'search_default_open_count': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">ยังไม่มีรายการตรวจนับ</p>
+            <p>สร้างรอบตรวจนับแล้วกดสร้าง Sheet — หน่วยงานบันทึกผ่าน Portal จะอัปเดตที่นี่แบบออนไลน์</p>
+        </field>
+    </record>
+</odoo>

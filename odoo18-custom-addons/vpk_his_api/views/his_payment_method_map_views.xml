@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_his_payment_method_map_list" model="ir.ui.view">
+        <field name="name">vpk.his.payment.method.map.list</field>
+        <field name="model">vpk.his.payment.method.map</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="journal_id"/>
+                <field name="create_payment"/>
+                <field name="is_entitlement"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_his_payment_method_map_form" model="ir.ui.view">
+        <field name="name">vpk.his.payment.method.map.form</field>
+        <field name="model">vpk.his.payment.method.map</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_auto_bind" type="object" string="Bind Journals"
+                            class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="create_payment" invisible="is_entitlement"/>
+                            <field name="is_entitlement"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="journal_type" invisible="is_entitlement"/>
+                            <field name="journal_id" invisible="is_entitlement"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_his_payment_method_map" model="ir.actions.act_window">
+        <field name="name">HIS Payment Methods</field>
+        <field name="res_model">vpk.his.payment.method.map</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

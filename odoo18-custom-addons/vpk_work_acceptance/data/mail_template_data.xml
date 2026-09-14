@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mail_template_requester_acceptance_completed"
+            model="mail.template">
+        <field name="name">แจ้งผู้ขอเมื่อคณะกรรมการตรวจรับเรียบร้อย</field>
+        <field name="model_id" ref="purchase_work_acceptance.model_work_acceptance"/>
+        <field name="subject">แจ้งผลตรวจรับเรียบร้อย: {{ object.purchase_id.name }}</field>
+        <field name="email_from">{{ object.company_id.email_formatted or user.email_formatted }}</field>
+        <field name="email_to">{{ object.requester_email_to }}</field>
+        <field name="auto_delete" eval="False"/>
+        <field name="body_html" type="html">
+            <div style="font-family: Arial, sans-serif; font-size: 14px;">
+                <p>
+                    เรียน
+                    <t t-out="', '.join(object.requester_user_ids.mapped('name'))"/>
+                </p>
+                <p>
+                    คณะกรรมการได้ดำเนินการตรวจรับพัสดุ/งานเรียบร้อยแล้ว
+                </p>
+                <table style="border-collapse: collapse; width: 100%;">
+                    <tr>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><strong>ใบตรวจรับ</strong></td>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><t t-out="object.name"/></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><strong>เลขที่ PO</strong></td>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><t t-out="object.purchase_id.name"/></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><strong>วันที่ตรวจรับ</strong></td>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><t t-out="object.acceptance_date"/></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><strong>ผลการตรวจรับ</strong></td>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><t t-out="object.acceptance_type"/></td>
+                    </tr>
+                    <tr>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><strong>รายละเอียด</strong></td>
+                        <td style="border: 1px solid #ccc; padding: 6px;"><t t-out="object.acceptance_note or '-'"/></td>
+                    </tr>
+                </table>
+                <p>จึงเรียนมาเพื่อทราบ</p>
+            </div>
+        </field>
+    </record>
+</odoo>

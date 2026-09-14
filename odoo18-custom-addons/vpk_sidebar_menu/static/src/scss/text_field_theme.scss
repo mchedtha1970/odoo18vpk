@@ -1,0 +1,26 @@
+// Override Odoo text_field.scss (resize:none + overflow hidden on autoresize wrapper)
+body.o_web_client.o_vpk_sidebar_menu {
+    .o_field_text {
+        width: 100% !important;
+        display: block !important;
+
+        > div {
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+        }
+
+        > div > textarea,
+        > div > textarea.o_input {
+            box-sizing: border-box !important;
+            resize: vertical !important;
+            overflow-y: auto !important;
+            min-height: 80px !important;
+            max-height: none !important;
+        }
+    }
+
+    .o_list_renderer .o_field_text > div > textarea {
+        min-height: 36px !important;
+    }
+}

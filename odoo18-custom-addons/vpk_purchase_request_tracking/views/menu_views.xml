@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_purchase_tracking_root"
+              name="ติดตาม / รายงานขอซื้อ-สั่งซื้อ"
+              parent="purchase.menu_procurement_management"
+              sequence="18"/>
+
+    <menuitem id="menu_purchase_request_tracking"
+              name="ติดตามสถานะขอซื้อ/จ้าง/เช่า"
+              parent="menu_purchase_tracking_root"
+              action="action_purchase_request_tracking"
+              sequence="10"/>
+
+    <menuitem id="menu_purchase_order_tracking"
+              name="รายงานสั่งซื้อ/จ้าง/เช่า"
+              parent="menu_purchase_tracking_root"
+              action="action_purchase_order_tracking"
+              sequence="20"/>
+
+    <menuitem id="menu_pr_po_report_export"
+              name="Export รายงาน (วัน/สัปดาห์/เดือน/ปี)"
+              parent="menu_purchase_tracking_root"
+              action="action_pr_po_report_export_wizard"
+              sequence="30"/>
+</odoo>

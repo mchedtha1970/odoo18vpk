@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-odoo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odoo}
+      POSTGRES_DB: postgres
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data
+      - ./VPK_S1:/mnt/backup
+
+  odoo:
+    build: ./docker
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "${ODOO_PORT:-8069}:8069"
+    environment:
+      HOST: db
+      USER: ${POSTGRES_USER:-odoo}
+      PASSWORD: ${POSTGRES_PASSWORD:-odoo}
+    volumes:
+      - odoo-web-data:/var/lib/odoo
+      - ./odoo18-custom-addons:/mnt/extra-addons
+      - ./docker/odoo.conf:/etc/odoo/odoo.conf:ro
+      - ./VPK_S1:/mnt/backup
+
+volumes:
+  odoo-db-data:
+  odoo-web-data:

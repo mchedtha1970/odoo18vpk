@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_form_official_document" model="ir.ui.view">
+        <field name="name">purchase.request.form.official.document</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="l10n_th_gov_purchase_request.view_purchase_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_official_documents" type="object"
+                        class="oe_stat_button" icon="fa-file-word-o"
+                        groups="purchase.group_purchase_user">
+                    <field name="official_document_count" widget="statinfo"
+                           string="หนังสือราชการ"/>
+                </button>
+            </xpath>
+            <xpath expr="//sheet/notebook" position="before">
+                <field name="has_approval_attachments" invisible="1"/>
+            </xpath>
+            <xpath expr="//page[@name='committee']" position="attributes">
+                <attribute name="string">รายชื่อคณะกรรมการ</attribute>
+            </xpath>
+            <xpath expr="//page[@name='committee']" position="after">
+                <page string="เอกสารแต่งตั้งคณะกรรมการ" name="wa_committee_order">
+                    <field name="issued_wa_committee_order_id" invisible="1"/>
+                    <field name="issued_spec_price_committee_id" invisible="1"/>
+                    <div class="text-muted mb-2">
+                        ออกคำสั่งแต่งตั้งจากรายชื่อในแท็บคณะกรรมการ แล้วพิมพ์ PDF
+                        กด <b>ขอเลขจากระบบสารบรรณ</b> ที่หัวเอกสารคำสั่ง
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button name="action_create_wa_committee_order" type="object"
+                                string="ออกคำสั่งแต่งตั้งคณะกรรมการตรวจรับ"
+                                class="btn-primary me-2"
+                                groups="purchase.group_purchase_user"
+                                invisible="state == 'rejected' or issued_wa_committee_order_id"/>
+                        <button name="action_create_wa_committee_order" type="object"
+                                string="เปิดคำสั่งแต่งตั้งคณะกรรมการตรวจรับ"
+                                class="btn-primary me-2"
+                                groups="purchase.group_purchase_user"
+                                invisible="state == 'rejected' or not issued_wa_committee_order_id"/>
+                        <button name="action_create_spec_price_committee" type="object"
+                                string="ออกขออนุมัติแต่งตั้งคณะกรรมการกำหนดคุณลักษณะ"
+                                class="btn-primary me-2"
+                                groups="purchase.group_purchase_user"
+                                invisible="state == 'rejected' or issued_spec_price_committee_id"/>
+                        <button name="action_create_spec_price_committee" type="object"
+                                string="เปิดขออนุมัติแต่งตั้งคณะกรรมการกำหนดคุณลักษณะ"
+                                class="btn-primary me-2"
+                                groups="purchase.group_purchase_user"
+                                invisible="state == 'rejected' or not issued_spec_price_committee_id"/>
+                    </div>
+                    <field name="wa_committee_order_ids"
+                           context="{'default_request_id': id}"
+                           readonly="1" create="false" delete="false">
+                        <list>
+                            <field name="has_pdf" widget="vpk_pdf_icon" string="ไฟล์"/>
+                            <field name="pdf_filename" column_invisible="1"/>
+                            <field name="pdf_attachment_id" column_invisible="1"/>
+                            <field name="can_review" column_invisible="1"/>
+                            <field name="document_type" string="ประเภท"/>
+                            <field name="name" string="เลขที่เอกสาร"/>
+                            <field name="saraban_book_no" string="เลขที่จากสารบรรณ"/>
+                            <field name="date"/>
+                            <field name="subject"/>
+                            <field name="signature_state" widget="badge"
+                                   decoration-muted="signature_state == 'not_sent'"
+                                   decoration-warning="signature_state == 'waiting'"
+                                   decoration-success="signature_state == 'signed'"/>
+                            <button name="action_send_for_signature" type="object"
+                                    string="ส่งเพื่อลงนาม"
+                                    icon="fa-paper-plane"
+                                    groups="purchase.group_purchase_user"
+                                    invisible="signature_state != 'not_sent' or state == 'cancelled'"/>
+                            <field name="state" widget="badge"
+                                   decoration-info="state == 'draft'"
+                                   decoration-success="state in ('generated', 'approved')"
+                                   decoration-warning="state == 'to_approve'"
+                                   decoration-muted="state == 'cancelled'"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="เอกสารแสดงความบริสุทธิ์ใจ" name="integrity_over_100k">
+                    <field name="issued_integrity_document_id" invisible="1"/>
+                    <div class="text-muted mb-2">
+                        แบบแสดงความบริสุทธิ์ใจใช้เมื่อวงเงินมากกว่า 100,000 บาท
+                        ดึงเจ้าหน้าที่ หัวหน้าเจ้าหน้าที่ และกรรมการตรวจรับจากแท็บรายชื่อคณะกรรมการ
+                        ลงนามตามลำดับเจ้าหน้าที่ หัวหน้าเจ้าหน้าที่ และกรรมการตามลำดับในเอกสาร
+                        กด <b>ขอเลขจากระบบสารบรรณ</b> ที่หัวเอกสาร
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button name="action_create_integrity_over_100k" type="object"
+                                string="ออกแบบแสดงความบริสุทธิ์ใจ"
+                                class="btn-primary me-2"
+                                groups="purchase.group_purchase_user"
+                                invisible="state == 'rejected' or issued_integrity_document_id"/>
+                        <button name="action_create_integrity_over_100k" type="object"
+                                string="เปิดแบบแสดงความบริสุทธิ์ใจ"
+                                class="btn-primary me-2"
+                                groups="purchase.group_purchase_user"
+                                invisible="state == 'rejected' or not issued_integrity_document_id"/>
+                    </div>
+                    <field name="integrity_over_100k_ids"
+                           context="{'default_document_type': 'integrity_over_100k', 'default_request_id': id}"
+                           readonly="1" create="false" delete="false">
+                        <list>
+                            <field name="has_pdf" widget="vpk_pdf_icon" string="ไฟล์"/>
+                            <field name="pdf_filename" column_invisible="1"/>
+                            <field name="pdf_attachment_id" column_invisible="1"/>
+                            <field name="can_review" column_invisible="1"/>
+                            <field name="name" string="เลขที่เอกสาร"/>
+                            <field name="saraban_book_no" string="เลขที่จากสารบรรณ"/>
+                            <field name="date"/>
+                            <field name="subject"/>
+                            <field name="signature_state" widget="badge"
+                                   decoration-muted="signature_state == 'not_sent'"
+                                   decoration-warning="signature_state == 'waiting'"
+                                   decoration-success="signature_state == 'signed'"/>
+                            <button name="action_send_for_signature" type="object"
+                                    string="ส่งเพื่อลงนาม"
+                                    icon="fa-paper-plane"
+                                    groups="purchase.group_purchase_user"
+                                    invisible="signature_state != 'not_sent' or state == 'cancelled'"/>
+                            <field name="state" widget="badge"
+                                   decoration-info="state == 'draft'"
+                                   decoration-success="state in ('generated', 'approved')"
+                                   decoration-warning="state == 'to_approve'"
+                                   decoration-muted="state == 'cancelled'"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="เอกสารขออนุมัติจัดซื้อจัดจ้าง" name="specific_method_approval">
+                    <field name="issued_specific_method_approval_id" invisible="1"/>
+                    <div class="text-muted mb-2">
+                        รายงานขออนุมัติใช้เลขสารบรรณจากปุ่ม <b>ขอเลขสารบรรณ</b> ที่ใบขอซื้อ
+                        คำสั่งและหนังสือราชการอื่นให้กดขอเลขที่เอกสารนั้นแยกกัน
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button name="action_create_specific_method_approval" type="object"
+                                string="ออกหนังสือขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง"
+                                class="btn-primary me-2"
+                                groups="purchase.group_purchase_user"
+                                invisible="state == 'rejected' or issued_specific_method_approval_id"/>
+                        <button name="action_create_specific_method_approval" type="object"
+                                string="เปิดหนังสือขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง"
+                                class="btn-primary me-2"
+                                groups="purchase.group_purchase_user"
+                                invisible="state == 'rejected' or not issued_specific_method_approval_id"/>
+                    </div>
+                    <field name="specific_method_approval_ids"
+                           context="{'default_document_type': 'specific_method_approval', 'default_request_id': id}"
+                           readonly="1" create="false" delete="false">
+                        <list>
+                            <field name="has_pdf" widget="vpk_pdf_icon" string="ไฟล์"/>
+                            <field name="pdf_filename" column_invisible="1"/>
+                            <field name="pdf_attachment_id" column_invisible="1"/>
+                            <field name="can_review" column_invisible="1"/>
+                            <field name="name" string="เลขที่เอกสาร"/>
+                            <field name="saraban_book_no" string="เลขที่จากสารบรรณ"/>
+                            <field name="date"/>
+                            <field name="subject"/>
+                            <field name="signature_state" widget="badge"
+                                   decoration-muted="signature_state == 'not_sent'"
+                                   decoration-warning="signature_state == 'waiting'"
+                                   decoration-success="signature_state == 'signed'"/>
+                            <button name="action_send_for_signature" type="object"
+                                    string="ส่งเพื่อลงนาม"
+                                    icon="fa-paper-plane"
+                                    groups="purchase.group_purchase_user"
+                                    invisible="signature_state != 'not_sent' or state == 'cancelled'"/>
+                            <field name="state" widget="badge"
+                                   decoration-info="state == 'draft'"
+                                   decoration-success="state in ('generated', 'approved')"
+                                   decoration-warning="state == 'to_approve'"
+                                   decoration-muted="state == 'cancelled'"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="เอกสารราชการที่เกี่ยวข้อง" name="related_official_documents">
+                    <div class="text-muted mb-2">
+                        แต่ละเอกสารมีเลขสารบรรณของตนเอง กด <b>ขอเลขจากระบบสารบรรณ</b> ที่หัวเอกสารนั้น
+                        ยกเว้นรายงานขออนุมัติที่ใช้เลขจากใบขอซื้อ
+                    </div>
+                    <field name="official_document_ids"
+                           context="{'default_request_id': id}"
+                           readonly="1" create="false" delete="false">
+                        <list>
+                            <field name="document_type"/>
+                            <field name="has_pdf" widget="vpk_pdf_icon" string="ไฟล์"/>
+                            <field name="pdf_filename" column_invisible="1"/>
+                            <field name="pdf_attachment_id" column_invisible="1"/>
+                            <field name="can_review" column_invisible="1"/>
+                            <field name="name" string="เลขที่เอกสาร"/>
+                            <field name="saraban_book_no" string="เลขที่จากสารบรรณ"/>
+                            <field name="date"/>
+                            <field name="subject"/>
+                            <field name="signature_state" widget="badge"
+                                   decoration-muted="signature_state == 'not_sent'"
+                                   decoration-warning="signature_state == 'waiting'"
+                                   decoration-success="signature_state == 'signed'"/>
+                            <button name="action_send_for_signature" type="object"
+                                    string="ส่งเพื่อลงนาม"
+                                    icon="fa-paper-plane"
+                                    groups="purchase.group_purchase_user"
+                                    invisible="signature_state != 'not_sent' or state == 'cancelled'"/>
+                            <field name="state" widget="badge"
+                                   decoration-info="state == 'draft'"
+                                   decoration-success="state in ('generated', 'approved')"
+                                   decoration-warning="state == 'to_approve'"
+                                   decoration-muted="state == 'cancelled'"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

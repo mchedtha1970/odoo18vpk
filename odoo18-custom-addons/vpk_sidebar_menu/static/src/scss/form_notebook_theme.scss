@@ -1,0 +1,130 @@
+// Notebook — fixed "stage" box: same width + min-height on every tab (all modules).
+html body.o_web_client.o_vpk_sidebar_menu {
+    .o_form_view .o_form_renderer .o_form_sheet:has(.o_notebook),
+    .o_form_view .o_form_sheet:has(.o_notebook) {
+        overflow-x: visible !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    // Sheet must not shrink to a short centred card when a tab has few fields.
+    .o_form_view .o_form_sheet_bg:has(.o_notebook) {
+        width: 100% !important;
+        max-width: 100% !important;
+        align-self: stretch !important;
+        flex: 1 1 auto !important;
+    }
+
+    .o_form_view .o_form_renderer .o_form_sheet .o_notebook,
+    .o_form_view .o_form_sheet .o_notebook {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        --notebook-margin-x: 0 !important;
+        --notebook-padding-x: 0 !important;
+
+        > .o_notebook_headers {
+            padding-left: var(--formView-sheet-padding-x, 1rem) !important;
+            padding-right: var(--formView-sheet-padding-x, 1rem) !important;
+        }
+
+        > .o_notebook_content,
+        > .tab-content {
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: var(--vpk-notebook-min-height, 400px) !important;
+            box-sizing: border-box;
+            scrollbar-gutter: stable;
+            border-bottom: 0 !important;
+
+            > .tab-pane {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                align-self: stretch !important;
+                flex: 1 1 auto !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-height: var(--vpk-notebook-min-height, 400px) !important;
+                padding: var(--formView-sheet-padding-y, 1rem) 0 !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+            }
+        }
+
+        // Direct tab content stretches full stage width (product Sales/Accounting sparse tabs).
+        > .o_notebook_content > .tab-pane > *,
+        > .tab-content > .tab-pane > * {
+            width: 100% !important;
+            max-width: 100% !important;
+            align-self: stretch !important;
+        }
+
+        > .o_notebook_content > .tab-pane > .o_group.row,
+        > .tab-content > .tab-pane > .o_group.row {
+            flex: 1 1 auto !important;
+        }
+
+        // Single inner column (Odoo default col-lg-6 = 50%) → use full stage width.
+        .tab-pane .o_group.row > .o_inner_group:only-child,
+        .tab-pane .o_group.row > .o_group:only-child,
+        .tab-pane .o_group.row > :only-child {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+
+        .o_field_x2many_list,
+        .o_field_one2many,
+        .o_field_section_and_note_one2many,
+        .o_field_many2many {
+            width: 100% !important;
+            max-width: 100% !important;
+            align-self: stretch !important;
+
+            .o_list_renderer {
+                --ListRenderer-margin-x: 0 !important;
+                --ListRenderer-table-padding-x: var(--formView-sheet-padding-x, 1rem) !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+        }
+
+        .tab-pane .o_list_renderer {
+            --ListRenderer-margin-x: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            margin-top: 0 !important;
+        }
+
+        .tab-pane .oe_subtotal_footer {
+            margin-left: auto;
+        }
+
+        .o_field_x2many_list_row_add a,
+        .o_group_field_row_add a {
+            color: var(--vpk-sidebar-bg-start) !important;
+        }
+    }
+
+    // Payment form has no notebook, so the sheet shrinks to the field card.
+    // Stretch it to the same full content width as invoice / notebook forms.
+    .o_form_view.o_vpk_fullwidth_form .o_form_sheet_bg,
+    .o_form_view:has(.o_field_widget[name="payment_type"]) .o_form_sheet_bg {
+        width: 100% !important;
+        max-width: 100% !important;
+        align-self: stretch !important;
+        flex: 1 1 auto !important;
+    }
+
+    .o_form_view.o_vpk_fullwidth_form .o_form_renderer .o_form_sheet,
+    .o_form_view.o_vpk_fullwidth_form .o_form_sheet_bg > .o_form_sheet,
+    .o_form_view:has(.o_field_widget[name="payment_type"]) .o_form_renderer .o_form_sheet,
+    .o_form_view:has(.o_field_widget[name="payment_type"]) .o_form_sheet_bg > .o_form_sheet {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}

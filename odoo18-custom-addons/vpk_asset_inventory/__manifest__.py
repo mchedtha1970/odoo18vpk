@@ -1,0 +1,31 @@
+# -*- coding: utf-8 -*-
+{
+    "name": "VPK Asset Annual Inventory Count",
+    "version": "18.0.1.0.5",
+    "category": "Accounting",
+    "summary": "ตรวจนับทรัพย์สินประจำปี — gen sheet, portal/QR นับจำนวน, ดูผลออนไลน์",
+    "author": "VPK",
+    "depends": [
+        "account_asset_management",
+        "account_asset_number",
+        "vpk_asset_transfer",
+        "vpk_asset_menu",
+        "portal",
+        "website",
+        "mail",
+    ],
+    "data": [
+        "security/asset_inventory_security.xml",
+        "security/ir.model.access.csv",
+        "data/ir_sequence_data.xml",
+        "views/inventory_count_views.xml",
+        "views/res_users_views.xml",
+        "views/menuitem.xml",
+        "views/portal_templates.xml",
+        "views/asset_number_report_inherit.xml",
+    ],
+    "license": "LGPL-3",
+    "installable": True,
+    "application": False,
+    "auto_install": False,
+}

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="entitlement_self_pay_op" model="vpk.his.entitlement.map">
+        <field name="name">ชำระเงินเอง OP</field>
+        <field name="code">SELF_PAY</field>
+        <field name="service_type">op</field>
+        <field name="item_type">all</field>
+        <field name="partner_id" ref="partner_payer_self_pay_op"/>
+        <field name="income_account_code">4301020104.106</field>
+        <field name="receivable_account_code">1102050102.106</field>
+        <field name="cash_account_code">1101010101.101</field>
+        <field name="create_payment" eval="True"/>
+    </record>
+    <record id="entitlement_self_pay_ip" model="vpk.his.entitlement.map">
+        <field name="name">ชำระเงินเอง IP</field>
+        <field name="code">SELF_PAY</field>
+        <field name="service_type">ip</field>
+        <field name="item_type">all</field>
+        <field name="partner_id" ref="partner_payer_self_pay_ip"/>
+        <field name="income_account_code">4301020104.107</field>
+        <field name="receivable_account_code">1102050102.107</field>
+        <field name="cash_account_code">1101010101.101</field>
+        <field name="create_payment" eval="True"/>
+    </record>
+    <record id="entitlement_uc_op" model="vpk.his.entitlement.map">
+        <field name="name">UC / บัตรทอง OP</field>
+        <field name="code">UC</field>
+        <field name="service_type">op</field>
+        <field name="item_type">all</field>
+        <field name="partner_id" ref="partner_payer_uc_op"/>
+        <field name="income_account_code">4301020105.201</field>
+        <field name="receivable_account_code">1102050101.201</field>
+        <field name="create_payment" eval="False"/>
+    </record>
+    <record id="entitlement_uc_ip" model="vpk.his.entitlement.map">
+        <field name="name">UC / บัตรทอง IP</field>
+        <field name="code">UC</field>
+        <field name="service_type">ip</field>
+        <field name="item_type">all</field>
+        <field name="partner_id" ref="partner_payer_uc_ip"/>
+        <field name="income_account_code">4301020105.202</field>
+        <field name="receivable_account_code">1102050101.202</field>
+        <field name="create_payment" eval="False"/>
+    </record>
+    <record id="entitlement_sso_op" model="vpk.his.entitlement.map">
+        <field name="name">ประกันสังคม OP</field>
+        <field name="code">SSO</field>
+        <field name="service_type">op</field>
+        <field name="item_type">all</field>
+        <field name="partner_id" ref="partner_payer_sso_op"/>
+        <field name="income_account_code">4301020106.303</field>
+        <field name="receivable_account_code">1102050101.301</field>
+        <field name="create_payment" eval="False"/>
+    </record>
+    <record id="entitlement_sso_ip" model="vpk.his.entitlement.map">
+        <field name="name">ประกันสังคม IP</field>
+        <field name="code">SSO</field>
+        <field name="service_type">ip</field>
+        <field name="item_type">all</field>
+        <field name="partner_id" ref="partner_payer_sso_ip"/>
+        <field name="income_account_code">4301020106.306</field>
+        <field name="receivable_account_code">1102050101.302</field>
+        <field name="create_payment" eval="False"/>
+    </record>
+    <record id="entitlement_csmbs_op" model="vpk.his.entitlement.map">
+        <field name="name">เบิกจ่ายตรง กรมบัญชีกลาง OP</field>
+        <field name="code">CSMBS</field>
+        <field name="service_type">op</field>
+        <field name="item_type">all</field>
+        <field name="partner_id" ref="partner_payer_csmbs_op"/>
+        <field name="income_account_code">4301020104.401</field>
+        <field name="receivable_account_code">1102050101.401</field>
+        <field name="create_payment" eval="False"/>
+    </record>
+    <record id="entitlement_csmbs_ip" model="vpk.his.entitlement.map">
+        <field name="name">เบิกจ่ายตรง กรมบัญชีกลาง IP</field>
+        <field name="code">CSMBS</field>
+        <field name="service_type">ip</field>
+        <field name="item_type">all</field>
+        <field name="partner_id" ref="partner_payer_csmbs_ip"/>
+        <field name="income_account_code">4301020104.402</field>
+        <field name="receivable_account_code">1102050101.402</field>
+        <field name="create_payment" eval="False"/>
+    </record>
+</odoo>

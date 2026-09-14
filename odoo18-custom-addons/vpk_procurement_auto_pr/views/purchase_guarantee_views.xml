@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_procurement_guarantee_list" model="ir.ui.view">
+        <field name="name">procurement.guarantee.list</field>
+        <field name="model">procurement.guarantee</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="expiry_status == 'expired'"
+                  decoration-warning="expiry_status == 'expiring'"
+                  decoration-muted="state in ('returned', 'cancelled')">
+                <field name="name"/>
+                <field name="guarantee_type"/>
+                <field name="contract_id" optional="show"/>
+                <field name="purchase_order_id" optional="show"/>
+                <field name="partner_id"/>
+                <field name="instrument_type" optional="show"/>
+                <field name="reference"/>
+                <field name="amount" sum="รวมหลักประกัน"/>
+                <field name="coverage_start_date"/>
+                <field name="coverage_end_date"/>
+                <field name="days_to_expiry"/>
+                <field name="expiry_status"
+                       widget="badge"
+                       decoration-success="expiry_status in ('normal', 'returned')"
+                       decoration-warning="expiry_status == 'expiring'"
+                       decoration-danger="expiry_status == 'expired'"/>
+                <field name="state" widget="badge"/>
+                <field name="currency_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_procurement_guarantee_form" model="ir.ui.view">
+        <field name="name">procurement.guarantee.form</field>
+        <field name="model">procurement.guarantee</field>
+        <field name="arch" type="xml">
+            <form string="ทะเบียนหลักประกัน">
+                <header>
+                    <button name="action_activate"
+                            type="object"
+                            string="รับหลักประกัน"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_mark_obligation_completed"
+                            type="object"
+                            string="ยืนยันครบพันธะ/พร้อมคืน"
+                            class="btn-primary"
+                            invisible="state != 'active'"/>
+                    <button name="action_return"
+                            type="object"
+                            string="บันทึกส่งคืนหลักประกัน"
+                            class="btn-primary"
+                            invisible="state != 'eligible_return'"/>
+                    <button name="action_claim"
+                            type="object"
+                            string="เรียกหลักประกัน"
+                            confirm="ยืนยันการเรียกหลักประกัน?"
+                            invisible="state not in ('active', 'eligible_return')"/>
+                    <button name="action_cancel"
+                            type="object"
+                            string="ยกเลิก"
+                            invisible="state not in ('draft', 'active')"/>
+                    <button name="action_draft"
+                            type="object"
+                            string="กลับเป็นแบบร่าง"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state"
+                           widget="statusbar"
+                           statusbar_visible="draft,active,eligible_return,returned"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button type="object"
+                                name="action_return"
+                                class="oe_stat_button"
+                                icon="fa-undo"
+                                invisible="state != 'eligible_return'">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_text">ส่งคืนหลักประกัน</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="state != 'draft'"/></h1>
+                    </div>
+                    <group>
+                        <group string="ข้อมูลหลักประกัน">
+                            <field name="guarantee_type" readonly="state != 'draft'"/>
+                            <field name="contract_id"
+                                   readonly="state != 'draft'"
+                                   options="{'no_create': True}"/>
+                            <field name="purchase_order_id"
+                                   readonly="state != 'draft'"
+                                   options="{'no_create': True}"/>
+                            <field name="partner_id"/>
+                            <field name="instrument_type" readonly="state != 'draft'"/>
+                            <field name="issuer_id" readonly="state != 'draft'"/>
+                            <field name="reference" readonly="state != 'draft'"/>
+                            <field name="issue_date" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="มูลค่าและระยะคุ้มครอง">
+                            <field name="base_amount" readonly="state != 'draft'"/>
+                            <field name="guarantee_percent" readonly="state != 'draft'"/>
+                            <field name="amount" readonly="state != 'draft'"/>
+                            <field name="coverage_start_date" readonly="state != 'draft'"/>
+                            <field name="coverage_end_date" readonly="state != 'draft'"/>
+                            <field name="coverage_days"/>
+                            <field name="days_to_expiry"/>
+                            <field name="expiry_status"
+                                   widget="badge"
+                                   decoration-success="expiry_status in ('normal', 'returned')"
+                                   decoration-warning="expiry_status == 'expiring'"
+                                   decoration-danger="expiry_status == 'expired'"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="การครบพันธะและส่งคืน" name="return">
+                            <group>
+                                <group string="การปฏิบัติตามพันธะสัญญา">
+                                    <field name="obligation_completed"
+                                           readonly="state in ('returned', 'claimed', 'cancelled')"/>
+                                    <field name="obligation_completed_date"
+                                           readonly="state in ('returned', 'claimed', 'cancelled')"/>
+                                    <field name="obligation_note"
+                                           readonly="state in ('returned', 'claimed', 'cancelled')"/>
+                                </group>
+                                <group string="ข้อมูลการส่งคืน">
+                                    <field name="return_reference"
+                                           readonly="state == 'returned'"/>
+                                    <field name="return_note"
+                                           readonly="state == 'returned'"/>
+                                    <field name="return_date"/>
+                                    <field name="returned_by_id"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="เอกสารแนบ" name="attachments">
+                            <field name="attachment_ids"
+                                   widget="many2many_binary"
+                                   options="{'accepted_file_extensions': '.pdf,.jpg,.jpeg,.png,.doc,.docx'}"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_procurement_guarantee_search" model="ir.ui.view">
+        <field name="name">procurement.guarantee.search</field>
+        <field name="model">procurement.guarantee</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="reference"/>
+                <field name="partner_id"/>
+                <field name="contract_id"/>
+                <field name="purchase_order_id"/>
+                <filter name="active"
+                        string="หลักประกันที่ถืออยู่"
+                        domain="[('state', 'in', ('active', 'eligible_return'))]"/>
+                <filter name="eligible_return"
+                        string="พร้อมส่งคืน"
+                        domain="[('state', '=', 'eligible_return')]"/>
+                <filter name="returned"
+                        string="ส่งคืนแล้ว"
+                        domain="[('state', '=', 'returned')]"/>
+                <filter name="expired"
+                        string="หมดอายุและยังไม่คืน"
+                        domain="[('coverage_end_date', '&lt;', context_today()), ('state', 'not in', ('returned', 'cancelled'))]"/>
+                <group expand="0" string="จัดกลุ่ม">
+                    <filter name="group_type"
+                            string="ประเภทหลักประกัน"
+                            context="{'group_by': 'guarantee_type'}"/>
+                    <filter name="group_partner"
+                            string="คู่สัญญา"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_state"
+                            string="สถานะ"
+                            context="{'group_by': 'state'}"/>
+                    <filter name="group_expiry_month"
+                            string="เดือนหมดอายุ"
+                            context="{'group_by': 'coverage_end_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_procurement_guarantee" model="ir.actions.act_window">
+        <field name="name">ทะเบียนหลักประกัน</field>
+        <field name="res_model">procurement.guarantee</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_procurement_guarantee_search"/>
+    </record>
+
+    <record id="view_purchase_contract_guarantee" model="ir.ui.view">
+        <field name="name">purchase.contract.guarantee</field>
+        <field name="model">purchase.contract</field>
+        <field name="inherit_id"
+               ref="vpk_purchase_contract.view_purchase_contract_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="หลักประกัน" name="guarantees">
+                    <group>
+                        <field name="guarantee_count"/>
+                        <field name="active_guarantee_amount"/>
+                    </group>
+                    <field name="guarantee_ids"
+                           context="{'default_contract_id': id, 'default_base_amount': amount_total, 'default_coverage_start_date': date_start, 'default_coverage_end_date': date_end}">
+                        <list>
+                            <field name="name"/>
+                            <field name="guarantee_type"/>
+                            <field name="reference"/>
+                            <field name="amount"/>
+                            <field name="coverage_start_date"/>
+                            <field name="coverage_end_date"/>
+                            <field name="expiry_status" widget="badge"/>
+                            <field name="state" widget="badge"/>
+                            <field name="currency_id" column_invisible="True"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_guarantee" model="ir.ui.view">
+        <field name="name">purchase.order.guarantee</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="priority">97</field>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="หลักประกัน" name="vpk_guarantees">
+                    <group>
+                        <field name="guarantee_count"/>
+                    </group>
+                    <field name="guarantee_ids"
+                           context="{'default_purchase_order_id': id, 'default_base_amount': amount_total}">
+                        <list>
+                            <field name="name"/>
+                            <field name="guarantee_type"/>
+                            <field name="reference"/>
+                            <field name="amount"/>
+                            <field name="coverage_start_date"/>
+                            <field name="coverage_end_date"/>
+                            <field name="expiry_status" widget="badge"/>
+                            <field name="state" widget="badge"/>
+                            <field name="currency_id" column_invisible="True"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <menuitem id="menu_procurement_guarantee"
+              name="ทะเบียนหลักประกัน"
+              parent="purchase.menu_procurement_management"
+              action="action_procurement_guarantee"
+              sequence="32"
+              groups="purchase.group_purchase_user"/>
+</odoo>

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_form_budget_reservation" model="ir.ui.view">
+        <field name="name">purchase.request.form.budget.reservation</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+        <field name="priority">120</field>
+        <field name="arch" type="xml">
+            <header position="inside">
+                <button
+                    name="action_check_budget_status"
+                    type="object"
+                    string="เช็คงบประมาณ"
+                    class="btn-primary"
+                    invisible="state not in ('draft', 'sent_to_procurement')"
+                />
+                <button
+                    name="action_refresh_budget_reservation"
+                    type="object"
+                    string="ปรับปรุงการจองงบ"
+                    class="btn-secondary"
+                    invisible="not budget_reservation_active"
+                    groups="purchase_request.group_purchase_request_manager"
+                />
+            </header>
+            <button name="button_approved" position="attributes">
+                <attribute name="invisible">state != 'draft' or validation_status in ('pending', 'rejected') or budget_check_state != 'enough'</attribute>
+            </button>
+            <field name="state" position="after">
+                <field name="budget_check_state" invisible="1"/>
+                <field name="budget_reservation_active" invisible="1"/>
+            </field>
+            <field name="department_id" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+            <field name="department_id" position="after">
+                <field name="budget_section_key" readonly="state != 'draft'"/>
+                <field name="budget_analytic_account_id" readonly="state != 'draft'"/>
+                <field name="budget_group_id" readonly="state != 'draft'"
+                       invisible="budget_section_key != 'material'"/>
+                <field name="budget_fund_source_id" readonly="state != 'draft'"/>
+                <field name="budget_post_id" readonly="state != 'draft'"
+                       domain="[('company_id', '=', company_id)]"/>
+            </field>
+            <field name="picking_type_id" position="after">
+                <field name="budget_requested_amount" readonly="1"/>
+                <field name="budget_available_amount" readonly="1"/>
+                <field name="budget_check_state" readonly="1"/>
+                <field name="budget_check_date" readonly="1"/>
+                <field name="budget_reservation_active" readonly="1"/>
+            </field>
+            <field name="line_ids" position="attributes">
+                <attribute name="context">{'default_budget_post_id': budget_post_id}</attribute>
+            </field>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='estimated_cost']" position="attributes">
+                <attribute name="string">งบประมาณ</attribute>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='estimated_cost']" position="after">
+                <field name="budget_post_id"/>
+                <field name="budget_reserved_amount" widget="monetary"/>
+                <field name="allowed_budget_line_ids" column_invisible="1"/>
+                <field name="budget_line_id"/>
+                <field name="budget_line_available_amount" readonly="1"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="ตรวจสอบงบประมาณ">
+                    <group>
+                        <group>
+                            <field name="budget_section_key"
+                                   readonly="state != 'draft'"/>
+                            <field name="budget_analytic_account_id" readonly="state != 'draft'"/>
+                            <field name="budget_group_id" readonly="state != 'draft'"
+                                   invisible="budget_section_key != 'material'"/>
+                            <field name="budget_fund_source_id" readonly="state != 'draft'"/>
+                            <field name="budget_post_id" readonly="state != 'draft'"
+                                   domain="[('company_id', '=', company_id)]"/>
+                        </group>
+                        <group>
+                            <field name="budget_requested_amount" readonly="1"/>
+                            <field name="budget_available_amount" readonly="1"/>
+                            <field name="budget_check_state" readonly="1"/>
+                            <field name="budget_check_date" readonly="1"/>
+                            <field name="budget_reservation_active" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="budget_check_message" readonly="1" nolabel="1"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_tree_budget_reservation" model="ir.ui.view">
+        <field name="name">purchase.request.list.budget.reservation</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_tree"/>
+        <field name="arch" type="xml">
+            <field name="estimated_cost" position="after">
+                <field name="budget_section_key" optional="show"/>
+                <field name="budget_analytic_account_id" optional="hide"/>
+                <field name="budget_group_id" optional="hide"/>
+                <field name="budget_fund_source_id" optional="hide"/>
+                <field name="budget_check_state" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="purchase_request_line_form_budget_reservation" model="ir.ui.view">
+        <field name="name">purchase.request.line.form.budget.reservation</field>
+        <field name="model">purchase.request.line</field>
+        <field name="inherit_id" ref="purchase_request.purchase_request_line_form"/>
+        <field name="arch" type="xml">
+            <field name="estimated_cost" position="after">
+                <field name="budget_post_id" readonly="is_editable == False"/>
+                <field name="budget_reserved_amount" widget="monetary" readonly="is_editable == False"/>
+                <field name="allowed_budget_line_ids" invisible="1"/>
+                <field name="budget_line_id" readonly="is_editable == False"/>
+                <field name="budget_line_available_amount" readonly="1"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="purchase_request_line_tree_budget_reservation" model="ir.ui.view">
+        <field name="name">purchase.request.line.list.budget.reservation</field>
+        <field name="model">purchase.request.line</field>
+        <field name="inherit_id" ref="purchase_request.purchase_request_line_tree"/>
+        <field name="arch" type="xml">
+            <field name="estimated_cost" position="after">
+                <field name="budget_post_id" optional="show"/>
+                <field name="budget_reserved_amount" optional="show"/>
+                <field name="budget_line_id" optional="hide"/>
+            </field>
+        </field>
+    </record>
+</odoo>

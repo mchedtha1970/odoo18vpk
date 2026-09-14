@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="base_tier_validation.Collapse" t-inherit-mode="extension">
+        <xpath expr="//a[hasclass('o_info_btn')]" position="replace">
+            <a
+                class="o_info_btn"
+                data-toggle="state.collapse"
+                href="#"
+                data-target="#collapse1"
+                t-on-click="onToggleCollapse"
+            >
+                สถานะการอนุมัติ
+            </a>
+        </xpath>
+        <!-- Expanded by default -->
+        <xpath expr="//div[@id='collapse1']" position="attributes">
+            <attribute name="class">panel-collapse collapse show active</attribute>
+            <attribute name="style">display: block;</attribute>
+        </xpath>
+    </t>
+</templates>

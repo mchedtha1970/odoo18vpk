@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_official_document.SignPdfViewerDialog">
+        <Dialog
+            size="'fs'"
+            title="props.title"
+            contentClass="'o_vpk_sign_pdf_dialog'"
+            bodyClass="'o_vpk_sign_pdf_body p-0'"
+            withBodyPadding="false"
+        >
+            <div class="o_vpk_sign_pdf_container position-relative">
+                <div t-if="state.loading" class="o_vpk_sign_pdf_loading d-flex align-items-center justify-content-center">
+                    <div class="text-center text-muted">
+                        <i class="fa fa-spinner fa-spin fa-2x mb-2"/>
+                        <div>กำลังเปิดไฟล์...</div>
+                    </div>
+                </div>
+                <div t-if="state.error" class="alert alert-danger m-3 mb-0">
+                    ไม่สามารถแสดงไฟล์ PDF ได้ กรุณาปิดแล้วเปิดใหม่
+                </div>
+                <iframe
+                    t-if="state.viewerUrl"
+                    t-ref="pdfFrame"
+                    class="o_vpk_sign_pdf_iframe"
+                    t-att-src="state.viewerUrl"
+                    t-on-load="onIframeLoad"
+                    allowfullscreen="allowfullscreen"
+                />
+            </div>
+            <t t-set-slot="footer">
+                <div class="o_vpk_sign_pdf_footer d-flex flex-wrap align-items-center gap-2 w-100">
+                    <span class="text-muted me-auto">
+                        <t t-if="props.canSign">
+                            <t t-if="!state.reachedEnd">เลื่อนเอกสารจนถึงหน้าสุดท้าย จากนั้นกดลงนาม</t>
+                            <t t-else="">ตรวจท้ายเอกสารแล้วกดลงนาม</t>
+                        </t>
+                    </span>
+                    <button class="btn btn-secondary" t-on-click="onClose" t-att-disabled="state.busy">
+                        ปิด
+                    </button>
+                    <button t-if="props.canSign" class="btn btn-danger" t-on-click="onReject" t-att-disabled="state.busy">
+                        ไม่อนุมัติ
+                    </button>
+                    <button t-if="props.canSign"
+                            class="btn btn-success"
+                            t-on-click="onSign"
+                            t-att-disabled="!signEnabled"
+                            t-att-title="state.reachedEnd ? '' : 'เลื่อนเอกสารจนถึงหน้าสุดท้ายก่อนลงนาม'">
+                        <i class="fa fa-pencil me-1"/>ลงนาม
+                    </button>
+                </div>
+            </t>
+        </Dialog>
+    </t>
+</templates>

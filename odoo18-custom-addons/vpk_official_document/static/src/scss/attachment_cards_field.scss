@@ -1,0 +1,13 @@
+.o_vpk_attachment_cards {
+    min-height: 48px;
+
+    .o_vpk_attachment_card {
+        min-width: 280px;
+        cursor: pointer;
+
+        .o_image {
+            width: 38px;
+            height: 38px;
+        }
+    }
+}

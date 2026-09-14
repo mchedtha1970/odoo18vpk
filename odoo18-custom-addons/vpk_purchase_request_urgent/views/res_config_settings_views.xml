@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_res_config_settings_urgent" model="ir.ui.view">
+        <field name="name">res.config.settings.purchase.urgent</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="purchase.res_config_settings_view_form_purchase"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='purchase']" position="inside">
+                <block title="ขอซื้อฉุกเฉิน / เร่งด่วน" name="purchase_request_urgent_setting">
+                    <setting string="เส้นทางงบเร่งด่วนสำหรับ PR ฉุกเฉิน"
+                             help="อนุญาตให้ PR ที่ระบุเป็นฉุกเฉิน เช็คงบแบบเร่งด่วน (ไม่จองงบแผ่นดินทันที — ต้องติดตามตัดงบภายหลัง)">
+                        <field name="emergency_budget_bypass"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

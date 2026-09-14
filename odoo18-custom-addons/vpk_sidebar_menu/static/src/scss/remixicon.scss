@@ -1,0 +1,27 @@
+@font-face {
+    font-family: "remixicon";
+    src: url("/vpk_sidebar_menu/static/lib/RemixIcon/remixicon.woff2") format("woff2");
+    font-display: swap;
+}
+
+.ri {
+    font-family: "remixicon" !important;
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.ri-building-2-line:before { content: "\eb09"; }
+.ri-code-box-line:before { content: "\eba7"; }
+.ri-paint-brush-line:before { content: "\efc1"; }
+.ri-lock-unlock-line:before { content: "\eed2"; }
+.ri-sticky-note-line:before { content: "\f19b"; }
+.ri-edit-box-line:before { content: "\ec82"; }
+.ri-lightbulb-flash-line:before { content: "\eea8"; }
+.ri-arrow-down-s-line:before { content: "\ea4e"; }
+.ri-arrow-right-s-line:before { content: "\ea6e"; }
+.ri-arrow-left-s-line:before { content: "\ea64"; }
+.ri-side-bar-line:before { content: "\f128"; }
+.ri-ruler-2-line:before { content: "\f0a1"; }

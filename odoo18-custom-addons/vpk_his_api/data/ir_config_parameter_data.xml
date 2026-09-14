@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="ir_config_vpk_his_api_enabled" model="ir.config_parameter">
+        <field name="key">vpk_his_api.enabled</field>
+        <field name="value">True</field>
+    </record>
+    <record id="ir_config_vpk_his_api_key" model="ir.config_parameter">
+        <field name="key">vpk_his_api.api_key</field>
+        <field name="value">CHANGE-ME-HIS-API-KEY</field>
+    </record>
+</odoo>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="stock_location_overview_list" model="ir.ui.view">
+        <field name="name">stock.location.overview.list</field>
+        <field name="model">stock.location</field>
+        <field name="arch" type="xml">
+            <list string="Locations / Bins" create="0" delete="0">
+                <field name="complete_name" string="Location"/>
+                <field name="location_id" string="Parent" optional="show"/>
+                <field name="barcode" optional="show"/>
+                <field name="usage" optional="hide"/>
+                <field name="is_empty" string="Empty"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="stock_location_overview_search" model="ir.ui.view">
+        <field name="name">stock.location.overview.search</field>
+        <field name="model">stock.location</field>
+        <field name="arch" type="xml">
+            <search string="Locations / Bins">
+                <field name="complete_name" string="Location"/>
+                <field name="barcode"/>
+                <field name="location_id" string="Parent"/>
+                <filter name="empty" string="Empty" domain="[('is_empty', '=', True)]"/>
+                <filter name="not_empty" string="Has Stock" domain="[('is_empty', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_stock_location_overview_embedded" model="ir.actions.act_window">
+        <field name="name">Locations / Bins</field>
+        <field name="res_model">stock.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="stock_location_overview_list"/>
+        <field name="search_view_id" ref="stock_location_overview_search"/>
+        <field name="context">{'create': False}</field>
+    </record>
+</odoo>

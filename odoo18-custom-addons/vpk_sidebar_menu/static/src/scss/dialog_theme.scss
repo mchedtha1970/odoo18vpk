@@ -1,0 +1,92 @@
+// Wizard / dialog — theme font + custom drag-resize (CSS resize fails on flex .modal-content)
+body.o_web_client.o_vpk_sidebar_menu {
+    .o_dialog > .modal.o_technical_modal:not(.o_modal_full) {
+        .modal-title {
+            font-family: var(--vpk-font-family, inherit) !important;
+            font-size: var(--vpk-font-size-lg, 1.25rem) !important;
+            font-weight: 600;
+        }
+
+        .modal-body,
+        .modal-footer,
+        .modal-header {
+            font-family: var(--vpk-font-family, inherit);
+            font-size: var(--vpk-font-size-md, inherit);
+        }
+
+        .modal-body {
+            .o_form_label,
+            .o_horizontal_separator,
+            .o_field_widget,
+            .o_input,
+            label,
+            th,
+            td {
+                font-family: inherit;
+                font-size: inherit;
+            }
+        }
+
+        .modal-dialog {
+            &.modal-dialog-centered {
+                min-height: auto !important;
+                height: auto !important;
+            }
+        }
+
+        .modal-content {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            width: 100%;
+            max-height: 90vh;
+            min-width: 360px;
+            min-height: 200px;
+            box-sizing: border-box;
+
+            .modal-header,
+            .modal-footer {
+                flex: 0 0 auto;
+            }
+
+            .modal-body {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: auto;
+            }
+
+            // Visible grip so users can drag to resize
+            &::after {
+                content: "";
+                position: absolute;
+                right: 3px;
+                bottom: 3px;
+                width: 14px;
+                height: 14px;
+                z-index: 5;
+                pointer-events: auto;
+                cursor: nwse-resize;
+                background:
+                    linear-gradient(135deg, transparent 50%, var(--vpk-sidebar-bg-start, #0b6848) 50%) no-repeat 100% 100% / 6px 6px,
+                    linear-gradient(135deg, transparent 50%, var(--vpk-sidebar-bg-start, #0b6848) 50%) no-repeat calc(100% - 4px) calc(100% - 4px) / 6px 6px;
+                opacity: 0.55;
+            }
+        }
+
+        &.vpk-wizard-resize-active {
+            .modal-dialog {
+                max-width: 95vw;
+            }
+
+            .modal-content {
+                max-width: 95vw;
+            }
+        }
+    }
+}
+
+body.o_web_client.o_vpk_sidebar_menu.vpk-wizard-resizing {
+    cursor: nwse-resize !important;
+    user-select: none !important;
+}

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- เกณฑ์ประเมินผู้จำหน่ายมาตรฐาน 5 ด้าน (น้ำหนักรวม = 100%) -->
+
+    <record id="criteria_delivery" model="vendor.evaluation.criteria">
+        <field name="name">ระยะเวลาการจัดส่ง (Delivery)</field>
+        <field name="code">DELIVERY</field>
+        <field name="sequence">10</field>
+        <field name="weight">25</field>
+        <field name="max_score">5</field>
+        <field name="description">ประเมินความตรงต่อเวลาในการจัดส่งสินค้า/บริการ
+5 = ส่งก่อนกำหนดหรือตรงเวลาทุกครั้ง
+4 = ส่งตรงเวลาส่วนใหญ่ (มีล่าช้าไม่เกิน 1-2 วัน)
+3 = ส่งล่าช้าบ้าง (3-5 วัน)
+2 = ส่งล่าช้าบ่อย (มากกว่า 5 วัน)
+1 = ส่งล่าช้ามากจนกระทบงาน</field>
+    </record>
+
+    <record id="criteria_quality" model="vendor.evaluation.criteria">
+        <field name="name">คุณภาพสินค้า/บริการ (Quality)</field>
+        <field name="code">QUALITY</field>
+        <field name="sequence">20</field>
+        <field name="weight">30</field>
+        <field name="max_score">5</field>
+        <field name="description">ประเมินคุณภาพของสินค้า/งาน/บริการที่ส่งมอบ
+5 = คุณภาพดีเยี่ยม ตรงตาม spec ทุกครั้ง
+4 = คุณภาพดี มีข้อบกพร่องเล็กน้อย
+3 = คุณภาพพอใช้ ต้องแก้ไขบ้าง
+2 = คุณภาพต่ำ ต้องแก้ไขบ่อย
+1 = คุณภาพไม่ได้มาตรฐาน ต้องส่งคืน</field>
+    </record>
+
+    <record id="criteria_price" model="vendor.evaluation.criteria">
+        <field name="name">ราคาและเงื่อนไขการชำระ (Price)</field>
+        <field name="code">PRICE</field>
+        <field name="sequence">30</field>
+        <field name="weight">20</field>
+        <field name="max_score">5</field>
+        <field name="description">ประเมินความเหมาะสมของราคาและเงื่อนไขการชำระเงิน
+5 = ราคาต่ำกว่าตลาด เงื่อนไขดีมาก
+4 = ราคาเหมาะสม เงื่อนไขดี
+3 = ราคาปานกลาง เงื่อนไขมาตรฐาน
+2 = ราคาสูงกว่าตลาด
+1 = ราคาสูงมาก ไม่คุ้มค่า</field>
+    </record>
+
+    <record id="criteria_service" model="vendor.evaluation.criteria">
+        <field name="name">การให้บริการ/การสนับสนุน (Service)</field>
+        <field name="code">SERVICE</field>
+        <field name="sequence">40</field>
+        <field name="weight">15</field>
+        <field name="max_score">5</field>
+        <field name="description">ประเมินการให้บริการ การตอบสนอง การแก้ปัญหา
+5 = ตอบสนองรวดเร็ว แก้ปัญหาได้ทันที
+4 = ตอบสนองดี แก้ปัญหาได้ในเวลาที่เหมาะสม
+3 = ตอบสนองปานกลาง บางครั้งต้องติดตาม
+2 = ตอบสนองช้า ต้องติดตามบ่อย
+1 = ไม่ค่อยตอบสนอง/แก้ปัญหาไม่ได้</field>
+    </record>
+
+    <record id="criteria_document" model="vendor.evaluation.criteria">
+        <field name="name">ความถูกต้องของเอกสาร (Documentation)</field>
+        <field name="code">DOCUMENT</field>
+        <field name="sequence">50</field>
+        <field name="weight">10</field>
+        <field name="max_score">5</field>
+        <field name="description">ประเมินความถูกต้องครบถ้วนของเอกสารประกอบ
+5 = เอกสารถูกต้อง ครบถ้วน ทุกครั้ง
+4 = เอกสารถูกต้องส่วนใหญ่
+3 = ต้องแก้ไขเอกสารบ้าง
+2 = เอกสารผิดพลาดบ่อย
+1 = เอกสารไม่ถูกต้อง/ไม่ครบ</field>
+    </record>
+</odoo>

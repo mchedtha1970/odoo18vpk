@@ -1,0 +1,6 @@
+python-docx
+pypdfium2
+python-pptx
+beautifulsoup4
+openpyxl
+XlsxWriter

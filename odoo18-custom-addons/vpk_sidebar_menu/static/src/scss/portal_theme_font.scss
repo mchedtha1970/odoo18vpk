@@ -1,0 +1,37 @@
+/* Portal / frontend — align with VPK backend theme font variables */
+body,
+#wrapwrap,
+.o_portal,
+.oe_website_login_container {
+    font-family: var(--vpk-font-family, var(--bs-body-font-family, inherit));
+    font-size: var(--vpk-font-size-md, inherit);
+}
+
+#wrapwrap.vpk_font_kanit {
+    --vpk-font-family: 'Kanit', sans-serif;
+}
+
+#wrapwrap.vpk_font_sarabun {
+    --vpk-font-family: 'Sarabun', sans-serif;
+}
+
+#wrapwrap.vpk_font_prompt {
+    --vpk-font-family: 'Prompt', sans-serif;
+}
+
+#wrapwrap.vpk_font_roboto {
+    --vpk-font-family: 'Roboto', sans-serif;
+}
+
+#wrapwrap .fa {
+    font-family: FontAwesome !important;
+}
+
+#wrapwrap [class^="ri-"],
+#wrapwrap [class*=" ri-"] {
+    font-family: remixicon !important;
+}
+
+#wrapwrap .oi {
+    font-family: odoo_ui_icons !important;
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_procurement_action_plan"
+              name="แผนปฏิบัติการจัดซื้อจัดจ้าง"
+              parent="vpk_procurement_auto_pr.menu_procurement_plan_root"
+              action="action_procurement_action_plan"
+              sequence="5"/>
+
+    <menuitem id="menu_procurement_action_schedule"
+              name="แผนปฏิบัติการรายเดือน"
+              parent="vpk_procurement_auto_pr.menu_procurement_plan_root"
+              action="action_procurement_action_schedule"
+              sequence="15"/>
+</odoo>

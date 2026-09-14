@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_master_data_template_wizard_system,vpk.master.data.template.wizard system,model_vpk_master_data_template_wizard,base.group_system,1,1,1,1
+access_vpk_master_data_template_wizard_stock,vpk.master.data.template.wizard stock manager,model_vpk_master_data_template_wizard,stock.group_stock_manager,1,1,1,1
+access_vpk_master_data_template_wizard_account,vpk.master.data.template.wizard account manager,model_vpk_master_data_template_wizard,account.group_account_manager,1,1,1,1
+access_vpk_master_data_template_wizard_equipment,vpk.master.data.template.wizard equipment manager,model_vpk_master_data_template_wizard,maintenance.group_equipment_manager,1,1,1,1
+access_vpk_master_data_template_wizard_purchase,vpk.master.data.template.wizard purchase manager,model_vpk_master_data_template_wizard,purchase.group_purchase_manager,1,1,1,1

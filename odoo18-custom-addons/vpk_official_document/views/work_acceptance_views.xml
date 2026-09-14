@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_work_acceptance_form_official_document" model="ir.ui.view">
+        <field name="name">work.acceptance.form.official.document</field>
+        <field name="model">work.acceptance</field>
+        <field name="inherit_id" ref="purchase_work_acceptance.view_work_acceptance_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="official_document_count" invisible="1"/>
+                <field name="issued_wa_committee_order_id" invisible="1"/>
+                <field name="issued_integrity_document_id" invisible="1"/>
+                <button name="action_create_wa_committee_order" type="object"
+                        string="ออกคำสั่งแต่งตั้งคณะกรรมการตรวจรับ"
+                        class="btn-secondary me-2"
+                        groups="purchase.group_purchase_user"
+                        invisible="issued_wa_committee_order_id"/>
+                <button name="action_create_wa_committee_order" type="object"
+                        string="เปิดคำสั่งแต่งตั้งคณะกรรมการตรวจรับ"
+                        class="btn-secondary me-2"
+                        groups="purchase.group_purchase_user"
+                        invisible="not issued_wa_committee_order_id"/>
+                <button name="action_create_integrity_over_100k" type="object"
+                        string="ออกแบบแสดงความบริสุทธิ์ใจ"
+                        class="btn-secondary me-2"
+                        groups="purchase.group_purchase_user"
+                        invisible="issued_integrity_document_id"/>
+                <button name="action_create_integrity_over_100k" type="object"
+                        string="เปิดแบบแสดงความบริสุทธิ์ใจ"
+                        class="btn-secondary me-2"
+                        groups="purchase.group_purchase_user"
+                        invisible="not issued_integrity_document_id"/>
+                <button name="action_view_official_documents" type="object"
+                        string="หนังสือราชการ"
+                        class="btn-secondary me-2"
+                        groups="purchase.group_purchase_user"
+                        invisible="official_document_count == 0 and not issued_wa_committee_order_id and not issued_integrity_document_id"/>
+            </xpath>
+            <xpath expr="//sheet/div[hasclass('oe_title')]" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button name="action_view_official_documents" type="object"
+                            class="oe_stat_button" icon="fa-file-word-o"
+                            groups="purchase.group_purchase_user">
+                        <field name="official_document_count" widget="statinfo"
+                               string="หนังสือราชการ"/>
+                    </button>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_work_acceptance_form_committee_order_button" model="ir.ui.view">
+        <field name="name">work.acceptance.form.committee.order.button</field>
+        <field name="model">work.acceptance</field>
+        <field name="inherit_id" ref="vpk_work_acceptance.view_work_acceptance_form_vpk"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='committee']" position="inside">
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <field name="issued_wa_committee_order_id" invisible="1"/>
+                    <field name="issued_integrity_document_id" invisible="1"/>
+                    <button name="action_create_wa_committee_order" type="object"
+                            string="ออกคำสั่งแต่งตั้งคณะกรรมการตรวจรับ"
+                            class="btn-primary me-2"
+                            groups="purchase.group_purchase_user"
+                            invisible="issued_wa_committee_order_id"/>
+                    <button name="action_create_wa_committee_order" type="object"
+                            string="เปิดคำสั่งแต่งตั้งคณะกรรมการตรวจรับ"
+                            class="btn-primary me-2"
+                            groups="purchase.group_purchase_user"
+                            invisible="not issued_wa_committee_order_id"/>
+                    <button name="action_create_integrity_over_100k" type="object"
+                            string="ออกแบบแสดงความบริสุทธิ์ใจ"
+                            class="btn-primary me-2"
+                            groups="purchase.group_purchase_user"
+                            invisible="issued_integrity_document_id"/>
+                    <button name="action_create_integrity_over_100k" type="object"
+                            string="เปิดแบบแสดงความบริสุทธิ์ใจ"
+                            class="btn-primary me-2"
+                            groups="purchase.group_purchase_user"
+                            invisible="not issued_integrity_document_id"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

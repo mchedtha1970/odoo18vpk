@@ -1,0 +1,40 @@
+# Translation of Odoo Server.
+# This file contains Thai menu label overrides for the account module.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-10 00:00+0000\n"
+"PO-Revision-Date: 2026-06-10 00:00+0000\n"
+"Last-Translator: VPK\n"
+"Language-Team: Thai\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: account
+#: model:ir.ui.menu,name:account.menu_finance
+msgid "Accounting"
+msgstr "ระบบบัญชี"
+
+#. module: account
+#: model:ir.ui.menu,name:account.menu_finance
+msgid "Invoicing"
+msgstr "ระบบบัญชี"
+
+#. module: account
+#: model:ir.ui.menu,name:account.menu_finance_receivables
+msgid "Customers"
+msgstr "ระบบลูกหนี้"
+
+#. module: account
+#: model:ir.ui.menu,name:account.menu_finance_payables
+msgid "Vendors"
+msgstr "ระบบเจ้าหนี้"
+
+#. module: account
+#: model:ir.ui.menu,name:account.menu_finance_entries
+msgid "Accounting"
+msgstr "ระบบบัญชีแยกประเภท"

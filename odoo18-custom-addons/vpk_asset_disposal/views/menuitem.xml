@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_vpk_asset_disposal"
+        name="ใบขออนุมัติจำหน่าย"
+        parent="account_asset_management.menu_finance_assets"
+        action="action_vpk_asset_disposal"
+        sequence="35"
+        groups="vpk_asset_disposal.group_asset_disposal_user"
+    />
+</odoo>

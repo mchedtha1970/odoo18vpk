@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="vpk.budget.request.form.type" name="_sync_department_budget_request_menus"/>
+</odoo>

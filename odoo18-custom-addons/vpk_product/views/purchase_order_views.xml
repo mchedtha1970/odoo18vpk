@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="purchase_order_form_egp_name" model="ir.ui.view">
+        <field name="name">purchase.order.form.egp.purchase.name</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']/list/field[@name='product_id']" position="after">
+                <field name="egp_purchase_name"
+                       optional="show"
+                       invisible="display_type"
+                       readonly="state in ('purchase', 'to approve', 'done', 'cancel') or is_downpayment"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/form//field[@name='product_id']" position="after">
+                <field name="egp_purchase_name"
+                       widget="text"
+                       invisible="display_type"
+                       readonly="state in ('purchase', 'to approve', 'done', 'cancel')"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_line_tree_egp_name" model="ir.ui.view">
+        <field name="name">purchase.order.line.list.egp.purchase.name</field>
+        <field name="model">purchase.order.line</field>
+        <field name="inherit_id" ref="purchase.purchase_order_line_tree"/>
+        <field name="arch" type="xml">
+            <field name="product_id" position="after">
+                <field name="egp_purchase_name" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="purchase_order_line_form2_egp_name" model="ir.ui.view">
+        <field name="name">purchase.order.line.form2.egp.purchase.name</field>
+        <field name="model">purchase.order.line</field>
+        <field name="inherit_id" ref="purchase.purchase_order_line_form2"/>
+        <field name="arch" type="xml">
+            <field name="product_id" position="after">
+                <field name="egp_purchase_name" widget="text"/>
+            </field>
+        </field>
+    </record>
+</odoo>

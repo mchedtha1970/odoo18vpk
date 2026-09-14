@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vendor_product_price_report_list"
+            model="ir.ui.view">
+        <field name="name">product.supplierinfo.vendor.price.report.list</field>
+        <field name="model">product.supplierinfo</field>
+        <field name="arch" type="xml">
+            <list string="รายงานราคาสินค้าตามรหัสผู้จำหน่าย"
+                  create="false"
+                  edit="false"
+                  delete="false"
+                  default_order="vendor_reference, partner_id, internal_product_code, min_qty">
+                <field name="vendor_reference"/>
+                <field name="partner_id"/>
+                <field name="product_code"
+                       string="รหัสสินค้าผู้จำหน่าย"/>
+                <field name="internal_product_code"/>
+                <field name="report_product_id"/>
+                <field name="product_name"
+                       string="ชื่อสินค้าผู้จำหน่าย"
+                       optional="hide"/>
+                <field name="report_category_id"
+                       optional="show"/>
+                <field name="min_qty"
+                       string="จำนวนขั้นต่ำ"/>
+                <field name="report_unit_price"/>
+                <field name="currency_id"/>
+                <field name="date_start"
+                       optional="show"/>
+                <field name="date_end"
+                       optional="show"/>
+                <field name="delay"
+                       string="ระยะเวลาส่ง (วัน)"
+                       optional="hide"/>
+                <field name="company_id"
+                       groups="base.group_multi_company"
+                       optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vendor_product_price_report_pivot"
+            model="ir.ui.view">
+        <field name="name">product.supplierinfo.vendor.price.report.pivot</field>
+        <field name="model">product.supplierinfo</field>
+        <field name="arch" type="xml">
+            <pivot string="เปรียบเทียบราคาสินค้าตามผู้จำหน่าย">
+                <field name="report_product_id" type="row"/>
+                <field name="internal_product_code" type="row"/>
+                <field name="partner_id" type="col"/>
+                <field name="vendor_reference" type="col"/>
+                <field name="report_unit_price" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_vendor_product_price_report_graph"
+            model="ir.ui.view">
+        <field name="name">product.supplierinfo.vendor.price.report.graph</field>
+        <field name="model">product.supplierinfo</field>
+        <field name="arch" type="xml">
+            <graph string="เปรียบเทียบราคาตามผู้จำหน่าย"
+                   type="bar">
+                <field name="partner_id"/>
+                <field name="report_unit_price" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_vendor_product_price_report_search"
+            model="ir.ui.view">
+        <field name="name">product.supplierinfo.vendor.price.report.search</field>
+        <field name="model">product.supplierinfo</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาราคาสินค้าผู้จำหน่าย">
+                <field name="vendor_reference"/>
+                <field name="partner_id"/>
+                <field name="product_code"/>
+                <field name="internal_product_code"/>
+                <field name="report_product_id"/>
+                <field name="report_category_id"/>
+                <filter string="มีรหัสผู้จำหน่าย"
+                        name="has_vendor_reference"
+                        domain="[('vendor_reference', '!=', False)]"/>
+                <filter string="มีรหัสสินค้าผู้จำหน่าย"
+                        name="has_vendor_product_code"
+                        domain="[('product_code', '!=', False)]"/>
+                <separator/>
+                <filter string="ผู้จำหน่าย"
+                        name="group_vendor_price_partner"
+                        domain="[]"
+                        context="{'group_by': 'partner_id'}"/>
+                <filter string="รหัสผู้จำหน่าย"
+                        name="group_vendor_reference"
+                        domain="[]"
+                        context="{'group_by': 'vendor_reference'}"/>
+                <filter string="สินค้า"
+                        name="group_vendor_price_product"
+                        domain="[]"
+                        context="{'group_by': 'report_product_id'}"/>
+                <filter string="หมวดสินค้า"
+                        name="group_vendor_price_category"
+                        domain="[]"
+                        context="{'group_by': 'report_category_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vendor_product_price_report"
+            model="ir.actions.act_window">
+        <field name="name">ราคาสินค้าตามรหัสผู้จำหน่าย</field>
+        <field name="res_model">product.supplierinfo</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_id"
+               ref="view_vendor_product_price_report_list"/>
+        <field name="search_view_id"
+               ref="view_vendor_product_price_report_search"/>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ยังไม่มีข้อมูลราคาสินค้าจากผู้จำหน่าย
+            </p>
+        </field>
+    </record>
+
+    <record id="action_vendor_product_price_report_list"
+            model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id"
+               ref="view_vendor_product_price_report_list"/>
+        <field name="act_window_id"
+               ref="action_vendor_product_price_report"/>
+    </record>
+
+    <record id="action_vendor_product_price_report_pivot"
+            model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">pivot</field>
+        <field name="view_id"
+               ref="view_vendor_product_price_report_pivot"/>
+        <field name="act_window_id"
+               ref="action_vendor_product_price_report"/>
+    </record>
+
+    <record id="action_vendor_product_price_report_graph"
+            model="ir.actions.act_window.view">
+        <field name="sequence">3</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id"
+               ref="view_vendor_product_price_report_graph"/>
+        <field name="act_window_id"
+               ref="action_vendor_product_price_report"/>
+    </record>
+
+    <menuitem id="menu_vendor_product_price_report"
+              name="ราคาสินค้าตามรหัสผู้จำหน่าย"
+              parent="purchase.purchase_report_main"
+              action="action_vendor_product_price_report"
+              sequence="34"
+              groups="purchase.group_purchase_user"/>
+</odoo>

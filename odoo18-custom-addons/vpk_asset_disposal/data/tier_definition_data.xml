@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!--
+      หมายเหตุลำดับ (base_tier_validation):
+      เมื่อ approve_sequence=True ระบบสร้าง review ด้วย order="sequence desc"
+      ดังนั้นค่า sequence ของ tier.definition ที่มากกว่า = อนุมัติก่อน
+      ลำดับ 1 (อนุมัติก่อน) → sequence สูงกว่า
+      ลำดับ 2 (อนุมัติทีหลัง) → sequence ต่ำกว่า
+    -->
+    <record id="tier_definition_asset_disposal_1" model="tier.definition">
+        <field name="name">ใบขออนุมัติจำหน่าย — ลำดับ 1</field>
+        <field name="model_id" ref="model_vpk_asset_disposal"/>
+        <field name="review_type">group</field>
+        <field name="reviewer_group_id" ref="group_asset_disposal_approver"/>
+        <field name="definition_type">domain</field>
+        <field name="definition_domain">[]</field>
+        <field name="sequence">20</field>
+        <field name="approve_sequence" eval="True"/>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="tier_definition_asset_disposal_2" model="tier.definition">
+        <field name="name">ใบขออนุมัติจำหน่าย — ลำดับ 2</field>
+        <field name="model_id" ref="model_vpk_asset_disposal"/>
+        <field name="review_type">group</field>
+        <field name="reviewer_group_id" ref="group_asset_disposal_manager"/>
+        <field name="definition_type">domain</field>
+        <field name="definition_domain">[]</field>
+        <field name="sequence">10</field>
+        <field name="approve_sequence" eval="True"/>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

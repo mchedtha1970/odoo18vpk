@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mail_template_purchase_vendor_sign" model="mail.template">
+        <field name="name">Purchase: Vendor Portal Sign Request</field>
+        <field name="model_id" ref="purchase.model_purchase_order"/>
+        <field name="subject">คำขอยืนยัน/ลงนามเอกสาร {{ object.name }}</field>
+        <field name="email_from">{{ (object.user_id.email_formatted or object.company_id.email_formatted or user.email_formatted) }}</field>
+        <field name="partner_to">{{ object.partner_id.id }}</field>
+        <field name="description">ส่งลิงก์พอร์ทัลให้ผู้จำหน่ายที่ชนะประมูลลงนามยืนยัน PO/RFQ</field>
+        <field name="body_html" type="html">
+        <div style="margin:0px;padding:0px;">
+    <p>เรียน {{ object.partner_id.name }},</p>
+    <p>
+        ท่านได้รับเลือกเป็นผู้จำหน่ายสำหรับเอกสาร
+        <strong t-out="object.name or ''"/>
+        <t t-if="object.egp_project_reference">
+            (เลขที่โครงการ: <t t-out="object.egp_project_reference"/>)
+        </t>
+    </p>
+    <p>
+        กรุณาเข้าสู่ <strong>Vendor Portal</strong> ด้วย User ของท่าน
+        เพื่อดูรายการใบสั่งซื้อและกดยืนยัน
+    </p>
+    <p style="margin:16px 0;">
+        <a t-att-href="object.get_base_url() + '/vendor'"
+           style="background-color:#875A7B;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;margin-right:8px;">
+            เข้าสู่ระบบ Vendor Portal
+        </a>
+        <a t-att-href="object.get_portal_url()"
+           style="background-color:#714B67;padding:8px 16px;text-decoration:none;color:#fff;border-radius:5px;">
+            เปิดเอกสารโดยตรง
+        </a>
+    </p>
+    <p t-if="object.egp_project_name">ชื่อโครงการ: <t t-out="object.egp_project_name"/></p>
+    <p>ยอดรวม: <strong t-out="object.amount_total" t-options="{'widget': 'monetary', 'display_currency': object.currency_id}"/></p>
+    <p>ขอแสดงความนับถือ<br/><t t-out="object.company_id.name or ''"/></p>
+</div>
+        </field>
+        <field name="lang">{{ object.partner_id.lang }}</field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+</odoo>

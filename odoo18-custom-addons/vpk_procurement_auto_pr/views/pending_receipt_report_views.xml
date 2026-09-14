@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_order_line_pending_receipt_list"
+            model="ir.ui.view">
+        <field name="name">purchase.order.line.pending.receipt.list</field>
+        <field name="model">purchase.order.line</field>
+        <field name="arch" type="xml">
+            <list string="รายงานสินค้าค้างรับ"
+                  create="false"
+                  edit="false"
+                  delete="false"
+                  default_order="material_category_id, order_id, id">
+                <field name="order_id" string="เลขที่ PO"/>
+                <field name="partner_id" string="ผู้จำหน่าย"/>
+                <field name="material_category_id"/>
+                <field name="product_id" string="สินค้า/วัสดุ"/>
+                <field name="name" string="รายละเอียดรายการ"
+                       optional="show"/>
+                <field name="date_planned" string="กำหนดรับ"/>
+                <field name="product_qty" string="จำนวนสั่ง"
+                       sum="รวมจำนวนสั่ง"/>
+                <field name="qty_received" string="รับแล้ว"
+                       sum="รวมจำนวนรับ"/>
+                <field name="qty_pending_receipt"
+                       sum="รวมจำนวนค้างรับ"/>
+                <field name="product_uom" string="หน่วย"/>
+                <field name="price_unit" string="ราคาต่อหน่วย"
+                       optional="show"/>
+                <field name="discount" string="ส่วนลด (%)"
+                       optional="hide"/>
+                <field name="currency_id" string="สกุลเงิน"
+                       optional="hide"/>
+                <field name="receipt_progress_percent_line"
+                       widget="progressbar"
+                       optional="show"/>
+                <field name="company_currency_id"
+                       column_invisible="True"/>
+                <field name="pending_receipt_amount"
+                       sum="รวมมูลค่าค้างรับ"/>
+                <field name="company_id" groups="base.group_multi_company"
+                       optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_line_pending_receipt_pivot"
+            model="ir.ui.view">
+        <field name="name">purchase.order.line.pending.receipt.pivot</field>
+        <field name="model">purchase.order.line</field>
+        <field name="arch" type="xml">
+            <pivot string="สินค้าค้างรับแยกตามหมวดวัสดุ">
+                <field name="material_category_id" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="partner_id" type="col"/>
+                <field name="product_qty" type="measure"/>
+                <field name="qty_received" type="measure"/>
+                <field name="qty_pending_receipt" type="measure"/>
+                <field name="pending_receipt_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_line_pending_receipt_graph"
+            model="ir.ui.view">
+        <field name="name">purchase.order.line.pending.receipt.graph</field>
+        <field name="model">purchase.order.line</field>
+        <field name="arch" type="xml">
+            <graph string="มูลค่าสินค้าค้างรับตามหมวดวัสดุ"
+                   type="bar">
+                <field name="material_category_id"/>
+                <field name="pending_receipt_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_line_pending_receipt_search"
+            model="ir.ui.view">
+        <field name="name">purchase.order.line.pending.receipt.search</field>
+        <field name="model">purchase.order.line</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาสินค้าค้างรับ">
+                <field name="order_id"/>
+                <field name="partner_id"/>
+                <field name="material_category_id"/>
+                <field name="product_id"/>
+                <filter string="มีสินค้าค้างรับ"
+                        name="pending_receipt"
+                        domain="[('qty_pending_receipt', '&gt;', 0)]"/>
+                <filter string="เกินกำหนดรับ"
+                        name="overdue_receipt"
+                        domain="[('qty_pending_receipt', '&gt;', 0), ('date_planned', '&lt;', context_today())]"/>
+                <separator/>
+                <filter string="หมวดวัสดุ"
+                        name="group_material_category"
+                        domain="[]"
+                        context="{'group_by': 'material_category_id'}"/>
+                <filter string="ผู้จำหน่าย"
+                        name="group_vendor"
+                        domain="[]"
+                        context="{'group_by': 'partner_id'}"/>
+                <filter string="เลขที่ PO"
+                        name="group_po"
+                        domain="[]"
+                        context="{'group_by': 'order_id'}"/>
+                <filter string="เดือนกำหนดรับ"
+                        name="group_planned_month"
+                        domain="[]"
+                        context="{'group_by': 'date_planned:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pending_receipt_by_material_category"
+            model="ir.actions.act_window">
+        <field name="name">สินค้าค้างรับแยกตามหมวดวัสดุ</field>
+        <field name="res_model">purchase.order.line</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_id"
+               ref="view_purchase_order_line_pending_receipt_list"/>
+        <field name="search_view_id"
+               ref="view_purchase_order_line_pending_receipt_search"/>
+        <field name="domain">
+            [('order_id.state', 'in', ('purchase', 'done')),
+             ('qty_pending_receipt', '&gt;', 0)]
+        </field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ไม่พบสินค้าค้างรับ
+            </p>
+            <p>
+                รายงานจะแสดงรายการจาก PO ที่ยังรับสินค้าไม่ครบ
+            </p>
+        </field>
+    </record>
+
+    <record id="action_pending_receipt_detail_list"
+            model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id"
+               ref="view_purchase_order_line_pending_receipt_list"/>
+        <field name="act_window_id"
+               ref="action_pending_receipt_by_material_category"/>
+    </record>
+
+    <record id="action_pending_receipt_detail_pivot"
+            model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">pivot</field>
+        <field name="view_id"
+               ref="view_purchase_order_line_pending_receipt_pivot"/>
+        <field name="act_window_id"
+               ref="action_pending_receipt_by_material_category"/>
+    </record>
+
+    <record id="action_pending_receipt_detail_graph"
+            model="ir.actions.act_window.view">
+        <field name="sequence">3</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id"
+               ref="view_purchase_order_line_pending_receipt_graph"/>
+        <field name="act_window_id"
+               ref="action_pending_receipt_by_material_category"/>
+    </record>
+
+    <menuitem id="menu_pending_receipt_by_material_category"
+              name="สินค้าค้างรับแยกตามหมวดวัสดุ"
+              parent="purchase.purchase_report_main"
+              action="action_pending_receipt_by_material_category"
+              sequence="30"
+              groups="purchase.group_purchase_user"/>
+
+    <record id="view_purchase_order_line_pending_receipt_vendor_pivot"
+            model="ir.ui.view">
+        <field name="name">purchase.order.line.pending.receipt.vendor.pivot</field>
+        <field name="model">purchase.order.line</field>
+        <field name="arch" type="xml">
+            <pivot string="สินค้าค้างรับแยกตามชื่อผู้ค้า">
+                <field name="partner_id" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="material_category_id" type="col"/>
+                <field name="product_qty" type="measure"/>
+                <field name="qty_received" type="measure"/>
+                <field name="qty_pending_receipt" type="measure"/>
+                <field name="pending_receipt_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_line_pending_receipt_vendor_graph"
+            model="ir.ui.view">
+        <field name="name">purchase.order.line.pending.receipt.vendor.graph</field>
+        <field name="model">purchase.order.line</field>
+        <field name="arch" type="xml">
+            <graph string="มูลค่าสินค้าค้างรับตามชื่อผู้ค้า"
+                   type="bar">
+                <field name="partner_id"/>
+                <field name="pending_receipt_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_pending_receipt_by_vendor"
+            model="ir.actions.act_window">
+        <field name="name">สินค้าค้างรับแยกตามชื่อผู้ค้า</field>
+        <field name="res_model">purchase.order.line</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_id"
+               ref="view_purchase_order_line_pending_receipt_list"/>
+        <field name="search_view_id"
+               ref="view_purchase_order_line_pending_receipt_search"/>
+        <field name="domain">
+            [('order_id.state', 'in', ('purchase', 'done')),
+             ('qty_pending_receipt', '&gt;', 0)]
+        </field>
+        <field name="context">
+            {'search_default_group_vendor': 1}
+        </field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ไม่พบสินค้าค้างรับ
+            </p>
+            <p>
+                รายงานจะแสดงรายละเอียดสินค้าค้างรับแยกตามชื่อผู้ค้า
+            </p>
+        </field>
+    </record>
+
+    <record id="action_pending_receipt_vendor_list"
+            model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id"
+               ref="view_purchase_order_line_pending_receipt_list"/>
+        <field name="act_window_id"
+               ref="action_pending_receipt_by_vendor"/>
+    </record>
+
+    <record id="action_pending_receipt_vendor_pivot"
+            model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">pivot</field>
+        <field name="view_id"
+               ref="view_purchase_order_line_pending_receipt_vendor_pivot"/>
+        <field name="act_window_id"
+               ref="action_pending_receipt_by_vendor"/>
+    </record>
+
+    <record id="action_pending_receipt_vendor_graph"
+            model="ir.actions.act_window.view">
+        <field name="sequence">3</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id"
+               ref="view_purchase_order_line_pending_receipt_vendor_graph"/>
+        <field name="act_window_id"
+               ref="action_pending_receipt_by_vendor"/>
+    </record>
+
+    <menuitem id="menu_pending_receipt_by_vendor"
+              name="สินค้าค้างรับแยกตามชื่อผู้ค้า"
+              parent="purchase.purchase_report_main"
+              action="action_pending_receipt_by_vendor"
+              sequence="31"
+              groups="purchase.group_purchase_user"/>
+</odoo>

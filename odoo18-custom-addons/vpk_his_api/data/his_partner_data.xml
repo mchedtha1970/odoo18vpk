@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="partner_payer_self_pay_op" model="res.partner">
+        <field name="name">HIS Payer - ชำระเงินเอง OP</field>
+        <field name="is_company" eval="True"/>
+        <field name="customer_rank">1</field>
+        <field name="company_type">company</field>
+    </record>
+    <record id="partner_payer_self_pay_ip" model="res.partner">
+        <field name="name">HIS Payer - ชำระเงินเอง IP</field>
+        <field name="is_company" eval="True"/>
+        <field name="customer_rank">1</field>
+        <field name="company_type">company</field>
+    </record>
+    <record id="partner_payer_uc_op" model="res.partner">
+        <field name="name">HIS Payer - UC OP</field>
+        <field name="is_company" eval="True"/>
+        <field name="customer_rank">1</field>
+        <field name="company_type">company</field>
+    </record>
+    <record id="partner_payer_uc_ip" model="res.partner">
+        <field name="name">HIS Payer - UC IP</field>
+        <field name="is_company" eval="True"/>
+        <field name="customer_rank">1</field>
+        <field name="company_type">company</field>
+    </record>
+    <record id="partner_payer_sso_op" model="res.partner">
+        <field name="name">HIS Payer - ประกันสังคม OP</field>
+        <field name="is_company" eval="True"/>
+        <field name="customer_rank">1</field>
+        <field name="company_type">company</field>
+    </record>
+    <record id="partner_payer_sso_ip" model="res.partner">
+        <field name="name">HIS Payer - ประกันสังคม IP</field>
+        <field name="is_company" eval="True"/>
+        <field name="customer_rank">1</field>
+        <field name="company_type">company</field>
+    </record>
+    <record id="partner_payer_csmbs_op" model="res.partner">
+        <field name="name">HIS Payer - เบิกจ่ายตรง OP</field>
+        <field name="is_company" eval="True"/>
+        <field name="customer_rank">1</field>
+        <field name="company_type">company</field>
+    </record>
+    <record id="partner_payer_csmbs_ip" model="res.partner">
+        <field name="name">HIS Payer - เบิกจ่ายตรง IP</field>
+        <field name="is_company" eval="True"/>
+        <field name="customer_rank">1</field>
+        <field name="company_type">company</field>
+    </record>
+</odoo>

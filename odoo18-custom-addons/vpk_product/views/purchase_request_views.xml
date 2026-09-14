@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_form_egp_name" model="ir.ui.view">
+        <field name="name">purchase.request.form.egp.purchase.name</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='line_ids']/list/field[@name='product_id']" position="after">
+                <field name="egp_purchase_name" optional="show" readonly="is_editable == False"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_request_line_form_egp_name" model="ir.ui.view">
+        <field name="name">purchase.request.line.form.egp.purchase.name</field>
+        <field name="model">purchase.request.line</field>
+        <field name="inherit_id" ref="purchase_request.purchase_request_line_form"/>
+        <field name="arch" type="xml">
+            <field name="product_id" position="after">
+                <field name="egp_purchase_name" widget="text" readonly="is_editable == False"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="purchase_request_line_tree_egp_name" model="ir.ui.view">
+        <field name="name">purchase.request.line.list.egp.purchase.name</field>
+        <field name="model">purchase.request.line</field>
+        <field name="inherit_id" ref="purchase_request.purchase_request_line_tree"/>
+        <field name="arch" type="xml">
+            <field name="product_id" position="after">
+                <field name="egp_purchase_name" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_line_details_egp_name" model="ir.ui.view">
+        <field name="name">purchase.request.line.details.egp.purchase.name</field>
+        <field name="model">purchase.request.line</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_line_details"/>
+        <field name="arch" type="xml">
+            <field name="product_id" position="after">
+                <field name="egp_purchase_name" widget="text" readonly="is_editable == False"/>
+            </field>
+        </field>
+    </record>
+</odoo>

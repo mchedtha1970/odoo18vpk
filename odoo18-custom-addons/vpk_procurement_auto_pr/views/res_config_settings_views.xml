@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_res_config_settings_procurement_auto" model="ir.ui.view">
+        <field name="name">res.config.settings.procurement.auto</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="purchase.res_config_settings_view_form_purchase"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='purchase']" position="inside">
+                <block title="แผนจัดซื้อจัดจ้าง / Gen Auto" name="procurement_auto_pr_setting">
+                    <setting string="เปิดใช้ Gen Auto ใบขอซื้อ/จ้าง/เช่า"
+                             help="สร้างใบขอซื้ออัตโนมัติจากสินค้าถึงจุดสั่งซื้อ และสัญญาจ้าง/เช่าใกล้หมดอายุ ตามแผนประจำปี">
+                        <field name="procurement_auto_gen_enabled"/>
+                    </setting>
+                    <setting string="วันก่อนสัญญาหมดอายุ"
+                             help="สร้าง PR อัตโนมัติเมื่อสัญญาจะหมดอายุภายในจำนวนวันนี้">
+                        <field name="procurement_contract_expiry_days"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

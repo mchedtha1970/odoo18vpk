@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_wa_committee_order" model="report.paperformat">
+        <field name="name">คำสั่งแต่งตั้งคณะกรรมการตรวจรับ (A4)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">15</field>
+        <field name="margin_bottom">20</field>
+        <field name="margin_left">30</field>
+        <field name="margin_right">20</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="action_report_wa_committee_order" model="ir.actions.report">
+        <field name="name">คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ</field>
+        <field name="model">vpk.official.document</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_official_document.report_wa_committee_order</field>
+        <field name="report_file">vpk_official_document.report_wa_committee_order</field>
+        <field name="print_report_name">'คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ-%s' % (object.order_no or object.name)</field>
+        <field name="binding_model_id" ref="model_vpk_official_document"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_wa_committee_order"/>
+    </record>
+
+    <template id="report_wa_committee_order">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="asset_base" t-value="env['ir.config_parameter'].sudo().get_param('report.url') or env['ir.config_parameter'].sudo().get_param('web.base.url') or ''"/>
+                <div class="article o_wa_committee_order">
+                    <div class="order-garuda">
+                        <img
+                            t-att-src="asset_base + '/vpk_official_document/static/src/img/garuda.jpeg'"
+                            alt="ครุฑ"
+                        />
+                    </div>
+                    <p class="order-title">คำสั่ง<t t-esc="o.agency or o.company_id.name or ''"/></p>
+                    <p class="order-center"><t t-esc="o._committee_order_no_line()"/></p>
+                    <p class="order-center">เรื่อง  <t t-esc="o.subject or o._default_subject()"/></p>
+                    <p class="order-rule">---------------------------------------------------------------------</p>
+                    <p class="order-body"><t t-esc="o.body or o._default_body()"/></p>
+                    <t t-foreach="o.line_ids" t-as="line">
+                        <p class="order-member">
+                            <t t-esc="line_index + 1"/>.
+                            <t t-esc="line.name"/>
+                            <t t-if="line.position">  ตำแหน่ง <t t-esc="line.position"/></t>
+                              <t t-if="line.role == 'chairman'">ประธานกรรมการ</t>
+                              <t t-elif="line.role == 'secretary'">กรรมการและเลขานุการ</t>
+                              <t t-else="">กรรมการ</t>
+                        </p>
+                    </t>
+                    <p class="order-duty"><t t-esc="o.duty or ''"/></p>
+                    <p class="order-effective"><t t-esc="o.effective or ''"/></p>
+                    <p class="order-date">สั่ง  ณ  วันที่  <t t-esc="o._format_order_date()"/></p>
+                    <table class="order-sign">
+                        <tr>
+                            <td/>
+                            <td>
+                                <div class="sign-block">
+                                    <p class="sign-name">(<t t-esc="o.signer_name or '................................'"/>)</p>
+                                    <p class="sign-position"><t t-esc="o.signer_position or ''"/></p>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

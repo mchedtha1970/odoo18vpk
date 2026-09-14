@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_stock_receipt_validator" model="res.groups">
+        <field name="name">ผู้มีสิทธิรับสินค้า</field>
+        <field name="category_id" ref="base.module_category_inventory"/>
+        <field name="implied_ids"
+               eval="[(4, ref('stock.group_stock_user'))]"/>
+        <field name="comment">
+            สามารถตรวจสอบและกดยืนยันใบรับสินค้า (Incoming Receipt)
+        </field>
+    </record>
+
+    <record id="group_stock_receipt_canceller" model="res.groups">
+        <field name="name">ผู้มีสิทธิยกเลิกการรับสินค้า</field>
+        <field name="category_id" ref="base.module_category_inventory"/>
+        <field name="implied_ids"
+               eval="[(4, ref('vpk_maintenance.group_stock_receipt_validator'))]"/>
+        <field name="comment">
+            สามารถยกเลิกใบรับสินค้า และมีสิทธิรับสินค้าด้วย
+        </field>
+    </record>
+</odoo>

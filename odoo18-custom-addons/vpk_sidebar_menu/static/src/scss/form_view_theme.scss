@@ -1,0 +1,266 @@
+// Spiffy-inspired form view (Odoo 18) — card sheet, input sizing, stat buttons.
+// Boxed 4-sided field borders are in form_fields.scss (loaded after this file).
+body.o_web_client.o_vpk_sidebar_menu {
+    .o-form-buttonbox,
+    .oe_button_box {
+        --o-input-border-color: #dee2e6;
+        border-bottom: 1px solid var(--o-input-border-color) !important;
+
+        .btn.oe_stat_button {
+            border-radius: 0 !important;
+            margin: 0;
+            opacity: 1 !important;
+            box-shadow: unset;
+            border: 0 !important;
+
+            &:not(:first-child) {
+                border-left: 1px solid var(--o-input-border-color) !important;
+                border-bottom: 0 !important;
+            }
+
+            &:last-child {
+                border-top-right-radius: var(--vpk-border-radius-lg, 6px) !important;
+            }
+
+            .o_button_more {
+                border: 0 !important;
+            }
+
+            &:hover {
+                opacity: 1 !important;
+            }
+
+            .o_button_icon {
+                color: var(--vpk-sidebar-bg-start);
+                line-height: unset;
+            }
+
+            .o_stat_value {
+                color: unset !important;
+            }
+        }
+
+        &.o_not_full {
+            box-shadow: inset 0 -1px 0 #efefef;
+            border-top-right-radius: var(--vpk-border-radius-lg, 6px);
+        }
+    }
+
+    .o_form_view {
+        background-color: unset !important;
+
+        .o_input {
+            min-height: var(--vpk-field-height, 36px);
+            border-radius: var(--vpk-border-radius-md, 4px);
+            padding: 0 4px !important;
+
+            > .o_input {
+                min-height: calc(var(--vpk-field-height, 36px) - 2px);
+                border: 0 !important;
+                padding: 0 !important;
+            }
+
+            &:focus {
+                border-color: var(--vpk-sidebar-bg-start) !important;
+            }
+        }
+
+        textarea.o_input {
+            min-height: 80px;
+            max-height: none !important;
+            resize: vertical !important;
+            overflow-y: auto !important;
+        }
+
+        .o_field_text > div > textarea.o_input {
+            min-height: 80px !important;
+            resize: vertical !important;
+            overflow-y: auto !important;
+        }
+
+        .o_form_label.o_required_modifier {
+            color: var(--vpk-sidebar-bg-start) !important;
+        }
+
+        .o_required_modifier.o_input,
+        .o_required_modifier .o_input {
+            border-color: var(--vpk-sidebar-bg-start) !important;
+            background-color: transparent !important;
+        }
+
+        .o_td_label {
+            border-right: 0 !important;
+            vertical-align: middle !important;
+
+            .o_form_label {
+                font-weight: normal !important;
+            }
+        }
+
+        .o_form_sheet_bg {
+            background: var(--vpk-form-body-bg, #f9f9f9) !important;
+            border-bottom: 0 !important;
+
+            .o_form_statusbar {
+                padding-left: 10px;
+                padding-right: 10px;
+                background-color: var(--vpk-form-surface-bg, #fff) !important;
+                box-shadow: var(--vpk-box-shadow-common, 0 4px 10px rgba(0, 0, 0, 0.03)) !important;
+                border: 0;
+                border-radius: var(--vpk-border-radius-lg, 6px);
+
+                @include media-breakpoint-down(sm) {
+                    padding-left: 5px;
+                    padding-right: 5px;
+                }
+
+                .o_statusbar_buttons .btn {
+                    min-height: 30px !important;
+                }
+            }
+
+            .o_form_sheet {
+                background-color: var(--vpk-form-surface-bg, #fff) !important;
+                box-shadow: var(--vpk-box-shadow-common, 0 4px 10px rgba(0, 0, 0, 0.03)) !important;
+                border: 0;
+                border-radius: var(--vpk-border-radius-lg, 6px);
+                max-width: 100%;
+                margin-left: auto;
+                margin-right: auto;
+
+                .o_group .o_form_label:not(.o_required_modifier) {
+                    color: inherit;
+                }
+
+                .oe_title h1 {
+                    font-size: 20px !important;
+                }
+            }
+        }
+
+        .o_form_statusbar {
+            background-color: var(--vpk-form-surface-bg, #fff) !important;
+            border-radius: var(--vpk-border-radius-md, 4px) !important;
+        }
+
+        .o_field_widget {
+            .o_input_dropdown .o_dropdown_button,
+            .o_datepicker .o_datepicker_button {
+                top: 50% !important;
+                transform: translateY(-50%);
+            }
+
+            .o_external_button {
+                background-color: transparent !important;
+                margin: 0 !important;
+                padding: 5px;
+            }
+        }
+
+        .o_inner_group .o_field_widget.o_field_copy {
+            align-items: center;
+            display: flex;
+            border-color: var(--vpk-sidebar-bg-start) !important;
+            background-color: transparent !important;
+            min-height: var(--vpk-field-height, 36px) !important;
+            border-radius: var(--vpk-border-radius-md, 4px) !important;
+            padding: 0 4px !important;
+        }
+
+        // Spiffy separator_style_1 — accent underline
+        .o_horizontal_separator {
+            background-color: transparent !important;
+            color: var(--vpk-sidebar-bg-start) !important;
+            position: relative;
+            padding: 10px 0 !important;
+
+            &::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                bottom: 1px;
+                height: 3px;
+                z-index: 2;
+                width: 55px;
+                background-color: var(--vpk-sidebar-bg-start);
+            }
+
+            &::after {
+                content: "";
+                position: absolute;
+                left: 0;
+                bottom: 1px;
+                height: 1px;
+                width: 95%;
+                background-color: #d8d8d8;
+            }
+        }
+
+        .o_field_x2many_list_row_add a {
+            color: var(--vpk-sidebar-bg-start) !important;
+        }
+
+        .o_form_image_controls {
+            background-color: var(--vpk-sidebar-bg-start) !important;
+        }
+    }
+
+    // Chatter card (Odoo 18 mail)
+    .o-mail-Form-chatter,
+    .o-mail-ChatterContainer {
+        background-color: var(--vpk-form-body-bg, #f9f9f9) !important;
+        padding: 0;
+
+        .o-mail-Chatter {
+            background-color: var(--vpk-form-surface-bg, #fff) !important;
+            border-radius: var(--vpk-border-radius-lg, 6px);
+            box-shadow: var(--vpk-box-shadow-common, 0 4px 10px rgba(0, 0, 0, 0.03)) !important;
+            margin: 15px 0;
+        }
+    }
+
+    @include media-breakpoint-up(lg) {
+        .o_form_view .o_form_sheet_bg > .o_form_sheet {
+            margin: 12px auto;
+        }
+    }
+
+    @include media-breakpoint-down(md) {
+        .o_content .o_form_view {
+            padding: 0 15px !important;
+        }
+
+        .o_form_view {
+            padding: 0;
+
+            .o_form_sheet {
+                margin: 15px 0 0;
+                min-width: unset;
+            }
+
+            .o_notebook .o_notebook_headers .nav-tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                overflow-y: hidden;
+
+                &::-webkit-scrollbar {
+                    width: 0;
+                    height: 0;
+                }
+
+                .nav-link {
+                    width: max-content;
+                }
+            }
+        }
+    }
+
+    .modal .modal-dialog .o_form_view {
+        padding: 20px 0 !important;
+
+        .o_form_sheet_bg > .o_form_sheet {
+            box-shadow: unset !important;
+            padding-bottom: 0 !important;
+        }
+    }
+}

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="vpk_tier_validation.PendingReviewDashboard">
+        <Layout display="display">
+            <div class="o_vpk_pending_review_dashboard h-100 d-flex flex-column">
+                <div class="o_vpk_dashboard_header">
+                    <div class="o_vpk_dashboard_header_text">
+                        <h2 class="mb-1">งานรออนุมัติของฉัน</h2>
+                        <p class="text-muted mb-0">
+                            คลิกกล่องเพื่อเปิดเอกสารและดำเนินการอนุมัติ
+                        </p>
+                    </div>
+                    <div class="o_vpk_dashboard_header_actions">
+                        <span
+                            t-if="state.count"
+                            class="badge rounded-pill text-bg-warning fs-6"
+                        >
+                            <t t-esc="state.count"/> รายการ
+                        </span>
+                        <button
+                            type="button"
+                            class="btn btn-outline-primary btn-sm"
+                            t-on-click="openAllReviews"
+                        >
+                            ดูรายการทั้งหมด
+                        </button>
+                    </div>
+                </div>
+
+                <div class="o_vpk_dashboard_body flex-grow-1" t-if="state.ready and viewProps">
+                    <t t-if="state.count">
+                        <View t-props="viewProps"/>
+                    </t>
+                    <t t-else="">
+                        <div class="o_vpk_dashboard_empty text-center text-muted py-5">
+                            <i class="fa fa-check-circle fa-3x mb-3 d-block opacity-50"/>
+                            <h4>ไม่มีงานรออนุมัติ</h4>
+                            <p>เมื่อมีเอกสารที่ต้องอนุมัติ จะแสดงเป็นกล่องที่นี่</p>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </Layout>
+    </t>
+
+</templates>

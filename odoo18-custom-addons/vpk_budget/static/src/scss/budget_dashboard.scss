@@ -1,0 +1,331 @@
+.o_vpk_budget_dashboard {
+    min-height: 100%;
+    padding: 22px 24px 32px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-family: var(--vpk-font-family, var(--bs-body-font-family, inherit));
+    font-size: var(--vpk-font-size-md, inherit);
+
+    h2,
+    h3,
+    h4,
+    p,
+    span,
+    strong,
+    small,
+    b,
+    table,
+    th,
+    td,
+    button,
+    .btn,
+    select,
+    .form-select {
+        font-family: inherit;
+    }
+
+    .o_vpk_budget_dashboard_header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 18px;
+
+        h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        p {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_budget_dashboard_actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .form-select {
+            width: 150px;
+            background-color: #fff;
+        }
+    }
+
+    .o_vpk_budget_metric_grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 16px;
+    }
+
+    .o_vpk_budget_metric_card,
+    .o_vpk_budget_panel {
+        background: #fff;
+        border: 1px solid #edf2f7;
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+
+    .o_vpk_budget_metric_card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 96px;
+        padding: 18px;
+        cursor: pointer;
+
+        &:hover {
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 22px;
+            letter-spacing: -0.02em;
+        }
+    }
+
+    .o_vpk_budget_metric_label {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .o_vpk_budget_metric_icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: #f8fafc;
+        font-size: 18px;
+    }
+
+    .o_vpk_budget_dashboard_grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(320px, 0.95fr);
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .o_vpk_budget_dashboard_grid_bottom {
+        grid-template-columns: minmax(0, 1.4fr) minmax(340px, 0.9fr);
+    }
+
+    .o_vpk_budget_panel {
+        padding: 18px;
+        min-width: 0;
+    }
+
+    .o_vpk_budget_panel_header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 14px;
+
+        h3 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        span {
+            color: #64748b;
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_budget_trend_chart {
+        height: 270px;
+
+        svg {
+            width: 100%;
+            height: 230px;
+            overflow: visible;
+        }
+    }
+
+    .o_vpk_budget_trend_area {
+        fill: rgba(16, 185, 129, 0.15);
+    }
+
+    .o_vpk_budget_trend_line {
+        fill: none;
+        stroke: #10b981;
+        stroke-width: 2.2;
+        vector-effect: non-scaling-stroke;
+    }
+
+    .o_vpk_budget_trend_axis {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        color: #94a3b8;
+        font-size: 10px;
+        text-align: center;
+    }
+
+    .o_vpk_budget_donut_wrap {
+        display: grid;
+        grid-template-columns: 170px minmax(0, 1fr);
+        align-items: center;
+        gap: 18px;
+        min-height: 260px;
+    }
+
+    .o_vpk_budget_donut {
+        width: 165px;
+        height: 165px;
+        border-radius: 50%;
+        position: relative;
+
+        &::after {
+            content: "";
+            position: absolute;
+            inset: 42px;
+            border-radius: 50%;
+            background: #fff;
+        }
+    }
+
+    .o_vpk_budget_donut_legend,
+    .o_vpk_budget_state_list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .o_vpk_budget_legend_item,
+    .o_vpk_budget_state_item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        strong {
+            display: block;
+            font-size: 12px;
+        }
+
+        small {
+            display: block;
+            color: #64748b;
+            font-size: 11px;
+        }
+    }
+
+    .o_vpk_budget_legend_item > span,
+    .o_vpk_budget_state_dot {
+        flex: 0 0 auto;
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+    }
+
+    .o_vpk_budget_state_item {
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+
+        > div {
+            flex: 1;
+            min-width: 0;
+        }
+
+        b {
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_budget_table {
+        margin-bottom: 0;
+
+        th {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        td {
+            vertical-align: middle;
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_budget_recent {
+        margin-top: 18px;
+
+        h4 {
+            margin: 0 0 10px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+    }
+
+    .o_vpk_budget_recent_item {
+        display: flex;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        border: 0;
+        border-bottom: 1px solid #f1f5f9;
+        background: transparent;
+        text-align: left;
+
+        strong,
+        small {
+            display: block;
+        }
+
+        small {
+            color: #64748b;
+            font-size: 11px;
+        }
+
+        b {
+            color: #059669;
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_budget_dashboard_loading {
+        padding: 60px;
+        text-align: center;
+        color: #64748b;
+    }
+}
+
+@media (max-width: 1200px) {
+    .o_vpk_budget_dashboard {
+        .o_vpk_budget_metric_grid,
+        .o_vpk_budget_dashboard_grid,
+        .o_vpk_budget_dashboard_grid_bottom {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .o_vpk_budget_dashboard {
+        padding: 16px;
+
+        .o_vpk_budget_dashboard_header,
+        .o_vpk_budget_dashboard_actions {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .o_vpk_budget_metric_grid,
+        .o_vpk_budget_dashboard_grid,
+        .o_vpk_budget_dashboard_grid_bottom,
+        .o_vpk_budget_donut_wrap {
+            grid-template-columns: 1fr;
+        }
+    }
+}

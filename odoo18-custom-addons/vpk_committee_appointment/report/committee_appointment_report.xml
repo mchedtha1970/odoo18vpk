@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_committee_appointment" model="ir.actions.report">
+        <field name="name">เอกสารแต่งตั้งคณะกรรมการซื้อจ้าง</field>
+        <field name="model">procurement.committee.appointment</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_committee_appointment.report_committee_appointment</field>
+        <field name="report_file">vpk_committee_appointment.report_committee_appointment</field>
+        <field name="print_report_name">'แต่งตั้งคณะกรรมการ-%s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_procurement_committee_appointment"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_committee_appointment">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.basic_layout">
+                    <div class="page" style="font-size:14px;">
+                        <div class="text-center mb-3">
+                            <h3>บันทึกข้อความ</h3>
+                            <div>ส่วนราชการ <t t-esc="o.company_id.name"/></div>
+                        </div>
+                        <p>ที่ <strong t-esc="o.name"/></p>
+                        <p>วันที่ <span t-field="o.date"/></p>
+                        <p>เรื่อง <t t-esc="o.subject"/></p>
+                        <p>เรียน ผู้อำนวยการ</p>
+                        <div t-if="o.note" t-field="o.note"/>
+                        <p t-else="">
+                            ด้วยหน่วยงานมีความประสงค์ขออนุมัติแต่งตั้งคณะกรรมการซื้อจ้าง
+                            ตามใบขอซื้อ/จ้าง/เช่า
+                            <t t-esc="o.request_id.name or '-'"/>
+                            ดังรายชื่อต่อไปนี้
+                        </p>
+
+                        <t t-set="types" t-value="[
+                            ('price_mid', 'คณะกรรมการกำหนดราคากลาง'),
+                            ('procurement', 'คณะกรรมการจัดซื้อจัดจ้าง'),
+                            ('work_acceptance', 'คณะกรรมการตรวจรับ'),
+                        ]"/>
+                        <t t-foreach="types" t-as="ctype">
+                            <t t-set="lines" t-value="o.line_ids.filtered(lambda l: l.committee_type == ctype[0])"/>
+                            <t t-if="lines">
+                                <h5 class="mt-3" t-esc="ctype[1]"/>
+                                <ol>
+                                    <t t-foreach="lines" t-as="line">
+                                        <li>
+                                            <t t-esc="line.name"/>
+                                            —
+                                            <t t-if="line.approve_role == 'chairman'">ประธาน</t>
+                                            <t t-elif="line.approve_role == 'secretary'">เลขานุการ</t>
+                                            <t t-else="">กรรมการ</t>
+                                            <t t-if="line.department_id">
+                                                (<t t-esc="line.department_id.name"/>)
+                                            </t>
+                                        </li>
+                                    </t>
+                                </ol>
+                            </t>
+                        </t>
+
+                        <div class="mt-4 text-end">
+                            <div>จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ</div>
+                            <div class="mt-4">
+                                <div t-esc="o.requested_by.name"/>
+                                <div>ผู้จัดทำ</div>
+                            </div>
+                            <div class="mt-4" t-if="o.state == 'approved'">
+                                <div>อนุมัติแล้ว</div>
+                                <div t-esc="o.approved_by.name"/>
+                                <div><span t-field="o.approved_date"/></div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

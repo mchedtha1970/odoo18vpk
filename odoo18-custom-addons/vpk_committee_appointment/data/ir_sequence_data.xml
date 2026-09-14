@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_committee_appointment" model="ir.sequence">
+        <field name="name">Committee Appointment</field>
+        <field name="code">procurement.committee.appointment</field>
+        <field name="prefix">CA/%(year)s/</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>

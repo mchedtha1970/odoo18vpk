@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_form_urgent" model="ir.ui.view">
+        <field name="name">purchase.request.form.urgent</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+        <field name="priority">130</field>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="after">
+                <div class="alert alert-danger" role="alert"
+                     invisible="urgency_level != 'emergency'">
+                    <strong>ขอซื้อฉุกเฉิน</strong>
+                    — ต้องระบุเหตุผลและวันที่ต้องการของ
+                    <span invisible="not urgency_needed_date">
+                        (ต้องการภายใน: <field name="urgency_needed_date" readonly="1" class="oe_inline"/>)
+                    </span>
+                </div>
+                <div class="alert alert-warning" role="alert"
+                     invisible="urgency_level != 'urgent'">
+                    <strong>ขอซื้อเร่งด่วน</strong>
+                    — ต้องระบุเหตุผลความเร่งด่วนก่อนส่งอนุมัติ
+                </div>
+            </xpath>
+            <field name="date_start" position="after">
+                <field name="urgency_level" widget="radio"
+                       readonly="state != 'draft'"
+                       options="{'horizontal': true}"/>
+                <field name="urgency_needed_date"
+                       readonly="state != 'draft'"
+                       invisible="urgency_level == 'normal'"
+                       required="urgency_level in ('urgent', 'emergency')"/>
+                <field name="urgency_reason"
+                       readonly="state != 'draft'"
+                       invisible="urgency_level == 'normal'"
+                       required="urgency_level in ('urgent', 'emergency')"
+                       placeholder="เช่น เครื่องมือแพทย์ชำรุดฉุกเฉิน กระทบการรักษาผู้ป่วย / ของหมดคลังฉุกเฉิน"/>
+                <field name="is_urgency" invisible="1"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_tree_urgent" model="ir.ui.view">
+        <field name="name">purchase.request.tree.urgent</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_tree"/>
+        <field name="priority">130</field>
+        <field name="arch" type="xml">
+            <list position="attributes">
+                <attribute name="decoration-bf">message_needaction==True</attribute>
+                <attribute name="decoration-info">state in ('draft','to_approve')</attribute>
+                <attribute name="decoration-muted">state in ('rejected')</attribute>
+                <attribute name="decoration-danger">urgency_level == 'emergency'</attribute>
+                <attribute name="decoration-warning">urgency_level == 'urgent'</attribute>
+            </list>
+            <field name="name" position="after">
+                <field name="urgency_level" widget="badge"
+                       decoration-danger="urgency_level == 'emergency'"
+                       decoration-warning="urgency_level == 'urgent'"
+                       decoration-success="urgency_level == 'normal'"
+                       optional="show"/>
+                <field name="urgency_needed_date" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_search_urgent" model="ir.ui.view">
+        <field name="name">purchase.request.search.urgent</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_search"/>
+        <field name="arch" type="xml">
+            <filter name="state_draft" position="before">
+                <filter string="ฉุกเฉิน" name="filter_emergency"
+                        domain="[('urgency_level', '=', 'emergency')]"/>
+                <filter string="เร่งด่วน" name="filter_urgent"
+                        domain="[('urgency_level', '=', 'urgent')]"/>
+                <filter string="เร่งด่วน/ฉุกเฉินทั้งหมด" name="filter_is_urgency"
+                        domain="[('is_urgency', '=', True)]"/>
+                <separator/>
+            </filter>
+            <xpath expr="//group/filter[@name='assigned_to']" position="after">
+                <filter string="ระดับความเร่งด่วน" name="groupby_urgency_level"
+                        context="{'group_by': 'urgency_level'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

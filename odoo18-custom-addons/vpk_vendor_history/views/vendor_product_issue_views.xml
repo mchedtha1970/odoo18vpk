@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vendor_product_issue_form" model="ir.ui.view">
+        <field name="name">vendor.product.issue.form</field>
+        <field name="model">vendor.product.issue</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_open" string="เปิดเรื่อง" type="object"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_in_progress" string="กำลังดำเนินการ" type="object"
+                            class="btn-primary" invisible="state != 'open'"/>
+                    <button name="action_resolve" string="แก้ไขแล้ว" type="object"
+                            class="btn-primary"
+                            invisible="state not in ('open', 'in_progress')"/>
+                    <button name="action_cancel" string="ยกเลิก" type="object"
+                            invisible="state in ('resolved', 'cancelled')"/>
+                    <button name="action_draft" string="กลับเป็นร่าง" type="object"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,open,in_progress,resolved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id" options="{'no_create': True}"/>
+                            <field name="product_id"/>
+                            <field name="qty_affected"/>
+                            <field name="uom_id"/>
+                            <field name="lot_name"/>
+                        </group>
+                        <group>
+                            <field name="issue_date"/>
+                            <field name="issue_type"/>
+                            <field name="severity" widget="badge"
+                                   decoration-success="severity == 'low'"
+                                   decoration-warning="severity == 'medium'"
+                                   decoration-danger="severity in ('high', 'critical')"/>
+                            <field name="resolution"/>
+                            <field name="reported_by"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="อ้างอิงเอกสาร">
+                        <group>
+                            <field name="purchase_order_id" options="{'no_create': True}"/>
+                            <field name="picking_id" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="invoice_id" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <group string="รายละเอียดปัญหา">
+                        <field name="description" nolabel="1" placeholder="อธิบายปัญหาที่พบ..."/>
+                    </group>
+                    <group string="การดำเนินการ">
+                        <field name="action_taken" nolabel="1" placeholder="บันทึกการดำเนินการแก้ไข..."/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vendor_product_issue_list" model="ir.ui.view">
+        <field name="name">vendor.product.issue.list</field>
+        <field name="model">vendor.product.issue</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancelled'"
+                  decoration-danger="severity == 'critical'"
+                  decoration-warning="severity == 'high'">
+                <field name="name"/>
+                <field name="issue_date"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="issue_type"/>
+                <field name="severity" widget="badge"
+                       decoration-success="severity == 'low'"
+                       decoration-warning="severity == 'medium'"
+                       decoration-danger="severity in ('high', 'critical')"/>
+                <field name="qty_affected"/>
+                <field name="lot_name" optional="show"/>
+                <field name="purchase_order_id" optional="show"/>
+                <field name="resolution"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state in ('open', 'in_progress')"
+                       decoration-success="state == 'resolved'"
+                       decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vendor_product_issue_search" model="ir.ui.view">
+        <field name="name">vendor.product.issue.search</field>
+        <field name="model">vendor.product.issue</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="lot_name"/>
+                <separator/>
+                <filter name="open" string="ยังไม่ปิด"
+                        domain="[('state', 'in', ['draft', 'open', 'in_progress'])]"/>
+                <filter name="resolved" string="แก้ไขแล้ว"
+                        domain="[('state', '=', 'resolved')]"/>
+                <separator/>
+                <filter name="type_quality" string="คุณภาพ"
+                        domain="[('issue_type', '=', 'quality')]"/>
+                <filter name="type_damage" string="ชำรุด"
+                        domain="[('issue_type', '=', 'damage')]"/>
+                <filter name="type_expire" string="หมดอายุ"
+                        domain="[('issue_type', '=', 'expire')]"/>
+                <filter name="type_late" string="จัดส่งล่าช้า"
+                        domain="[('issue_type', '=', 'late')]"/>
+                <separator/>
+                <filter name="sev_critical" string="วิกฤต"
+                        domain="[('severity', '=', 'critical')]"/>
+                <filter name="sev_high" string="สูง"
+                        domain="[('severity', '=', 'high')]"/>
+                <group expand="0" string="จัดกลุ่ม">
+                    <filter name="group_partner" string="เจ้าหนี้"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_product" string="สินค้า"
+                            context="{'group_by': 'product_id'}"/>
+                    <filter name="group_type" string="ประเภทปัญหา"
+                            context="{'group_by': 'issue_type'}"/>
+                    <filter name="group_severity" string="ความรุนแรง"
+                            context="{'group_by': 'severity'}"/>
+                    <filter name="group_month" string="เดือน"
+                            context="{'group_by': 'issue_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

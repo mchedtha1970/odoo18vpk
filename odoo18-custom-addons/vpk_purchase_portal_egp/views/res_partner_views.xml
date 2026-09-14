@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_vendor_portal" model="ir.ui.view">
+        <field name="name">res.partner.form.vendor.portal</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="%(vpk_purchase_portal_egp.action_vendor_portal_user_wizard)d"
+                    type="action"
+                    class="oe_stat_button"
+                    icon="fa-user-plus"
+                    context="{'default_partner_id': id, 'active_id': id}"
+                    groups="purchase.group_purchase_user"
+                    invisible="supplier_rank &lt;= 0"
+                >
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">User Portal</span>
+                    </div>
+                </button>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-info" role="alert" groups="purchase.group_purchase_user"
+                     invisible="supplier_rank &lt;= 0">
+                    สร้างบัญชี Vendor Portal:
+                    กดปุ่ม <strong>User Portal</strong> (หรือ Action → สร้าง User Portal)
+                    เพื่อใส่ Email / User ID / Password โดยไม่ต้องพึ่งอีเมลระบบ
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

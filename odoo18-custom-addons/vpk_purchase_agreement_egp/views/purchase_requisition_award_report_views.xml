@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_award_report_form" model="ir.ui.view">
+        <field name="name">purchase.requisition.award.report.form</field>
+        <field name="model">purchase.requisition.award.report</field>
+        <field name="arch" type="xml">
+            <form string="รายงานผลการพิจารณาและขออนุมัติ">
+                <header>
+                    <button name="action_generate_results"
+                            string="สร้างรายการจากข้อเสนอ eGP"
+                            type="object" class="btn-secondary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_submit" string="ส่งขออนุมัติ"
+                            type="object" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_approve" string="อนุมัติ"
+                            type="object" class="btn-primary"
+                            groups="purchase.group_purchase_manager"
+                            invisible="state != 'to_approve'"/>
+                    <button name="action_reject" string="ไม่อนุมัติ"
+                            type="object"
+                            groups="purchase.group_purchase_manager"
+                            invisible="state != 'to_approve'"/>
+                    <button name="action_print" string="พิมพ์รายงาน"
+                            type="object"
+                            invisible="state == 'cancelled'"/>
+                    <button name="action_cancel" string="ยกเลิก"
+                            type="object"
+                            invisible="state in ('approved', 'cancelled')"/>
+                    <button name="action_draft" string="กลับเป็นร่าง"
+                            type="object"
+                            invisible="state not in ('approved', 'rejected', 'cancelled')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,to_approve,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                        <h3><field name="subject"
+                                   readonly="state != 'draft'"/></h3>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="requisition_id"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
+                            <field name="egp_reference"/>
+                            <field name="purchase_request_id"/>
+                        </group>
+                        <group>
+                            <field name="committee_meeting_date"
+                                   readonly="state != 'draft'"/>
+                            <field name="evaluation_method"
+                                   readonly="state != 'draft'"/>
+                            <field name="winner_bid_id"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
+                            <field name="winner_partner_id"/>
+                            <field name="winner_amount"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="ผลการพิจารณาผู้เสนอราคา">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="partner_id"/>
+                                    <field name="egp_bid_reference"/>
+                                    <field name="bid_date"/>
+                                    <field name="currency_id"
+                                           column_invisible="1"/>
+                                    <field name="amount_total" sum="รวม"/>
+                                    <field name="result" widget="badge"
+                                           decoration-success="result == 'winner'"
+                                           decoration-muted="result == 'not_selected'"
+                                           decoration-danger="result == 'disqualified'"/>
+                                    <field name="notes" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="สรุปและข้อเสนอ">
+                            <group string="สรุปผลการพิจารณา">
+                                <field name="result_summary" nolabel="1"/>
+                            </group>
+                            <group string="ข้อเสนอเพื่ออนุมัติ">
+                                <field name="recommendation" nolabel="1"/>
+                            </group>
+                        </page>
+                        <page string="การอนุมัติ">
+                            <group>
+                                <field name="approved_by"/>
+                                <field name="approved_date"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_award_report_list" model="ir.ui.view">
+        <field name="name">purchase.requisition.award.report.list</field>
+        <field name="model">purchase.requisition.award.report</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="requisition_id"/>
+                <field name="purchase_request_id"/>
+                <field name="winner_partner_id"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="winner_amount" sum="รวมวงเงินอนุมัติ"/>
+                <field name="approved_by" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'to_approve'"
+                       decoration-success="state == 'approved'"
+                       decoration-danger="state == 'rejected'"
+                       decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_award_report" model="ir.actions.act_window">
+        <field name="name">รายงานผลการพิจารณาและขออนุมัติ</field>
+        <field name="res_model">purchase.requisition.award.report</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_purchase_requisition_form_award_report" model="ir.ui.view">
+        <field name="name">purchase.requisition.form.award.report</field>
+        <field name="model">purchase.requisition</field>
+        <field name="inherit_id"
+               ref="vpk_purchase_agreement_egp.view_purchase_requisition_form_egp_invitation"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="egp_award_approved" invisible="1"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_award_reports" type="object"
+                        class="oe_stat_button" icon="fa-gavel"
+                        invisible="requisition_type != 'egp_procurement'">
+                    <field name="award_report_count" widget="statinfo"
+                           string="รายงานผล"/>
+                </button>
+            </xpath>
+            <xpath expr="//page[@name='egp_rfqs']/group" position="inside">
+                <button name="action_create_award_report"
+                        type="object"
+                        string="จัดทำรายงานผลและขออนุมัติ"
+                        class="btn-primary"
+                        invisible="not egp_bid_ids"/>
+            </xpath>
+            <button name="action_open_create_rfq_wizard"
+                    position="attributes">
+                <attribute name="invisible">requisition_type != 'egp_procurement' or state not in ('confirmed', 'done') or not egp_has_winner or not egp_award_approved</attribute>
+            </button>
+        </field>
+    </record>
+</odoo>

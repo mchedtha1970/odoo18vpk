@@ -1,0 +1,281 @@
+// Embedded @font-face in thai_fonts_embedded.scss (manifest loads it first)
+// font-family must match @font-face names exactly: THSarabunNew, THSarabunNew-Bold
+
+.vpk-official-memo,
+.vpk-official-memo * {
+    font-family: "THSarabunNew", sans-serif !important;
+    font-size: 16pt;
+    line-height: 1.55;
+    color: #000;
+}
+
+.vpk-official-memo {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+
+    strong,
+    b,
+    .vpk-memo-title,
+    .vpk-cm-section-title strong {
+        font-family: "THSarabunNew-Bold", sans-serif !important;
+        font-weight: normal !important;
+    }
+
+    .vpk-memo-page {
+        position: relative;
+        min-height: 960px;
+        padding-bottom: 28px;
+    }
+
+    .vpk-page-break {
+        page-break-after: always;
+        break-after: page;
+    }
+
+    .vpk-page-no {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        font-size: 14pt;
+    }
+
+    .vpk-memo-header-row {
+        display: table;
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .vpk-memo-garuda {
+        display: table-cell;
+        width: 80px;
+        vertical-align: top;
+
+        img {
+            width: 70px;
+            height: auto;
+        }
+    }
+
+    .vpk-memo-title-wrap {
+        display: table-cell;
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .vpk-memo-title {
+        font-size: 26pt;
+    }
+
+    .vpk-label {
+        display: inline-block;
+        min-width: 4.5em;
+        font-weight: normal;
+    }
+
+    .vpk-dots {
+        display: inline;
+        border-bottom: 1px dotted #444;
+        padding-bottom: 1px;
+    }
+
+    .vpk-memo-meta > div {
+        margin-bottom: 6px;
+    }
+
+    .vpk-memo-ref-date {
+        display: table;
+        width: 100%;
+
+        .vpk-ref,
+        .vpk-date {
+            display: table-cell;
+            width: 50%;
+            vertical-align: bottom;
+        }
+
+        .vpk-date {
+            text-align: right;
+        }
+    }
+
+    .vpk-memo-opening {
+        margin-top: 14px;
+        width: 100%;
+
+        p {
+            padding-left: 0;
+            text-indent: 2.5em;
+            text-align: left;
+            margin: 0 0 8px;
+            width: 100%;
+            max-width: 100%;
+            padding-right: 0;
+            box-sizing: border-box;
+        }
+    }
+
+    .vpk-memo-salutation {
+        margin: 0 0 8px;
+        text-indent: 0;
+        text-align: left;
+    }
+
+    .vpk-memo-para-indent {
+        padding-left: 0;
+        text-indent: 5em;
+        text-align: left;
+        margin: 0 0 8px;
+        width: 100%;
+        max-width: 100%;
+        padding-right: 0;
+        box-sizing: border-box;
+    }
+
+    .vpk-memo-body,
+    .vpk-memo-closing,
+    .vpk-memo-approval {
+        margin-top: 10px;
+        text-align: left;
+        width: 100%;
+        max-width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+        box-sizing: border-box;
+
+        > div {
+            width: 100%;
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+    }
+
+    .vpk-memo-body > div > p {
+        padding-left: 0;
+        padding-right: 0;
+        text-indent: 5em;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .vpk-memo-closing > div > p,
+    .vpk-memo-approval > div > p {
+        padding-left: 0;
+        padding-right: 0;
+        text-indent: 2.5em;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .vpk-memo-item-title,
+    .vpk-memo-item-body,
+    .vpk-memo-sub-item {
+        margin: 0 0 8px;
+        padding-left: 0;
+        padding-right: 0;
+        text-indent: 5em;
+        text-align: left;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .vpk-memo-sub-item {
+        u {
+            text-decoration: underline;
+        }
+    }
+
+    .vpk-memo-ol {
+        margin: 6px 0 8px 4.5em;
+        padding-left: 1.5em;
+    }
+
+    .vpk-cm-section-title {
+        margin: 12px 0 8px;
+        padding-left: 4.5em;
+        text-align: left;
+    }
+
+    .vpk-cm-member {
+        margin-bottom: 10px;
+        page-break-inside: avoid;
+    }
+
+    .vpk-cm-line {
+        display: table;
+        width: 100%;
+    }
+
+    .vpk-cm-no {
+        display: table-cell;
+        width: 2em;
+        vertical-align: top;
+    }
+
+    .vpk-cm-name {
+        display: table-cell;
+        vertical-align: top;
+    }
+
+    .vpk-cm-role {
+        display: table-cell;
+        width: 9em;
+        text-align: right;
+        vertical-align: top;
+        white-space: nowrap;
+    }
+
+    .vpk-cm-sub {
+        margin-left: 2em;
+        font-size: 15pt;
+    }
+
+    .vpk-cm-org {
+        margin-left: 2em;
+    }
+
+    .vpk-signature-single {
+        margin-top: 36px;
+        width: 45%;
+        margin-left: auto;
+        text-align: center;
+    }
+
+    .vpk-signature-dual {
+        display: table;
+        width: 100%;
+        margin-top: 48px;
+
+        .vpk-sig-col {
+            display: table-cell;
+            width: 50%;
+            text-align: center;
+            vertical-align: top;
+            padding: 0 12px;
+        }
+    }
+
+    .vpk-sig-space {
+        height: 56px;
+    }
+
+    .vpk-sig-name {
+        margin-top: 4px;
+    }
+
+    .vpk-sig-position {
+        margin-top: 2px;
+    }
+
+    .vpk-sig-acting {
+        margin-top: 2px;
+        font-size: 14pt;
+    }
+}

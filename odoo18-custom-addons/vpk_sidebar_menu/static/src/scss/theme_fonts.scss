@@ -1,0 +1,198 @@
+// Theme font — date picker popover + mail chatter (portal / nested components)
+body.o_web_client.o_vpk_sidebar_menu {
+    // Kanban cards often define their own text styles; keep them aligned with the selected theme font.
+    .o_kanban_view,
+    .o_kanban_renderer,
+    .o_kanban_record,
+    .o_kanban_card,
+    .o_kanban_group,
+    .o_kanban_header,
+    .o_kanban_record_title,
+    .o_kanban_record_subtitle {
+        font-family: var(--vpk-font-family, var(--bs-body-font-family, inherit)) !important;
+        font-size: var(--vpk-font-size-md, inherit);
+    }
+
+    // VPK Budget dashboards — inherit selected theme font everywhere.
+    .o_vpk_budget_dashboard,
+    .o_vpk_budget_overview,
+    .o_vpk_budget_department {
+        font-family: var(--vpk-font-family, var(--bs-body-font-family, inherit)) !important;
+        font-size: var(--vpk-font-size-md, inherit) !important;
+
+        h1, h2, h3, h4, h5, h6,
+        p, span, strong, small, b, em, label,
+        table, th, td,
+        button, .btn, select, .form-select,
+        .badge, a, li, div {
+            font-family: inherit !important;
+        }
+
+        .fa,
+        .fa::before {
+            font-family: "FontAwesome" !important;
+        }
+    }
+
+    .o_kanban_view {
+        .o_kanban_record {
+            div,
+            span,
+            p,
+            a,
+            small,
+            strong,
+            b,
+            label,
+            button,
+            .btn,
+            .badge,
+            .o_text_overflow,
+            .o_field_widget {
+                font-family: inherit !important;
+            }
+        }
+
+        .fa,
+        .fa::before,
+        .ri,
+        .ri::before,
+        .oi,
+        .oi::before {
+            font-family: revert;
+        }
+
+        .fa,
+        .fa::before {
+            font-family: "FontAwesome" !important;
+        }
+
+        .ri,
+        .ri::before {
+            font-family: "remixicon" !important;
+        }
+
+        .oi,
+        .oi::before {
+            font-family: "odoo_ui_icons" !important;
+        }
+    }
+
+    // DateTime picker popover (attached to body, outside form sheet)
+    .o_popover.popover,
+    .popover {
+        &:has(.o_datetime_picker) {
+            font-family: var(--vpk-font-family, inherit) !important;
+            font-size: var(--vpk-font-size-md, inherit) !important;
+        }
+    }
+
+    .o_datetime_picker {
+        font-family: var(--vpk-font-family, inherit) !important;
+        font-size: var(--vpk-font-size-md, inherit) !important;
+
+        .o_datetime_picker_header,
+        .o_date_item_cell,
+        .o_datetime_button,
+        .o_time_picker,
+        .o_time_picker_select,
+        .btn,
+        span,
+        select {
+            font-family: inherit !important;
+        }
+
+        .o_text_sm {
+            font-size: var(--vpk-font-size-sm, 0.875rem) !important;
+        }
+    }
+
+    // Mail chatter — Odoo sets font-family on .o-mail-Message-body / .o-mail-Composer-input
+    $vpk-mail-font: "text-emoji", var(--vpk-font-family, var(--bs-body-font-family, inherit));
+
+    .o-mail-ChatterContainer,
+    .o-mail-Form-chatter,
+    .o-mail-Chatter {
+        font-family: $vpk-mail-font !important;
+        font-size: var(--vpk-font-size-md, inherit) !important;
+
+        .o-mail-Chatter-topbar,
+        .o-mail-Chatter-content,
+        .o-mail-Thread,
+        .o-mail-Message,
+        .o-mail-Message-core,
+        .o-mail-Message-header,
+        .o-mail-Message-author,
+        .o-mail-Message-date,
+        .o-mail-Message-content,
+        .o-mail-Message-textContent,
+        .o-mail-NotificationMessage,
+        .o-mail-Composer,
+        .o-mail-Composer-coreHeader,
+        .o-mail-ActivityMenu,
+        .o-mail-ActivityListPopover,
+        textarea,
+        input,
+        button,
+        .btn,
+        .nav-link,
+        .dropdown-item {
+            font-family: inherit !important;
+        }
+
+        // Message body + composer — must override mail/static message.scss & composer.scss
+        .o-mail-Message-body,
+        .o-mail-Message-richBody,
+        .o-mail-MessageInReply-message,
+        .o-mail-Composer-input,
+        .o-mail-Composer-inputStyle {
+            font-family: $vpk-mail-font !important;
+            font-size: var(--vpk-font-size-md, inherit) !important;
+        }
+
+        .o-mail-Message-body,
+        .o-mail-Message-richBody {
+            p, span, div, li, a, em, strong, blockquote {
+                font-family: inherit !important;
+            }
+        }
+
+        .small,
+        .smaller,
+        .o-xsmaller {
+            font-size: var(--vpk-font-size-sm, inherit) !important;
+        }
+    }
+
+    // Action / Print menus — buttons in control panel + dropdowns portaled to body
+    .o_control_panel {
+        .o_cp_action_menus,
+        .o_list_selection_container,
+        .o_list_selection_box {
+            font-family: var(--vpk-font-family, inherit);
+            font-size: var(--vpk-font-size-md, inherit);
+
+            .btn,
+            .o_dropdown_title,
+            .list-group-item,
+            .dropdown-item,
+            .o-dropdown-item {
+                font-family: inherit !important;
+                font-size: inherit;
+            }
+        }
+    }
+
+    .o-dropdown--menu.dropdown-menu {
+        font-family: var(--vpk-font-family, inherit) !important;
+        font-size: var(--vpk-font-size-md, inherit);
+
+        .dropdown-item,
+        .o-dropdown-item,
+        .o_menu_item,
+        button {
+            font-family: inherit !important;
+            font-size: inherit;
+        }
+    }
+}

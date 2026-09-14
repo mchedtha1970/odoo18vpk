@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_equipment_view_form_asset" model="ir.ui.view">
+        <field name="name">maintenance.equipment.form.asset</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_open_fixed_asset"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-cube"
+                    invisible="not asset_id"
+                    string="ทรัพย์สิน"
+                />
+            </xpath>
+            <!-- Target Product Info tab only (not serial_no in button_box) -->
+            <xpath expr="//page[@name='product_information']//field[@name='serial_no']" position="before">
+                <field name="asset_number" string="หมายเลขทรัพย์สิน"/>
+            </xpath>
+            <xpath expr="//page[@name='product_information']//field[@name='serial_no']" position="after">
+                <field name="asset_id" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

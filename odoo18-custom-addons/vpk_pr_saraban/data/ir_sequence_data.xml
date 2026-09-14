@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_saraban_document" model="ir.sequence">
+        <field name="name">เลขที่สารบรรณ</field>
+        <field name="code">saraban.document</field>
+        <field name="prefix"/>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

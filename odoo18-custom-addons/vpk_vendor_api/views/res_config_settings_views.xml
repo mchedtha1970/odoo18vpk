@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_vendor_api" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.vendor.api</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="purchase.res_config_settings_view_form_purchase"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='purchase']" position="inside">
+                <block title="Vendor Registration API" name="vpk_vendor_api_setting">
+                    <setting
+                        string="Enable Vendor API"
+                        help="เปิดรับลงทะเบียนผู้จำหน่ายจากระบบภายนอกผ่าน HTTP API"
+                    >
+                        <field name="vpk_vendor_api_enabled"/>
+                    </setting>
+                    <setting
+                        string="API Key"
+                        help="ส่งใน Header X-Api-Key หรือ Authorization: Bearer"
+                        invisible="not vpk_vendor_api_enabled"
+                    >
+                        <field name="vpk_vendor_api_key" password="True"/>
+                        <div class="text-muted">
+                            POST /vpk/api/v1/vendors/register ·
+                            POST /vpk/api/v1/vendors/&lt;external_id&gt;/documents ·
+                            GET /vpk/api/v1/vendors/&lt;external_id&gt;
+                        </div>
+                    </setting>
+                    <setting
+                        string="Max document size (MB)"
+                        help="จำกัดขนาดไฟล์เอกสารทางการค้าต่อไฟล์"
+                        invisible="not vpk_vendor_api_enabled"
+                    >
+                        <field name="vpk_vendor_api_max_upload_mb"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

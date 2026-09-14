@@ -1,0 +1,74 @@
+/* Official appointment order PDF — TH Sarabun via l10n_th_base_utils */
+.o_wa_committee_order {
+    font-family: "THSarabunNew", "TH Sarabun New", sans-serif;
+    font-size: 16pt;
+    color: #000;
+    line-height: 1.45;
+}
+.o_wa_committee_order,
+.o_wa_committee_order * {
+    font-family: "THSarabunNew", "TH Sarabun New", sans-serif !important;
+    color: #000;
+}
+.o_wa_committee_order .order-garuda {
+    text-align: center;
+    margin: 0 0 4px 0;
+}
+.o_wa_committee_order .order-garuda img {
+    height: 78px;
+    width: auto;
+}
+.o_wa_committee_order .order-title {
+    text-align: center;
+    font-family: "THSarabunNew-Bold", "THSarabunNew", sans-serif !important;
+    font-size: 16pt;
+    font-weight: bold;
+    margin: 0;
+}
+.o_wa_committee_order .order-center {
+    text-align: center;
+    margin: 0;
+}
+.o_wa_committee_order .order-rule {
+    text-align: center;
+    letter-spacing: 1px;
+    margin: 2px 0 8px 0;
+}
+.o_wa_committee_order .order-body {
+    text-align: justify;
+    text-indent: 2.5cm;
+    margin: 8px 0 6px 0;
+}
+.o_wa_committee_order .order-member {
+    text-align: justify;
+    text-indent: 0;
+    padding-left: 2.5cm;
+    margin: 0 0 2px 0;
+}
+.o_wa_committee_order .order-duty,
+.o_wa_committee_order .order-effective {
+    text-align: justify;
+    text-indent: 2.5cm;
+    margin: 8px 0 0 0;
+}
+.o_wa_committee_order .order-date {
+    text-align: right;
+    margin: 18px 1.5cm 0 0;
+}
+.o_wa_committee_order .order-sign {
+    width: 100%;
+    margin-top: 42px;
+}
+.o_wa_committee_order .order-sign td {
+    width: 50%;
+    vertical-align: top;
+}
+.o_wa_committee_order .order-sign .sign-block {
+    text-align: center;
+    margin-left: 42%;
+}
+.o_wa_committee_order .sign-name,
+.o_wa_committee_order .sign-position {
+    margin: 0;
+    text-align: center;
+}

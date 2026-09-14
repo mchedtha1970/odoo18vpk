@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="purchase_requisition_alternative_warning_form_egp" model="ir.ui.view">
+        <field name="name">purchase.requisition.alternative.warning.form.egp</field>
+        <field name="model">purchase.requisition.alternative.warning</field>
+        <field name="inherit_id" ref="purchase_requisition.purchase_requisition_alternative_warning_form"/>
+        <field name="arch" type="xml">
+            <button name="action_keep_alternatives" position="attributes">
+                <attribute name="class">btn-secondary</attribute>
+            </button>
+            <button name="action_cancel_alternatives" position="attributes">
+                <attribute name="class">btn-primary</attribute>
+            </button>
+        </field>
+    </record>
+</odoo>

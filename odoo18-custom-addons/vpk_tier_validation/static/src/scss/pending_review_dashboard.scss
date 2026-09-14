@@ -1,0 +1,47 @@
+.o_vpk_pending_review_dashboard {
+    font-family: inherit;
+
+    .o_vpk_dashboard_header {
+        font-family: inherit;
+        font-size: var(--vpk-font-size-md, 12px);
+
+        h2 {
+            font-size: var(--vpk-font-size-xl, 15px);
+            font-family: inherit;
+        }
+
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 20px 24px 12px;
+        border-bottom: 1px solid #dee2e6;
+        background: #fff;
+    }
+
+    .o_vpk_dashboard_header_actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .o_vpk_dashboard_body {
+        overflow: auto;
+        padding: 16px 24px 24px;
+    }
+
+    .o_vpk_pending_review_dashboard_view {
+        min-height: 300px;
+    }
+}
+
+.o_vpk_menu_badge {
+    margin-left: auto;
+    min-width: 1.5rem;
+    font-size: var(--vpk-font-size-sm, 11px);
+}
+
+.o_vpk_app_link .o_vpk_menu_badge {
+    margin-left: 6px;
+}

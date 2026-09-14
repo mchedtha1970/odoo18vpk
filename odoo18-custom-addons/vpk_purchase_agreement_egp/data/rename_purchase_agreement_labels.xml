@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Gear menu on Purchase Request: Create Purchase Agreements → กระบวนการ eGP -->
+    <record
+        id="purchase_request_to_requisition.action_purchase_request_make_purchase_requisition"
+        model="ir.actions.act_window"
+    >
+        <field name="name">ส่งกระบวนการ eGP</field>
+    </record>
+    <record
+        id="purchase_request_to_requisition.action_purchase_request_line_make_purchase_requisition"
+        model="ir.actions.act_window"
+    >
+        <field name="name">ส่งกระบวนการ eGP</field>
+    </record>
+
+    <!-- Purchase menu / list of agreements -->
+    <record id="purchase_requisition.action_purchase_requisition" model="ir.actions.act_window">
+        <field name="name">กระบวนการ eGP</field>
+    </record>
+    <record id="purchase_requisition.menu_purchase_requisition_pro_mgt" model="ir.ui.menu">
+        <field name="name">กระบวนการ eGP</field>
+    </record>
+</odoo>

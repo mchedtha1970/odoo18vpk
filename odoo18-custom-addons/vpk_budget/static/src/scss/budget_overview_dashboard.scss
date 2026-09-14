@@ -1,0 +1,505 @@
+.o_vpk_budget_overview {
+    min-height: 100%;
+    padding: 22px 24px 32px;
+    background: #f5f7fb;
+    color: #0f172a;
+    font-family: var(--vpk-font-family, var(--bs-body-font-family, inherit));
+    font-size: var(--vpk-font-size-md, inherit);
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    span,
+    strong,
+    small,
+    b,
+    em,
+    i,
+    label,
+    table,
+    th,
+    td,
+    button,
+    .btn,
+    select,
+    .form-select,
+    .progress,
+    .text-muted,
+    .text-success,
+    .text-danger {
+        font-family: inherit !important;
+    }
+
+    .o_vpk_budget_overview_header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 18px;
+
+        h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        p {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: 13px;
+        }
+    }
+
+    .o_vpk_budget_overview_actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        .form-select {
+            min-width: 180px;
+            background: #fff;
+        }
+
+        .btn-success {
+            background: #16a34a;
+            border-color: #16a34a;
+        }
+    }
+
+    .o_vpk_budget_overview_metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 16px;
+    }
+
+    .o_vpk_budget_overview_metric,
+    .o_vpk_budget_overview_panel {
+        background: #fff;
+        border: 1px solid #e8eef5;
+        border-radius: 16px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+    }
+
+    .o_vpk_budget_overview_metric {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 110px;
+        padding: 18px;
+        cursor: pointer;
+
+        strong {
+            display: block;
+            margin: 8px 0 4px;
+            font-size: 24px;
+            letter-spacing: -0.02em;
+        }
+
+        small {
+            display: block;
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_budget_overview_metric_label {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .o_vpk_budget_overview_metric_icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .o_vpk_budget_overview_form_section {
+        background: #fff;
+        border: 1px solid #e8eef5;
+        border-radius: 16px;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+        padding: 18px;
+        margin-bottom: 16px;
+    }
+
+    .o_vpk_budget_overview_form_header {
+        margin-bottom: 14px;
+
+        h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        span {
+            color: #64748b;
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_budget_overview_form_kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .o_vpk_budget_overview_form_kpi {
+        border: 1px solid #e8eef5;
+        border-radius: 14px;
+        padding: 14px;
+        cursor: pointer;
+        background: #f8fafc;
+        transition: box-shadow 0.15s ease, transform 0.15s ease;
+
+        &:hover {
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+            transform: translateY(-1px);
+        }
+
+        b {
+            display: block;
+            margin: 6px 0 2px;
+            font-size: 18px;
+        }
+
+        small {
+            display: block;
+            font-size: 11px;
+        }
+    }
+
+    .o_vpk_budget_overview_form_kpi_top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .o_vpk_budget_overview_form_pct {
+        font-size: 18px;
+        color: #0f172a;
+    }
+
+    .o_vpk_budget_overview_form_bar {
+        margin-top: 10px;
+        height: 6px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        overflow: hidden;
+    }
+
+    .o_vpk_budget_overview_form_bar_fill {
+        height: 100%;
+        border-radius: 999px;
+    }
+
+    .o_vpk_budget_overview_form_donut {
+        border-top: 1px solid #eef2f7;
+        padding-top: 14px;
+    }
+
+    .o_vpk_budget_overview_grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr);
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .o_vpk_budget_overview_grid_bottom {
+        grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.95fr);
+    }
+
+    .o_vpk_budget_overview_panel {
+        padding: 18px;
+    }
+
+    .o_vpk_budget_overview_panel_header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 14px;
+
+        h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        span {
+            color: #64748b;
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_budget_overview_chart {
+        position: relative;
+        height: 280px;
+
+        svg {
+            width: 100%;
+            height: 220px;
+            overflow: visible;
+        }
+    }
+
+    .o_vpk_budget_overview_area {
+        fill: rgba(16, 185, 129, 0.15);
+        stroke: none;
+    }
+
+    .o_vpk_budget_overview_line_actual {
+        fill: none;
+        stroke: #10b981;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .o_vpk_budget_overview_line_plan {
+        fill: none;
+        stroke: #ef4444;
+        stroke-width: 2;
+        stroke-dasharray: 4 3;
+        stroke-linecap: round;
+    }
+
+    .o_vpk_budget_overview_legend_inline {
+        display: flex;
+        gap: 16px;
+        margin-top: 8px;
+        color: #64748b;
+        font-size: 12px;
+
+        .o_dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .o_dot_actual {
+            background: #10b981;
+        }
+
+        .o_dot_plan {
+            background: #ef4444;
+        }
+    }
+
+    .o_vpk_budget_overview_axis {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 2px;
+        margin-top: 8px;
+        color: #94a3b8;
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .o_vpk_budget_overview_donut_wrap {
+        display: grid;
+        grid-template-columns: 160px minmax(0, 1fr);
+        gap: 16px;
+        align-items: center;
+        min-height: 240px;
+    }
+
+    .o_vpk_budget_overview_donut {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        margin: 0 auto;
+        mask: radial-gradient(circle at center, transparent 48%, #000 49%);
+        -webkit-mask: radial-gradient(circle at center, transparent 48%, #000 49%);
+    }
+
+    .o_vpk_budget_overview_donut_legend {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .o_vpk_budget_overview_legend_item {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+
+        > span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-top: 5px;
+            flex: 0 0 auto;
+        }
+
+        strong {
+            display: block;
+            font-size: 13px;
+        }
+
+        small {
+            color: #64748b;
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_budget_overview_table {
+        margin: 0;
+
+        th {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 600;
+            border-bottom-width: 1px;
+        }
+
+        td {
+            vertical-align: middle;
+            border-color: #f1f5f9;
+            font-size: 13px;
+        }
+    }
+
+    .o_vpk_budget_overview_dept {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+
+        i {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    }
+
+    .o_vpk_budget_overview_usage {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        min-width: 140px;
+
+        .progress {
+            height: 8px;
+            background: #eef2f7;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 999px;
+        }
+
+        small {
+            color: #475569;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+    }
+
+    .o_vpk_budget_overview_recent {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .o_vpk_budget_overview_recent_item {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        border: 1px solid #eef2f7;
+        border-radius: 12px;
+        background: #f8fafc;
+        padding: 12px;
+        text-align: left;
+
+        strong {
+            display: block;
+            font-size: 13px;
+        }
+
+        small {
+            color: #64748b;
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_budget_overview_recent_meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+
+        b {
+            font-size: 13px;
+        }
+
+        .o_state {
+            font-style: normal;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .o_state_draft {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .o_state_submitted,
+        .o_state_review {
+            background: #ffedd5;
+            color: #c2410c;
+        }
+
+        .o_state_received {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
+        .o_state_approved {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .o_state_rejected {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+    }
+
+    .o_vpk_budget_overview_loading {
+        padding: 48px;
+        text-align: center;
+        color: #64748b;
+    }
+
+    @media (max-width: 1200px) {
+        .o_vpk_budget_overview_metrics,
+        .o_vpk_budget_overview_grid,
+        .o_vpk_budget_overview_grid_bottom {
+            grid-template-columns: 1fr;
+        }
+
+        .o_vpk_budget_overview_donut_wrap {
+            grid-template-columns: 1fr;
+        }
+    }
+}

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="budget_fund_source_state_budget" model="vpk.budget.fund.source">
+        <field name="sequence">10</field>
+        <field name="code">STATE_BUDGET</field>
+        <field name="name">เงินงบประมาณ</field>
+    </record>
+    <record id="budget_fund_source_hospital_maintenance" model="vpk.budget.fund.source">
+        <field name="sequence">20</field>
+        <field name="code">HOSP_MAINT</field>
+        <field name="name">เงินบำรุง</field>
+    </record>
+    <record id="budget_fund_source_uc_fund" model="vpk.budget.fund.source">
+        <field name="sequence">21</field>
+        <field name="code">UC_FUND</field>
+        <field name="name">เงินกองทุนหลักประกันสุขภาพ (UC)</field>
+    </record>
+    <record id="budget_fund_source_donation" model="vpk.budget.fund.source">
+        <field name="sequence">22</field>
+        <field name="code">DONATION</field>
+        <field name="name">เงินบริจาค</field>
+    </record>
+    <record id="budget_fund_source_donation_objective" model="vpk.budget.fund.source">
+        <field name="sequence">23</field>
+        <field name="code">DONATION_OBJECTIVE</field>
+        <field name="name">ระบุวัตถุประสงค์</field>
+        <field name="description">หมวดเงินบริจาค</field>
+    </record>
+    <record id="budget_fund_source_donation_luanporcham" model="vpk.budget.fund.source">
+        <field name="sequence">24</field>
+        <field name="code">DONATION_LUANPORCHAM</field>
+        <field name="name">หลวงพ่อแช่ม</field>
+        <field name="description">หมวดเงินบริจาค</field>
+    </record>
+    <record id="budget_fund_source_donation_other" model="vpk.budget.fund.source">
+        <field name="sequence">25</field>
+        <field name="code">DONATION_Other</field>
+        <field name="name">อื่นๆ ระบุ (ROTARY , LOINS ,Fund raise )</field>
+        <field name="description">หมวดเงินบริจาค</field>
+    </record>
+    <record id="budget_fund_source_capital" model="vpk.budget.fund.source">
+        <field name="sequence">26</field>
+        <field name="code">CAPITAL</field>
+        <field name="name">งบลงทุน</field>
+    </record>
+    <record id="budget_fund_source_depr" model="vpk.budget.fund.source">
+        <field name="sequence">27</field>
+        <field name="code">DEPR</field>
+        <field name="name">งบค่าเสื่อม</field>
+    </record>
+    <record id="budget_fund_source_pao" model="vpk.budget.fund.source">
+        <field name="sequence">28</field>
+        <field name="code">PAO</field>
+        <field name="name">งบอบจ</field>
+        <field name="description">งบลงทุน</field>
+    </record>
+    <record id="budget_fund_source_sso" model="vpk.budget.fund.source">
+        <field name="sequence">29</field>
+        <field name="code">SSO</field>
+        <field name="name">งบ 2.5% ปกส.</field>
+    </record>
+    <record id="budget_fund_source_migrant" model="vpk.budget.fund.source">
+        <field name="sequence">30</field>
+        <field name="code">MIGRANT</field>
+        <field name="name">งบแรงงานต่างด้าว</field>
+    </record>
+    <record id="budget_fund_source_prov" model="vpk.budget.fund.source">
+        <field name="sequence">31</field>
+        <field name="code">PROV</field>
+        <field name="name">งบพัฒนาจังหวัด</field>
+    </record>
+    <record id="budget_fund_source_andaman" model="vpk.budget.fund.source">
+        <field name="sequence">32</field>
+        <field name="code">ANDAMAN</field>
+        <field name="name">งบพัฒนากลุ่มจังหวัดภาคใต้ฝั่งอันดามัน</field>
+    </record>
+    <record id="budget_fund_source_lottery" model="vpk.budget.fund.source">
+        <field name="sequence">33</field>
+        <field name="code">LOTTERY</field>
+        <field name="name">งบสนับสนุนโครงการสลากการกุศล</field>
+    </record>
+    <record id="budget_fund_source_pao_hf" model="vpk.budget.fund.source">
+        <field name="sequence">34</field>
+        <field name="code">PAO-HF</field>
+        <field name="name">งบอบจ (กองทุนส่งเสริมและฟื้นฟูสุขภาพ)</field>
+        <field name="description">งบดำเนินงาน</field>
+    </record>
+    <record id="budget_fund_source_med_edu" model="vpk.budget.fund.source">
+        <field name="sequence">35</field>
+        <field name="code">MED-EDU</field>
+        <field name="name">หมวดอุดหนุนศูนย์แพทยศาสตร</field>
+        <field name="description">งบดำเนินงาน</field>
+    </record>
+    <record id="budget_fund_source_ltc_local" model="vpk.budget.fund.source">
+        <field name="sequence">36</field>
+        <field name="code">LTC-LOCAL</field>
+        <field name="name">กองทุนหลักประกันสุขภาพเทศบาลนครภูเก็ต</field>
+        <field name="description">งบดำเนินงาน</field>
+    </record>
+    <record id="budget_fund_source_academic" model="vpk.budget.fund.source">
+        <field name="sequence">37</field>
+        <field name="code">ACADEMIC</field>
+        <field name="name">เงินสนับสนุนประชุมวิชาการ</field>
+        <field name="description">งบดำเนินงาน</field>
+    </record>
+    <record id="budget_fund_source_welfare" model="vpk.budget.fund.source">
+        <field name="sequence">38</field>
+        <field name="code">WELFARE</field>
+        <field name="name">เงินสวัสดิการ</field>
+        <field name="description">งบดำเนินงาน</field>
+    </record>
+</odoo>

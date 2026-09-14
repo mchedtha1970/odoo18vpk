@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="assessment_result_repair_with_parts" model="maintenance.assessment.result">
+            <field name="name">ซ่อมได้มีอะไหล่</field>
+            <field name="code">repair_with_parts</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="assessment_result_repair_without_parts" model="maintenance.assessment.result">
+            <field name="name">ซ่อมได้ไม่มีอะไหล่</field>
+            <field name="code">repair_without_parts</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="assessment_result_outsource" model="maintenance.assessment.result">
+            <field name="name">จ้างซ่อมภายนอก</field>
+            <field name="code">outsource</field>
+            <field name="sequence">30</field>
+        </record>
+        <record id="assessment_result_not_worth_dispose" model="maintenance.assessment.result">
+            <field name="name">ซ่อมไม่คุ้มแทงจำหน่าย</field>
+            <field name="code">not_worth_dispose</field>
+            <field name="sequence">40</field>
+        </record>
+    </data>
+</odoo>

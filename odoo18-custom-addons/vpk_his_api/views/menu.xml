@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_his_revenue_queue"
+        name="HIS Revenue Queue"
+        parent="account.menu_finance_receivables"
+        action="action_his_batch_revenue"
+        sequence="25"
+        groups="vpk_his_api.group_his_user"
+    />
+    <menuitem
+        id="menu_his_remittance"
+        name="ใบนำส่งเงิน"
+        parent="account.menu_finance_receivables"
+        action="action_his_remittance_wizard"
+        sequence="24"
+        groups="vpk_his_api.group_his_user"
+    />
+    <menuitem
+        id="menu_his_entitlement_ar"
+        name="ลูกหนี้คงค้าง"
+        parent="account.menu_finance_receivables"
+        action="action_his_entitlement_ar"
+        sequence="23"
+        groups="vpk_his_api.group_his_accountant"
+    />
+    <menuitem
+        id="menu_his_entitlement_aging"
+        name="Aged Receivable (สิทธิ์)"
+        parent="account.menu_finance_receivables"
+        action="action_his_entitlement_aging"
+        sequence="23"
+        groups="vpk_his_api.group_his_accountant"
+    />
+
+    <menuitem
+        id="menu_his_entitlement_map"
+        name="HIS Entitlements"
+        parent="account.menu_finance_receivables"
+        action="action_his_entitlement_map"
+        sequence="26"
+        groups="vpk_his_api.group_his_accountant"
+    />
+    <menuitem
+        id="menu_his_payment_method_map"
+        name="HIS Payment Methods"
+        parent="account.menu_finance_receivables"
+        action="action_his_payment_method_map"
+        sequence="27"
+        groups="vpk_his_api.group_his_accountant"
+    />
+
+    <menuitem
+        id="menu_his_config_root"
+        name="HIS Interface"
+        parent="account.menu_finance_configuration"
+        sequence="80"
+        groups="vpk_his_api.group_his_manager"
+    />
+    <menuitem
+        id="menu_his_api_log"
+        name="API Logs"
+        parent="menu_his_config_root"
+        action="action_his_api_log"
+        sequence="90"
+        groups="vpk_his_api.group_his_manager"
+    />
+
+    <menuitem
+        id="menu_his_stock_queue"
+        name="HIS ตัดจ่ายสินค้า"
+        parent="stock.menu_stock_warehouse_mgmt"
+        action="action_his_batch_stock"
+        sequence="25"
+        groups="vpk_his_api.group_his_user"
+    />
+    <menuitem
+        id="menu_his_requisition_queue"
+        name="HIS เบิกเติมคลัง"
+        parent="stock.menu_stock_warehouse_mgmt"
+        action="action_his_batch_requisition"
+        sequence="26"
+        groups="vpk_his_api.group_his_user"
+    />
+    <menuitem
+        id="menu_his_unit_map"
+        name="HIS Service Units"
+        parent="stock.menu_stock_config_settings"
+        action="action_his_unit_map"
+        sequence="80"
+        groups="vpk_his_api.group_his_pharmacist"
+    />
+</odoo>

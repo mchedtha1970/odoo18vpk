@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_budget_material_type_tree" model="ir.ui.view">
+        <field name="name">budget.material.type.tree</field>
+        <field name="model">budget.material.type</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="sequence" widget="handle"/>
+                <field name="budget_post_id"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_budget_material_type_form" model="ir.ui.view">
+        <field name="name">budget.material.type.form</field>
+        <field name="model">budget.material.type</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="budget_post_id"/>
+                            <field name="name"/>
+                            <field name="code"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_budget_material_type" model="ir.actions.act_window">
+        <field name="name">ประเภทวัสดุตามหมวดงบ</field>
+        <field name="res_model">budget.material.type</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <record id="view_budget_post_form_hospital_material_types" model="ir.ui.view">
+        <field name="name">account.budget.post.form.hospital.material.types</field>
+        <field name="model">account.budget.post</field>
+        <field name="inherit_id" ref="base_account_budget.view_budget_post_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Material Types">
+                    <field name="material_type_ids" context="{'default_budget_post_id': active_id}">
+                        <tree editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="active"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <menuitem
+        id="menu_budget_material_type"
+        name="Master ประเภทวัสดุย่อย"
+        parent="hospital_budget_customization.menu_budget_master_root"
+        action="action_budget_material_type"
+        sequence="20"
+        groups="account.group_account_manager"
+    />
+</odoo>

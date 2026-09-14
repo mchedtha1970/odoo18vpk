@@ -1,0 +1,115 @@
+// List table header — true vertical center (inline-block + fixed row height)
+html body.o_web_client.o_vpk_sidebar_menu {
+    .o_list_renderer {
+        --ListRenderer-thead-padding-y: 0px !important;
+    }
+
+    .o_list_renderer .o_list_table thead > tr > th {
+        box-sizing: border-box !important;
+        padding: 0 var(--ListRenderer-table-padding-x, 0.75rem) !important;
+        height: var(--vpk-list-header-height, 2.125rem) !important;
+        max-height: var(--vpk-list-header-height, 2.125rem) !important;
+        vertical-align: middle !important;
+        line-height: normal !important;
+        overflow: visible !important;
+
+        // Ghost inline-block — classic vertical-align middle helper
+        &::before {
+            content: "" !important;
+            display: inline-block !important;
+            height: 100% !important;
+            vertical-align: middle !important;
+            width: 0 !important;
+        }
+
+        > .d-flex {
+            display: inline-flex !important;
+            align-items: center !important;
+            vertical-align: middle !important;
+            max-width: 100%;
+            line-height: 1.3 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        > .d-flex > span {
+            display: inline !important;
+            line-height: 1.3 !important;
+            vertical-align: middle !important;
+        }
+
+        &.o_list_number_th > .d-flex,
+        > .d-flex > span.o_list_number_th {
+            justify-content: flex-end;
+        }
+
+        &.o_list_record_selector {
+            text-align: center !important;
+
+            &::before {
+                display: none !important;
+            }
+
+            .form-check,
+            .o-checkbox {
+                display: inline-flex !important;
+                align-items: center !important;
+                vertical-align: middle !important;
+                margin: 0 auto !important;
+            }
+        }
+
+        &.o_list_actions_header {
+            &::before {
+                display: none !important;
+            }
+
+            white-space: nowrap !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+            overflow: visible !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+
+            > .o_optional_columns_dropdown {
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                vertical-align: middle !important;
+                height: 100% !important;
+                line-height: 1 !important;
+                margin: 0 auto !important;
+
+                .btn {
+                    display: inline-flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    padding: 0 !important;
+                    line-height: 1 !important;
+                    min-height: 0 !important;
+                }
+
+                .o_optional_columns_dropdown_toggle {
+                    position: static !important;
+                    top: auto !important;
+                    line-height: 1 !important;
+                }
+            }
+        }
+    }
+
+    .o_list_renderer .o_list_table .o_list_record_remove button.fa {
+        font-family: "remixicon" !important;
+        font-style: normal !important;
+        font-weight: normal !important;
+        font-size: 1rem !important;
+        line-height: 1 !important;
+        color: var(--bs-body-color, #495057) !important;
+
+        &.fa-trash-o::before,
+        &.fa-trash::before {
+            content: "\ec2a" !important;
+            font-family: "remixicon" !important;
+        }
+    }
+}

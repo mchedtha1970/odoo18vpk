@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_his_entitlement_map_list" model="ir.ui.view">
+        <field name="name">vpk.his.entitlement.map.list</field>
+        <field name="model">vpk.his.entitlement.map</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="remittance_sequence" optional="hide"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="remittance_label" optional="hide"/>
+                <field name="service_type"/>
+                <field name="item_type"/>
+                <field name="partner_id"/>
+                <field name="income_account_id"/>
+                <field name="receivable_account_id"/>
+                <field name="receipt_journal_id" optional="show"/>
+                <field name="create_payment"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_his_entitlement_map_form" model="ir.ui.view">
+        <field name="name">vpk.his.entitlement.map.form</field>
+        <field name="model">vpk.his.entitlement.map</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_auto_bind" type="object" string="Bind CoA Accounts"
+                            class="btn-secondary"/>
+                    <button name="action_open_outstanding_ar" type="object"
+                            string="ลูกหนี้คงค้าง" class="btn-primary"/>
+                    <button name="action_open_aged_receivable" type="object"
+                            string="Aged Receivable" class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="remittance_sequence"/>
+                            <field name="remittance_label"/>
+                            <field name="service_type"/>
+                            <field name="item_type"/>
+                            <field name="partner_id"/>
+                            <field name="create_payment"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="income_account_code"/>
+                            <field name="income_account_id"/>
+                            <field name="receivable_account_code"/>
+                            <field name="receivable_account_id"/>
+                            <field name="cash_account_code"/>
+                            <field name="cash_account_id"/>
+                            <field name="receipt_journal_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_his_entitlement_map" model="ir.actions.act_window">
+        <field name="name">HIS Entitlements</field>
+        <field name="res_model">vpk.his.entitlement.map</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_his_outstanding_ar_search" model="ir.ui.view">
+        <field name="name">account.move.his.outstanding.ar.search</field>
+        <field name="model">account.move</field>
+        <field name="arch" type="xml">
+            <search string="ลูกหนี้คงค้าง">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="ref"/>
+                <field name="invoice_origin"/>
+                <filter string="สิทธิ์" name="his_fund"
+                        domain="[('partner_id.category_id', 'in', [ref('vpk_his_api.partner_category_entitlement_payer')])]"/>
+                <filter string="คนไข้ IPD" name="his_ipd_patient"
+                        domain="[('partner_id.category_id', 'in', [ref('vpk_his_api.partner_category_ipd_patient')])]"/>
+                <separator/>
+                <filter string="ยังไม่ชำระ" name="unpaid"
+                        domain="[('payment_state', 'in', ('not_paid', 'partial', 'in_payment'))]"/>
+                <group>
+                    <filter string="คู่ค้า" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="วันที่" name="group_date" context="{'group_by': 'invoice_date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_his_entitlement_ar" model="ir.actions.server">
+        <field name="name">ลูกหนี้คงค้าง</field>
+        <field name="model_id" ref="model_vpk_his_entitlement_map"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_outstanding_ar()</field>
+    </record>
+    <record id="action_his_entitlement_aging" model="ir.actions.server">
+        <field name="name">Aged Receivable (สิทธิ์)</field>
+        <field name="model_id" ref="model_vpk_his_entitlement_map"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_aged_receivable()</field>
+    </record>
+</odoo>

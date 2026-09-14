@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_winner_announcement_form" model="ir.ui.view">
+        <field name="name">purchase.requisition.winner.announcement.form</field>
+        <field name="model">purchase.requisition.winner.announcement</field>
+        <field name="arch" type="xml">
+            <form string="ประกาศผู้ชนะการเสนอราคา">
+                <header>
+                    <button name="action_publish" string="เผยแพร่ประกาศ"
+                            type="object" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_print" string="พิมพ์ประกาศ"
+                            type="object"
+                            invisible="state == 'cancelled'"/>
+                    <button name="action_cancel" string="ยกเลิก"
+                            type="object"
+                            invisible="state != 'draft'"/>
+                    <button name="action_draft" string="กลับเป็นร่าง"
+                            type="object"
+                            invisible="state not in ('published', 'cancelled')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,published"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                        <h3><field name="subject"
+                                   readonly="state != 'draft'"/></h3>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="requisition_id"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
+                            <field name="award_report_id"
+                                   options="{'no_create': True}"
+                                   readonly="state != 'draft'"/>
+                            <field name="purchase_request_id"/>
+                            <field name="egp_reference"/>
+                        </group>
+                        <group>
+                            <field name="procurement_method_id"/>
+                            <field name="winner_partner_id"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="winner_amount"/>
+                            <field name="published_by"/>
+                            <field name="published_date"/>
+                        </group>
+                    </group>
+                    <group string="เหตุผลที่ได้รับการคัดเลือก">
+                        <field name="reason" nolabel="1"
+                               readonly="state != 'draft'"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_winner_announcement_list" model="ir.ui.view">
+        <field name="name">purchase.requisition.winner.announcement.list</field>
+        <field name="model">purchase.requisition.winner.announcement</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="requisition_id"/>
+                <field name="egp_reference"/>
+                <field name="winner_partner_id"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="winner_amount"/>
+                <field name="published_by" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'published'"
+                       decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_winner_announcement" model="ir.actions.act_window">
+        <field name="name">ประกาศผู้ชนะการเสนอราคา</field>
+        <field name="res_model">purchase.requisition.winner.announcement</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_award_report_form_winner_announcement" model="ir.ui.view">
+        <field name="name">purchase.requisition.award.report.winner.announcement</field>
+        <field name="model">purchase.requisition.award.report</field>
+        <field name="inherit_id"
+               ref="vpk_purchase_agreement_egp.view_award_report_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_create_winner_announcement"
+                        string="สร้างประกาศผู้ชนะ"
+                        type="object" class="btn-secondary"
+                        invisible="state != 'approved'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_requisition_form_winner_announcement"
+            model="ir.ui.view">
+        <field name="name">purchase.requisition.form.winner.announcement</field>
+        <field name="model">purchase.requisition</field>
+        <field name="inherit_id"
+               ref="vpk_purchase_agreement_egp.view_purchase_requisition_form_award_report"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_winner_announcements"
+                        type="object" class="oe_stat_button"
+                        icon="fa-bullhorn"
+                        invisible="requisition_type != 'egp_procurement'">
+                    <field name="winner_announcement_count"
+                           widget="statinfo" string="ประกาศผู้ชนะ"/>
+                </button>
+            </xpath>
+            <xpath expr="//page[@name='egp_rfqs']/group" position="inside">
+                <button name="action_create_winner_announcement"
+                        type="object" string="สร้างประกาศผู้ชนะ"
+                        class="btn-secondary"
+                        invisible="not egp_award_approved"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vendor_evaluation_report_list"
+            model="ir.ui.view">
+        <field name="name">vendor.evaluation.report.list</field>
+        <field name="model">vendor.evaluation</field>
+        <field name="arch" type="xml">
+            <list string="รายงานประเมินผู้จำหน่าย"
+                  create="false"
+                  edit="false"
+                  delete="false"
+                  default_order="partner_id, evaluation_date desc"
+                  decoration-success="grade == 'A'"
+                  decoration-info="grade == 'B'"
+                  decoration-warning="grade in ('C', 'D')"
+                  decoration-danger="grade == 'F'">
+                <field name="evaluation_date"/>
+                <field name="partner_id"/>
+                <field name="purchase_order_id" optional="show"/>
+                <field name="evaluator_id"/>
+                <field name="delivery_score" optional="show"/>
+                <field name="quality_score" optional="show"/>
+                <field name="price_score" optional="show"/>
+                <field name="service_score" optional="show"/>
+                <field name="document_score" optional="show"/>
+                <field name="total_score" string="คะแนนรวม (%)"
+                       avg="คะแนนเฉลี่ย"/>
+                <field name="grade"/>
+                <field name="grade_description"/>
+                <field name="company_id"
+                       groups="base.group_multi_company"
+                       optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vendor_evaluation_report_pivot"
+            model="ir.ui.view">
+        <field name="name">vendor.evaluation.report.pivot</field>
+        <field name="model">vendor.evaluation</field>
+        <field name="arch" type="xml">
+            <pivot string="สรุปผลประเมินผู้จำหน่าย">
+                <field name="partner_id" type="row"/>
+                <field name="evaluation_date" type="col"
+                       interval="month"/>
+                <field name="grade" type="col"/>
+                <field name="total_score" type="measure"/>
+                <field name="delivery_score" type="measure"/>
+                <field name="quality_score" type="measure"/>
+                <field name="price_score" type="measure"/>
+                <field name="service_score" type="measure"/>
+                <field name="document_score" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_vendor_evaluation_report_graph"
+            model="ir.ui.view">
+        <field name="name">vendor.evaluation.report.graph</field>
+        <field name="model">vendor.evaluation</field>
+        <field name="arch" type="xml">
+            <graph string="คะแนนเฉลี่ยผู้จำหน่าย"
+                   type="bar">
+                <field name="partner_id"/>
+                <field name="total_score" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_vendor_evaluation_report_search"
+            model="ir.ui.view">
+        <field name="name">vendor.evaluation.report.search</field>
+        <field name="model">vendor.evaluation</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาผลประเมินผู้จำหน่าย">
+                <field name="partner_id"/>
+                <field name="purchase_order_id"/>
+                <field name="evaluator_id"/>
+                <field name="evaluation_date"/>
+                <filter string="ผ่านเกณฑ์"
+                        name="evaluation_passed"
+                        domain="[('grade', 'in', ('A', 'B', 'C'))]"/>
+                <filter string="ต้องปรับปรุง"
+                        name="evaluation_improvement"
+                        domain="[('grade', 'in', ('D', 'F'))]"/>
+                <separator/>
+                <filter string="ผู้จำหน่าย"
+                        name="group_evaluation_vendor"
+                        domain="[]"
+                        context="{'group_by': 'partner_id'}"/>
+                <filter string="เกรด"
+                        name="group_evaluation_grade"
+                        domain="[]"
+                        context="{'group_by': 'grade'}"/>
+                <filter string="เดือนประเมิน"
+                        name="group_evaluation_month"
+                        domain="[]"
+                        context="{'group_by': 'evaluation_date:month'}"/>
+                <filter string="ผู้ประเมิน"
+                        name="group_evaluator"
+                        domain="[]"
+                        context="{'group_by': 'evaluator_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vendor_evaluation_report"
+            model="ir.actions.act_window">
+        <field name="name">รายงานประเมินผู้จำหน่าย</field>
+        <field name="res_model">vendor.evaluation</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_id"
+               ref="view_vendor_evaluation_report_list"/>
+        <field name="search_view_id"
+               ref="view_vendor_evaluation_report_search"/>
+        <field name="domain">[('state', '=', 'approved')]</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ยังไม่มีผลประเมินผู้จำหน่ายที่อนุมัติแล้ว
+            </p>
+        </field>
+    </record>
+
+    <record id="action_vendor_evaluation_report_list"
+            model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id"
+               ref="view_vendor_evaluation_report_list"/>
+        <field name="act_window_id"
+               ref="action_vendor_evaluation_report"/>
+    </record>
+
+    <record id="action_vendor_evaluation_report_pivot"
+            model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">pivot</field>
+        <field name="view_id"
+               ref="view_vendor_evaluation_report_pivot"/>
+        <field name="act_window_id"
+               ref="action_vendor_evaluation_report"/>
+    </record>
+
+    <record id="action_vendor_evaluation_report_graph"
+            model="ir.actions.act_window.view">
+        <field name="sequence">3</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id"
+               ref="view_vendor_evaluation_report_graph"/>
+        <field name="act_window_id"
+               ref="action_vendor_evaluation_report"/>
+    </record>
+
+    <menuitem id="menu_vendor_evaluation_report"
+              name="รายงานประเมินผู้จำหน่าย"
+              parent="purchase.purchase_report_main"
+              action="action_vendor_evaluation_report"
+              sequence="33"
+              groups="purchase.group_purchase_user"/>
+</odoo>

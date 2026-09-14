@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_departmental_budget_summary_wizard_form" model="ir.ui.view">
+        <field name="name">departmental.budget.request.summary.wizard.form</field>
+        <field name="model">departmental.budget.request.summary.wizard</field>
+        <field name="arch" type="xml">
+            <form string="สรุปรายการคำของบประมาณ">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>สรุปรายการคำของบประมาณ</h1>
+                        <div class="text-muted" invisible="not form_type_id">
+                            แบบฟอร์ม:
+                            <field name="form_type_id" readonly="1" class="oe_inline" nolabel="1"/>
+                        </div>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="company_id" invisible="1"/>
+                            <field name="is_form_type_locked" invisible="1"/>
+                            <field name="summary_section" invisible="1"/>
+                            <field
+                                name="form_type_id"
+                                options="{'no_create': True, 'no_open': True}"
+                                readonly="is_form_type_locked"
+                            />
+                            <field name="fiscal_year" placeholder="เช่น 2026"/>
+                            <field name="budget_post_id" options="{'no_create': True}"/>
+                            <field name="fund_source_id" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="analytic_account_id" options="{'no_create': True}"/>
+                            <field name="prior_fiscal_year_ce" string="ปีงบก่อนหน้า (ค.ศ.)"/>
+                            <field name="current_fiscal_year_ce" string="ปีงบปัจจุบัน (ค.ศ.)"/>
+                        </group>
+                    </group>
+                    <div class="mb-3">
+                        <button
+                            name="action_load_summary"
+                            type="object"
+                            string="แสดงสรุป"
+                            class="btn-primary"
+                        />
+                        <button
+                            name="action_export_excel"
+                            type="object"
+                            string="ส่งออก Excel"
+                            class="btn-secondary"
+                            invisible="not line_ids or (summary_section != 'material' and summary_section != 'asset' and summary_section != 'construction')"
+                        />
+                    </div>
+                    <field name="line_ids" readonly="1">
+                        <list create="0" delete="0" edit="0">
+                            <field name="sequence" widget="handle" column_invisible="1"/>
+                            <field name="budget_group_id" optional="show" column_invisible="parent.summary_section != 'material'"/>
+                            <field name="material_sub_type_id" column_invisible="parent.summary_section != 'material'"/>
+                            <field name="budget_post_id" column_invisible="parent.summary_section == 'material'"/>
+                            <field name="request_id" optional="hide" column_invisible="parent.summary_section != 'asset' and parent.summary_section != 'construction'"/>
+                            <field name="department_name" column_invisible="parent.summary_section != 'asset' and parent.summary_section != 'construction'"/>
+                            <field name="line_label" column_invisible="parent.summary_section == 'material'"/>
+                            <field name="usage_area" column_invisible="parent.summary_section != 'construction'"/>
+                            <field name="construction_location" column_invisible="parent.summary_section != 'construction'"/>
+                            <field name="current_quantity" sum="รวมจำนวนปัจจุบัน" column_invisible="parent.summary_section != 'asset'"/>
+                            <field name="current_age_year" column_invisible="parent.summary_section != 'asset'"/>
+                            <field name="prior_year_plan_amount" sum="รวมแผนปีก่อน" column_invisible="parent.summary_section != 'material'"/>
+                            <field name="disbursed_amount" sum="รวมเบิกจ่าย" column_invisible="parent.summary_section != 'material'"/>
+                            <field name="payable_amount" sum="รวมเจ้าหนี้" column_invisible="parent.summary_section != 'material'"/>
+                            <field name="committed_not_received_amount" sum="รวมก่อหนี้" column_invisible="parent.summary_section != 'material'"/>
+                            <field name="total_spent_amount" sum="รวมรายจ่าย" column_invisible="parent.summary_section != 'material'"/>
+                            <field name="remaining_amount" sum="รวมคงเหลือ" column_invisible="parent.summary_section != 'material'"/>
+                            <field name="stock_amount" sum="รวมคงคลัง" column_invisible="parent.summary_section != 'material'"/>
+                            <field name="requested_plan_amount" sum="รวมคำขอตั้งแผน" column_invisible="parent.summary_section != 'material'"/>
+                            <field name="requested_quantity" sum="รวมจำนวนขอตั้ง" column_invisible="parent.summary_section == 'material'"/>
+                            <field name="unit_name" column_invisible="parent.summary_section != 'construction'"/>
+                            <field name="unit_price" column_invisible="parent.summary_section != 'asset' and parent.summary_section != 'construction'"/>
+                            <field name="total_amount" sum="รวมเงิน" column_invisible="parent.summary_section == 'material'"/>
+                            <field name="qty_new_purchase" sum="รวมซื้อใหม่" column_invisible="parent.summary_section != 'asset'"/>
+                            <field name="qty_replacement" sum="รวมซื้อทดแทน" column_invisible="parent.summary_section != 'asset'"/>
+                            <field name="qty_addition" sum="รวมซื้อเพิ่ม" column_invisible="parent.summary_section != 'asset'"/>
+                            <field name="construction_request_improvement" string="ขอปรับปรุง" column_invisible="parent.summary_section != 'construction'"/>
+                            <field name="construction_request_expansion" string="ขอขยาย/ต่อเติม" column_invisible="parent.summary_section != 'construction'"/>
+                            <field name="reason" optional="show" column_invisible="parent.summary_section != 'asset' and parent.summary_section != 'construction'"/>
+                            <field name="material_note" optional="hide" column_invisible="parent.summary_section != 'material'"/>
+                            <field name="request_count" optional="hide"/>
+                        </list>
+                    </field>
+                    <group class="oe_subtotal_footer" invisible="not line_ids or summary_section != 'material'">
+                        <field name="total_prior_year_plan"/>
+                        <field name="total_disbursed"/>
+                        <field name="total_payable"/>
+                        <field name="total_committed"/>
+                        <field name="total_spent"/>
+                        <field name="total_remaining"/>
+                        <field name="total_stock"/>
+                        <field name="total_requested_plan"/>
+                    </group>
+                    <group class="oe_subtotal_footer" invisible="not line_ids or summary_section == 'material'">
+                        <field name="total_amount"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_departmental_budget_summary_wizard" model="ir.actions.act_window">
+        <field name="name">สรุปรายการคำของบประมาณ</field>
+        <field name="res_model">departmental.budget.request.summary.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_departmental_budget_summary_root"
+        name="สรุปรายการคำของบประมาณ"
+        parent="menu_vpk_budget_root"
+        sequence="20"
+        groups="group_vpk_budget_user"
+    />
+
+    <record id="view_departmental_budget_cover_wizard_form" model="ir.ui.view">
+        <field name="name">departmental.budget.request.cover.wizard.form</field>
+        <field name="model">departmental.budget.request.cover.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ใบปะหน้าคำของบประมาณ">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>ใบปะหน้าคำของบประมาณ</h1>
+                        <div class="text-muted">
+                            สรุปยอดตามหน่วยงาน/กลุ่มงาน แยกครุภัณฑ์ 100,000 บาทขึ้นไป,
+                            ครุภัณฑ์ต่ำกว่า 100,000 บาท และสิ่งก่อสร้าง
+                        </div>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="company_id" invisible="1"/>
+                            <field name="fiscal_year" placeholder="เช่น 2569"/>
+                            <field name="fund_source_id" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="analytic_account_id" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <div class="mb-3">
+                        <button
+                            name="action_load_cover"
+                            type="object"
+                            string="แสดงใบปะหน้า"
+                            class="btn-primary"
+                        />
+                        <button
+                            name="action_export_excel"
+                            type="object"
+                            string="ส่งออก Excel"
+                            class="btn-secondary"
+                            invisible="not line_ids"
+                        />
+                    </div>
+                    <field name="line_ids" readonly="1">
+                        <list create="0" delete="0" edit="0">
+                            <field name="sequence" column_invisible="1"/>
+                            <field name="department_name"/>
+                            <field name="asset_above_amount" sum="รวมครุภัณฑ์ 100,000 บาทขึ้นไป"/>
+                            <field name="asset_below_amount" sum="รวมครุภัณฑ์ต่ำกว่า 100,000 บาท"/>
+                            <field name="construction_amount" sum="รวมสิ่งก่อสร้าง"/>
+                            <field name="total_amount" sum="รวมทั้งหมด"/>
+                        </list>
+                    </field>
+                    <group class="oe_subtotal_footer" invisible="not line_ids">
+                        <field name="total_asset_above_amount"/>
+                        <field name="total_asset_below_amount"/>
+                        <field name="total_construction_amount"/>
+                        <field name="total_amount"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_departmental_budget_cover_wizard" model="ir.actions.act_window">
+        <field name="name">ใบปะหน้าคำของบประมาณ</field>
+        <field name="res_model">departmental.budget.request.cover.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_departmental_budget_cover_wizard"
+        name="ใบปะหน้าคำของบประมาณ"
+        parent="menu_vpk_budget_root"
+        action="action_departmental_budget_cover_wizard"
+        sequence="21"
+        groups="group_vpk_budget_user"
+    />
+</odoo>

@@ -1,0 +1,483 @@
+// VPK Sidebar Menu - Variables
+:root {
+    --vpk-sidebar-width: 288px;
+    --vpk-sidebar-width-collapsed: 72px;
+    --vpk-sidebar-bg-start: #00a884;
+    --vpk-sidebar-bg-end: #063a32;
+    --vpk-sidebar-bg-gradient: linear-gradient(135deg, #00a884 0%, #063a32 100%);
+    --vpk-sidebar-bg: #063a32;
+    --vpk-sidebar-bg-active: rgba(255, 255, 255, 0.12);
+    --vpk-sidebar-bg-hover: rgba(255, 255, 255, 0.08);
+    --vpk-sidebar-bg-submenu: rgba(255, 255, 255, 0.06);
+    --vpk-sidebar-text: #ffffff;
+    --vpk-sidebar-text-muted: rgba(255, 255, 255, 0.7);
+    --vpk-primary-color: #00a884;
+    --vpk-primary-color-dark: #063a32;
+}
+
+// ============================================================================
+// Layout overrides
+// ============================================================================
+html:has(> body.o_vpk_sidebar_menu) {
+    overflow-x: hidden !important;
+    width: 100%;
+    max-width: 100%;
+}
+
+body.o_web_client.o_vpk_sidebar_menu {
+    font-size: var(--vpk-font-size, 12px);
+    overflow-x: clip !important;
+    width: 100%;
+    max-width: 100%;
+
+    > .o_action_manager {
+        > .o_action {
+            min-width: 0;
+            max-width: 100%;
+        }
+    }
+
+    .o_form_view {
+        min-width: 0 !important;
+        max-width: 100%;
+
+        &.o_xxl_form_view {
+            overflow-x: hidden;
+
+            .o_form_view_container {
+                min-width: 0;
+                max-width: 100%;
+            }
+
+            .o_form_sheet_bg {
+                flex: 1 1 0 !important;
+                min-width: 0 !important;
+            }
+        }
+    }
+
+    .o_navbar.o_vpk_sidebar_header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        height: 100vh;
+        width: var(--vpk-sidebar-width);
+        max-width: var(--vpk-sidebar-width);
+        overflow: hidden;
+        background: transparent;
+        border: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    &.o_vpk_sidebar_collapsed .o_navbar.o_vpk_sidebar_header {
+        width: var(--vpk-sidebar-width-collapsed);
+        max-width: var(--vpk-sidebar-width-collapsed);
+    }
+}
+
+// ============================================================================
+// Primary sidebar
+// ============================================================================
+.o_vpk_sidebar_primary {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--vpk-sidebar-width);
+    max-width: var(--vpk-sidebar-width);
+    height: 100vh;
+    background: var(--vpk-sidebar-bg-gradient);
+    color: var(--vpk-sidebar-text);
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    transition: width 0.25s ease;
+    z-index: 1001;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+
+    &.o_vpk_sidebar_collapsed {
+        width: var(--vpk-sidebar-width-collapsed);
+        max-width: var(--vpk-sidebar-width-collapsed);
+
+        .o_vpk_logo_full,
+        .o_vpk_user_info,
+        .o_vpk_app_name,
+        .o_vpk_app_arrow,
+        .o_vpk_app_children,
+        .o_vpk_sidebar_systray {
+            display: none !important;
+        }
+
+        .o_vpk_logo_icon {
+            display: block !important;
+        }
+
+        .o_vpk_sidebar_user {
+            justify-content: center;
+            padding: 8px;
+        }
+
+        .o_vpk_app_link {
+            justify-content: center;
+            padding: 10px 0;
+        }
+    }
+}
+
+// Logo
+.o_vpk_sidebar_logo {
+    padding: 16px 20px 12px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+
+    .o_vpk_logo_full {
+        max-height: 48px;
+        max-width: 100%;
+        object-fit: contain;
+        background: #fff;
+        border-radius: 0;
+        padding: 4px 8px;
+    }
+
+    .o_vpk_logo_icon {
+        display: none;
+        max-height: 36px;
+        max-width: 36px;
+        object-fit: contain;
+        background: #fff;
+        border-radius: 0;
+        padding: 2px;
+    }
+
+    .o_vpk_logo_text {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--vpk-sidebar-text);
+    }
+}
+
+// User profile (Spiffy user-image-style) + dropdown menu
+.o_vpk_sidebar_user {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    margin: auto auto 10px;
+    padding: 0;
+    border-radius: 8px;
+    transition: 0.3s;
+    flex-shrink: 0;
+
+    .o-dropdown {
+        width: 100%;
+    }
+
+    .o_vpk_user_dropdown_toggle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        margin: 0;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        transition: 0.3s;
+
+        &:hover,
+        &:focus,
+        &.show {
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+            color: inherit;
+        }
+    }
+
+    .o_vpk_user_avatar_wrap {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-bottom: 5px;
+        flex-shrink: 0;
+    }
+
+    .o_vpk_user_avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50% !important;
+        object-fit: cover;
+        border: none;
+        display: block;
+    }
+
+    .o_vpk_user_info {
+        text-align: center;
+
+        .o_vpk_user_name {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--vpk-sidebar-text);
+            line-height: 1.3;
+        }
+
+        .o_vpk_user_greeting {
+            display: block;
+            font-size: 10px;
+            color: var(--vpk-sidebar-text-muted);
+            margin-top: 2px;
+        }
+    }
+}
+
+.o_vpk_user_dropdown_menu {
+    min-width: 18rem !important;
+    width: 18rem;
+    padding: 0 0 12px !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
+
+    .o_vpk_user_menu_header {
+        background: var(--vpk-sidebar-bg-gradient);
+        color: var(--vpk-sidebar-text);
+        font-size: 13px;
+        font-weight: 600;
+        padding: 10px 16px;
+        margin: 0 0 4px;
+    }
+
+    .dropdown-item {
+        padding: 8px 16px !important;
+        font-size: 13px;
+        transition: color 0.2s;
+
+        &:hover,
+        &:focus {
+            background: transparent !important;
+            color: var(--vpk-sidebar-bg) !important;
+        }
+    }
+
+    .dropdown-divider {
+        margin: 6px 0;
+    }
+}
+
+// App list (Spiffy: o_navbar_apps_menu padding 0 30px, font inherits body size)
+.o_vpk_sidebar_apps {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 30px 15px;
+
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 2px;
+    }
+}
+
+.o_vpk_apps_list {
+    .o_vpk_app_item {
+        &.active > .o_vpk_app_link {
+            background: var(--vpk-sidebar-bg-active);
+        }
+
+        &.expanded > .o_vpk_app_link {
+            background: var(--vpk-sidebar-bg-active);
+        }
+    }
+
+    .o_vpk_app_link {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        margin: 0.1rem 0;
+        color: var(--vpk-sidebar-text);
+        text-decoration: none;
+        font-size: inherit;
+        line-height: inherit;
+        border-radius: 8px;
+        transition: background 0.3s ease;
+        cursor: pointer;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--vpk-sidebar-text);
+            text-decoration: none;
+        }
+
+        .o_vpk_app_icon {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+
+            img {
+                max-width: 20px;
+                width: 20px;
+                height: 20px;
+                object-fit: contain;
+                border-radius: 4px;
+            }
+
+            .oi {
+                font-size: 20px;
+                vertical-align: middle;
+            }
+        }
+
+        .o_vpk_app_name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .o_vpk_app_arrow {
+            flex-shrink: 0;
+            margin-left: auto;
+            font-size: inherit;
+            line-height: 1;
+            color: var(--vpk-sidebar-text);
+            opacity: 0.9;
+        }
+    }
+}
+
+// Nested sub-menus under root app (Spiffy: child_menus padding 0.5rem 1rem, font-size inherit)
+.o_vpk_app_children {
+    background: transparent;
+    padding-left: 15px;
+    list-style: none;
+
+    .o_vpk_sub_item {
+        .o_vpk_sub_link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            margin: 0.1rem 0;
+            color: var(--vpk-sidebar-text);
+            text-decoration: none;
+            font-size: inherit;
+            line-height: inherit;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+            cursor: pointer;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.1);
+                color: var(--vpk-sidebar-text);
+                text-decoration: none;
+            }
+
+            .o_vpk_sub_arrow {
+                flex-shrink: 0;
+                margin-left: auto;
+                font-size: inherit;
+                line-height: 1;
+                color: var(--vpk-sidebar-text);
+                opacity: 0.9;
+            }
+        }
+
+        &.has-children > .o_vpk_sub_link {
+            font-weight: 600;
+        }
+
+        &.expanded > .o_vpk_sub_link {
+            background: rgba(255, 255, 255, 0.1);
+        }
+    }
+
+    .o_vpk_sub_children {
+        padding-left: 15px;
+
+        .o_vpk_sub_link {
+            font-weight: 400;
+        }
+    }
+}
+
+// Collapse button
+.o_vpk_collapse_btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.15);
+    border: none;
+    color: var(--vpk-sidebar-text);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+
+    &:hover {
+        background: rgba(0, 0, 0, 0.25);
+    }
+}
+
+// ============================================================================
+// Mobile
+// ============================================================================
+.o_vpk_mobile_toggle {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 1002;
+    color: var(--vpk-sidebar-bg);
+    font-size: 20px;
+    padding: 6px 10px;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 767.98px) {
+    .o_vpk_sidebar_primary {
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+
+        &.o_vpk_sidebar_open {
+            transform: translateX(0);
+        }
+    }
+
+    .o_vpk_sidebar_backdrop {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1000;
+    }
+}
+
+
+// Discuss app: offset content beside sidebar
+body.o_vpk_sidebar_menu:not(.o_fullscreen) {
+    .o_action_manager .o-mail-Discuss {
+        margin-left: 0;
+    }
+}

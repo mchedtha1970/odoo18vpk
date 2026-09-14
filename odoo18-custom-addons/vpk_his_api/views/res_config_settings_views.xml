@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_his_api" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.his.api</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='account']" position="inside">
+                <block title="HIS Interface API" name="vpk_his_api_setting">
+                    <setting
+                        string="Enable HIS API"
+                        help="เปิดรับสรุปรายวันจากระบบ HIS ผ่าน HTTP API"
+                    >
+                        <field name="vpk_his_api_enabled"/>
+                    </setting>
+                    <setting
+                        string="API Key"
+                        help="ส่งใน Header X-Api-Key หรือ Authorization: Bearer"
+                        invisible="not vpk_his_api_enabled"
+                    >
+                        <field name="vpk_his_api_key" password="True"/>
+                        <div class="text-muted">
+                            POST /vpk/api/v1/his/revenue ·
+                            POST /vpk/api/v1/his/stock-issues ·
+                            GET /vpk/api/v1/his/lookups/products ·
+                            GET /vpk/api/v1/his/batches/&lt;external_id&gt;
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

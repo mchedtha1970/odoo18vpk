@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="budget_group_medicine" model="vpk.budget.group">
+        <field name="sequence">10</field>
+        <field name="code">MEDICINE</field>
+        <field name="name">เวชภัณฑ์ ยา</field>
+    </record>
+    <record id="budget_group_non_medicine" model="vpk.budget.group">
+        <field name="sequence">20</field>
+        <field name="code">NON_MEDICINE</field>
+        <field name="name">เวชภัณฑ์มิใช่ยา</field>
+    </record>
+    <record id="budget_group_medical_supply" model="vpk.budget.group">
+        <field name="sequence">30</field>
+        <field name="code">MEDICAL_SUPPLY</field>
+        <field name="name">วัสดุการแพทย์</field>
+    </record>
+    <record id="budget_group_scientific_supply" model="vpk.budget.group">
+        <field name="sequence">40</field>
+        <field name="code">SCIENTIFIC_SUPPLY</field>
+        <field name="name">วัสดุวิทยาศาสตร์</field>
+    </record>
+    <record id="budget_group_general_supply" model="vpk.budget.group">
+        <field name="sequence">50</field>
+        <field name="code">GENERAL_SUPPLY</field>
+        <field name="name">วัสดุทั่วไป</field>
+    </record>
+    <record id="budget_group_fuel" model="vpk.budget.group">
+        <field name="sequence">60</field>
+        <field name="code">FUEL</field>
+        <field name="name">เชื้อเพลิง</field>
+    </record>
+    <record id="budget_group_technician" model="vpk.budget.group">
+        <field name="sequence">70</field>
+        <field name="code">TECHNICIAN</field>
+        <field name="name">ช่าง</field>
+    </record>
+    <record id="budget_group_nutrition" model="vpk.budget.group">
+        <field name="sequence">80</field>
+        <field name="code">NUTRITION</field>
+        <field name="name">โภชนาการ</field>
+    </record>
+    <record id="budget_group_uniform" model="vpk.budget.group">
+        <field name="sequence">90</field>
+        <field name="code">UNIFORM</field>
+        <field name="name">เครื่องแต่งกาย</field>
+    </record>
+</odoo>

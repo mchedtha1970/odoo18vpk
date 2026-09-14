@@ -1,0 +1,26 @@
+{
+    "name": "VPK Asset Registry and Purchase Traceability",
+    "version": "18.0.1.3.0",
+    "category": "Accounting/Assets",
+    "summary": "ทะเบียนสินทรัพย์และติดตามแหล่งที่มาจาก PO ใบแจ้งหนี้ GFMIS และงบประมาณ",
+    "depends": [
+        "account_asset_management",
+        "account_asset_number",
+        "vpk_asset_transfer",
+        "vpk_asset_equipment",
+        "vpk_budget",
+        "vpk_procurement_auto_pr",
+        "vpk_maintenance",
+        "purchase",
+        "account",
+    ],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/asset_related_contract_views.xml",
+        "views/account_asset_registry_views.xml",
+        "views/account_asset_set_views.xml",
+    ],
+    "installable": True,
+    "application": False,
+    "license": "LGPL-3",
+}

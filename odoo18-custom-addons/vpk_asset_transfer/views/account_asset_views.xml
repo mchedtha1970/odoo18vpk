@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_asset_form_transfer" model="ir.ui.view">
+        <field name="name">account.asset.form.owning.department</field>
+        <field name="model">account.asset</field>
+        <field name="inherit_id" ref="account_asset_management.account_asset_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_open_asset_transfers"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-exchange"
+                    invisible="transfer_count == 0"
+                >
+                    <field name="transfer_count" widget="statinfo" string="ใบโอน"/>
+                </button>
+            </xpath>
+            <xpath expr="//group[@id='header_left_group']" position="inside">
+                <field
+                    name="owning_analytic_account_id"
+                    string="หน่วยงาน"
+                    options="{'no_create': True}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_asset_list_owning" model="ir.ui.view">
+        <field name="name">account.asset.list.owning.department</field>
+        <field name="model">account.asset</field>
+        <field name="inherit_id" ref="account_asset_management.account_asset_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="owning_analytic_account_id" string="หน่วยงาน"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_asset_search_owning" model="ir.ui.view">
+        <field name="name">account.asset.search.owning.department</field>
+        <field name="model">account.asset</field>
+        <field name="inherit_id" ref="account_asset_management.account_asset_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="owning_analytic_account_id" string="หน่วยงาน"/>
+            </xpath>
+            <xpath expr="//search" position="inside">
+                <filter
+                    string="หน่วยงาน"
+                    name="group_owning_analytic"
+                    context="{'group_by': 'owning_analytic_account_id'}"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <!-- รายการเลือกทรัพย์สิน: แสดงเลขทรัพย์สิน + ชื่อ + หน่วยงาน -->
+    <record id="view_account_asset_transfer_select_list" model="ir.ui.view">
+        <field name="name">account.asset.list.transfer.select</field>
+        <field name="model">account.asset</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <list string="เลือกทรัพย์สิน">
+                <field name="number" string="เลขทรัพย์สิน"/>
+                <field name="name" string="ชื่อ"/>
+                <field name="owning_analytic_account_id" string="หน่วยงาน"/>
+                <field name="code" optional="show"/>
+                <field name="profile_id" optional="show"/>
+                <field name="state" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_account_asset_transfer_select_search" model="ir.ui.view">
+        <field name="name">account.asset.search.transfer.select</field>
+        <field name="model">account.asset</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาทรัพย์สิน">
+                <field
+                    name="number"
+                    string="เลขทรัพย์สิน / ชื่อ"
+                    filter_domain="['|', '|', ('number', 'ilike', self), ('name', 'ilike', self), ('code', 'ilike', self)]"
+                />
+                <field name="name" string="ชื่อ"/>
+                <field name="owning_analytic_account_id" string="หน่วยงาน"/>
+                <field name="code"/>
+                <field name="profile_id"/>
+                <filter string="เปิดใช้งาน" name="open" domain="[('state', '=', 'open')]"/>
+                <filter string="ร่าง" name="draft" domain="[('state', '=', 'draft')]"/>
+                <group>
+                    <filter string="ประเภท" name="group_profile" context="{'group_by': 'profile_id'}"/>
+                    <filter string="หน่วยงาน" name="group_owning" context="{'group_by': 'owning_analytic_account_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

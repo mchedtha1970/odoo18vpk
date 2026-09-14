@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_egp_procurement" model="ir.sequence">
+            <field name="name">e-GP Procurement Agreement</field>
+            <field name="code">purchase.requisition.egp.procurement</field>
+            <field name="prefix">EGP/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <record id="seq_egp_invitation" model="ir.sequence">
+            <field name="name">e-GP Quotation Invitation</field>
+            <field name="code">purchase.requisition.egp.invitation</field>
+            <field name="prefix">INV-EGP/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <record id="seq_egp_award_report" model="ir.sequence">
+            <field name="name">e-GP Award Approval Report</field>
+            <field name="code">purchase.requisition.award.report</field>
+            <field name="prefix">AR-EGP/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <record id="seq_egp_winner_announcement" model="ir.sequence">
+            <field name="name">e-GP Winner Announcement</field>
+            <field name="code">purchase.requisition.winner.announcement</field>
+            <field name="prefix">WIN-EGP/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+</odoo>

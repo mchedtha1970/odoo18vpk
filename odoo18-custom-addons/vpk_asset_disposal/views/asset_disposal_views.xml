@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_asset_disposal_form" model="ir.ui.view">
+        <field name="name">vpk.asset.disposal.form</field>
+        <field name="model">vpk.asset.disposal</field>
+        <field name="arch" type="xml">
+            <form string="ใบขออนุมัติจำหน่ายทรัพย์สิน">
+                <header>
+                    <button
+                        name="action_load_waiting_disposal_assets"
+                        type="object"
+                        string="ดึงรายการรอจำหน่าย"
+                        invisible="state != 'draft'"
+                        groups="vpk_asset_disposal.group_asset_disposal_user"
+                    />
+                    <button
+                        name="action_request"
+                        type="object"
+                        string="ขออนุมัติ"
+                        class="oe_highlight"
+                        invisible="state != 'draft'"
+                        groups="vpk_asset_disposal.group_asset_disposal_user"
+                    />
+                    <button
+                        name="action_done"
+                        type="object"
+                        string="ตัดจำหน่ายจากทะเบียน"
+                        class="oe_highlight"
+                        invisible="state != 'approved'"
+                        groups="vpk_asset_disposal.group_asset_disposal_manager"
+                        confirm="ยืนยันการตัดจำหน่ายสินทรัพย์ทั้งหมดในเอกสารนี้? ระบบจะสร้างรายการบัญชีและเปลี่ยนบัตรสินทรัพย์เป็นสถานะ Removed"
+                    />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="ยกเลิก"
+                        invisible="state not in ('draft', 'request', 'in_progress')"
+                        groups="vpk_asset_disposal.group_asset_disposal_user"
+                    />
+                    <button
+                        name="action_draft"
+                        type="object"
+                        string="กลับเป็นร่าง"
+                        icon="fa-undo"
+                        invisible="state not in ('cancel', 'request', 'in_progress', 'approved')"
+                        groups="vpk_asset_disposal.group_asset_disposal_manager"
+                        confirm="ยืนยันการนำเอกสารกลับเป็นร่าง? ประวัติการอนุมัติเดิมจะถูกยกเลิกและต้องส่งอนุมัติใหม่"
+                    />
+                    <field name="validation_status" invisible="1"/>
+                    <field
+                        name="state"
+                        widget="statusbar"
+                        statusbar_visible="draft,request,in_progress,approved,done"
+                    />
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_removal_moves"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-book"
+                                invisible="removal_move_count == 0">
+                            <field name="removal_move_count"
+                                   widget="statinfo"
+                                   string="รายการบัญชี"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="requester_id" readonly="state != 'draft'"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="retirement_date" readonly="state != 'draft'"/>
+                            <field name="disposal_method" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                            <field name="approved_date" invisible="not approved_date"/>
+                            <field name="done_date" invisible="not done_date"/>
+                        </group>
+                        <group>
+                            <field name="line_count"/>
+                            <field name="approval_reference"
+                                   readonly="state != 'draft'"/>
+                            <field name="buyer_partner_id"
+                                   readonly="state != 'draft'"
+                                   invisible="disposal_method not in ('auction', 'sale', 'trade_in', 'transfer', 'donation')"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="reason" readonly="state != 'draft'" placeholder="ระบุเหตุผลการจำหน่าย..."/>
+                    </group>
+                    <group string="สรุปมูลค่าการตัดจำหน่าย">
+                        <group>
+                            <field name="total_purchase_value" readonly="1"/>
+                            <field name="total_residual_value" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="total_proceeds_amount" readonly="1"/>
+                            <field name="total_gain_loss_amount"
+                                   readonly="1"
+                                   decoration-success="total_gain_loss_amount &gt;= 0"
+                                   decoration-danger="total_gain_loss_amount &lt; 0"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="รายการทรัพย์สิน" name="lines">
+                            <div class="alert alert-info" role="alert" invisible="state != 'draft'">
+                                กดปุ่ม "ดึงรายการรอจำหน่าย" เพื่อดึงทรัพย์สินที่ Sub-Status = รอจำหน่าย
+                                หรือเลือกเพิ่มเองจากรายการด้านล่าง
+                            </div>
+                            <field
+                                name="line_ids"
+                                readonly="state != 'draft'"
+                                context="{'default_company_id': company_id}"
+                            >
+                                <list editable="bottom">
+                                    <field name="company_id" column_invisible="1"/>
+                                    <field
+                                        name="asset_id"
+                                        string="ทรัพย์สิน"
+                                        options="{'no_create': True, 'no_create_edit': True}"
+                                        domain="[
+                                            ('company_id', '=', parent.company_id),
+                                            ('state', '!=', 'removed'),
+                                            ('asset_sub_state_id.name', '=', 'รอจำหน่าย'),
+                                        ]"
+                                    />
+                                    <field name="asset_number" string="เลขทรัพย์สิน" optional="show"/>
+                                    <field name="asset_name" string="ชื่อ" optional="show"/>
+                                    <field name="asset_code" optional="hide"/>
+                                    <field name="profile_id" optional="show"/>
+                                    <field name="owning_analytic_account_id" optional="show"/>
+                                    <field name="asset_sub_state_id" string="Sub-Status" optional="show"/>
+                                    <field name="purchase_value" optional="show" sum="รวมมูลค่าซื้อ"/>
+                                    <field name="method_number" string="อายุการใช้งาน (ปี)" optional="show"/>
+                                    <field name="years_in_use" string="ใช้มาแล้วกี่ปี" optional="show"/>
+                                    <field name="value_residual" string="มูลค่าคงเหลือ" optional="show" sum="รวมมูลค่าคงเหลือ"/>
+                                    <field name="proceeds_amount"
+                                           string="มูลค่าที่ได้รับ"
+                                           optional="show"
+                                           sum="รวมมูลค่าที่ได้รับ"/>
+                                    <field name="gain_loss_amount"
+                                           string="กำไร/(ขาดทุน)"
+                                           optional="show"
+                                           sum="รวมกำไร/(ขาดทุน)"/>
+                                    <field name="repair_total_value" string="มูลค่าซ่อมทั้งหมด" optional="show" sum="รวมมูลค่าซ่อม"/>
+                                    <field name="date_start" optional="hide"/>
+                                    <field name="company_currency_id" column_invisible="1"/>
+                                    <field name="note" optional="show"/>
+                                    <button
+                                        name="action_open_asset"
+                                        type="object"
+                                        string="เปิดบัตร"
+                                        icon="fa-external-link"
+                                        title="เปิดบัตรทรัพย์สิน"
+                                    />
+                                </list>
+                            </field>
+                        </page>
+                        <page string="เอกสารประกอบ"
+                              name="retirement_attachments">
+                            <field name="attachment_ids"
+                                   widget="many2many_binary"
+                                   readonly="state != 'draft'"
+                                   nolabel="1"/>
+                        </page>
+                        <page string="ตั้งค่าบัญชีตัดจำหน่าย"
+                              name="retirement_accounts">
+                            <div class="alert alert-warning"
+                                 role="alert"
+                                 invisible="state != 'approved'">
+                                ตรวจสอบบัญชีด้านล่างก่อนกด
+                                “ตัดจำหน่ายจากทะเบียน”
+                                ระบบจะสร้างรายการบัญชีแยกตามสินทรัพย์
+                            </div>
+                            <group>
+                                <group>
+                                    <field name="account_sale_id"
+                                           readonly="state == 'done'"/>
+                                    <field name="account_gain_id"
+                                           readonly="state == 'done'"
+                                           required="state == 'approved'"/>
+                                    <field name="account_loss_id"
+                                           readonly="state == 'done'"
+                                           required="state == 'approved'"/>
+                                </group>
+                                <group>
+                                    <field name="removed_asset_count"
+                                           readonly="1"/>
+                                    <field name="removal_move_count"
+                                           readonly="1"/>
+                                </group>
+                            </group>
+                            <field name="removal_move_ids"
+                                   readonly="1"
+                                   nolabel="1">
+                                <list create="false" delete="false">
+                                    <field name="date"/>
+                                    <field name="name"/>
+                                    <field name="ref"/>
+                                    <field name="journal_id"/>
+                                    <field name="amount_total"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="หมายเหตุ" name="notes">
+                            <field name="note" readonly="state != 'draft'" placeholder="รายละเอียดเพิ่มเติม..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_asset_disposal_list" model="ir.ui.view">
+        <field name="name">vpk.asset.disposal.list</field>
+        <field name="model">vpk.asset.disposal</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="requester_id"/>
+                <field name="retirement_date"/>
+                <field name="disposal_method"/>
+                <field name="line_count"/>
+                <field name="approval_reference" optional="show"/>
+                <field name="total_residual_value"
+                       optional="show"
+                       sum="รวมมูลค่าคงเหลือ"/>
+                <field name="total_proceeds_amount"
+                       optional="show"
+                       sum="รวมมูลค่าที่ได้รับ"/>
+                <field name="total_gain_loss_amount"
+                       optional="show"
+                       sum="รวมกำไร/(ขาดทุน)"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="validation_status" optional="show"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field
+                    name="state"
+                    widget="badge"
+                    decoration-info="state in ('draft', 'request')"
+                    decoration-warning="state == 'in_progress'"
+                    decoration-success="state in ('approved', 'done')"
+                    decoration-muted="state == 'cancel'"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_asset_disposal_search" model="ir.ui.view">
+        <field name="name">vpk.asset.disposal.search</field>
+        <field name="model">vpk.asset.disposal</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="requester_id"/>
+                <field name="approval_reference"/>
+                <field name="buyer_partner_id"/>
+                <field name="disposal_method"/>
+                <filter string="ร่าง" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="ขออนุมัติ" name="request" domain="[('state', '=', 'request')]"/>
+                <filter string="ดำเนินการ" name="in_progress" domain="[('state', '=', 'in_progress')]"/>
+                <filter string="อนุมัติ" name="approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="เสร็จสิ้น" name="done" domain="[('state', '=', 'done')]"/>
+                <filter string="ยกเลิก" name="cancel" domain="[('state', '=', 'cancel')]"/>
+                <separator/>
+                <filter
+                    string="รอฉันอนุมัติ"
+                    name="needs_review"
+                    domain="[('reviewer_ids', 'in', uid), ('state', 'in', ('request', 'in_progress'))]"
+                />
+                <filter string="ของฉัน" name="my" domain="[('requester_id', '=', uid)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="สถานะ" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="ผู้ขอ" name="group_requester" context="{'group_by': 'requester_id'}"/>
+                    <filter string="วิธีจำหน่าย" name="group_disposal_method"
+                            context="{'group_by': 'disposal_method'}"/>
+                    <filter string="เดือนตัดจำหน่าย"
+                            name="group_retirement_month"
+                            context="{'group_by': 'retirement_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_asset_disposal" model="ir.actions.act_window">
+        <field name="name">ใบขออนุมัติจำหน่าย</field>
+        <field name="res_model">vpk.asset.disposal</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                สร้างใบขออนุมัติจำหน่ายทรัพย์สิน
+            </p>
+            <p>
+                ดึงรายการที่ Sub-Status เป็น "รอจำหน่าย" แล้วส่งขออนุมัติตามลำดับ
+            </p>
+        </field>
+    </record>
+</odoo>

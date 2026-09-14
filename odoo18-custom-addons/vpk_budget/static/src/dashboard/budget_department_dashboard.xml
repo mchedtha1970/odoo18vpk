@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="vpk_budget.BudgetDepartmentDashboard">
+        <Layout display="display">
+            <div class="o_vpk_budget_department">
+                <div class="o_vpk_budget_department_header">
+                    <div>
+                        <h2>เจาะลึกงบประมาณแยกรายแผนก</h2>
+                        <p>
+                            โครงสร้างโครงการและค่าใช้จ่ายของ
+                            <t t-esc="state.data.selected_department_name"/>
+                        </p>
+                    </div>
+                    <div class="o_vpk_budget_department_actions">
+                        <select class="form-select form-select-sm" t-on-change="onYearChange">
+                            <t t-foreach="state.data.year_options" t-as="year" t-key="year">
+                                <option t-att-value="year" t-att-selected="year === state.data.fiscal_year">
+                                    ปีงบประมาณ <t t-esc="year"/>
+                                </option>
+                            </t>
+                        </select>
+                        <button class="btn btn-success btn-sm" t-on-click="() => this.openBudgetLines()">
+                            <i class="fa fa-plus me-1"/>เบิกจ่ายงบประมาณ
+                        </button>
+                    </div>
+                </div>
+
+                <t t-if="state.ready">
+                    <div class="o_vpk_budget_department_tabs">
+                        <t t-foreach="state.data.departments" t-as="dept" t-key="dept.id">
+                            <button
+                                type="button"
+                                t-att-class="'o_vpk_budget_department_tab' + (dept.id === state.data.selected_department_id ? ' active' : '')"
+                                t-att-style="'--dept-color:' + dept.color"
+                                t-on-click="() => this.selectDepartment(dept.id)"
+                            >
+                                <t t-if="dept.id === state.data.selected_department_id">
+                                    <i class="fa fa-check me-1"/>
+                                </t>
+                                <t t-esc="dept.name"/>
+                            </button>
+                        </t>
+                    </div>
+
+                    <div class="o_vpk_budget_department_metrics">
+                        <t t-foreach="state.data.cards" t-as="card" t-key="card.label">
+                            <div class="o_vpk_budget_department_metric">
+                                <div>
+                                    <span class="o_vpk_budget_department_metric_label"><t t-esc="card.label"/></span>
+                                    <strong><t t-esc="cardValue(card)"/></strong>
+                                </div>
+                                <span class="o_vpk_budget_department_metric_icon" t-att-style="'color:' + card.color + ';background:' + card.color + '1a'">
+                                    <i t-att-class="'fa ' + card.icon"/>
+                                </span>
+                            </div>
+                        </t>
+                    </div>
+
+                    <div class="o_vpk_budget_department_grid">
+                        <section class="o_vpk_budget_department_panel">
+                            <div class="o_vpk_budget_department_panel_header">
+                                <div>
+                                    <h3>รายการโครงการควบคุมภายใต้ <t t-esc="state.data.selected_department_name"/></h3>
+                                    <span>งบประมาณรายโครงการและผลการเบิกจ่ายสะสม</span>
+                                </div>
+                                <button class="btn btn-link btn-sm" t-on-click="() => this.openBudgetLines()">
+                                    เลือกดูงบควบคุม
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm o_vpk_budget_department_table">
+                                    <thead>
+                                        <tr>
+                                            <th>ชื่อโครงการ/รายการ</th>
+                                            <th class="text-end">งบประมาณที่ได้รับ</th>
+                                            <th class="text-end">เบิกใช้ไปแล้ว</th>
+                                            <th class="text-end">คงเหลือเบิกจ่าย</th>
+                                            <th>สถานะการใช้</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="state.data.project_rows" t-as="row" t-key="row.id">
+                                            <tr>
+                                                <td><t t-esc="row.name"/></td>
+                                                <td class="text-end">฿<t t-esc="formatAmount(row.allocated)"/></td>
+                                                <td class="text-end">฿<t t-esc="formatAmount(row.actual)"/></td>
+                                                <td class="text-end">฿<t t-esc="formatAmount(row.remaining)"/></td>
+                                                <td>
+                                                    <div class="o_vpk_budget_department_usage">
+                                                        <div class="progress">
+                                                            <div
+                                                                class="progress-bar"
+                                                                t-att-style="'width:' + usageWidth(row.usage_pct) + ';background:' + row.bar_color"
+                                                            />
+                                                        </div>
+                                                        <small><t t-esc="formatPercent(row.usage_pct)"/></small>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                        <t t-if="!state.data.project_rows.length">
+                                            <tr>
+                                                <td colspan="5" class="text-muted text-center py-4">
+                                                    ยังไม่มีรายการงบประมาณของแผนกนี้
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <div class="o_vpk_budget_department_side">
+                            <section class="o_vpk_budget_department_panel">
+                                <div class="o_vpk_budget_department_panel_header">
+                                    <div>
+                                        <h3>สรุปสัดส่วนการใช้จ่ายแบ่งตามประเภทโครงการ</h3>
+                                    </div>
+                                </div>
+                                <div class="o_vpk_budget_department_donut_wrap">
+                                    <div class="o_vpk_budget_department_donut" t-att-style="categoryStyle()"/>
+                                    <div class="o_vpk_budget_department_donut_legend">
+                                        <t t-foreach="state.data.category_breakdown" t-as="item" t-key="item.key">
+                                            <div class="o_vpk_budget_department_legend_item">
+                                                <span t-att-style="'background:' + item.color"/>
+                                                <div>
+                                                    <strong><t t-esc="item.label"/></strong>
+                                                    <small><t t-esc="formatPercent(item.percent)"/></small>
+                                                </div>
+                                            </div>
+                                        </t>
+                                        <t t-if="!state.data.category_breakdown.length">
+                                            <div class="text-muted">ยังไม่มีข้อมูลสัดส่วน</div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="o_vpk_budget_department_panel">
+                                <div class="o_vpk_budget_department_panel_header">
+                                    <div>
+                                        <h3>ประวัติการเบิกจ่ายล่าสุดของแผนก</h3>
+                                    </div>
+                                </div>
+                                <div class="o_vpk_budget_department_recent">
+                                    <t t-foreach="state.data.recent_requests" t-as="request" t-key="request.id">
+                                        <button type="button" class="o_vpk_budget_department_recent_item" t-on-click="() => this.openRequest(request.id)">
+                                            <span>
+                                                <strong><t t-esc="request.name"/></strong>
+                                                <small><t t-esc="formatDate(request.date)"/></small>
+                                            </span>
+                                            <span class="o_vpk_budget_department_recent_meta">
+                                                <b>฿<t t-esc="formatShortAmount(request.amount)"/></b>
+                                                <em t-att-class="'o_state o_state_' + request.state"><t t-esc="request.state_label"/></em>
+                                            </span>
+                                        </button>
+                                    </t>
+                                    <t t-if="!state.data.recent_requests.length">
+                                        <div class="text-muted p-2">ยังไม่มีประวัติของแผนกนี้</div>
+                                    </t>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="o_vpk_budget_department_loading">กำลังโหลดข้อมูล...</div>
+                </t>
+            </div>
+        </Layout>
+    </t>
+
+</templates>

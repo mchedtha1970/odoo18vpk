@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_vpk_asset_disposal" model="ir.sequence">
+        <field name="name">ใบขออนุมัติจำหน่ายทรัพย์สิน</field>
+        <field name="code">vpk.asset.disposal</field>
+        <field name="prefix">AD/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===================== Form View ===================== -->
+    <record id="view_vendor_evaluation_form" model="ir.ui.view">
+        <field name="name">vendor.evaluation.form</field>
+        <field name="model">vendor.evaluation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_load_criteria"
+                            string="โหลดเกณฑ์ประเมิน"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_confirm"
+                            string="ยืนยัน"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_approve"
+                            string="อนุมัติ"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'confirmed'"
+                            groups="purchase.group_purchase_manager"/>
+                    <button name="action_cancel"
+                            string="ยกเลิก"
+                            type="object"
+                            invisible="state in ('cancelled', 'approved')"/>
+                    <button name="action_draft"
+                            string="กลับเป็นร่าง"
+                            type="object"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,confirmed,approved"/>
+                </header>
+                <sheet>
+                    <!-- Score + Grade Summary -->
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" disabled="1" icon="fa-star">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="total_score" widget="float" digits="[5,1]"/>%
+                                </span>
+                                <span class="o_stat_text">คะแนนรวม</span>
+                            </div>
+                        </button>
+                        <button class="oe_stat_button" disabled="1" icon="fa-trophy">
+                            <div class="o_field_widget o_stat_info">
+                                <span class="o_stat_value">
+                                    <field name="grade"/>
+                                </span>
+                                <span class="o_stat_text">
+                                    <field name="grade_description"/>
+                                </span>
+                            </div>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id"
+                                   readonly="state != 'draft'"
+                                   options="{'no_create': True}"/>
+                            <field name="purchase_order_id"
+                                   readonly="state != 'draft'"
+                                   options="{'no_create': True}"/>
+                            <field name="evaluator_id"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="evaluation_date"
+                                   readonly="state != 'draft'"/>
+                            <field name="period_start"
+                                   readonly="state != 'draft'"/>
+                            <field name="period_end"
+                                   readonly="state != 'draft'"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="รายการประเมิน" name="lines">
+                            <field name="line_ids"
+                                   readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="criteria_id"/>
+                                    <field name="weight"/>
+                                    <field name="max_score"/>
+                                    <field name="score"/>
+                                    <field name="score_pct" string="%"/>
+                                    <field name="weighted_score"
+                                           decoration-success="weighted_score >= 20"
+                                           decoration-warning="weighted_score >= 10 and weighted_score &lt; 20"
+                                           decoration-danger="weighted_score &lt; 10"/>
+                                    <field name="remark"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="หมายเหตุ" name="notes">
+                            <field name="notes"
+                                   readonly="state not in ('draft', 'confirmed')"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===================== List View ===================== -->
+    <record id="view_vendor_evaluation_list" model="ir.ui.view">
+        <field name="name">vendor.evaluation.list</field>
+        <field name="model">vendor.evaluation</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancelled'"
+                  decoration-success="grade == 'A'"
+                  decoration-info="grade == 'B'"
+                  decoration-warning="grade in ('C', 'D')"
+                  decoration-danger="grade == 'F'">
+                <field name="evaluation_date"/>
+                <field name="partner_id"/>
+                <field name="purchase_order_id" optional="show"/>
+                <field name="evaluator_id"/>
+                <field name="total_score" string="คะแนน (%)"/>
+                <field name="grade"/>
+                <field name="grade_description"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'confirmed'"
+                       decoration-success="state == 'approved'"
+                       decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===================== Search View ===================== -->
+    <record id="view_vendor_evaluation_search" model="ir.ui.view">
+        <field name="name">vendor.evaluation.search</field>
+        <field name="model">vendor.evaluation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id"/>
+                <field name="purchase_order_id"/>
+                <field name="evaluator_id"/>
+                <separator/>
+                <filter name="draft" string="ร่าง"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter name="confirmed" string="ยืนยัน"
+                        domain="[('state', '=', 'confirmed')]"/>
+                <filter name="approved" string="อนุมัติ"
+                        domain="[('state', '=', 'approved')]"/>
+                <separator/>
+                <filter name="grade_a" string="เกรด A"
+                        domain="[('grade', '=', 'A')]"/>
+                <filter name="grade_b" string="เกรด B"
+                        domain="[('grade', '=', 'B')]"/>
+                <filter name="grade_c" string="เกรด C"
+                        domain="[('grade', '=', 'C')]"/>
+                <filter name="grade_d" string="เกรด D"
+                        domain="[('grade', '=', 'D')]"/>
+                <filter name="grade_f" string="เกรด F"
+                        domain="[('grade', '=', 'F')]"/>
+                <group expand="0" string="จัดกลุ่ม">
+                    <filter name="group_partner" string="ผู้จำหน่าย"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_grade" string="เกรด"
+                            context="{'group_by': 'grade'}"/>
+                    <filter name="group_date" string="วันที่ประเมิน"
+                            context="{'group_by': 'evaluation_date:month'}"/>
+                    <filter name="group_state" string="สถานะ"
+                            context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ===================== Criteria Views ===================== -->
+    <record id="view_vendor_eval_criteria_list" model="ir.ui.view">
+        <field name="name">vendor.evaluation.criteria.list</field>
+        <field name="model">vendor.evaluation.criteria</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="weight" sum="รวมน้ำหนัก"/>
+                <field name="max_score"/>
+                <field name="description" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vendor_eval_criteria_form" model="ir.ui.view">
+        <field name="name">vendor.evaluation.criteria.form</field>
+        <field name="model">vendor.evaluation.criteria</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="weight"/>
+                            <field name="max_score"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="คำอธิบายเกณฑ์การให้คะแนน">
+                        <field name="description" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,8 @@
+.env
+VPK_S1/*.dump
+VPK_S1/*.sql
+VPK_S1/filestore/
+__pycache__/
+*.py[cod]
+*.egg-info/
+odoo18-custom-addons/**/.git/

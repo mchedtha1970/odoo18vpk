@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_budget_material_sub_type_list" model="ir.ui.view">
+        <field name="name">vpk.budget.material.sub.type.list</field>
+        <field name="model">vpk.budget.material.sub.type</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="budget_group_id"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_budget_material_sub_type_form" model="ir.ui.view">
+        <field name="name">vpk.budget.material.sub.type.form</field>
+        <field name="model">vpk.budget.material.sub.type</field>
+        <field name="arch" type="xml">
+            <form string="ประเภทวัสดุย่อย">
+                <sheet>
+                    <field name="active" invisible="1"/>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name" string="ชื่อประเภทวัสดุย่อย"/>
+                        <h1>
+                            <field name="name" nolabel="1" placeholder="e.g. ยาแผนปัจจุบันชั้นที่ 1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="budget_group_id"/>
+                            <field name="code"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="รายละเอียด" name="description">
+                            <field name="description" nolabel="1" placeholder="รายละเอียดเพิ่มเติม..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_budget_material_sub_type_search" model="ir.ui.view">
+        <field name="name">vpk.budget.material.sub.type.search</field>
+        <field name="model">vpk.budget.material.sub.type</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="budget_group_id"/>
+                <filter name="active" string="Active" domain="[('active', '=', True)]"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="กลุ่มงบประมาณ" name="group_budget_group" context="{'group_by': 'budget_group_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_budget_material_sub_type" model="ir.actions.act_window">
+        <field name="name">ประเภทวัสดุย่อย</field>
+        <field name="res_model">vpk.budget.material.sub.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_vpk_budget_material_sub_type_search"/>
+    </record>
+</odoo>

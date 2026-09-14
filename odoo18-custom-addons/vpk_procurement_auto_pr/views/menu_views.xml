@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_procurement_plan_root"
+              name="แผนจัดซื้อจัดจ้าง"
+              parent="purchase.menu_purchase_root"
+              sequence="75"/>
+
+    <menuitem id="menu_procurement_annual_plan"
+              name="แผนประจำปีงบประมาณ"
+              parent="menu_procurement_plan_root"
+              action="action_procurement_annual_plan"
+              sequence="10"/>
+
+    <menuitem id="menu_procurement_plan_amendment"
+              name="คำขอเพิ่มแผน"
+              parent="menu_procurement_plan_root"
+              action="action_procurement_plan_amendment"
+              sequence="20"/>
+</odoo>

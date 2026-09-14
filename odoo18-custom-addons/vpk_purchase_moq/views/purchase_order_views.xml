@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- แสดง MOQ warning ใน PO line -->
+    <record id="view_purchase_order_form_moq" model="ir.ui.view">
+        <field name="name">purchase.order.form.moq</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']/list/field[@name='product_qty']" position="after">
+                <field name="vendor_moq_qty" string="MOQ" optional="show"
+                       readonly="1" class="text-muted"/>
+                <field name="vendor_order_multiple" string="ทวีคูณ" optional="hide"
+                       readonly="1" class="text-muted"/>
+                <field name="moq_warning" string="คำเตือน" optional="show"
+                       readonly="1"
+                       invisible="not moq_warning"
+                       decoration-warning="moq_warning"
+                       widget="char"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

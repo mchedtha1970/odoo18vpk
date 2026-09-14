@@ -1,0 +1,39 @@
+.o_vpk_memo_html_field.o-wysiwyg {
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 4px;
+
+    > .o-we-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        flex-wrap: nowrap;
+        background: #fff;
+        border-bottom: 1px solid var(--border-color, #dee2e6);
+
+        .btn-group[name="align"],
+        .btn-group[name="indent"] {
+            flex-shrink: 0;
+        }
+    }
+
+    .odoo-editor-editable {
+        text-align: left;
+        width: 100%;
+
+        p,
+        div,
+        li {
+            text-align: left;
+        }
+
+        .vpk-memo-para-indent,
+        p.vpk-memo-para-indent {
+            width: 100%;
+            max-width: 100%;
+            padding-left: 0;
+            padding-right: 0;
+            text-indent: 5em;
+            box-sizing: border-box;
+        }
+    }
+}

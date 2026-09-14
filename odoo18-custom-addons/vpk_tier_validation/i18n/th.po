@@ -1,0 +1,85 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Language-Team: Thai\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: vpk_tier_validation
+#: model:ir.ui.menu,name:vpk_tier_validation.menu_vpk_tier_validation_root
+msgid "การอนุมัติตามลำดับ"
+msgstr "การอนุมัติตามลำดับ"
+
+#. module: vpk_tier_validation
+#: model:ir.ui.menu,name:vpk_tier_validation.menu_vpk_tier_definition
+msgid "กำหนดลำดับการอนุมัติ"
+msgstr "กำหนดลำดับการอนุมัติ"
+
+#. module: vpk_tier_validation
+#: model:ir.ui.menu,name:vpk_tier_validation.menu_vpk_tier_exception
+msgid "ข้อยกเว้นการแก้ไขระหว่างอนุมัติ"
+msgstr "ข้อยกเว้นการแก้ไขระหว่างอนุมัติ"
+
+#. module: vpk_tier_validation
+#: model:ir.actions.act_window,name:vpk_tier_validation.action_vpk_my_pending_reviews
+#: model:ir.ui.menu,name:vpk_tier_validation.menu_vpk_my_pending_reviews
+msgid "งานรออนุมัติของฉัน"
+msgstr "งานรออนุมัติของฉัน"
+
+#. module: vpk_tier_validation
+#: model:ir.actions.act_window,name:vpk_tier_validation.action_vpk_tier_review_pending
+#: model:ir.ui.menu,name:vpk_tier_validation.menu_vpk_tier_review
+msgid "รายการรออนุมัติทั้งหมด"
+msgstr "รายการรออนุมัติทั้งหมด"
+
+#. module: vpk_tier_validation
+#: model_terms:ir.ui.view,arch_db:vpk_tier_validation.tier_review_view_kanban_vpk
+msgid "ขั้นที่"
+msgstr "ขั้นที่"
+
+#. module: vpk_tier_validation
+#: model_terms:ir.ui.view,arch_db:vpk_tier_validation.tier_review_view_list_vpk
+msgid "เปิดเอกสาร"
+msgstr "เปิดเอกสาร"
+
+#. module: vpk_tier_validation
+#: model:ir.model.fields,field_description:vpk_tier_validation.field_tier_review__res_display_name
+msgid "Document"
+msgstr "เลขที่เอกสาร"
+
+#. module: vpk_tier_validation
+#: model:ir.model.fields,field_description:vpk_tier_validation.field_tier_review__model_display_name
+msgid "Document Type"
+msgstr "ประเภทเอกสาร"
+
+#. module: vpk_tier_validation
+#: model:ir.model.fields,field_description:vpk_tier_validation.field_purchase_request__tier_approver_names
+msgid "Approvers"
+msgstr "ผู้อนุมัติ"
+
+#. module: vpk_tier_validation
+#: model_terms:ir.ui.view,arch_db:vpk_tier_validation.view_purchase_request_tree_tier_approvers
+msgid "Organization"
+msgstr "องค์กร"
+
+#. module: vpk_tier_validation
+#: model:ir.actions.act_window,name:vpk_tier_validation.action_purchase_request_sent_to_procurement
+#: model:ir.ui.menu,name:vpk_tier_validation.menu_purchase_request_sent_to_procurement
+#: model:ir.ui.menu,name:vpk_tier_validation.menu_purchase_request_sent_to_procurement_purchase
+msgid "รอรับจากหน่วยงาน"
+msgstr "รอรับจากหน่วยงาน"
+
+#. module: vpk_tier_validation
+#: model_terms:ir.ui.view,arch_db:vpk_tier_validation.view_purchase_request_form_send_to_procurement
+msgid "ส่งพัสดุ"
+msgstr "ส่งพัสดุ"
+
+#. module: vpk_tier_validation
+#: model:ir.model.fields.selection,name:vpk_tier_validation.selection__purchase_request__state__sent_to_procurement
+#: model_terms:ir.ui.view,arch_db:vpk_tier_validation.view_purchase_request_search_send_to_procurement
+msgid "ส่งพัสดุแล้ว"
+msgstr "ส่งพัสดุแล้ว"

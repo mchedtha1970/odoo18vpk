@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_product_uom_change_wizard" model="ir.ui.view">
+        <field name="name">vpk.product.uom.change.wizard.form</field>
+        <field name="model">vpk.product.uom.change.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Change Product UoM">
+                <group>
+                    <group>
+                        <field name="product_tmpl_id" readonly="product_tmpl_id"/>
+                        <field name="current_uom_id"/>
+                        <field name="uom_category_id" invisible="1"/>
+                        <field name="new_uom_id"
+                               options="{'no_create': True, 'no_open': True}"/>
+                        <field name="factor_preview"/>
+                    </group>
+                    <group string="Options">
+                        <field name="update_uom_po"/>
+                        <field name="convert_prices"/>
+                        <field name="update_document_uom"/>
+                    </group>
+                </group>
+                <group string="Related records (preview)">
+                    <group>
+                        <field name="stock_move_count"/>
+                        <field name="stock_move_line_count"/>
+                        <field name="quant_count"/>
+                        <field name="svl_count"/>
+                    </group>
+                    <group>
+                        <field name="sale_line_count"/>
+                        <field name="purchase_line_count"/>
+                    </group>
+                </group>
+                <div class="alert alert-warning" role="alert">
+                    <p>
+                        การเปลี่ยนหน่วยวัดจะแปลงจำนวนในสต็อก Valuation และเอกสารที่เกี่ยวข้อง
+                        ตามอัตราส่วนของหน่วยในหมวดเดียวกัน แนะนำสำรองข้อมูลก่อนดำเนินการ
+                    </p>
+                    <field name="confirm"/>
+                </div>
+                <footer>
+                    <button name="action_apply"
+                            string="Apply UoM Change"
+                            type="object"
+                            class="btn-primary"
+                            confirm="ยืนยันเปลี่ยนหน่วยวัดและอัปเดตรายการที่เกี่ยวข้องทั้งหมด?"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vpk_product_uom_change_wizard" model="ir.actions.act_window">
+        <field name="name">Change Product UoM</field>
+        <field name="res_model">vpk.product.uom.change.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <menuitem id="menu_vpk_product_uom_change"
+              name="Change Product UoM"
+              parent="stock.menu_stock_inventory_control"
+              action="action_vpk_product_uom_change_wizard"
+              sequence="90"
+              groups="stock.group_stock_manager"/>
+</odoo>

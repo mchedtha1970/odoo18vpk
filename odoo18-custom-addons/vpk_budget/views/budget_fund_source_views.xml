@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_budget_fund_source_list" model="ir.ui.view">
+        <field name="name">vpk.budget.fund.source.list</field>
+        <field name="model">vpk.budget.fund.source</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_budget_fund_source_form" model="ir.ui.view">
+        <field name="name">vpk.budget.fund.source.form</field>
+        <field name="model">vpk.budget.fund.source</field>
+        <field name="arch" type="xml">
+            <form string="แหล่งเงิน">
+                <sheet>
+                    <field name="active" invisible="1"/>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name" string="ชื่อแหล่งเงิน"/>
+                        <h1>
+                            <field name="name" nolabel="1" placeholder="e.g. เงินงบประมาณ"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="รายละเอียด" name="description">
+                            <field name="description" nolabel="1" placeholder="รายละเอียดเพิ่มเติม..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_budget_fund_source_search" model="ir.ui.view">
+        <field name="name">vpk.budget.fund.source.search</field>
+        <field name="model">vpk.budget.fund.source</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <filter name="active" string="Active" domain="[('active', '=', True)]"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+</odoo>

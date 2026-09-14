@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="vpk_budget.BudgetOverviewDashboard">
+        <Layout display="display">
+            <div class="o_vpk_budget_overview">
+                <div class="o_vpk_budget_overview_header">
+                    <div>
+                        <h2>ภาพรวมงบประมาณรายจ่ายประจำปี</h2>
+                        <p>ประจำปีงบประมาณ พ.ศ. <t t-esc="state.data.fiscal_year"/></p>
+                    </div>
+                    <div class="o_vpk_budget_overview_actions">
+                        <select class="form-select form-select-sm" t-on-change="onYearChange">
+                            <t t-foreach="state.data.year_options" t-as="year" t-key="year">
+                                <option t-att-value="year" t-att-selected="year === state.data.fiscal_year">
+                                    ปีงบประมาณ <t t-esc="year"/>
+                                </option>
+                            </t>
+                        </select>
+                        <button class="btn btn-success btn-sm" t-on-click="() => this.openBudgetLines()">
+                            <i class="fa fa-plus me-1"/>เบิกจ่ายงบประมาณ
+                        </button>
+                    </div>
+                </div>
+
+                <t t-if="state.ready">
+                    <div class="o_vpk_budget_overview_metrics">
+                        <t t-foreach="state.data.cards" t-as="card" t-key="card.label">
+                            <div class="o_vpk_budget_overview_metric" t-on-click="() => this.openBudgets()">
+                                <div>
+                                    <span class="o_vpk_budget_overview_metric_label"><t t-esc="card.label"/></span>
+                                    <strong>฿<t t-esc="formatAmount(card.amount)"/></strong>
+                                    <small t-att-class="card.tone === 'up' ? 'text-success' : (card.tone === 'down' ? 'text-danger' : 'text-muted')">
+                                        <t t-esc="card.subtitle"/>
+                                    </small>
+                                </div>
+                                <span class="o_vpk_budget_overview_metric_icon" t-att-style="'color:' + card.color + ';background:' + card.color + '1a'">
+                                    <i t-att-class="'fa ' + card.icon"/>
+                                </span>
+                            </div>
+                        </t>
+                    </div>
+
+                    <div class="o_vpk_budget_overview_form_section" t-if="state.data.form_kpis.length">
+                        <div class="o_vpk_budget_overview_panel_header o_vpk_budget_overview_form_header">
+                            <div>
+                                <h3>KPI ตามสัดส่วนแบบฟอร์มคำของบ</h3>
+                                <span>สัดส่วนงบประมาณที่ขอ/ได้รับ แยกตามแบบฟอร์ม</span>
+                            </div>
+                        </div>
+                        <div class="o_vpk_budget_overview_form_kpis">
+                            <t t-foreach="state.data.form_kpis" t-as="kpi" t-key="kpi.id">
+                                <div
+                                    class="o_vpk_budget_overview_form_kpi"
+                                    t-on-click="() => this.openFormRequests(kpi.id)"
+                                >
+                                    <div class="o_vpk_budget_overview_form_kpi_top">
+                                        <span
+                                            class="o_vpk_budget_overview_metric_icon"
+                                            t-att-style="'color:' + kpi.color + ';background:' + kpi.color + '1a'"
+                                        >
+                                            <i t-att-class="'fa ' + kpi.icon"/>
+                                        </span>
+                                        <strong class="o_vpk_budget_overview_form_pct">
+                                            <t t-esc="formatPercent(kpi.percent)"/>
+                                        </strong>
+                                    </div>
+                                    <span class="o_vpk_budget_overview_metric_label"><t t-esc="kpi.label"/></span>
+                                    <b>฿<t t-esc="formatAmount(kpi.amount)"/></b>
+                                    <small class="text-muted"><t t-esc="kpi.subtitle"/></small>
+                                    <div class="o_vpk_budget_overview_form_bar">
+                                        <div
+                                            class="o_vpk_budget_overview_form_bar_fill"
+                                            t-att-style="'width:' + usageWidth(kpi.percent) + ';background:' + kpi.color"
+                                        />
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                        <div class="o_vpk_budget_overview_donut_wrap o_vpk_budget_overview_form_donut" t-if="state.data.form_breakdown.length">
+                            <div class="o_vpk_budget_overview_donut" t-att-style="formBreakdownStyle()"/>
+                            <div class="o_vpk_budget_overview_donut_legend">
+                                <t t-foreach="state.data.form_breakdown" t-as="item" t-key="item.key">
+                                    <div class="o_vpk_budget_overview_legend_item">
+                                        <span t-att-style="'background:' + item.color"/>
+                                        <div>
+                                            <strong><t t-esc="item.label"/></strong>
+                                            <small><t t-esc="formatPercent(item.percent)"/> · ฿<t t-esc="formatShortAmount(item.amount)"/></small>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="o_vpk_budget_overview_grid">
+                        <section class="o_vpk_budget_overview_panel">
+                            <div class="o_vpk_budget_overview_panel_header">
+                                <div>
+                                    <h3>วิวัฒนาการการเบิกจ่ายงบประมาณรายเดือน</h3>
+                                    <span>เปรียบเทียบเบิกจ่ายสะสมกับแผนควบคุมงบ</span>
+                                </div>
+                            </div>
+                            <div class="o_vpk_budget_overview_chart">
+                                <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                                    <path t-att-d="actualAreaPath" class="o_vpk_budget_overview_area"/>
+                                    <polyline t-att-points="actualPolyline" class="o_vpk_budget_overview_line_actual"/>
+                                    <polyline t-att-points="planPolyline" class="o_vpk_budget_overview_line_plan"/>
+                                </svg>
+                                <div class="o_vpk_budget_overview_legend_inline">
+                                    <span><i class="o_dot o_dot_actual"/>เบิกจ่ายสะสม</span>
+                                    <span><i class="o_dot o_dot_plan"/>เส้นเตือนวิกฤติ</span>
+                                </div>
+                                <div class="o_vpk_budget_overview_axis">
+                                    <t t-foreach="state.data.trend.actual_points" t-as="point" t-key="point.label">
+                                        <span><t t-esc="point.label"/></span>
+                                    </t>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="o_vpk_budget_overview_panel">
+                            <div class="o_vpk_budget_overview_panel_header">
+                                <div>
+                                    <h3>สัดส่วนจัดสรรงบประมาณ</h3>
+                                    <span>แบ่งตามหน่วยงาน / ศูนย์ต้นทุน</span>
+                                </div>
+                            </div>
+                            <div class="o_vpk_budget_overview_donut_wrap">
+                                <div class="o_vpk_budget_overview_donut" t-att-style="allocationStyle()"/>
+                                <div class="o_vpk_budget_overview_donut_legend">
+                                    <t t-foreach="state.data.allocation_breakdown" t-as="item" t-key="item.key">
+                                        <div class="o_vpk_budget_overview_legend_item">
+                                            <span t-att-style="'background:' + item.color"/>
+                                            <div>
+                                                <strong><t t-esc="item.label"/></strong>
+                                                <small><t t-esc="formatPercent(item.percent)"/> · ฿<t t-esc="formatShortAmount(item.amount)"/></small>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="o_vpk_budget_overview_grid o_vpk_budget_overview_grid_bottom">
+                        <section class="o_vpk_budget_overview_panel">
+                            <div class="o_vpk_budget_overview_panel_header">
+                                <div>
+                                    <h3>สถานะงบประมาณรายแผนก</h3>
+                                    <span>งบที่ได้รับ เบิกจ่าย และคงเหลือตามหน่วยงาน</span>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm o_vpk_budget_overview_table">
+                                    <thead>
+                                        <tr>
+                                            <th>ชื่อแผนก / ฝ่าย</th>
+                                            <th class="text-end">งบประมาณที่ได้รับ</th>
+                                            <th class="text-end">เบิกจ่ายแล้ว</th>
+                                            <th class="text-end">งบประมาณคงเหลือ</th>
+                                            <th>สัดส่วนการใช้</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="state.data.department_rows" t-as="row" t-key="row.id">
+                                            <tr>
+                                                <td>
+                                                    <span class="o_vpk_budget_overview_dept">
+                                                        <i t-att-style="'background:' + row.color"/>
+                                                        <t t-esc="row.name"/>
+                                                    </span>
+                                                </td>
+                                                <td class="text-end">฿<t t-esc="formatAmount(row.allocated)"/></td>
+                                                <td class="text-end">฿<t t-esc="formatAmount(row.actual)"/></td>
+                                                <td class="text-end">฿<t t-esc="formatAmount(row.remaining)"/></td>
+                                                <td>
+                                                    <div class="o_vpk_budget_overview_usage">
+                                                        <div class="progress">
+                                                            <div
+                                                                class="progress-bar"
+                                                                t-att-style="'width:' + usageWidth(row.usage_pct) + ';background:' + row.color"
+                                                            />
+                                                        </div>
+                                                        <small><t t-esc="formatPercent(row.usage_pct)"/></small>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <section class="o_vpk_budget_overview_panel o_vpk_budget_overview_side">
+                            <div class="o_vpk_budget_overview_panel_header">
+                                <div>
+                                    <h3>คำขอเบิกจ่ายล่าสุด</h3>
+                                    <span>รายการคำของบล่าสุดในปีงบประมาณนี้</span>
+                                </div>
+                                <button class="btn btn-link btn-sm" t-on-click="() => this.openRequests()">ดูทั้งหมด</button>
+                            </div>
+                            <div class="o_vpk_budget_overview_recent">
+                                <t t-foreach="state.data.recent_requests" t-as="request" t-key="request.id">
+                                    <button type="button" class="o_vpk_budget_overview_recent_item" t-on-click="() => this.openRequest(request.id)">
+                                        <span>
+                                            <strong><t t-esc="request.name"/></strong>
+                                            <small>
+                                                <t t-esc="formatDate(request.date)"/>
+                                                <t t-if="request.department"> · <t t-esc="request.department"/></t>
+                                            </small>
+                                        </span>
+                                        <span class="o_vpk_budget_overview_recent_meta">
+                                            <b>฿<t t-esc="formatShortAmount(request.amount)"/></b>
+                                            <em t-att-class="'o_state o_state_' + request.state"><t t-esc="request.state_label"/></em>
+                                        </span>
+                                    </button>
+                                </t>
+                                <t t-if="!state.data.recent_requests.length">
+                                    <div class="text-muted p-3">ยังไม่มีคำของบในปีงบประมาณนี้</div>
+                                </t>
+                            </div>
+                        </section>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="o_vpk_budget_overview_loading">กำลังโหลดข้อมูล...</div>
+                </t>
+            </div>
+        </Layout>
+    </t>
+
+</templates>

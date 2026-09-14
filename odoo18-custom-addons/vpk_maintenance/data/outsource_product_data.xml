@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="product_outsource_repair" model="product.product">
+            <field name="name">จ้างซ่อมภายนอก</field>
+            <field name="default_code">SVC-OUTSRC-REPAIR</field>
+            <field name="type">service</field>
+            <field name="purchase_ok" eval="True"/>
+            <field name="sale_ok" eval="False"/>
+            <field name="list_price">0.0</field>
+            <field name="standard_price">0.0</field>
+            <field name="description_purchase">บริการจ้างซ่อม/บำรุงรักษาภายนอกจากคำขอซ่อมบำรุง</field>
+        </record>
+    </data>
+</odoo>

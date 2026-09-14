@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_committee_appointment_form" model="ir.ui.view">
+        <field name="name">procurement.committee.appointment.form</field>
+        <field name="model">procurement.committee.appointment</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit" string="ส่งขออนุมัติ" type="object"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_approve" string="อนุมัติแต่งตั้ง" type="object"
+                            class="btn-primary" invisible="state != 'to_approve'"
+                            groups="purchase.group_purchase_manager"/>
+                    <button name="action_print" string="พิมพ์เอกสาร" type="object"
+                            invisible="state == 'cancelled'"/>
+                    <button name="action_cancel" string="ยกเลิก" type="object"
+                            invisible="state in ('approved', 'cancelled')"/>
+                    <button name="action_draft" string="กลับเป็นร่าง" type="object"
+                            invisible="state not in ('cancelled', 'approved')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,to_approve,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                        <h3><field name="subject" placeholder="เรื่อง..."/></h3>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date"/>
+                            <field name="request_id"/>
+                            <field name="department_id"/>
+                        </group>
+                        <group>
+                            <field name="requested_by"/>
+                            <field name="approved_by" readonly="1"/>
+                            <field name="approved_date" readonly="1"/>
+                            <field name="email_sent" readonly="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group string="ประเภทคณะกรรมการในเอกสาร">
+                        <group>
+                            <field name="has_price_mid"/>
+                            <field name="has_procurement"/>
+                            <field name="has_work_acceptance"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="รายชื่อคณะกรรมการ" name="lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="committee_type"/>
+                                    <field name="employee_id"/>
+                                    <field name="name"/>
+                                    <field name="approve_role"/>
+                                    <field name="department_id" optional="show"/>
+                                    <field name="email" optional="show"/>
+                                    <field name="note" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="รายละเอียด" name="note">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_committee_appointment_list" model="ir.ui.view">
+        <field name="name">procurement.committee.appointment.list</field>
+        <field name="model">procurement.committee.appointment</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="subject"/>
+                <field name="request_id"/>
+                <field name="department_id" optional="show"/>
+                <field name="line_count"/>
+                <field name="has_price_mid" optional="hide"/>
+                <field name="has_procurement" optional="hide"/>
+                <field name="has_work_acceptance" optional="hide"/>
+                <field name="email_sent" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'to_approve'"
+                       decoration-success="state == 'approved'"
+                       decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_committee_appointment_search" model="ir.ui.view">
+        <field name="name">procurement.committee.appointment.search</field>
+        <field name="model">procurement.committee.appointment</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="subject"/>
+                <field name="request_id"/>
+                <filter name="draft" string="ร่าง" domain="[('state', '=', 'draft')]"/>
+                <filter name="to_approve" string="รออนุมัติ" domain="[('state', '=', 'to_approve')]"/>
+                <filter name="approved" string="อนุมัติแล้ว" domain="[('state', '=', 'approved')]"/>
+                <filter name="with_price_mid" string="มีคณะราคากลาง" domain="[('has_price_mid', '=', True)]"/>
+                <filter name="with_procurement" string="มีคณะจัดซื้อ" domain="[('has_procurement', '=', True)]"/>
+                <filter name="with_wa" string="มีคณะตรวจรับ" domain="[('has_work_acceptance', '=', True)]"/>
+                <group>
+                    <filter name="group_state" string="สถานะ" context="{'group_by': 'state'}"/>
+                    <filter name="group_pr" string="ใบขอซื้อ" context="{'group_by': 'request_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_committee_appointment" model="ir.actions.act_window">
+        <field name="name">แต่งตั้งคณะกรรมการซื้อจ้าง</field>
+        <field name="res_model">procurement.committee.appointment</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+    </record>
+</odoo>

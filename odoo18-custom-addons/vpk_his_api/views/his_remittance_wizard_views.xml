@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_his_remittance_wizard_form" model="ir.ui.view">
+        <field name="name">vpk.his.remittance.wizard.form</field>
+        <field name="model">vpk.his.remittance.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ใบนำส่งเงิน">
+                <group>
+                    <group string="งวด">
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <field name="datetime_from"/>
+                        <field name="datetime_to"/>
+                        <field name="shift"/>
+                        <field name="batch_ids" widget="many2many_tags"
+                               options="{'no_create': True}"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                    <group string="หัวรายงาน">
+                        <field name="cashier_name"/>
+                        <field name="cashier_job"/>
+                        <field name="receipt_from"/>
+                        <field name="receipt_to"/>
+                        <field name="receipt_count"/>
+                        <field name="cancelled_count"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="พิมพ์ใบนำส่งเงิน"
+                            class="btn-primary" data-hotkey="q"/>
+                    <button string="ปิด" class="btn-secondary" special="cancel" data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_his_remittance_wizard" model="ir.actions.act_window">
+        <field name="name">ใบนำส่งเงิน</field>
+        <field name="res_model">vpk.his.remittance.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_saraban_document_user,access.saraban.document.user,model_saraban_document,purchase_request.group_purchase_request_user,1,1,1,0
+access_saraban_document_manager,access.saraban.document.manager,model_saraban_document,purchase_request.group_purchase_request_manager,1,1,1,1
+access_saraban_document_purchase,access.saraban.document.purchase,model_saraban_document,purchase.group_purchase_user,1,1,1,0

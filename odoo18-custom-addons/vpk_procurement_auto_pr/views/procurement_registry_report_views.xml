@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Contract registry -->
+    <record id="view_contract_registry_report_list" model="ir.ui.view">
+        <field name="name">purchase.contract.registry.report.list</field>
+        <field name="model">purchase.contract</field>
+        <field name="arch" type="xml">
+            <list string="ทะเบียนคุมสัญญา"
+                  create="false" edit="false" delete="false"
+                  default_order="date_start desc, name">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="egp_reference"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="amount_total" sum="รวมวงเงินสัญญา"/>
+                <field name="amount_pr_reserved" sum="รวมวงเงิน PR"/>
+                <field name="amount_po_confirmed" sum="รวมวงเงิน PO"/>
+                <field name="amount_consumed" sum="รวมใช้ไป"/>
+                <field name="amount_remaining" sum="รวมคงเหลือ"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'confirmed'"
+                       decoration-muted="state == 'done'"
+                       decoration-danger="state == 'cancel'"/>
+                <field name="company_id" groups="base.group_multi_company"
+                       optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_contract_registry_report_pivot" model="ir.ui.view">
+        <field name="name">purchase.contract.registry.report.pivot</field>
+        <field name="model">purchase.contract</field>
+        <field name="arch" type="xml">
+            <pivot string="สรุปทะเบียนคุมสัญญา">
+                <field name="state" type="row"/>
+                <field name="partner_id" type="row"/>
+                <field name="date_start" type="col" interval="year"/>
+                <field name="amount_total" type="measure"/>
+                <field name="amount_consumed" type="measure"/>
+                <field name="amount_remaining" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_contract_registry_report_graph" model="ir.ui.view">
+        <field name="name">purchase.contract.registry.report.graph</field>
+        <field name="model">purchase.contract</field>
+        <field name="arch" type="xml">
+            <graph string="วงเงินสัญญาตามสถานะ" type="bar">
+                <field name="state"/>
+                <field name="amount_total" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_contract_registry_report_search" model="ir.ui.view">
+        <field name="name">purchase.contract.registry.report.search</field>
+        <field name="model">purchase.contract</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาทะเบียนสัญญา">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="egp_reference"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <filter string="ใช้งานอยู่" name="contract_active"
+                        domain="[('state', '=', 'confirmed')]"/>
+                <filter string="สิ้นสุดแล้ว" name="contract_done"
+                        domain="[('state', '=', 'done')]"/>
+                <filter string="คู่สัญญา" name="group_contract_partner"
+                        domain="[]" context="{'group_by': 'partner_id'}"/>
+                <filter string="สถานะ" name="group_contract_state"
+                        domain="[]" context="{'group_by': 'state'}"/>
+                <filter string="ปีเริ่มสัญญา" name="group_contract_year"
+                        domain="[]" context="{'group_by': 'date_start:year'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_contract_registry_report" model="ir.actions.act_window">
+        <field name="name">ทะเบียนคุมสัญญา</field>
+        <field name="res_model">purchase.contract</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_id" ref="view_contract_registry_report_list"/>
+        <field name="search_view_id"
+               ref="view_contract_registry_report_search"/>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_contract_registry_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field><field name="view_mode">list</field>
+        <field name="view_id" ref="view_contract_registry_report_list"/>
+        <field name="act_window_id" ref="action_contract_registry_report"/>
+    </record>
+    <record id="action_contract_registry_pivot" model="ir.actions.act_window.view">
+        <field name="sequence">2</field><field name="view_mode">pivot</field>
+        <field name="view_id" ref="view_contract_registry_report_pivot"/>
+        <field name="act_window_id" ref="action_contract_registry_report"/>
+    </record>
+    <record id="action_contract_registry_graph" model="ir.actions.act_window.view">
+        <field name="sequence">3</field><field name="view_mode">graph</field>
+        <field name="view_id" ref="view_contract_registry_report_graph"/>
+        <field name="act_window_id" ref="action_contract_registry_report"/>
+    </record>
+
+    <menuitem id="menu_contract_registry_report"
+              name="ทะเบียนคุมสัญญา"
+              parent="purchase.purchase_report_main"
+              action="action_contract_registry_report"
+              sequence="39" groups="purchase.group_purchase_user"/>
+
+    <!-- e-GP registry -->
+    <record id="view_egp_registry_report_list" model="ir.ui.view">
+        <field name="name">purchase.requisition.egp.registry.report.list</field>
+        <field name="model">purchase.requisition</field>
+        <field name="arch" type="xml">
+            <list string="ทะเบียนคุม e-GP"
+                  create="false" edit="false" delete="false"
+                  default_order="id desc">
+                <field name="name"/>
+                <field name="egp_reference"/>
+                <field name="egp_project_name"/>
+                <field name="purchase_request_id"/>
+                <field name="purchase_request_amount_total"
+                       sum="รวมวงเงินโครงการ"/>
+                <field name="procurement_type_id"/>
+                <field name="purchase_type_id" optional="show"/>
+                <field name="procurement_method_id"/>
+                <field name="egp_report_winner_partner_id"/>
+                <field name="egp_report_winner_amount"
+                       sum="รวมวงเงินผู้ชนะ"/>
+                <field name="egp_report_published_date"/>
+                <field name="egp_flow_stage" widget="badge"/>
+                <field name="state" widget="badge"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="company_id" groups="base.group_multi_company"
+                       optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_egp_registry_report_pivot" model="ir.ui.view">
+        <field name="name">purchase.requisition.egp.registry.report.pivot</field>
+        <field name="model">purchase.requisition</field>
+        <field name="arch" type="xml">
+            <pivot string="สรุปทะเบียนคุม e-GP">
+                <field name="egp_flow_stage" type="row"/>
+                <field name="procurement_method_id" type="row"/>
+                <field name="egp_report_winner_partner_id" type="row"/>
+                <field name="purchase_request_amount_total" type="measure"/>
+                <field name="egp_report_winner_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_egp_registry_report_search" model="ir.ui.view">
+        <field name="name">purchase.requisition.egp.registry.report.search</field>
+        <field name="model">purchase.requisition</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาทะเบียน e-GP">
+                <field name="name"/>
+                <field name="egp_reference"/>
+                <field name="egp_project_name"/>
+                <field name="purchase_request_id"/>
+                <field name="egp_report_winner_partner_id"/>
+                <filter string="ขั้นตอน e-GP" name="group_egp_stage"
+                        domain="[]" context="{'group_by': 'egp_flow_stage'}"/>
+                <filter string="วิธีจัดซื้อจัดจ้าง" name="group_egp_method"
+                        domain="[]" context="{'group_by': 'procurement_method_id'}"/>
+                <filter string="ผู้ชนะ" name="group_egp_winner"
+                        domain="[]" context="{'group_by': 'egp_report_winner_partner_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_egp_registry_report" model="ir.actions.act_window">
+        <field name="name">ทะเบียนคุม e-GP</field>
+        <field name="res_model">purchase.requisition</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="view_id" ref="view_egp_registry_report_list"/>
+        <field name="search_view_id" ref="view_egp_registry_report_search"/>
+        <field name="domain">[('requisition_type', '=', 'egp_procurement')]</field>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_egp_registry_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field><field name="view_mode">list</field>
+        <field name="view_id" ref="view_egp_registry_report_list"/>
+        <field name="act_window_id" ref="action_egp_registry_report"/>
+    </record>
+    <record id="action_egp_registry_pivot" model="ir.actions.act_window.view">
+        <field name="sequence">2</field><field name="view_mode">pivot</field>
+        <field name="view_id" ref="view_egp_registry_report_pivot"/>
+        <field name="act_window_id" ref="action_egp_registry_report"/>
+    </record>
+
+    <menuitem id="menu_egp_registry_report"
+              name="ทะเบียนคุม e-GP"
+              parent="purchase.purchase_report_main"
+              action="action_egp_registry_report"
+              sequence="40" groups="purchase.group_purchase_user"/>
+
+    <!-- GFMIS entry and registry -->
+    <record id="view_purchase_order_form_gfmis_registry"
+            model="ir.ui.view">
+        <field name="name">purchase.order.form.gfmis.registry</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="ข้อมูล GFMIS" name="gfmis_registry">
+                    <group>
+                        <group>
+                            <field name="gfmis_document_number"/>
+                            <field name="gfmis_commitment_number"/>
+                            <field name="gfmis_document_date"/>
+                            <field name="gfmis_fiscal_year"/>
+                        </group>
+                        <group>
+                            <field name="gfmis_status" widget="badge"/>
+                            <field name="gfmis_sent_at"/>
+                            <field name="budget_commitment_active" readonly="1"/>
+                            <field name="budget_committed_amount" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="หมายเหตุ">
+                        <field name="gfmis_note" nolabel="1"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_gfmis_registry_report_list" model="ir.ui.view">
+        <field name="name">purchase.order.gfmis.registry.report.list</field>
+        <field name="model">purchase.order</field>
+        <field name="arch" type="xml">
+            <list string="ทะเบียนคุม GFMIS"
+                  create="false" edit="false" delete="false"
+                  default_order="gfmis_document_date desc, name">
+                <field name="gfmis_document_number"/>
+                <field name="gfmis_commitment_number"/>
+                <field name="gfmis_document_date"/>
+                <field name="gfmis_fiscal_year"/>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="contract_id"/>
+                <field name="amount_total" sum="รวมมูลค่า PO"/>
+                <field name="budget_committed_amount"
+                       sum="รวมวงเงินผูกพัน"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="gfmis_status" widget="badge"
+                       decoration-info="gfmis_status == 'sent'"
+                       decoration-success="gfmis_status == 'committed'"
+                       decoration-danger="gfmis_status == 'error'"
+                       decoration-muted="gfmis_status == 'cancelled'"/>
+                <field name="gfmis_sent_at"/>
+                <field name="company_id" groups="base.group_multi_company"
+                       optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_gfmis_registry_report_pivot" model="ir.ui.view">
+        <field name="name">purchase.order.gfmis.registry.report.pivot</field>
+        <field name="model">purchase.order</field>
+        <field name="arch" type="xml">
+            <pivot string="สรุปทะเบียนคุม GFMIS">
+                <field name="gfmis_fiscal_year" type="row"/>
+                <field name="gfmis_status" type="row"/>
+                <field name="partner_id" type="row"/>
+                <field name="amount_total" type="measure"/>
+                <field name="budget_committed_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_gfmis_registry_report_search" model="ir.ui.view">
+        <field name="name">purchase.order.gfmis.registry.report.search</field>
+        <field name="model">purchase.order</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาทะเบียน GFMIS">
+                <field name="gfmis_document_number"/>
+                <field name="gfmis_commitment_number"/>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="contract_id"/>
+                <filter string="ผูกพันแล้ว" name="gfmis_committed"
+                        domain="[('gfmis_status', '=', 'committed')]"/>
+                <filter string="ข้อมูลผิดพลาด" name="gfmis_error"
+                        domain="[('gfmis_status', '=', 'error')]"/>
+                <filter string="ปีงบประมาณ" name="group_gfmis_year"
+                        domain="[]" context="{'group_by': 'gfmis_fiscal_year'}"/>
+                <filter string="สถานะ" name="group_gfmis_status"
+                        domain="[]" context="{'group_by': 'gfmis_status'}"/>
+                <filter string="ผู้จำหน่าย" name="group_gfmis_vendor"
+                        domain="[]" context="{'group_by': 'partner_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_gfmis_registry_report" model="ir.actions.act_window">
+        <field name="name">ทะเบียนคุม GFMIS</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,pivot</field>
+        <field name="view_id" ref="view_gfmis_registry_report_list"/>
+        <field name="search_view_id" ref="view_gfmis_registry_report_search"/>
+        <field name="domain">[('gfmis_document_number', '!=', False)]</field>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_gfmis_registry_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field><field name="view_mode">list</field>
+        <field name="view_id" ref="view_gfmis_registry_report_list"/>
+        <field name="act_window_id" ref="action_gfmis_registry_report"/>
+    </record>
+    <record id="action_gfmis_registry_pivot" model="ir.actions.act_window.view">
+        <field name="sequence">2</field><field name="view_mode">pivot</field>
+        <field name="view_id" ref="view_gfmis_registry_report_pivot"/>
+        <field name="act_window_id" ref="action_gfmis_registry_report"/>
+    </record>
+
+    <menuitem id="menu_gfmis_registry_report"
+              name="ทะเบียนคุม GFMIS"
+              parent="purchase.purchase_report_main"
+              action="action_gfmis_registry_report"
+              sequence="41" groups="purchase.group_purchase_user"/>
+</odoo>

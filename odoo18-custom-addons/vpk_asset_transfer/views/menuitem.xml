@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_vpk_asset_transfer"
+        name="ใบโอนทรัพย์สิน"
+        parent="account_asset_management.menu_finance_assets"
+        action="action_vpk_asset_transfer"
+        sequence="30"
+        groups="vpk_asset_transfer.group_asset_transfer_user"
+    />
+</odoo>

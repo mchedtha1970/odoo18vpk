@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_master_data_template_wizard" model="ir.ui.view">
+        <field name="name">vpk.master.data.template.wizard.form</field>
+        <field name="model">vpk.master.data.template.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ดาวน์โหลด Template Master Data">
+                <group string="เลือกหมวดที่ต้องการ">
+                    <group>
+                        <field name="include_uom"/>
+                        <field name="include_product_category"/>
+                        <field name="include_product"/>
+                        <field name="include_warehouse"/>
+                    </group>
+                    <group>
+                        <field name="include_analytic"/>
+                        <field name="include_asset"/>
+                        <field name="include_equipment"/>
+                    </group>
+                </group>
+                <group string="จัดซื้อ / ผู้จำหน่าย">
+                    <group>
+                        <field name="include_vendor"/>
+                    </group>
+                    <group>
+                        <field name="include_purchase_request"/>
+                        <field name="include_purchase_order"/>
+                    </group>
+                </group>
+                <group string="ระบบเจ้าหนี้ / การเงิน / บัญชี">
+                    <group>
+                        <field name="include_coa"/>
+                        <field name="include_accounting_setup"/>
+                        <field name="include_work_acceptance"/>
+                        <field name="include_vendor_bill"/>
+                    </group>
+                    <group>
+                        <field name="include_finance"/>
+                        <field name="include_journal_entry"/>
+                        <field name="include_wht_cert"/>
+                        <field name="include_checkbook"/>
+                    </group>
+                </group>
+                <group>
+                    <field name="download_mode" widget="radio"/>
+                </group>
+                <div class="alert alert-info" role="alert">
+                    <p class="mb-1"><b>ลำดับเตรียมข้อมูลที่แนะนำ</b></p>
+                    <ol class="mb-0">
+                        <li>UoM (หมวดหน่วย → หน่วยนับ)</li>
+                        <li>Product Category → Product Master</li>
+                        <li>Warehouse → Location</li>
+                        <li>Analytic Plan → แผนก/หน่วยงาน → Project</li>
+                        <li>Asset Profile → Asset Card</li>
+                        <li>Equipment Category → Equipment (ยกยอด + ลิงก์ Asset ด้วย <code>asset_number</code>)</li>
+                        <li>Vendor → VendorBank → VendorPricelist</li>
+                        <li>Purchase Request (Header) → Lines</li>
+                        <li>Purchase Order (Header) → Lines (ต้องมี Vendor ก่อน)</li>
+                        <li>ผังบัญชี → สมุดรายวัน / ภาษี / WHT / เงื่อนไขชำระ</li>
+                        <li>ตรวจรับงาน (WA) → Lines (ต้องมี PO ก่อน)</li>
+                        <li>ใบแจ้งหนี้ผู้ขาย → Lines → ใบกำกับภาษีซื้อ</li>
+                        <li>จ่ายชำระเจ้าหนี้ / Bank Statement</li>
+                        <li>สมุดเช็ค (Header) → รายการเช็คในสมุด</li>
+                        <li>รายการบัญชีทั่วไป / ยกยอด → หนังสือรับรองหัก ณ ที่จ่าย</li>
+                    </ol>
+                    <p class="mb-0 mt-2">
+                        Product: <b>Inventory → Import Product Master</b>
+                        | Equipment ↔ Asset ใช้โมดูล <b>vpk_asset_equipment</b>
+                        | PR/PO/ใบแจ้งหนี้แนะนำนำเข้าสถานะ <b>draft</b> แล้วยืนยันในระบบ
+                        | แถวแรกของทุกชีตเป็น <b>ภาษาไทย</b> แถวถัดไปเป็นชื่อฟิลด์ภาษาอังกฤษ
+                    </p>
+                </div>
+                <footer>
+                    <button name="action_download"
+                            string="ดาวน์โหลด Template"
+                            type="object"
+                            class="btn-primary"/>
+                    <button string="ปิด" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vpk_master_data_template_wizard" model="ir.actions.act_window">
+        <field name="name">ดาวน์โหลด Template Master Data</field>
+        <field name="res_model">vpk.master.data.template.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_vpk_master_data_templates"
+        name="Template Master Data"
+        parent="base.menu_custom"
+        action="action_vpk_master_data_template_wizard"
+        sequence="90"
+        groups="base.group_system"
+    />
+
+    <!-- Also under Inventory for stock/product users -->
+    <menuitem
+        id="menu_vpk_master_data_templates_stock"
+        name="Template Master Data"
+        parent="stock.menu_stock_config_settings"
+        action="action_vpk_master_data_template_wizard"
+        sequence="95"
+        groups="stock.group_stock_manager"
+    />
+
+    <!-- Under Accounting configuration for CoA / AP / finance / GL templates -->
+    <menuitem
+        id="menu_vpk_master_data_templates_account"
+        name="Template นำเข้าเจ้าหนี้ / การเงิน / บัญชี"
+        parent="account.menu_finance_configuration"
+        action="action_vpk_master_data_template_wizard"
+        sequence="95"
+        groups="account.group_account_manager"
+    />
+
+    <!-- Under Maintenance for equipment opening-balance templates -->
+    <menuitem
+        id="menu_vpk_master_data_templates_maintenance"
+        name="Template ยกยอด Equipment / Asset"
+        parent="maintenance.menu_maintenance_configuration"
+        action="action_vpk_master_data_template_wizard"
+        sequence="95"
+        groups="maintenance.group_equipment_manager"
+    />
+
+    <!-- Under Purchase configuration for vendor / PR / PO templates -->
+    <menuitem
+        id="menu_vpk_master_data_templates_purchase"
+        name="Template นำเข้า Vendor / PR / PO"
+        parent="purchase.menu_purchase_config"
+        action="action_vpk_master_data_template_wizard"
+        sequence="95"
+        groups="purchase.group_purchase_manager"
+    />
+</odoo>

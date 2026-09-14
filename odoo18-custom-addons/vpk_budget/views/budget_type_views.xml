@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_budget_type_list" model="ir.ui.view">
+        <field name="name">vpk.budget.type.list</field>
+        <field name="model">vpk.budget.type</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="section_key"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_budget_type_form" model="ir.ui.view">
+        <field name="name">vpk.budget.type.form</field>
+        <field name="model">vpk.budget.type</field>
+        <field name="arch" type="xml">
+            <form string="ประเภทงบประมาณ" class="o_vpk_budget_form">
+                <sheet>
+                    <field name="active" invisible="1"/>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name" string="ชื่อประเภทงบประมาณ"/>
+                        <h1>
+                            <field name="name" nolabel="1" placeholder="e.g. วัสดุ"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="section_key"/>
+                            <field name="sequence"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description" placeholder="รายละเอียดเพิ่มเติม..." nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_budget_type_search" model="ir.ui.view">
+        <field name="name">vpk.budget.type.search</field>
+        <field name="model">vpk.budget.type</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="section_key"/>
+                <filter name="active" string="Active" domain="[('active', '=', True)]"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_budget_type" model="ir.actions.act_window">
+        <field name="name">ประเภทงบประมาณ</field>
+        <field name="res_model">vpk.budget.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_vpk_budget_type_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                สร้างประเภทงบประมาณใหม่
+            </p>
+            <p>
+                กำหนดประเภทงบประมาณหลัก เช่น วัสดุ ครุภัณฑ์ ก่อสร้าง โครงการ
+                เพื่อใช้กำหนดแบบฟอร์มและรายการคำของบ
+            </p>
+        </field>
+    </record>
+</odoo>

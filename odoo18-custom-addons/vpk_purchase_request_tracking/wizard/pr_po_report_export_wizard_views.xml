@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pr_po_report_export_wizard_form" model="ir.ui.view">
+        <field name="name">pr.po.report.export.wizard.form</field>
+        <field name="model">pr.po.report.export.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Export รายงานขอซื้อ / สั่งซื้อ">
+                <group>
+                    <group>
+                        <field name="report_scope" widget="radio"/>
+                        <field name="period_type" widget="radio"/>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                    <group>
+                        <field name="po_issued_status"
+                               invisible="report_scope == 'po'"/>
+                        <field name="procurement_type_id"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_export_excel" type="object"
+                            string="Export Excel" class="btn-primary"/>
+                    <button name="action_view_pr" type="object"
+                            string="ดูรายการ PR"
+                            invisible="report_scope == 'po'"
+                            class="btn-secondary"/>
+                    <button name="action_view_po" type="object"
+                            string="ดูรายการ PO"
+                            invisible="report_scope == 'pr'"
+                            class="btn-secondary"/>
+                    <button string="ปิด" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pr_po_report_export_wizard" model="ir.actions.act_window">
+        <field name="name">Export รายงานขอซื้อ/สั่งซื้อ</field>
+        <field name="res_model">pr.po.report.export.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

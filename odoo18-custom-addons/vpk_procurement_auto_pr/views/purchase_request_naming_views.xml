@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_form_name_assignment" model="ir.ui.view">
+        <field name="name">purchase.request.form.name.assignment</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="name_assignment" invisible="1"/>
+                <field name="is_name_editable" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="string">เลขที่ใบขอซื้อ/จ้าง</attribute>
+                <attribute name="readonly">1</attribute>
+                <attribute name="placeholder">บันทึกแล้วระบบจะออกเลขให้อัตโนมัติ</attribute>
+            </xpath>
+            <xpath expr="//field[@name='picking_type_id']" position="attributes">
+                <attribute name="domain">[('code', '=', 'incoming'), '|', ('warehouse_id', '=', False), ('warehouse_id.company_id', '=', company_id)]</attribute>
+            </xpath>
+            <xpath expr="//field[@name='origin']" position="after">
+                <field name="is_auto_generated" invisible="1"/>
+                <field name="procurement_plan_id"
+                       readonly="state != 'draft'"
+                       options="{'no_create': True}"/>
+                <field name="auto_gen_source"
+                       invisible="not is_auto_generated"
+                       readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

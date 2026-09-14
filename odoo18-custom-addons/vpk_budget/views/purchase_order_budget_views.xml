@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_order_form_budget_commitment" model="ir.ui.view">
+        <field name="name">purchase.order.form.budget.commitment</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='currency_id']" position="after">
+                <field name="budget_commitment_active" invisible="1"/>
+                <field
+                    name="budget_committed_amount"
+                    invisible="not budget_commitment_active"
+                    readonly="1"
+                />
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='price_subtotal']" position="after">
+                <field name="budget_post_id" optional="hide"/>
+                <field name="budget_line_id" optional="hide"/>
+                <field name="budget_open_committed_amount" optional="show" sum="ผูกพันคงเหลือ"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

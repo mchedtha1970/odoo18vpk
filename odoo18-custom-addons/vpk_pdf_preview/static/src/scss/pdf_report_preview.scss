@@ -1,0 +1,73 @@
+/* Keep styles libsass-safe: avoid min()/max() with mixed units (px + vh/vw). */
+
+.o_dialog .modal-content.o_vpk_pdf_preview_dialog {
+    height: 90vh;
+    max-height: 980px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.o_dialog .modal-content.o_vpk_pdf_preview_dialog .modal-header {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.o_dialog .modal-content.o_vpk_pdf_preview_dialog .modal-header .modal-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.o_dialog .modal-content.o_vpk_pdf_preview_dialog .modal-body.o_vpk_pdf_preview_body {
+    flex: 1 1 auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 0 !important;
+}
+
+.o_dialog .modal-content.o_vpk_pdf_preview_dialog .modal-footer {
+    border-top: 1px solid #dee2e6;
+    padding: 0.65rem 1rem;
+    justify-content: flex-start !important;
+}
+
+.o_dialog .modal-dialog.modal-fs .modal-content.o_vpk_pdf_preview_dialog,
+.o_dialog .modal-dialog.modal-fullscreen .modal-content.o_vpk_pdf_preview_dialog {
+    width: 96vw;
+    max-width: 1200px;
+}
+
+.o_vpk_pdf_preview_container {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    background: #323639;
+}
+
+.o_vpk_pdf_preview_iframe {
+    width: 100%;
+    height: 100%;
+    min-height: 70vh;
+    border: 0;
+    background: #323639;
+}
+
+.o_vpk_pdf_preview_loading {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.o_vpk_pdf_preview_close {
+    min-width: 5.5rem;
+    border-radius: 999px;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+}

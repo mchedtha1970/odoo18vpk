@@ -1,0 +1,56 @@
+.env
+*.log
+odoo.log
+
+# Local runtime / home-directory clutter (this path is also the Odoo user home)
+odoo18/
+odoo18vpk-venv/
+backups/
+import/
+work/
+tools/
+.config/
+.cache/
+.local/
+.npm/
+.claude/
+.copilot/
+.dotnet/
+.cursor/
+.cursor-server/
+.vscode-server/
+.bash_history
+.bash_logout
+.bashrc
+.profile
+.sudo_as_admin_successful
+.wget-hsts
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.Python
+
+# OCA repos that already have their own .git — fetch after clone
+# with odoo18vpk-docker/docker/clone-oca-addons.sh
+odoo18-custom-addons/account-invoicing-18.0/
+odoo18-custom-addons/account-payment-18.0/
+odoo18-custom-addons/hr-expense-18.0/
+odoo18-custom-addons/partner-contact-18.0/
+odoo18-custom-addons/reporting-engine-18.0/
+odoo18-custom-addons/server-tools-18.0/
+odoo18-custom-addons/server-ux-18.0/
+odoo18-custom-addons/stock-logistics-workflow-18.0/
+
+# Nested git metadata if any remain
+odoo18-custom-addons/*/.git/
+
+# Server-local conf copies (passwords / host paths)
+odoo18vpk-fixed.conf
+odoo18vpk-s1-test.conf
+odoo18vpk-docker/.env
+odoo18vpk-docker/VPK_S1/*.dump
+odoo18vpk-docker/VPK_S1/*.sql
+odoo18vpk-docker/VPK_S1/filestore/

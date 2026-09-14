@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_committee_appointment"
+              name="แต่งตั้งคณะกรรมการซื้อจ้าง"
+              parent="purchase.menu_purchase_root"
+              action="action_committee_appointment"
+              groups="purchase.group_purchase_user"
+              sequence="72"/>
+</odoo>

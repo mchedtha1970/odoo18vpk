@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record model="ir.module.category" id="module_category_vpk_approval">
+        <field name="name">การอนุมัติ VPK</field>
+        <field name="sequence">15</field>
+    </record>
+
+    <record id="group_vpk_pr_confirm" model="res.groups">
+        <field name="name">ยืนยันใบขอซื้อ (Confirm PR)</field>
+        <field name="category_id" ref="module_category_vpk_approval"/>
+        <field
+            name="implied_ids"
+            eval="[(4, ref('purchase_request.group_purchase_request_manager'))]"
+        />
+        <field name="comment">ยืนยันใบขอซื้อ (ระบบ Confirm อัตโนมัติเมื่ออนุมัติครบทุกขั้น)</field>
+    </record>
+
+    <record id="group_vpk_pr_verify" model="res.groups">
+        <field name="name">ตรวจสอบใบขอซื้อ (Verify PR)</field>
+        <field name="category_id" ref="module_category_vpk_approval"/>
+        <field
+            name="implied_ids"
+            eval="[(4, ref('l10n_th_gov_purchase_request.group_purchase_request_verify'))]"
+        />
+        <field name="comment">ตรวจสอบเอกสารก่อนอนุมัติ (Gov PR workflow)</field>
+    </record>
+
+    <record id="group_vpk_procurement_officer" model="res.groups">
+        <field name="name">เจ้าหน้าที่จัดซื้อ</field>
+        <field name="category_id" ref="module_category_vpk_approval"/>
+        <field name="implied_ids" eval="[(4, ref('purchase.group_purchase_user'))]"/>
+        <field name="comment">สร้าง RFQ / ใบสั่งซื้อจาก PR ที่อนุมัติแล้ว</field>
+    </record>
+
+</odoo>

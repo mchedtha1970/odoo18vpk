@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Mobile camera only opens URLs. Encode inventory deep-link in asset QR labels. -->
+    <template id="report_simple_asset_number_inventory_url"
+              inherit_id="account_asset_number.report_simple_asset_number">
+        <xpath expr="//t[@t-elif=&quot;profile.barcode_type == 'qr'&quot;]/img" position="replace">
+            <img
+                alt="QRcode"
+                t-att-src="'/report/barcode/?barcode_type=%s&amp;value=%s&amp;width=%s&amp;height=%s' % ('QR', quote_plus(asset.get_inventory_qr_value() or asset.number or ''), profile.barcode_width, profile.barcode_width)"
+                style="display: block; margin: 0 auto;"
+            />
+        </xpath>
+    </template>
+</odoo>

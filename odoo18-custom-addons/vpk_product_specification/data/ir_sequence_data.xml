@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_product_specification" model="ir.sequence">
+        <field name="name">Product Specification</field>
+        <field name="code">purchase.product.specification</field>
+        <field name="prefix">SPEC/%(year)s/</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>

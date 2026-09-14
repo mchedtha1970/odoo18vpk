@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vendor_product_issue_user,vendor.product.issue.user,model_vendor_product_issue,purchase.group_purchase_user,1,1,1,0
+access_vendor_product_issue_manager,vendor.product.issue.manager,model_vendor_product_issue,purchase.group_purchase_manager,1,1,1,1

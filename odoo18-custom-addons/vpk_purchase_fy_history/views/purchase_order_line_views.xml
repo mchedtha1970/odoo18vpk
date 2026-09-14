@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_order_form_fy_history" model="ir.ui.view">
+        <field name="name">purchase.order.form.fy.history</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']/list/field[@name='price_unit']" position="after">
+                <field name="fy_purchased_qty" optional="show" string="เคยซื้อปีงบฯ"/>
+                <field name="fy_last_price_unit" optional="show" string="ราคาล่าสุดปีงบฯ"/>
+                <field name="fy_avg_price_unit" optional="hide" string="ราคาเฉลี่ยปีงบฯ"/>
+                <field name="fy_min_price_unit" optional="hide"/>
+                <field name="fy_max_price_unit" optional="hide"/>
+                <field name="fy_purchase_count" optional="hide"/>
+                <field name="fy_price_warning" optional="show"
+                       decoration-danger="fy_price_warning"
+                       widget="badge"/>
+                <button name="action_view_fy_purchase_history"
+                        type="object"
+                        string="ประวัติปีงบฯ"
+                        icon="fa-history"
+                        optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_line_fy_history_list" model="ir.ui.view">
+        <field name="name">purchase.order.line.fy.history.list</field>
+        <field name="model">purchase.order.line</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0" edit="0"
+                  default_order="date_order desc, id desc">
+                <field name="date_order" string="วันที่สั่งซื้อ"/>
+                <field name="order_id" string="เลขที่ PO"/>
+                <field name="partner_id" string="ผู้จำหน่าย"/>
+                <field name="product_id" string="สินค้า"/>
+                <field name="product_qty" string="จำนวน" sum="รวมจำนวน"/>
+                <field name="product_uom" string="หน่วย" optional="show"/>
+                <field name="price_unit" string="ราคา/หน่วย"/>
+                <field name="price_subtotal" string="มูลค่า" sum="รวมมูลค่า"/>
+                <field name="state" string="สถานะ" optional="show" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_line_fy_history_search" model="ir.ui.view">
+        <field name="name">purchase.order.line.fy.history.search</field>
+        <field name="model">purchase.order.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_id"/>
+                <field name="partner_id"/>
+                <field name="order_id"/>
+                <filter name="confirmed" string="ยืนยันแล้ว"
+                        domain="[('state', 'in', ['purchase', 'done'])]"/>
+                <group expand="0" string="จัดกลุ่ม">
+                    <filter name="group_product" string="สินค้า"
+                            context="{'group_by': 'product_id'}"/>
+                    <filter name="group_partner" string="ผู้จำหน่าย"
+                            context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_month" string="เดือน"
+                            context="{'group_by': 'date_order:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_purchase_line_fy_history" model="ir.actions.act_window">
+        <field name="name">ราคา/ปริมาณที่เคยซื้อปีงบประมาณ</field>
+        <field name="res_model">purchase.order.line</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="domain">[('order_id.state', 'in', ['purchase', 'done']), ('display_type', '=', False)]</field>
+        <field name="context">{'search_default_group_product': 1}</field>
+        <field name="view_id" ref="view_purchase_order_line_fy_history_list"/>
+        <field name="search_view_id" ref="view_purchase_order_line_fy_history_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ยังไม่มีประวัติการซื้อในปีงบประมาณ
+            </p>
+        </field>
+    </record>
+</odoo>

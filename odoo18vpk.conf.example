@@ -1,0 +1,13 @@
+[options]
+admin_passwd = admin_passwd
+db_host = False
+db_port = False
+db_user = odoo18vpk
+db_password = odoo18vpk
+# Custom VPK modules live under odoo18-custom-addons/ only.
+# spiffy_theme_backend is reference-only — see work/spiffy_theme_backend (not on addons_path).
+addons_path = /opt/odoo18vpk/odoo18/addons,/opt/odoo18vpk/odoo18-custom-addons,/opt/odoo18vpk/odoo18-custom-addons/account-financial-tools-18.0,/opt/odoo18vpk/odoo18-custom-addons/base_accounting_kit-18.0.5.0.9,/opt/odoo18vpk/odoo18-custom-addons/l10n-thailand-18.0,/opt/odoo18vpk/odoo18-custom-addons/purchase-workflow-18.0,/opt/odoo18vpk/odoo18-custom-addons/reporting-engine-18.0,/opt/odoo18vpk/odoo18-custom-addons/server-ux-18.0,/opt/odoo18vpk/odoo18-custom-addons/partner-contact-18.0,/opt/odoo18vpk/odoo18-custom-addons/hr-expense-18.0,/opt/odoo18vpk/odoo18-custom-addons/server-tools-18.0,/opt/odoo18vpk/odoo18-custom-addons/server-ux-18.0
+xmlrpc_port = 8769
+logfile = /var/log/odoo18vpk/odoo18vpk.log
+proxy_mode = True
+max_cron_threads = 1

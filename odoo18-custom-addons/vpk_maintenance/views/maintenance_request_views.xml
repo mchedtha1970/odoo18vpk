@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hr_equipment_request_view_form_sub_state" model="ir.ui.view">
+        <field name="name">maintenance.request.form.sub.state</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='archive_equipment_request']" position="before">
+                <button
+                    name="action_create_parts_issue"
+                    type="object"
+                    string="เบิกอะไหล่"
+                    class="btn-primary"
+                    invisible="archive"
+                />
+                <button
+                    name="action_create_outsource_pr"
+                    type="object"
+                    string="เปิด PR"
+                    class="btn-secondary"
+                    invisible="archive or assessment_result_code not in ['outsource', 'repair_without_parts']"
+                />
+                <button
+                    name="action_open_asset_dispose"
+                    type="object"
+                    string="แทงจำหน่าย"
+                    class="btn-danger"
+                    invisible="archive or assessment_result_code != 'not_worth_dispose' or not asset_id"
+                />
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button
+                        name="action_view_parts_pickings"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-truck"
+                        invisible="parts_picking_count == 0"
+                    >
+                        <field name="parts_picking_count" widget="statinfo" string="ใบเบิกอะไหล่"/>
+                    </button>
+                    <button
+                        name="action_view_purchase_requests"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-shopping-cart"
+                        invisible="purchase_request_count == 0"
+                    >
+                        <field name="purchase_request_count" widget="statinfo" string="PR"/>
+                    </button>
+                    <button
+                        name="action_view_linked_asset"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-cube"
+                        invisible="not asset_id"
+                    >
+                        <div class="o_stat_info">
+                            <span class="o_stat_text">ทรัพย์สิน</span>
+                            <span class="o_stat_text" invisible="sub_state != 'waiting_disposal'">รอจำหน่าย</span>
+                        </div>
+                    </button>
+                </div>
+                <field name="assessment_result_code" invisible="1"/>
+                <field name="asset_id" invisible="1"/>
+                <field name="asset_state" invisible="1"/>
+                <label for="sub_state" string="สถานะการดำเนินการ" invisible="archive"/>
+                <field
+                    name="sub_state"
+                    widget="statusbar"
+                    options="{'clickable': '1'}"
+                    invisible="archive"
+                />
+            </xpath>
+            <xpath expr="//field[@name='equipment_id']" position="after">
+                <field name="asset_id" readonly="1" invisible="not asset_id"/>
+                <field name="asset_state" readonly="1" invisible="not asset_id"/>
+            </xpath>
+            <xpath expr="//field[@name='maintenance_type']" position="after">
+                <field
+                    name="assessment_result_id"
+                    options="{'no_create': True, 'no_open': True}"
+                />
+                <field name="company_currency_id" invisible="1"/>
+                <field name="parts_total_value" readonly="1"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="อะไหล่ที่เบิก" name="parts_issued">
+                    <field name="parts_move_ids" readonly="1">
+                        <list>
+                            <field name="picking_id" string="ใบเบิก"/>
+                            <field name="product_id" string="อะไหล่"/>
+                            <field name="parts_qty" string="จำนวน" sum="รวมจำนวน"/>
+                            <field name="product_uom" string="หน่วย" optional="show"/>
+                            <field name="parts_unit_cost" string="ต้นทุน/หน่วย"/>
+                            <field name="parts_value" string="มูลค่า" sum="รวมมูลค่า"/>
+                            <field name="state" string="สถานะ" widget="badge"
+                                     decoration-success="state == 'done'"
+                                     decoration-info="state == 'assigned'"
+                                     decoration-warning="state in ('confirmed', 'waiting', 'partially_available')"
+                                     decoration-muted="state == 'draft'"
+                                     decoration-danger="state == 'cancel'"/>
+                            <field name="date" string="วันที่" optional="hide"/>
+                            <field name="company_currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <group>
+                        <group/>
+                        <group>
+                            <field name="parts_total_value" readonly="1"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_equipment_request_view_tree_sub_state" model="ir.ui.view">
+        <field name="name">maintenance.request.list.sub.state</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='stage_id']" position="after">
+                <field name="sub_state" optional="show"/>
+                <field name="assessment_result_id" optional="show"/>
+                <field name="parts_total_value" optional="show" sum="มูลค่ารวมอะไหล่"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_equipment_request_view_kanban_sub_state" model="ir.ui.view">
+        <field name="name">maintenance.request.kanban.sub.state</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//templates//field[@name='name']" position="after">
+                <field name="sub_state" class="text-muted"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_equipment_request_view_search_sub_state" model="ir.ui.view">
+        <field name="name">maintenance.request.search.sub.state</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='stage_id']" position="after">
+                <field name="sub_state"/>
+                <field name="assessment_result_id"/>
+            </xpath>
+            <xpath expr="//filter[@name='high_priority']" position="after">
+                <separator/>
+                <filter string="รอประเมิน" name="sub_waiting_assessment" domain="[('sub_state', '=', 'waiting_assessment')]"/>
+                <filter string="ประเมินแล้ว" name="sub_assessed" domain="[('sub_state', '=', 'assessed')]"/>
+                <filter string="กำลังซ่อม" name="sub_repairing" domain="[('sub_state', '=', 'repairing')]"/>
+                <filter string="รออะไหล่" name="sub_waiting_parts" domain="[('sub_state', '=', 'waiting_parts')]"/>
+                <filter string="รอจำหน่าย" name="sub_waiting_disposal" domain="[('sub_state', '=', 'waiting_disposal')]"/>
+                <filter string="ซ่อมเสร็จสิ้น" name="sub_repaired" domain="[('sub_state', '=', 'repaired')]"/>
+            </xpath>
+            <xpath expr="//filter[@name='stages']" position="after">
+                <filter string="สถานะการดำเนินการ" name="group_sub_state" domain="[]" context="{'group_by': 'sub_state'}"/>
+                <filter string="ผลการประเมิน" name="group_assessment_result" domain="[]" context="{'group_by': 'assessment_result_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

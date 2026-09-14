@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ir_asset_vpk_button_theme" model="ir.asset">
+        <field name="name">VPK Button Theme (load last)</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">vpk_sidebar_menu/static/src/scss/button_theme.scss</field>
+        <field name="directive">append</field>
+        <field name="sequence">100</field>
+    </record>
+</odoo>

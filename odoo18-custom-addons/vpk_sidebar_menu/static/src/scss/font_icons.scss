@@ -1,0 +1,118 @@
+// Icon fonts — Spiffy-style FA → RemixIcon mappings + guards against theme text font override.
+
+@mixin vpk-fa-remix($name, $content) {
+    .fa.fa-#{$name} {
+        font-family: "remixicon" !important;
+        font-style: normal;
+        font-weight: normal;
+
+        &::before {
+            content: $content !important;
+        }
+    }
+}
+
+html body.o_web_client.o_vpk_sidebar_menu {
+    // Sidebar / menu arrows and toggles (thin chevrons = arrow-*-s-line)
+    @include vpk-fa-remix(bars, "\ef3e");
+    @include vpk-fa-remix(angle-right, "\ea6e");
+    @include vpk-fa-remix(angle-down, "\ea4e");
+    @include vpk-fa-remix(angle-double-left, "\ea64");
+    @include vpk-fa-remix(angle-double-right, "\ea6e");
+
+    // Common UI (control panel, forms, lists)
+    @include vpk-fa-remix(search, "\f0d1");
+    @include vpk-fa-remix(filter, "\ed23");
+    @include vpk-fa-remix(plus, "\ea13");
+    @include vpk-fa-remix(pencil, "\efe0");
+    @include vpk-fa-remix(times, "\eb99");
+    @include vpk-fa-remix(check, "\eb7b");
+    @include vpk-fa-remix(chevron-left, "\ea64");
+    @include vpk-fa-remix(chevron-right, "\ea6e");
+    @include vpk-fa-remix(caret-down, "\ea4e");
+    @include vpk-fa-remix(caret-right, "\ea6e");
+    @include vpk-fa-remix(cog, "\f0e6");
+    @include vpk-fa-remix(cogs, "\f0e6");
+    @include vpk-fa-remix(bug, "\eb07");
+    @include vpk-fa-remix(comments, "\eb51");
+    @include vpk-fa-remix(clock-o, "\f215");
+    @include vpk-fa-remix(paperclip, "\ea86");
+    @include vpk-fa-remix(print, "\f029");
+    @include vpk-fa-remix(trash-o, "\ec2a");
+    @include vpk-fa-remix(trash, "\ec29");
+
+    // Form control panel — manual save / validation (Odoo 18 defaults)
+    @include vpk-fa-remix(cloud-upload, "\f24e");
+    @include vpk-fa-remix(warning, "\eca1");
+
+    // Keep Odoo's standard favorite/priority star glyphs.
+    .fa.fa-star,
+    .fa.fa-star-o,
+    .fa.fa-star-half-o,
+    .fa.fa-star-half-empty {
+        font-family: "FontAwesome" !important;
+        font-style: normal;
+        font-weight: normal;
+
+        &::before {
+            font-family: "FontAwesome" !important;
+        }
+    }
+
+    .o_form_status_indicator {
+        .fa {
+            font-family: "remixicon", "FontAwesome", sans-serif !important;
+            font-style: normal;
+            font-weight: normal;
+            line-height: 1;
+        }
+    }
+
+    .ri {
+        font-family: "remixicon" !important;
+        font-style: normal;
+        font-weight: normal;
+        font-size: 18px;
+        vertical-align: middle;
+        line-height: 1;
+    }
+
+    .oi {
+        font-family: "odoo_ui_icons" !important;
+        font-style: normal;
+        font-weight: normal;
+    }
+
+    // Theme text font must not replace icon fonts on ::before glyphs
+    &.vpk_font_kanit,
+    &.vpk_font_sarabun,
+    &.vpk_font_prompt,
+    &.vpk_font_roboto {
+        .fa::before {
+            font-family: "remixicon", "FontAwesome", sans-serif !important;
+        }
+        .fa.fa-star::before,
+        .fa.fa-star-o::before,
+        .fa.fa-star-half-o::before,
+        .fa.fa-star-half-empty::before {
+            font-family: "FontAwesome" !important;
+        }
+        .ri::before {
+            font-family: "remixicon" !important;
+        }
+        .oi::before {
+            font-family: "odoo_ui_icons" !important;
+        }
+    }
+
+    .o_vpk_sidebar_systray,
+    .o_vpk_sidebar_apps,
+    .o_vpk_sidebar_primary {
+        .fa,
+        .ri,
+        .oi {
+            font-style: normal;
+            font-weight: normal;
+        }
+    }
+}

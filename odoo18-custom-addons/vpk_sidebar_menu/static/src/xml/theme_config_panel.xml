@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="vpk_sidebar_menu.ThemeConfigPanel">
+        <div class="o_vpk_theme_overlay" t-on-click="props.close">
+            <div class="o_vpk_theme_panel" t-on-click.stop="">
+                <button class="o_vpk_theme_close" t-on-click="props.close" title="Close">
+                    <i class="fa fa-times"/>
+                </button>
+
+                <div class="o_vpk_theme_layout">
+                    <aside class="o_vpk_theme_sidebar">
+                        <h3 class="o_vpk_theme_title">Theme Settings</h3>
+                        <ul class="o_vpk_theme_tabs list-unstyled mb-0">
+                            <t t-foreach="tabs" t-as="tab" t-key="tab.id">
+                                <li>
+                                    <button
+                                        type="button"
+                                        t-attf-class="o_vpk_theme_tab {{ state.activeTab === tab.id ? 'active' : '' }}"
+                                        t-on-click="() => this.setActiveTab(tab.id)"
+                                        t-esc="tab.label"
+                                    />
+                                </li>
+                            </t>
+                        </ul>
+                    </aside>
+
+                    <main class="o_vpk_theme_content">
+                        <t t-if="state.loading">
+                            <div class="o_vpk_theme_loading">Loading...</div>
+                        </t>
+                        <t t-else="">
+                            <!-- General Settings -->
+                            <t t-if="state.activeTab === 'general'">
+                                <h4 class="o_vpk_section_title">General Settings</h4>
+
+                                <h5 class="o_vpk_field_label">Theme Style</h5>
+                                <div class="o_vpk_option_row">
+                                    <t t-foreach="[
+                                        ['rounded', 'Rounded'],
+                                        ['standard', 'Standard'],
+                                        ['square', 'Square']
+                                    ]" t-as="opt" t-key="opt[0]">
+                                        <label t-attf-class="o_vpk_option_card vpk_preview_style_{{ opt[0] }} {{ state.draft.theme_style === opt[0] ? 'selected' : '' }}">
+                                            <input type="radio" name="theme_style" t-att-value="opt[0]"
+                                                t-att-checked="state.draft.theme_style === opt[0]"
+                                                t-on-change="() => this.setDraftValue('theme_style', opt[0])"/>
+                                            <span class="o_vpk_preview_box"/>
+                                            <span t-esc="opt[1]"/>
+                                        </label>
+                                    </t>
+                                </div>
+
+                                <h5 class="o_vpk_field_label">Menu Position</h5>
+                                <div class="o_vpk_option_row">
+                                    <t t-foreach="[
+                                        ['horizontal', 'Horizontal'],
+                                        ['vertical', 'Vertical']
+                                    ]" t-as="opt" t-key="opt[0]">
+                                        <label t-attf-class="o_vpk_option_card vpk_preview_menu_{{ opt[0] }} {{ state.draft.menu_position === opt[0] ? 'selected' : '' }}">
+                                            <input type="radio" name="menu_position" t-att-value="opt[0]"
+                                                t-att-checked="state.draft.menu_position === opt[0]"
+                                                t-on-change="() => this.setDraftValue('menu_position', opt[0])"/>
+                                            <span class="o_vpk_preview_box"/>
+                                            <span t-esc="opt[1]"/>
+                                        </label>
+                                    </t>
+                                </div>
+
+                                <h5 class="o_vpk_field_label">Chatter Position</h5>
+                                <div class="o_vpk_option_row">
+                                    <t t-foreach="[
+                                        ['right', 'Right'],
+                                        ['bottom', 'Bottom']
+                                    ]" t-as="opt" t-key="opt[0]">
+                                        <label t-attf-class="o_vpk_option_card vpk_preview_chatter_{{ opt[0] }} {{ state.draft.chatter_position === opt[0] ? 'selected' : '' }}">
+                                            <input type="radio" name="chatter_position" t-att-value="opt[0]"
+                                                t-att-checked="state.draft.chatter_position === opt[0]"
+                                                t-on-change="() => this.setDraftValue('chatter_position', opt[0])"/>
+                                            <span class="o_vpk_preview_box"/>
+                                            <span t-esc="opt[1]"/>
+                                        </label>
+                                    </t>
+                                </div>
+
+                                <h5 class="o_vpk_field_label">Tree Form Split View</h5>
+                                <div class="o_vpk_switch_row">
+                                    <label class="o_vpk_switch">
+                                        <input type="checkbox"
+                                            t-att-checked="state.draft.tree_form_split_view"
+                                            t-on-change="(ev) => this.setDraftValue('tree_form_split_view', ev.target.checked)"/>
+                                        <span>Use Split view ?</span>
+                                    </label>
+                                </div>
+
+                                <h5 class="o_vpk_field_label">List View Density</h5>
+                                <div class="o_vpk_option_row">
+                                    <t t-foreach="[
+                                        ['comfortable', 'Comfortable'],
+                                        ['compact', 'Compact']
+                                    ]" t-as="opt" t-key="opt[0]">
+                                        <label t-attf-class="o_vpk_option_card vpk_preview_density_{{ opt[0] }} {{ state.draft.list_view_density === opt[0] ? 'selected' : '' }}">
+                                            <input type="radio" name="list_view_density" t-att-value="opt[0]"
+                                                t-att-checked="state.draft.list_view_density === opt[0]"
+                                                t-on-change="() => this.setDraftValue('list_view_density', opt[0])"/>
+                                            <span class="o_vpk_preview_box"/>
+                                            <span t-esc="opt[1]"/>
+                                        </label>
+                                    </t>
+                                </div>
+
+                                <h5 class="o_vpk_field_label">List/Tree view Sticky Header and Footer</h5>
+                                <div class="o_vpk_switch_row">
+                                    <label class="o_vpk_switch">
+                                        <input type="checkbox"
+                                            t-att-checked="state.draft.list_view_sticky_header"
+                                            t-on-change="(ev) => this.setDraftValue('list_view_sticky_header', ev.target.checked)"/>
+                                        <span>Enable sticky header</span>
+                                    </label>
+                                </div>
+                            </t>
+
+                            <!-- Colors -->
+                            <t t-if="state.activeTab === 'colors'">
+                                <h4 class="o_vpk_section_title">Colors</h4>
+                                <div class="o_vpk_color_field">
+                                    <label>Gradient Start (Top-Left)</label>
+                                    <input type="color"
+                                        t-att-value="state.draft.sidebar_color"
+                                        t-on-change="(ev) => this.setDraftValue('sidebar_color', ev.target.value)"/>
+                                    <input type="text" class="form-control form-control-sm"
+                                        t-att-value="state.draft.sidebar_color"
+                                        t-on-change="(ev) => this.setDraftValue('sidebar_color', ev.target.value)"/>
+                                </div>
+                                <div class="o_vpk_color_field">
+                                    <label>Gradient End (Bottom-Right)</label>
+                                    <input type="color"
+                                        t-att-value="state.draft.sidebar_active_color"
+                                        t-on-change="(ev) => this.setDraftValue('sidebar_active_color', ev.target.value)"/>
+                                    <input type="text" class="form-control form-control-sm"
+                                        t-att-value="state.draft.sidebar_active_color"
+                                        t-on-change="(ev) => this.setDraftValue('sidebar_active_color', ev.target.value)"/>
+                                </div>
+                                <div class="o_vpk_color_field">
+                                    <label>Sidebar Text Color</label>
+                                    <input type="color"
+                                        t-att-value="state.draft.sidebar_text_color"
+                                        t-on-change="(ev) => this.setDraftValue('sidebar_text_color', ev.target.value)"/>
+                                    <input type="text" class="form-control form-control-sm"
+                                        t-att-value="state.draft.sidebar_text_color"
+                                        t-on-change="(ev) => this.setDraftValue('sidebar_text_color', ev.target.value)"/>
+                                </div>
+                            </t>
+
+                            <!-- Sidebar Size -->
+                            <t t-if="state.activeTab === 'sidebar_size'">
+                                <h4 class="o_vpk_section_title">Sidebar Size</h4>
+
+                                <h5 class="o_vpk_field_label">Default Settings</h5>
+                                <div class="o_vpk_option_row">
+                                    <button
+                                        type="button"
+                                        t-attf-class="o_vpk_option_card o_vpk_default_settings_card {{ isSidebarDefaultSize ? 'selected' : '' }}"
+                                        t-on-click="onResetSidebarDefaultSize"
+                                        title="Reset sidebar width to default"
+                                    >
+                                        <span class="o_vpk_preview_box o_vpk_preview_width_default"/>
+                                        <span>Default</span>
+                                        <span class="o_vpk_preset_px">288 / 72 px</span>
+                                    </button>
+                                </div>
+
+                                <h5 class="o_vpk_field_label">Sidebar Width</h5>
+                                <div class="o_vpk_option_row">
+                                    <t t-foreach="sidebarWidthPresets" t-as="opt" t-key="opt.id">
+                                        <label t-attf-class="o_vpk_option_card o_vpk_width_preset {{ isSidebarWidthPreset(opt.width) ? 'selected' : '' }}">
+                                            <input type="radio" name="sidebar_width_preset" t-att-value="opt.width"
+                                                t-att-checked="isSidebarWidthPreset(opt.width)"
+                                                t-on-change="() => this.setSidebarWidthPreset(opt.width)"/>
+                                            <span t-attf-class="o_vpk_preview_box o_vpk_preview_width_{{ opt.id }}"/>
+                                            <span t-esc="opt.label"/>
+                                            <span class="o_vpk_preset_px" t-esc="opt.width + ' px'"/>
+                                        </label>
+                                    </t>
+                                </div>
+                                <div class="o_vpk_range_field">
+                                    <label>Custom Width (px)</label>
+                                    <input type="range" min="200" max="420" step="4"
+                                        t-att-value="state.draft.sidebar_width"
+                                        t-on-input="(ev) => this.onRangeDraftValue('sidebar_width', ev)"/>
+                                    <span class="o_vpk_range_value" t-esc="state.draft.sidebar_width + ' px'"/>
+                                </div>
+
+                                <h5 class="o_vpk_field_label">Collapsed Width</h5>
+                                <div class="o_vpk_option_row">
+                                    <t t-foreach="sidebarCollapsedWidthPresets" t-as="opt" t-key="opt.id">
+                                        <label t-attf-class="o_vpk_option_card o_vpk_width_preset {{ isSidebarCollapsedWidthPreset(opt.width) ? 'selected' : '' }}">
+                                            <input type="radio" name="sidebar_collapsed_width_preset" t-att-value="opt.width"
+                                                t-att-checked="isSidebarCollapsedWidthPreset(opt.width)"
+                                                t-on-change="() => this.setSidebarCollapsedWidthPreset(opt.width)"/>
+                                            <span t-attf-class="o_vpk_preview_box o_vpk_preview_collapsed_{{ opt.id }}"/>
+                                            <span t-esc="opt.label"/>
+                                            <span class="o_vpk_preset_px" t-esc="opt.width + ' px'"/>
+                                        </label>
+                                    </t>
+                                </div>
+                                <div class="o_vpk_range_field">
+                                    <label>Custom Collapsed (px)</label>
+                                    <input type="range" min="56" max="120" step="4"
+                                        t-att-value="state.draft.sidebar_collapsed_width"
+                                        t-on-input="(ev) => this.onRangeDraftValue('sidebar_collapsed_width', ev)"/>
+                                    <span class="o_vpk_range_value" t-esc="state.draft.sidebar_collapsed_width + ' px'"/>
+                                </div>
+                            </t>
+
+                            <!-- Font Family -->
+                            <t t-if="state.activeTab === 'font_family'">
+                                <h4 class="o_vpk_section_title">Font Family</h4>
+                                <div class="o_vpk_option_row o_vpk_option_row_vertical">
+                                    <t t-foreach="[
+                                        ['default', 'Default'],
+                                        ['kanit', 'Kanit'],
+                                        ['sarabun', 'Sarabun'],
+                                        ['prompt', 'Prompt'],
+                                        ['roboto', 'Roboto']
+                                    ]" t-as="opt" t-key="opt[0]">
+                                        <label t-attf-class="o_vpk_option_card o_vpk_font_preview_{{ opt[0] }} {{ state.draft.font_family === opt[0] ? 'selected' : '' }}">
+                                            <input type="radio" name="font_family" t-att-value="opt[0]"
+                                                t-att-checked="state.draft.font_family === opt[0]"
+                                                t-on-change="() => this.setDraftValue('font_family', opt[0])"/>
+                                            <span t-esc="opt[1]"/>
+                                        </label>
+                                    </t>
+                                </div>
+                            </t>
+
+                            <!-- Font Size -->
+                            <t t-if="state.activeTab === 'font_size'">
+                                <h4 class="o_vpk_section_title">Font Size</h4>
+                                <div class="o_vpk_option_row">
+                                    <t t-foreach="[
+                                        ['small', 'Small'],
+                                        ['medium', 'Medium'],
+                                        ['large', 'Large']
+                                    ]" t-as="opt" t-key="opt[0]">
+                                        <label t-attf-class="o_vpk_option_card {{ state.draft.font_size === opt[0] ? 'selected' : '' }}">
+                                            <input type="radio" name="font_size" t-att-value="opt[0]"
+                                                t-att-checked="state.draft.font_size === opt[0]"
+                                                t-on-change="() => this.setDraftValue('font_size', opt[0])"/>
+                                            <span t-esc="opt[1]"/>
+                                        </label>
+                                    </t>
+                                </div>
+                            </t>
+
+                            <!-- Loaders -->
+                            <t t-if="state.activeTab === 'loaders'">
+                                <h4 class="o_vpk_section_title">Loaders</h4>
+                                <div class="o_vpk_option_row">
+                                    <t t-foreach="[
+                                        ['default', 'Default'],
+                                        ['dots', 'Dots'],
+                                        ['bars', 'Bars']
+                                    ]" t-as="opt" t-key="opt[0]">
+                                        <label t-attf-class="o_vpk_option_card {{ state.draft.loader_style === opt[0] ? 'selected' : '' }}">
+                                            <input type="radio" name="loader_style" t-att-value="opt[0]"
+                                                t-att-checked="state.draft.loader_style === opt[0]"
+                                                t-on-change="() => this.setDraftValue('loader_style', opt[0])"/>
+                                            <span t-esc="opt[1]"/>
+                                        </label>
+                                    </t>
+                                </div>
+                            </t>
+                        </t>
+
+                        <div class="o_vpk_theme_actions">
+                            <button type="button" class="btn btn-primary o_vpk_btn_apply" t-on-click="onApply">
+                                Apply
+                            </button>
+                            <button type="button" class="btn btn-secondary o_vpk_btn_discard" t-on-click="onDiscard">
+                                Discard
+                            </button>
+                            <button
+                                type="button"
+                                t-attf-class="btn btn-outline-secondary o_vpk_btn_defaults {{ isThemeDefault ? 'active' : '' }}"
+                                t-on-click="onResetDefaults"
+                                title="Reset all theme settings to default"
+                            >
+                                Defaults
+                            </button>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

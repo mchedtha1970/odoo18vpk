@@ -1,0 +1,18 @@
+// Tier review panel title — use selected VPK theme font (not icon font).
+.o_form_view .panel-group {
+    .panel-heading .panel-title > a.o_info_btn {
+        font-family: var(--vpk-font-family, var(--bs-body-font-family, inherit)) !important;
+        font-size: var(--vpk-font-size-md, inherit) !important;
+    }
+
+    // Chevron must stay on FontAwesome (pseudo-element only).
+    .panel-heading a.o_info_btn:before {
+        font-family: FontAwesome !important;
+    }
+
+    .panel-body.o_review,
+    .panel-body.o_review table {
+        font-family: var(--vpk-font-family, var(--bs-body-font-family, inherit)) !important;
+        font-size: var(--vpk-font-size-md, inherit);
+    }
+}

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="template_wa_committee_order" model="vpk.official.document.template">
+        <field name="name">แบบฟอร์มคำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ</field>
+        <field name="code">wa_committee_order</field>
+        <field name="document_type">wa_committee_order</field>
+        <field name="filename">แบบฟอร์ม_คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ.docx</field>
+        <field name="datas" type="base64" file="vpk_official_document/static/src/templates/wa_committee_order.docx"/>
+        <field name="note">ต้นฉบับแบบฟอร์มคำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ ระบบจะแทนที่หัวคำสั่ง เลขที่ เรื่อง ย่อหน้าแรก รายชื่อกรรมการ และผู้ลงนาม โดยดึงรายชื่อจากแท็บคณะกรรมการตรวจรับ</field>
+    </record>
+    <record id="template_integrity_over_100k" model="vpk.official.document.template">
+        <field name="name">แบบแสดงความบริสุทธิ์ใจ (วงเงินมากกว่า ๑๐๐,๐๐๐ บาท)</field>
+        <field name="code">integrity_over_100k</field>
+        <field name="document_type">integrity_over_100k</field>
+        <field name="sequence">20</field>
+        <field name="filename">แบบฟอร์ม_แบบแสดงความบริสุทธิ์ใจ_วงเงินมากกว่า_100000_บาท.docx</field>
+        <field name="datas" type="base64" file="vpk_official_document/static/src/templates/integrity_over_100k.docx"/>
+        <field name="note">ต้นฉบับแบบแสดงความบริสุทธิ์ใจ ระบบจะใส่ชื่อหัวหน้าเจ้าหน้าที่ เจ้าหน้าที่ และคณะกรรมการตรวจรับพัสดุ ทั้งตารางคำรับรองและช่องลงนาม</field>
+    </record>
+    <record id="template_spec_price_committee" model="vpk.official.document.template">
+        <field name="name">แบบฟอร์มขออนุมัติแต่งตั้งคณะกรรมการกำหนดรายละเอียดคุณลักษณะ</field>
+        <field name="code">spec_price_committee</field>
+        <field name="document_type">spec_price_committee</field>
+        <field name="sequence">30</field>
+        <field name="filename">แบบฟอร์ม_ขออนุมัติแต่งตั้งคณะกรรมการกำหนดรายละเอียดคุณลักษณะ.docx</field>
+        <field name="datas" type="base64" file="vpk_official_document/static/src/templates/spec_price_committee.docx"/>
+        <field name="note">ต้นฉบับบันทึกข้อความขออนุมัติแต่งตั้งคณะกรรมการกำหนดรายละเอียดคุณลักษณะเฉพาะและกำหนดราคากลาง ระบบจะแทนที่ส่วนราชการ ที่ วันที่ เรื่อง เรียน ต้นเรื่อง รายชื่อกรรมการ และผู้ลงนาม โดยดึงรายชื่อจากคณะกรรมการกำหนดราคากลางในใบขอซื้อ</field>
+    </record>
+    <record id="template_specific_method_approval" model="vpk.official.document.template">
+        <field name="name">แบบฟอร์มรายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง</field>
+        <field name="code">specific_method_approval</field>
+        <field name="document_type">specific_method_approval</field>
+        <field name="sequence">40</field>
+        <field name="filename">แบบฟอร์ม_รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง.docx</field>
+        <field name="datas" type="base64" file="vpk_official_document/static/src/templates/specific_method_approval.docx"/>
+        <field name="note">ต้นฉบับรายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง ระบบจะแทนที่ส่วนราชการ ที่ วันที่ เรื่อง เรียน ต้นเรื่อง วงเงิน รายชื่อกรรมการตรวจรับ เจ้าหน้าที่ หัวหน้าเจ้าหน้าที่ และผู้อนุมัติ</field>
+    </record>
+</odoo>

@@ -1,0 +1,14 @@
+#. module: vpk_sidebar_menu
+msgid "Supporting Documents"
+msgstr "เอกสารประกอบ"
+
+#. module: web
+#. odoo-javascript
+#: code:addons/web/controllers/action.py:0
+#: code:addons/web/static/src/views/form/form_controller.js:0
+#: code:addons/web/static/src/views/form/form_controller.xml:0
+#: code:addons/web/static/src/views/kanban/kanban_controller.xml:0
+#: code:addons/web/static/src/views/list/list_controller.xml:0
+#: code:addons/web/static/src/views/view_dialogs/select_create_dialog.xml:0
+msgid "New"
+msgstr "สร้างรายการใหม่"

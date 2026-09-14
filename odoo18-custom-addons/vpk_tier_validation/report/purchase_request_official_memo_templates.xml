@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="vpk_memo_header">
+        <t t-set="memo_asset_base" t-value="env['ir.config_parameter'].sudo().get_param('report.url') or env['ir.config_parameter'].sudo().get_param('web.base.url') or ''"/>
+        <div class="vpk-memo-header-row">
+            <div class="vpk-memo-garuda">
+                <img
+                    t-att-src="memo_asset_base + '/vpk_tier_validation/static/src/img/garuda_emblem.svg'"
+                    alt="Garuda"
+                />
+            </div>
+            <div class="vpk-memo-title-wrap">
+                <h1 class="vpk-memo-title">บันทึกข้อความ</h1>
+            </div>
+        </div>
+        <div class="vpk-memo-meta">
+            <div class="vpk-memo-agency">
+                <span class="vpk-label">ส่วนราชการ</span>
+                <span class="vpk-dots" t-esc="doc._get_memo_agency_display()"/>
+            </div>
+            <div class="vpk-memo-ref-date">
+                <div class="vpk-ref">
+                    <span class="vpk-label">ที่</span>
+                    <span class="vpk-dots" t-esc="doc._get_memo_ref_display()"/>
+                </div>
+                <div class="vpk-date">
+                    <span class="vpk-label">วันที่</span>
+                    <span class="vpk-dots" t-esc="doc._thai_digits(doc._format_memo_date_thai())"/>
+                </div>
+            </div>
+            <div class="vpk-memo-subject">
+                <span class="vpk-label">เรื่อง</span>
+                <span class="vpk-dots" t-esc="doc.memo_subject or doc.description or doc.name"/>
+            </div>
+            <div class="vpk-memo-to">
+                <span class="vpk-label">เรียน</span>
+                <span class="vpk-dots" t-esc="doc.memo_to"/>
+            </div>
+        </div>
+    </template>
+
+    <template id="vpk_memo_committee_block">
+        <t t-foreach="members" t-as="m">
+            <div class="vpk-cm-member">
+                <div class="vpk-cm-line">
+                    <span class="vpk-cm-no" t-esc="doc._thai_digits(m['no'])"/>.
+                    <span class="vpk-cm-name" t-esc="m['name']"/>
+                    <span class="vpk-cm-role" t-esc="m['role']"/>
+                </div>
+                <div class="vpk-cm-sub" t-if="m['position']" t-esc="m['position']"/>
+                <div class="vpk-cm-sub vpk-cm-org" t-esc="m['organization']"/>
+            </div>
+        </t>
+    </template>
+
+    <template id="vpk_memo_page_number">
+        <div class="vpk-page-no">
+            <span t-esc="doc._thai_digits(page_no)"/>/<span t-esc="doc._thai_digits(total_pages)"/>
+        </div>
+    </template>
+
+    <template id="report_purchase_request_official_memo_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <style type="text/css" t-out="doc._get_official_memo_inline_css()"/>
+                <div class="vpk-official-memo">
+
+                    <!-- หน้า ๑ -->
+                    <div class="vpk-memo-page">
+                        <t t-call="vpk_tier_validation.vpk_memo_header"/>
+                        <div class="vpk-memo-opening">
+                            <p t-esc="doc._get_memo_opening_paragraph()"/>
+                        </div>
+                        <div class="vpk-memo-body">
+                            <t t-if="doc.memo_body">
+                                <div t-out="doc.memo_body"/>
+                            </t>
+                        </div>
+                        <t t-set="page_no" t-value="1"/>
+                        <t t-set="total_pages" t-value="4"/>
+                        <t t-call="vpk_tier_validation.vpk_memo_page_number"/>
+                    </div>
+
+                    <div class="vpk-page-break"/>
+
+                    <!-- หน้า ๒ -->
+                    <div class="vpk-memo-page">
+                        <div class="vpk-memo-body">
+                            <t t-if="doc.memo_body_page2">
+                                <div t-out="doc.memo_body_page2"/>
+                            </t>
+                        </div>
+                        <t t-if="doc.memo_show_committee and doc.procurement_committee_ids">
+                            <p class="vpk-cm-section-title">
+                                <strong>๑๐.๒.๑ คณะกรรมการพิจารณาผลการประกวดราคาอิเล็กทรอนิกส์ ประกอบด้วย</strong>
+                            </p>
+                            <t t-set="members" t-value="doc._get_memo_committee_formal_list('procurement')"/>
+                            <t t-call="vpk_tier_validation.vpk_memo_committee_block"/>
+                        </t>
+                        <t t-set="page_no" t-value="2"/>
+                        <t t-set="total_pages" t-value="4"/>
+                        <t t-call="vpk_tier_validation.vpk_memo_page_number"/>
+                    </div>
+
+                    <div class="vpk-page-break"/>
+
+                    <!-- หน้า ๓ -->
+                    <div class="vpk-memo-page">
+                        <t t-if="doc.memo_show_committee and doc.work_acceptance_committee_ids">
+                            <p class="vpk-cm-section-title">
+                                <strong>๑๐.๒.๒ คณะกรรมการตรวจรับพัสดุ ประกอบด้วย</strong>
+                            </p>
+                            <t t-set="members" t-value="doc._get_memo_committee_formal_list('work_acceptance')"/>
+                            <t t-call="vpk_tier_validation.vpk_memo_committee_block"/>
+                        </t>
+                        <div class="vpk-memo-closing">
+                            <t t-if="doc.memo_closing">
+                                <div t-out="doc.memo_closing"/>
+                            </t>
+                        </div>
+                        <div class="vpk-signature-single">
+                            <div class="vpk-sig-space"/>
+                            <div class="vpk-sig-name">
+                                (<span t-esc="doc.memo_proposer_name or '................................'"/>)
+                            </div>
+                            <div class="vpk-sig-position" t-esc="doc.memo_proposer_position or ''"/>
+                        </div>
+                        <t t-set="page_no" t-value="3"/>
+                        <t t-set="total_pages" t-value="4"/>
+                        <t t-call="vpk_tier_validation.vpk_memo_page_number"/>
+                    </div>
+
+                    <div class="vpk-page-break"/>
+
+                    <!-- หน้า ๔ -->
+                    <div class="vpk-memo-page vpk-memo-page-approval">
+                        <div class="vpk-memo-approval">
+                            <t t-if="doc.memo_approval">
+                                <div t-out="doc.memo_approval"/>
+                            </t>
+                        </div>
+                        <div class="vpk-signature-dual">
+                            <div class="vpk-sig-col">
+                                <div class="vpk-sig-space"/>
+                                <div class="vpk-sig-name">
+                                    (<span t-esc="doc.memo_proposer_name or '................................'"/>)
+                                </div>
+                                <div class="vpk-sig-position" t-esc="doc.memo_proposer_position or ''"/>
+                            </div>
+                            <div class="vpk-sig-col">
+                                <div class="vpk-sig-space"/>
+                                <div class="vpk-sig-name">
+                                    (<span t-esc="doc.memo_approver_name or '................................'"/>)
+                                </div>
+                                <div class="vpk-sig-position" t-esc="doc.memo_approver_position or ''"/>
+                                <div class="vpk-sig-acting" t-if="doc.memo_approver_acting" t-esc="doc.memo_approver_acting"/>
+                            </div>
+                        </div>
+                        <t t-set="page_no" t-value="4"/>
+                        <t t-set="total_pages" t-value="4"/>
+                        <t t-call="vpk_tier_validation.vpk_memo_page_number"/>
+                    </div>
+
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_purchase_request_official_memo">
+        <t t-call="vpk_tier_validation.report_purchase_request_official_memo_document"/>
+    </template>
+
+</odoo>

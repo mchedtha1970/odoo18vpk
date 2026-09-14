@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_product_template_drug_list_type"
+            model="ir.ui.view">
+        <field name="name">product.template.form.drug.list.type</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id"
+               ref="vpk_procurement_auto_pr.view_product_template_hospital_item_type"/>
+        <field name="arch" type="xml">
+            <field name="hospital_item_type" position="after">
+                <field name="drug_list_type"
+                       invisible="hospital_item_type != 'medicine'"
+                       required="hospital_item_type == 'medicine'"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_drug_list_report_list"
+            model="ir.ui.view">
+        <field name="name">purchase.report.drug.list.list</field>
+        <field name="model">purchase.report</field>
+        <field name="arch" type="xml">
+            <list string="ยอดซื้อสินค้าแยกตามยา ED และ Non-ED"
+                  create="false"
+                  edit="false"
+                  delete="false"
+                  default_order="drug_list_type, date_order desc, product_id">
+                <field name="date_order" string="วันที่สั่งซื้อ"/>
+                <field name="drug_list_type"
+                       widget="badge"
+                       decoration-success="drug_list_type == 'ed'"
+                       decoration-warning="drug_list_type == 'non_ed'"/>
+                <field name="product_id"/>
+                <field name="category_id"/>
+                <field name="order_id"/>
+                <field name="partner_id"/>
+                <field name="qty_ordered"
+                       sum="รวมจำนวนสั่ง"/>
+                <field name="qty_received"
+                       sum="รวมจำนวนรับ"/>
+                <field name="price_average"/>
+                <field name="untaxed_total"
+                       sum="รวมก่อนภาษี"/>
+                <field name="price_total"
+                       sum="รวมยอดซื้อ"/>
+                <field name="currency_id"
+                       column_invisible="True"/>
+                <field name="company_id"
+                       groups="base.group_multi_company"
+                       optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_purchase_drug_list_report_pivot"
+            model="ir.ui.view">
+        <field name="name">purchase.report.drug.list.pivot</field>
+        <field name="model">purchase.report</field>
+        <field name="arch" type="xml">
+            <pivot string="สรุปยอดซื้อยา ED และ Non-ED">
+                <field name="drug_list_type" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="partner_id" type="row"/>
+                <field name="date_order" type="col"
+                       interval="month"/>
+                <field name="qty_ordered" type="measure"/>
+                <field name="qty_received" type="measure"/>
+                <field name="untaxed_total" type="measure"/>
+                <field name="price_total" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_purchase_drug_list_report_graph"
+            model="ir.ui.view">
+        <field name="name">purchase.report.drug.list.graph</field>
+        <field name="model">purchase.report</field>
+        <field name="arch" type="xml">
+            <graph string="เปรียบเทียบยอดซื้อยา ED และ Non-ED"
+                   type="bar">
+                <field name="drug_list_type"/>
+                <field name="price_total" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_purchase_drug_list_report_search"
+            model="ir.ui.view">
+        <field name="name">purchase.report.drug.list.search</field>
+        <field name="model">purchase.report</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหายอดซื้อยา ED และ Non-ED">
+                <field name="date_order"/>
+                <field name="drug_list_type"/>
+                <field name="product_id"/>
+                <field name="partner_id"/>
+                <filter string="ยา ED"
+                        name="drug_list_ed"
+                        domain="[('drug_list_type', '=', 'ed')]"/>
+                <filter string="ยา Non-ED"
+                        name="drug_list_non_ed"
+                        domain="[('drug_list_type', '=', 'non_ed')]"/>
+                <filter string="ยังไม่ระบุประเภทบัญชียา"
+                        name="drug_list_unclassified"
+                        domain="[('drug_list_type', '=', False)]"/>
+                <separator/>
+                <filter string="ประเภทบัญชียา"
+                        name="group_drug_list_type"
+                        domain="[]"
+                        context="{'group_by': 'drug_list_type'}"/>
+                <filter string="สินค้า"
+                        name="group_drug_product"
+                        domain="[]"
+                        context="{'group_by': 'product_id'}"/>
+                <filter string="ผู้จำหน่าย"
+                        name="group_drug_vendor"
+                        domain="[]"
+                        context="{'group_by': 'partner_id'}"/>
+                <filter string="รายเดือน"
+                        name="group_drug_month"
+                        domain="[]"
+                        context="{'group_by': 'date_order:month'}"/>
+                <filter string="รายไตรมาส"
+                        name="group_drug_quarter"
+                        domain="[]"
+                        context="{'group_by': 'date_order:quarter'}"/>
+                <filter string="รายปี"
+                        name="group_drug_year"
+                        domain="[]"
+                        context="{'group_by': 'date_order:year'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_purchase_drug_list_report"
+            model="ir.actions.act_window">
+        <field name="name">ยอดซื้อแยกยา ED/Non-ED</field>
+        <field name="res_model">purchase.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="view_id"
+               ref="view_purchase_drug_list_report_pivot"/>
+        <field name="search_view_id"
+               ref="view_purchase_drug_list_report_search"/>
+        <field name="domain">
+            [('state', 'in', ('purchase', 'done')),
+             ('hospital_item_type', '=', 'medicine')]
+        </field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ไม่พบยอดซื้อสินค้าประเภทยา
+            </p>
+        </field>
+    </record>
+
+    <record id="action_purchase_drug_list_report_pivot"
+            model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">pivot</field>
+        <field name="view_id"
+               ref="view_purchase_drug_list_report_pivot"/>
+        <field name="act_window_id"
+               ref="action_purchase_drug_list_report"/>
+    </record>
+
+    <record id="action_purchase_drug_list_report_graph"
+            model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id"
+               ref="view_purchase_drug_list_report_graph"/>
+        <field name="act_window_id"
+               ref="action_purchase_drug_list_report"/>
+    </record>
+
+    <record id="action_purchase_drug_list_report_list"
+            model="ir.actions.act_window.view">
+        <field name="sequence">3</field>
+        <field name="view_mode">list</field>
+        <field name="view_id"
+               ref="view_purchase_drug_list_report_list"/>
+        <field name="act_window_id"
+               ref="action_purchase_drug_list_report"/>
+    </record>
+
+    <menuitem id="menu_purchase_drug_list_report"
+              name="ยอดซื้อแยกยา ED/Non-ED"
+              parent="purchase.purchase_report_main"
+              action="action_purchase_drug_list_report"
+              sequence="38"
+              groups="purchase.group_purchase_user"/>
+</odoo>

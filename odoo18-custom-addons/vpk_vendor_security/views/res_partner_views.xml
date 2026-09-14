@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- แสดงข้อความสิทธิ์ + ประเภท VAT -->
+    <record id="view_partner_form_vendor_security" model="ir.ui.view">
+        <field name="name">res.partner.form.vendor.security</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="priority">300</field>
+        <field name="arch" type="xml">
+            <!-- แถบแสดงสิทธิ์ -->
+            <xpath expr="//div[hasclass('oe_title')]" position="before">
+                <div class="alert alert-info mb-2" role="alert"
+                     groups="vpk_vendor_security.group_vendor_viewer">
+                    <span groups="vpk_vendor_security.group_vendor_admin">
+                        <i class="fa fa-shield me-1"/>
+                        สิทธิ์: <strong>ผู้ดูแลระบบผู้จำหน่าย</strong> — ดู/เพิ่ม/แก้ไข/ลบได้
+                    </span>
+                    <span groups="vpk_vendor_security.group_vendor_editor,!vpk_vendor_security.group_vendor_admin">
+                        <i class="fa fa-pencil me-1"/>
+                        สิทธิ์: <strong>ผู้จัดการข้อมูล</strong> — ดู/เพิ่ม/แก้ไขได้ (ลบไม่ได้)
+                    </span>
+                    <span groups="vpk_vendor_security.group_vendor_viewer,!vpk_vendor_security.group_vendor_editor">
+                        <i class="fa fa-eye me-1"/>
+                        สิทธิ์: <strong>ผู้ดูข้อมูล</strong> — ดูได้อย่างเดียว
+                    </span>
+                </div>
+            </xpath>
+
+            <!-- ฟิลด์ประเภท VAT ข้าง Tax ID -->
+            <xpath expr="//field[@name='vat']" position="after">
+                <field name="vat_type" string="ประเภท VAT"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- แสดงประเภท VAT ในรายการ (list view) -->
+    <record id="view_partner_tree_vat_type" model="ir.ui.view">
+        <field name="name">res.partner.tree.vat.type</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='vat']" position="after">
+                <field name="vat_type" string="ประเภท VAT" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ฟิลเตอร์ค้นหาตามประเภท VAT -->
+    <record id="view_partner_search_vat_type" model="ir.ui.view">
+        <field name="name">res.partner.search.vat.type</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='supplier']" position="after">
+                <separator/>
+                <filter name="vat_registered" string="จดทะเบียน VAT"
+                        domain="[('vat_type', '=', 'vat_registered')]"/>
+                <filter name="vat_non_registered" string="ไม่จดทะเบียน VAT"
+                        domain="[('vat_type', '=', 'vat_non_registered')]"/>
+                <filter name="vat_exempt" string="ยกเว้น VAT"
+                        domain="[('vat_type', '=', 'vat_exempt')]"/>
+                <filter name="vat_government" string="หน่วยงานราชการ"
+                        domain="[('vat_type', '=', 'government')]"/>
+                <filter name="vat_foreign" string="ต่างประเทศ"
+                        domain="[('vat_type', '=', 'foreign')]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter name="group_vat_type" string="ประเภท VAT"
+                        context="{'group_by': 'vat_type'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

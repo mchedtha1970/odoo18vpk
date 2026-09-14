@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_procurement_vendor_group"
+            model="ir.ui.view">
+        <field name="name">res.partner.form.procurement.vendor.group</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <field name="ref" position="after">
+                <field name="procurement_vendor_group_id"
+                       options="{'no_create_edit': True}"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_partner_tree_procurement_vendor_group"
+            model="ir.ui.view">
+        <field name="name">res.partner.tree.procurement.vendor.group</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='email']" position="after">
+                <field name="procurement_vendor_group_id"
+                       string="กลุ่มผู้จำหน่าย"
+                       optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_partner_search_procurement_vendor_group"
+            model="ir.ui.view">
+        <field name="name">res.partner.search.procurement.vendor.group</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='supplier']" position="after">
+                <separator/>
+                <filter name="vendor_group_utility"
+                        string="ส่วนสาธารณูปโภค"
+                        domain="[('procurement_vendor_group_id.code', '=', 'UTILITY'), ('supplier_rank', '&gt;', 0)]"/>
+                <filter name="vendor_group_direct"
+                        string="เจ้าหนี้ตรง"
+                        domain="[('procurement_vendor_group_id.code', '=', 'DIRECT'), ('supplier_rank', '&gt;', 0)]"/>
+                <filter name="vendor_group_unclassified"
+                        string="ยังไม่จัดกลุ่มผู้จำหน่าย"
+                        domain="[('procurement_vendor_group_id', '=', False), ('supplier_rank', '&gt;', 0)]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter name="group_procurement_vendor_group"
+                        string="กลุ่มผู้จำหน่ายจัดซื้อ"
+                        context="{'group_by': 'procurement_vendor_group_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_procurement_vendor_group_list"
+            model="ir.ui.view">
+        <field name="name">procurement.vendor.group.list</field>
+        <field name="model">procurement.vendor.group</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="description" optional="hide"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_procurement_vendor_group_form"
+            model="ir.ui.view">
+        <field name="name">procurement.vendor.group.form</field>
+        <field name="model">procurement.vendor.group</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="รายละเอียด">
+                        <field name="description" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_procurement_vendor_group"
+            model="ir.actions.act_window">
+        <field name="name">กลุ่มผู้จำหน่ายจัดซื้อ</field>
+        <field name="res_model">procurement.vendor.group</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_procurement_vendor_group"
+              name="กลุ่มผู้จำหน่ายจัดซื้อ"
+              parent="purchase.menu_purchase_config"
+              action="action_procurement_vendor_group"
+              sequence="45"
+              groups="purchase.group_purchase_manager"/>
+
+    <record id="view_purchase_vendor_group_report_list"
+            model="ir.ui.view">
+        <field name="name">purchase.report.vendor.group.list</field>
+        <field name="model">purchase.report</field>
+        <field name="arch" type="xml">
+            <list string="ยอดซื้อสินค้าแยกตามกลุ่มผู้จำหน่าย"
+                  create="false"
+                  edit="false"
+                  delete="false"
+                  default_order="procurement_vendor_group_id, partner_id, date_order desc">
+                <field name="date_order" string="วันที่สั่งซื้อ"/>
+                <field name="procurement_vendor_group_id"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="category_id"/>
+                <field name="order_id"/>
+                <field name="qty_ordered"
+                       sum="รวมจำนวนสั่ง"/>
+                <field name="qty_received"
+                       sum="รวมจำนวนรับ"/>
+                <field name="price_average"/>
+                <field name="untaxed_total"
+                       sum="รวมก่อนภาษี"/>
+                <field name="price_total"
+                       sum="รวมยอดซื้อ"/>
+                <field name="currency_id"
+                       column_invisible="True"/>
+                <field name="company_id"
+                       groups="base.group_multi_company"
+                       optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_purchase_vendor_group_report_pivot"
+            model="ir.ui.view">
+        <field name="name">purchase.report.vendor.group.pivot</field>
+        <field name="model">purchase.report</field>
+        <field name="arch" type="xml">
+            <pivot string="สรุปยอดซื้อตามกลุ่มผู้จำหน่าย">
+                <field name="procurement_vendor_group_id" type="row"/>
+                <field name="partner_id" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="date_order" type="col"
+                       interval="month"/>
+                <field name="qty_ordered" type="measure"/>
+                <field name="qty_received" type="measure"/>
+                <field name="untaxed_total" type="measure"/>
+                <field name="price_total" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_purchase_vendor_group_report_graph"
+            model="ir.ui.view">
+        <field name="name">purchase.report.vendor.group.graph</field>
+        <field name="model">purchase.report</field>
+        <field name="arch" type="xml">
+            <graph string="เปรียบเทียบยอดซื้อตามกลุ่มผู้จำหน่าย"
+                   type="bar">
+                <field name="procurement_vendor_group_id"/>
+                <field name="price_total" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_purchase_vendor_group_report_search"
+            model="ir.ui.view">
+        <field name="name">purchase.report.vendor.group.search</field>
+        <field name="model">purchase.report</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหายอดซื้อตามกลุ่มผู้จำหน่าย">
+                <field name="date_order"/>
+                <field name="procurement_vendor_group_id"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="category_id"/>
+                <filter string="ยังไม่จัดกลุ่ม"
+                        name="vendor_group_unclassified"
+                        domain="[('procurement_vendor_group_id', '=', False)]"/>
+                <separator/>
+                <filter string="กลุ่มผู้จำหน่าย"
+                        name="group_procurement_vendor_group"
+                        domain="[]"
+                        context="{'group_by': 'procurement_vendor_group_id'}"/>
+                <filter string="ผู้จำหน่าย"
+                        name="group_procurement_vendor"
+                        domain="[]"
+                        context="{'group_by': 'partner_id'}"/>
+                <filter string="สินค้า"
+                        name="group_vendor_product"
+                        domain="[]"
+                        context="{'group_by': 'product_id'}"/>
+                <filter string="รายเดือน"
+                        name="group_vendor_month"
+                        domain="[]"
+                        context="{'group_by': 'date_order:month'}"/>
+                <filter string="รายไตรมาส"
+                        name="group_vendor_quarter"
+                        domain="[]"
+                        context="{'group_by': 'date_order:quarter'}"/>
+                <filter string="รายปี"
+                        name="group_vendor_year"
+                        domain="[]"
+                        context="{'group_by': 'date_order:year'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_purchase_vendor_group_report"
+            model="ir.actions.act_window">
+        <field name="name">ยอดซื้อแยกตามกลุ่มผู้จำหน่าย</field>
+        <field name="res_model">purchase.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="view_id"
+               ref="view_purchase_vendor_group_report_pivot"/>
+        <field name="search_view_id"
+               ref="view_purchase_vendor_group_report_search"/>
+        <field name="domain">
+            [('state', 'in', ('purchase', 'done'))]
+        </field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ยังไม่มีข้อมูลยอดซื้อที่ยืนยันแล้ว
+            </p>
+        </field>
+    </record>
+
+    <record id="action_purchase_vendor_group_report_pivot"
+            model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">pivot</field>
+        <field name="view_id"
+               ref="view_purchase_vendor_group_report_pivot"/>
+        <field name="act_window_id"
+               ref="action_purchase_vendor_group_report"/>
+    </record>
+
+    <record id="action_purchase_vendor_group_report_graph"
+            model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">graph</field>
+        <field name="view_id"
+               ref="view_purchase_vendor_group_report_graph"/>
+        <field name="act_window_id"
+               ref="action_purchase_vendor_group_report"/>
+    </record>
+
+    <record id="action_purchase_vendor_group_report_list"
+            model="ir.actions.act_window.view">
+        <field name="sequence">3</field>
+        <field name="view_mode">list</field>
+        <field name="view_id"
+               ref="view_purchase_vendor_group_report_list"/>
+        <field name="act_window_id"
+               ref="action_purchase_vendor_group_report"/>
+    </record>
+
+    <menuitem id="menu_purchase_vendor_group_report"
+              name="ยอดซื้อแยกตามกลุ่มผู้จำหน่าย"
+              parent="purchase.purchase_report_main"
+              action="action_purchase_vendor_group_report"
+              sequence="37"
+              groups="purchase.group_purchase_user"/>
+</odoo>

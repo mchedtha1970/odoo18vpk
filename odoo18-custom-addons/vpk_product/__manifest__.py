@@ -1,0 +1,27 @@
+{
+    "name": "VPK Product",
+    "version": "18.0.1.3.1",
+    "category": "Inventory",
+    "summary": "แถบหมวดหมู่สินค้า, เปลี่ยนหน่วยวัด, ชื่อซื้อ e-GP, และปรับป้ายคงเหลือ",
+    "author": "VPK",
+    "license": "LGPL-3",
+    "depends": [
+        "product",
+        "stock",
+        "stock_account",
+        "sale_stock",
+        "purchase_stock",
+        "purchase_request",
+        "purchase_requisition",
+    ],
+    "data": [
+        "data/ir_config_parameter_data.xml",
+        "security/ir.model.access.csv",
+        "wizard/product_uom_change_wizard_views.xml",
+        "views/product_template_views.xml",
+        "views/purchase_request_views.xml",
+        "views/purchase_order_views.xml",
+    ],
+    "installable": True,
+    "application": False,
+}

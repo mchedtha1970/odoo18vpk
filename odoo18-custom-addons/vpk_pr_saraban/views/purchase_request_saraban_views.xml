@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_form_saraban" model="ir.ui.view">
+        <field name="name">purchase.request.form.saraban</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="vpk_tier_validation.view_purchase_request_form_official_memo"/>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <button name="action_print_official_memo" position="after">
+                <button name="action_request_saraban_number"
+                        type="object"
+                        string="ขอเลขสารบรรณ"
+                        class="btn-primary"
+                        icon="fa-bookmark"
+                        invisible="saraban_status == 'registered'"/>
+            </button>
+            <div class="oe_button_box" position="inside">
+                <button name="action_view_saraban_documents" type="object"
+                        class="oe_stat_button" icon="fa-book"
+                        invisible="saraban_document_count == 0">
+                    <field name="saraban_document_count" widget="statinfo" string="สารบรรณ"/>
+                </button>
+            </div>
+            <page name="official_memo" position="before">
+                <page string="สารบรรณ" name="saraban" invisible="1">
+                    <group>
+                        <group string="สถานะการเชื่อมสารบรรณ">
+                            <field name="saraban_status" widget="badge"
+                                   decoration-success="saraban_status == 'registered'"
+                                   decoration-warning="saraban_status == 'pending'"
+                                   decoration-muted="saraban_status in ('none', 'cancelled')"/>
+                            <field name="saraban_book_no_display" readonly="1"/>
+                            <field name="saraban_book_no" readonly="1"/>
+                            <field name="saraban_external_id" readonly="1"/>
+                            <field name="saraban_document_id" readonly="1"/>
+                        </group>
+                        <group string="คำอธิบาย">
+                            <div colspan="2" class="text-muted">
+                                กดปุ่ม <b>ขอเลขสารบรรณ</b> เพื่อออกเลขสำหรับ
+                                <b>เอกสารอนุมัติขอซื้อ</b> (รายงานขออนุมัติจัดซื้อจัดจ้าง)
+                                ระบบนำเลขนี้ใส่ช่อง ที่ ในรายงานนั้น
+                                คำสั่งแต่งตั้ง แบบแสดงความบริสุทธิ์ใจ
+                                และหนังสือราชการอื่นให้กด <b>ขอเลขจากระบบสารบรรณ</b>
+                                ที่เอกสารนั้นแยกกัน
+                            </div>
+                        </group>
+                    </group>
+                    <field name="saraban_document_ids">
+                        <list>
+                            <field name="book_no_display"/>
+                            <field name="purpose"/>
+                            <field name="name"/>
+                            <field name="register_date"/>
+                            <field name="external_id"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+                </page>
+            </page>
+            <field name="memo_ref" position="after">
+                <field name="saraban_book_no_display" readonly="1"
+                       string="เลขจากสารบรรณ"
+                       invisible="saraban_status != 'registered'"/>
+            </field>
+        </field>
+    </record>
+</odoo>

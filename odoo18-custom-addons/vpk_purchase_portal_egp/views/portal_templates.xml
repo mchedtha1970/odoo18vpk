@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========== Vendor login landing ========== -->
+    <template id="vendor_portal_login" name="Vendor Portal Login">
+        <t t-call="portal.frontend_layout">
+            <t t-set="no_header" t-value="False"/>
+            <t t-set="no_footer" t-value="False"/>
+            <div class="container py-5">
+                <div class="row justify-content-center">
+                    <div class="col-md-6 col-lg-5">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body p-4 p-md-5">
+                                <h1 class="h3 mb-2 text-center">Vendor Portal</h1>
+                                <p class="text-muted text-center mb-4">
+                                    พอร์ทัลผู้จำหน่าย — เข้าสู่ระบบด้วย User ของท่าน
+                                    เพื่อดูและยืนยันใบสั่งซื้อ
+                                </p>
+                                <div class="d-grid gap-2">
+                                    <a class="btn btn-primary btn-lg" href="/web/login?redirect=/my/vendor">
+                                        <i class="fa fa-sign-in me-2"/>เข้าสู่ระบบ Vendor
+                                    </a>
+                                </div>
+                                <hr class="my-4"/>
+                                <p class="small text-muted mb-0">
+                                    หากยังไม่มีบัญชี กรุณาติดต่อฝ่ายจัดซื้อของโรงพยาบาล
+                                    เพื่อเชิญเข้าพอร์ทัล (ปุ่ม &quot;เชิญเข้าพอร์ทัล&quot; บนเอกสาร RFQ/PO)
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ========== Vendor home after login: single PO box ========== -->
+    <template id="portal_my_vendor_home" name="Vendor Portal Home">
+        <t t-call="portal.portal_layout">
+            <div class="o_portal container">
+                <div class="row justify-content-center">
+                    <div class="col-12 col-md-8 col-lg-6">
+                        <h2 class="mb-1">Vendor Portal</h2>
+                        <p class="text-muted mb-4">
+                            สวัสดี <t t-esc="request.env.user.name"/>
+                        </p>
+                        <a href="/my/vendor/orders" class="card text-decoration-none shadow-sm">
+                            <div class="card-body d-flex align-items-center gap-3">
+                                <div class="flex-grow-1">
+                                    <h3 class="h5 card-title text-dark mb-1">ใบสั่งซื้อ</h3>
+                                    <p class="text-muted mb-0 small">ดูและยืนยันใบสั่งซื้อของท่าน</p>
+                                </div>
+                                <div class="text-end">
+                                    <p class="display-6 mb-0 text-primary">
+                                        <t t-esc="vendor_po_count or 0"/>
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ========== Vendor PO list ========== -->
+    <template id="portal_my_vendor_orders" name="Vendor My Purchase Orders">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">ใบสั่งซื้อของฉัน</t>
+            </t>
+            <t t-if="not orders">
+                <p class="alert alert-warning">ยังไม่มีใบสั่งซื้อในรายการนี้</p>
+            </t>
+            <t t-if="orders" t-call="portal.portal_table">
+                <thead>
+                    <tr class="active">
+                        <th>เลขที่เอกสาร</th>
+                        <th class="text-end">วันที่</th>
+                        <th class="text-center">สถานะ</th>
+                        <th class="text-end">ยอดรวม</th>
+                        <th/>
+                    </tr>
+                </thead>
+                <t t-foreach="orders" t-as="order">
+                    <tr>
+                        <td>
+                            <a t-att-href="order.get_portal_url()">
+                                <t t-esc="order.name"/>
+                            </a>
+                            <div t-if="order.egp_project_reference" class="small text-muted">
+                                <t t-esc="order.egp_project_reference"/>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <span t-field="order.date_order" t-options="{'widget': 'date'}"/>
+                        </td>
+                        <td class="text-center">
+                            <span t-if="order.state == 'sent'" class="badge text-bg-warning">รอการยืนยัน</span>
+                            <span t-elif="order.state == 'purchase'" class="badge text-bg-success">ยืนยันแล้ว</span>
+                            <span t-elif="order.state == 'done'" class="badge text-bg-success">เสร็จสิ้น</span>
+                            <span t-elif="order.state == 'cancel'" class="badge text-bg-secondary">ยกเลิก</span>
+                            <span t-else="" class="badge text-bg-light" t-esc="order.state"/>
+                        </td>
+                        <td class="text-end">
+                            <span t-field="order.amount_total"/>
+                        </td>
+                        <td class="text-end">
+                            <a t-att-href="order.get_portal_url()" class="btn btn-sm btn-outline-primary">
+                                เปิด
+                            </a>
+                        </td>
+                    </tr>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <!-- Breadcrumbs -->
+    <template id="portal_vendor_breadcrumbs" inherit_id="portal.portal_breadcrumbs" priority="30">
+        <xpath expr="//ol[hasclass('o_portal_submenu')]" position="inside">
+            <li t-if="page_name in ('vendor_home', 'vendor_orders') or (order and order.require_vendor_signature)"
+                t-attf-class="breadcrumb-item #{'active' if page_name == 'vendor_home' and not order else ''}">
+                <a t-if="page_name != 'vendor_home' or order" href="/my/vendor">Vendor Portal</a>
+                <t t-else="">Vendor Portal</t>
+            </li>
+            <li t-if="page_name == 'vendor_orders' or (order and order.require_vendor_signature)"
+                t-attf-class="breadcrumb-item #{'active' if page_name == 'vendor_orders' and not order else ''}">
+                <a t-if="order" href="/my/vendor/orders">ใบสั่งซื้อของฉัน</a>
+                <t t-else="">ใบสั่งซื้อของฉัน</t>
+            </li>
+        </xpath>
+    </template>
+
+    <!-- /my Home: only Purchase Order box for portal vendors -->
+    <template id="portal_my_home_vendor_only_po" inherit_id="portal.portal_my_home" priority="99">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="before">
+            <t t-if="request.env.user.share">
+                <t t-set="portal_alert_category_enable" t-value="False"/>
+                <t t-set="portal_client_category_enable" t-value="False"/>
+                <t t-set="portal_service_category_enable" t-value="False"/>
+                <t t-set="portal_vendor_category_enable" t-value="True"/>
+            </t>
+        </xpath>
+        <xpath expr="//div[@id='portal_common_category']" position="attributes">
+            <attribute name="t-if">not request.env.user.share</attribute>
+        </xpath>
+    </template>
+
+    <!-- Replace purchase home cards with a single PO box -->
+    <template id="portal_my_home_vendor" inherit_id="purchase.portal_my_home_purchase" priority="40">
+        <xpath expr="//div[@id='portal_vendor_category']" position="replace">
+            <div id="portal_vendor_category" class="o_portal_category row g-2 mt-3">
+                <t t-call="portal.portal_docs_entry">
+                    <t t-set="icon" t-value="'/purchase/static/src/img/calculator.svg'"/>
+                    <t t-set="text">ดูและยืนยันใบสั่งซื้อของท่าน</t>
+                    <t t-set="title">ใบสั่งซื้อ</t>
+                    <t t-set="url" t-value="'/my/vendor/orders'"/>
+                    <t t-set="placeholder_count" t-value="'vendor_po_count'"/>
+                    <t t-set="show_count" t-value="True"/>
+                </t>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- PO detail: Confirm / Decline -->
+    <template id="portal_my_purchase_order_vendor_sign" inherit_id="purchase.portal_my_purchase_order">
+        <xpath expr="//div[hasclass('flex-grow-1') and hasclass('d-flex') and hasclass('gap-2')]" position="replace">
+            <div t-if="order._can_vendor_confirm()" class="flex-grow-1 d-flex flex-column gap-2">
+                <form method="POST" t-att-action="order.get_portal_url(suffix='/confirm')" class="d-grid">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="name" t-att-value="request.env.user.name if not request.env.user._is_public() else order.partner_id.name"/>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fa fa-check"/> ยืนยัน PO
+                    </button>
+                </form>
+                <a role="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalaccept" href="#">
+                    ยืนยันพร้อมลงนาม
+                </a>
+                <a role="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modaldecline" href="#">
+                    ปฏิเสธ
+                </a>
+            </div>
+            <div t-elif="not request.env.user._is_public() and order.state in ['sent']" class="flex-grow-1 d-flex gap-2">
+                <div class="btn-group flex-grow-1 mb-1">
+                    <a t-if="not order.mail_reception_confirmed" t-att-href="order.get_confirm_url(confirm_type='reception')" target="_self" class="btn btn-secondary btn-block px-3" name="accept" title="Accept" style="background-color: #875A7B;">Accept</a>
+                    <a t-else="" href="#" class="btn btn-secondary btn-block px-3 disabled" style="background-color: #875A7B;" tabindex="-1" aria-disabled="true" name="accept" title="Accept">Accept</a>
+                </div>
+                <div class="btn-group flex-grow-1 mb-1">
+                    <a t-if="not order.mail_reception_declined" t-att-href="order.get_confirm_url(confirm_type='decline')" target="_self" class="btn btn-secondary btn-block px-3" name="decline" title="Decline">Decline</a>
+                    <a t-else="" href="#" class="btn btn-secondary btn-block px-3 disabled" tabindex="-1" aria-disabled="true" name="decline" title="Decline">Decline</a>
+                </div>
+            </div>
+        </xpath>
+
+        <xpath expr="//div[@id='quote_content']" position="before">
+            <div role="dialog" class="modal fade" id="modalaccept">
+                <div class="modal-dialog" t-if="order._can_vendor_confirm()">
+                    <form id="accept" method="POST" t-att-data-order-id="order.id" t-att-data-token="order.access_token" class="js_accept_json modal-content js_website_submit_form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <header class="modal-header">
+                            <h4 class="modal-title">ยืนยันและลงนามเอกสาร</h4>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"/>
+                        </header>
+                        <main class="modal-body" id="sign-dialog">
+                            <p>
+                                การลงนามนี้เป็นการยืนยันในนาม
+                                <b t-field="order.partner_id.commercial_partner_id"/>
+                                สำหรับเอกสาร <b t-field="order.name"/>
+                                ยอดรวม <b t-field="order.amount_total"/>
+                            </p>
+                            <t t-call="portal.signature_form">
+                                <t t-set="call_url" t-value="order.get_portal_url(suffix='/accept')"/>
+                                <t t-set="default_name" t-value="order.partner_id.name or order.partner_id.commercial_partner_id.name"/>
+                                <t t-set="send_label">ยืนยันและลงนาม</t>
+                            </t>
+                        </main>
+                    </form>
+                </div>
+            </div>
+
+            <div role="dialog" class="modal fade" id="modaldecline">
+                <div class="modal-dialog" t-if="order._can_vendor_confirm()">
+                    <form id="decline" method="POST" t-att-action="order.get_portal_url(suffix='/decline')" class="modal-content">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <header class="modal-header">
+                            <h4 class="modal-title">ปฏิเสธเอกสาร</h4>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"/>
+                        </header>
+                        <main class="modal-body">
+                            <p>กรุณาระบุเหตุผลในการปฏิเสธ</p>
+                            <textarea rows="4" name="decline_message" required="required" placeholder="เหตุผล..." class="form-control"/>
+                        </main>
+                        <footer class="modal-footer">
+                            <button type="submit" class="btn btn-danger">ปฏิเสธ</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                        </footer>
+                    </form>
+                </div>
+            </div>
+        </xpath>
+
+        <xpath expr="//div[@id='quote_content']" position="inside">
+            <div t-if="vendor_sign_message" class="alert alert-success alert-dismissible d-print-none" role="alert">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="close"/>
+                <strong t-out="vendor_sign_message"/>
+            </div>
+            <div t-if="order.signed_by" class="alert alert-info d-print-none" role="alert">
+                ยืนยันโดย <strong t-field="order.signed_by"/>
+                เมื่อ <span t-field="order.signed_on"/>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="purchase_order_portal_content_vendor_sign" inherit_id="purchase.purchase_order_portal_content">
+        <xpath expr="//div[@id='introduction']" position="after">
+            <div t-if="order._can_vendor_confirm()" class="d-flex justify-content-center gap-2 my-3 d-print-none flex-wrap">
+                <form method="POST" t-att-action="order.get_portal_url(suffix='/confirm')">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="name" t-att-value="request.env.user.name if not request.env.user._is_public() else order.partner_id.name"/>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fa fa-check"/> ยืนยัน PO
+                    </button>
+                </form>
+                <a role="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalaccept" href="#">
+                    ยืนยันพร้อมลงนาม
+                </a>
+                <a role="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modaldecline" href="#">
+                    ปฏิเสธ
+                </a>
+            </div>
+        </xpath>
+    </template>
+</odoo>

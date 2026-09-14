@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================
+         Fiscal Position: กำหนดอัตราภาษีอัตโนมัติตามประเภท VAT
+         ============================================================ -->
+
+    <!-- 1. จดทะเบียน VAT (Registered) — ภาษี 7% ปกติ (ไม่ต้อง map) -->
+    <record id="fp_vat_registered" model="account.fiscal.position">
+        <field name="name">จดทะเบียน VAT (7%)</field>
+        <field name="auto_apply" eval="False"/>
+        <field name="sequence">10</field>
+    </record>
+
+    <!-- 2. ไม่จดทะเบียน VAT (Non-Registered) — 7% → 0% -->
+    <record id="fp_vat_non_registered" model="account.fiscal.position">
+        <field name="name">ไม่จดทะเบียน VAT (0%)</field>
+        <field name="auto_apply" eval="False"/>
+        <field name="sequence">20</field>
+    </record>
+    <record id="fp_vat_non_reg_map_p" model="account.fiscal.position.tax">
+        <field name="position_id" ref="fp_vat_non_registered"/>
+        <field name="tax_src_id" ref="account.1_tax_input_vat"/>
+        <field name="tax_dest_id" ref="account.1_tax_input_vat_0"/>
+    </record>
+    <record id="fp_vat_non_reg_map_s" model="account.fiscal.position.tax">
+        <field name="position_id" ref="fp_vat_non_registered"/>
+        <field name="tax_src_id" ref="account.1_tax_output_vat"/>
+        <field name="tax_dest_id" ref="account.1_tax_output_vat_0"/>
+    </record>
+
+    <!-- 3. ได้รับยกเว้น VAT (Exempt) — 7% → 0% EXEMPT -->
+    <record id="fp_vat_exempt" model="account.fiscal.position">
+        <field name="name">ยกเว้น VAT (Exempt)</field>
+        <field name="auto_apply" eval="False"/>
+        <field name="sequence">30</field>
+    </record>
+    <record id="fp_vat_exempt_map_p" model="account.fiscal.position.tax">
+        <field name="position_id" ref="fp_vat_exempt"/>
+        <field name="tax_src_id" ref="account.1_tax_input_vat"/>
+        <field name="tax_dest_id" ref="account.1_tax_input_vat_exempted"/>
+    </record>
+    <record id="fp_vat_exempt_map_s" model="account.fiscal.position.tax">
+        <field name="position_id" ref="fp_vat_exempt"/>
+        <field name="tax_src_id" ref="account.1_tax_output_vat"/>
+        <field name="tax_dest_id" ref="account.1_tax_output_vat_exempted"/>
+    </record>
+
+    <!-- 4. หน่วยงานราชการ (Government) — 7% → 0% -->
+    <record id="fp_government" model="account.fiscal.position">
+        <field name="name">หน่วยงานราชการ (0%)</field>
+        <field name="auto_apply" eval="False"/>
+        <field name="sequence">40</field>
+    </record>
+    <record id="fp_gov_map_p" model="account.fiscal.position.tax">
+        <field name="position_id" ref="fp_government"/>
+        <field name="tax_src_id" ref="account.1_tax_input_vat"/>
+        <field name="tax_dest_id" ref="account.1_tax_input_vat_0"/>
+    </record>
+    <record id="fp_gov_map_s" model="account.fiscal.position.tax">
+        <field name="position_id" ref="fp_government"/>
+        <field name="tax_src_id" ref="account.1_tax_output_vat"/>
+        <field name="tax_dest_id" ref="account.1_tax_output_vat_0"/>
+    </record>
+
+    <!-- 5. ผู้ขายต่างประเทศ (Foreign) — 7% → 0% -->
+    <record id="fp_foreign" model="account.fiscal.position">
+        <field name="name">ต่างประเทศ (Foreign / 0%)</field>
+        <field name="auto_apply" eval="False"/>
+        <field name="sequence">50</field>
+    </record>
+    <record id="fp_foreign_map_p" model="account.fiscal.position.tax">
+        <field name="position_id" ref="fp_foreign"/>
+        <field name="tax_src_id" ref="account.1_tax_input_vat"/>
+        <field name="tax_dest_id" ref="account.1_tax_input_vat_0"/>
+    </record>
+    <record id="fp_foreign_map_s" model="account.fiscal.position.tax">
+        <field name="position_id" ref="fp_foreign"/>
+        <field name="tax_src_id" ref="account.1_tax_output_vat"/>
+        <field name="tax_dest_id" ref="account.1_tax_output_vat_0"/>
+    </record>
+</odoo>

@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_contract_form" model="ir.ui.view">
+        <field name="name">purchase.contract.form</field>
+        <field name="model">purchase.contract</field>
+        <field name="arch" type="xml">
+            <form string="ทะเบียนสัญญาหลัก">
+                <header>
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="ยืนยันสัญญา"
+                        class="btn-primary"
+                        invisible="state != 'draft'"
+                        groups="purchase.group_purchase_manager"
+                    />
+                    <button
+                        name="action_done"
+                        type="object"
+                        string="ปิดสัญญา"
+                        invisible="state != 'confirmed'"
+                        groups="purchase.group_purchase_manager"
+                    />
+                    <button
+                        name="action_cancel"
+                        type="object"
+                        string="ยกเลิก"
+                        invisible="state in ('done', 'cancel')"
+                        groups="purchase.group_purchase_manager"
+                    />
+                    <button
+                        name="action_draft"
+                        type="object"
+                        string="ตั้งเป็นแบบร่าง"
+                        invisible="state != 'cancel'"
+                        groups="purchase.group_purchase_manager"
+                    />
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button
+                            name="action_view_contract_attachments"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-paperclip"
+                            invisible="contract_attachment_count == 0"
+                        >
+                            <field name="contract_attachment_count"
+                                   widget="statinfo"
+                                   string="เอกสารสัญญา"/>
+                        </button>
+                        <button
+                            name="action_view_purchase_requests"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-file-text-o"
+                        >
+                            <field name="purchase_request_count" widget="statinfo" string="ใบขอซื้อ"/>
+                        </button>
+                        <button
+                            name="action_view_purchase_orders"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-shopping-cart"
+                        >
+                            <field name="purchase_order_count" widget="statinfo" string="ใบสั่งซื้อ"/>
+                        </button>
+                        <button
+                            name="action_view_vendor_bills"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-pencil-square-o"
+                        >
+                            <field name="vendor_bill_count" widget="statinfo" string="ใบแจ้งหนี้"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" readonly="state != 'draft'"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="ข้อมูลสัญญา">
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="requisition_id" readonly="state != 'draft'"/>
+                            <field name="egp_reference"/>
+                            <field name="date_start" readonly="state != 'draft'"/>
+                            <field name="date_end" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                            <field name="currency_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="วงเงินสัญญา">
+                            <field name="amount_total" readonly="state != 'draft'"/>
+                            <field name="amount_pr_reserved"/>
+                            <field name="amount_po_confirmed"/>
+                            <field name="amount_consumed"/>
+                            <field name="amount_remaining"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="เงื่อนไขแบ่งงวด" name="installments">
+                            <div class="mb-2" invisible="state != 'draft'">
+                                <button
+                                    name="action_open_generate_installments"
+                                    type="object"
+                                    string="สร้างรายการงวดงาน"
+                                    class="btn-secondary"
+                                    icon="fa-magic"
+                                />
+                            </div>
+                            <field name="payment_term_note" readonly="state != 'draft'" placeholder="สรุปเงื่อนไขการแบ่งงวดจ่ายเงิน..."/>
+                            <field name="installment_ids" readonly="state != 'draft'">
+                                <list editable="bottom" decoration-success="is_used">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="product_id" optional="show" options="{'no_create': True}"/>
+                                    <field name="amount" sum="รวม"/>
+                                    <field name="percent"/>
+                                    <field name="date_planned"/>
+                                    <field name="is_used" string="ใช้แล้ว" optional="show"/>
+                                    <field name="note"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="เงื่อนไขข้อตกลง" name="description">
+                            <field name="description" readonly="state != 'draft'"/>
+                        </page>
+                        <page string="เอกสารสัญญา" name="contract_attachments">
+                            <div class="alert alert-info" role="alert">
+                                แนบสัญญาที่ลงนามแล้ว TOR หลักประกันสัญญา
+                                และเอกสารประกอบได้หลายไฟล์
+                            </div>
+                            <field name="contract_attachment_ids"
+                                   widget="many2many_binary"
+                                   options="{'accepted_file_extensions': '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png'}"/>
+                        </page>
+                        <page string="ติดตามสัญญา (Tracking)" name="tracking">
+                            <group>
+                                <group string="สถานะวงเงิน">
+                                    <field name="amount_total"/>
+                                    <field name="amount_consumed"/>
+                                    <field name="amount_remaining"/>
+                                </group>
+                                <group string="เอกสารที่เกี่ยวข้อง">
+                                    <field name="purchase_request_count"/>
+                                    <field name="purchase_order_count"/>
+                                    <field name="vendor_bill_count"/>
+                                </group>
+                            </group>
+                            <separator string="ใบขอซื้อ (PR)"/>
+                            <field name="purchase_request_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="requested_by"/>
+                                    <field name="date_start"/>
+                                    <field name="estimated_cost" sum="รวม"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                            <separator string="ใบสั่งซื้อ (PO)"/>
+                            <field name="purchase_order_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="partner_id"/>
+                                    <field name="date_order"/>
+                                    <field name="amount_total" sum="รวม"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                            <separator string="ใบแจ้งหนี้ (Vendor Bill)"/>
+                            <field name="vendor_bill_ids" readonly="1" domain="[('move_type', 'in', ('in_invoice', 'in_refund'))]">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="partner_id"/>
+                                    <field name="invoice_date"/>
+                                    <field name="amount_total" sum="รวม"/>
+                                    <field name="state"/>
+                                    <field name="payment_state"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_purchase_contract_list" model="ir.ui.view">
+        <field name="name">purchase.contract.list</field>
+        <field name="model">purchase.contract</field>
+        <field name="arch" type="xml">
+            <list string="ทะเบียนสัญญาหลัก">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="egp_reference" optional="show"/>
+                <field name="date_start"/>
+                <field name="date_end" optional="hide"/>
+                <field name="amount_total"/>
+                <field name="amount_consumed"/>
+                <field name="amount_remaining"/>
+                <field name="state"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_purchase_contract_search" model="ir.ui.view">
+        <field name="name">purchase.contract.search</field>
+        <field name="model">purchase.contract</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาสัญญา">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="egp_reference"/>
+                <field name="requisition_id"/>
+                <filter string="มีผลบังคับใช้" name="confirmed" domain="[('state', '=', 'confirmed')]"/>
+                <filter string="แบบร่าง" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="ปิดแล้ว" name="done" domain="[('state', '=', 'done')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="คู่ค้า" name="groupby_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="สถานะ" name="groupby_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_purchase_contract" model="ir.actions.act_window">
+        <field name="name">ทะเบียนสัญญาหลัก</field>
+        <field name="res_model">purchase.contract</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_purchase_contract_search"/>
+        <field name="context">{'search_default_confirmed': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                เปิดทะเบียนสัญญาหลักหลังคัดเลือกผู้ชนะจาก e-GP
+            </p>
+            <p>
+                กรอกมูลค่ารวมสัญญา คู่ค้า และเงื่อนไขแบ่งงวดจ่ายเงิน
+                เพื่อใช้เป็นฐานตรวจวงเงินเมื่อเปิด PR/PO งวดถัดไป
+            </p>
+        </field>
+    </record>
+</odoo>

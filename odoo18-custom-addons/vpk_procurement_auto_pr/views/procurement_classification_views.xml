@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_form_procurement_classification"
+            model="ir.ui.view">
+        <field name="name">purchase.request.form.procurement.classification</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id"
+               ref="vpk_purchase_contract.view_purchase_request_form_contract"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_create_po_by_latest_vendor"
+                        type="object"
+                        string="สร้าง PO แยกตามผู้ขายล่าสุด"
+                        class="btn-primary"
+                        icon="fa-sitemap"
+                        invisible="state not in ('approved', 'in_progress')"/>
+            </xpath>
+            <field name="contract_id" position="after">
+                <field name="procurement_nature"
+                       readonly="is_editable == False"/>
+                <field name="procurement_document"
+                       readonly="is_editable == False"/>
+                <field name="procurement_category" readonly="1"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_list_procurement_classification"
+            model="ir.ui.view">
+        <field name="name">purchase.request.list.procurement.classification</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id"
+               ref="vpk_purchase_contract.view_purchase_request_tree_contract"/>
+        <field name="arch" type="xml">
+            <field name="contract_id" position="after">
+                <field name="procurement_category"
+                       string="ประเภทจัดซื้อจัดจ้าง" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_form_procurement_classification"
+            model="ir.ui.view">
+        <field name="name">purchase.order.form.procurement.classification</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id"
+               ref="vpk_purchase_contract.view_purchase_order_form_contract"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/field[@name='state']" position="after">
+                <field name="procurement_urgency"
+                       widget="statusbar"
+                       statusbar_visible="normal,urgent,emergency"/>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-danger text-center mb-0"
+                     role="alert"
+                     invisible="procurement_urgency != 'emergency'">
+                    <strong>
+                        <i class="fa fa-exclamation-triangle me-1"/>
+                        ใบสั่งซื้อ/สั่งจ้างฉุกเฉิน
+                    </strong>
+                    — กรุณาเร่งดำเนินการและตรวจสอบเหตุผลความจำเป็น
+                </div>
+            </xpath>
+            <xpath expr="//sheet/group[.//field[@name='partner_id']][1]"
+                   position="after">
+                <group name="vpk_procurement_information"
+                       string="ข้อมูลการจัดซื้อจัดจ้าง">
+                    <group name="vpk_pr_information"
+                           string="ประเภทและข้อมูลจาก PR">
+                        <field name="procurement_urgency"/>
+                        <field name="urgency_reason"
+                               invisible="procurement_urgency == 'normal'"
+                               required="procurement_urgency == 'emergency'"
+                               placeholder="ระบุเหตุผลและความจำเป็น..."/>
+                        <field name="procurement_nature" readonly="1"/>
+                        <field name="procurement_document" readonly="1"/>
+                        <field name="procurement_category" readonly="1"/>
+                        <field name="pr_purchase_type_id"/>
+                        <field name="pr_procurement_type_id"/>
+                        <field name="pr_procurement_method_id"/>
+                    </group>
+                    <group name="vpk_order_conditions"
+                           string="กำหนดการและเงื่อนไขคำสั่งซื้อ">
+                        <field name="procurement_fulfillment_status"
+                               widget="badge"
+                               decoration-info="procurement_fulfillment_status == 'awaiting_receipt'"
+                               decoration-warning="procurement_fulfillment_status in ('partial_receipt', 'awaiting_payment')"
+                               decoration-success="procurement_fulfillment_status in ('received', 'paid')"
+                               decoration-muted="procurement_fulfillment_status in ('preparing', 'cancelled')"/>
+                        <field name="hospital_item_type_summary" readonly="1"/>
+                        <field name="free_item_count" readonly="1"/>
+                        <field name="total_discount_amount" readonly="1"/>
+                        <field name="procurement_term_days"
+                               readonly="state in ('purchase', 'done', 'cancel')"/>
+                        <field name="procurement_confirmed_date"/>
+                        <field name="procurement_due_date"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='product_id']"
+                   position="after">
+                <field name="hospital_item_type"
+                       string="ประเภทพัสดุ"
+                       optional="show"/>
+                <field name="is_free_item"
+                       string="ของแถม"
+                       widget="boolean_toggle"
+                       optional="show"/>
+                <field name="free_item_source_line_id"
+                       string="แถมจากรายการ"
+                       optional="hide"/>
+                <field name="free_item_note"
+                       string="เงื่อนไขของแถม"
+                       optional="hide"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list" position="attributes">
+                <attribute name="decoration-success">is_free_item</attribute>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='discount']"
+                   position="attributes">
+                <attribute name="optional">show</attribute>
+                <attribute name="string">ส่วนลด (%)</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_list_procurement_classification"
+            model="ir.ui.view">
+        <field name="name">purchase.order.list.procurement.classification</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id"
+               ref="vpk_purchase_contract.view_purchase_order_tree_contract"/>
+        <field name="arch" type="xml">
+            <field name="contract_id" position="after">
+                <field name="procurement_urgency"
+                       string="ความเร่งด่วน"
+                       widget="badge"
+                       decoration-warning="procurement_urgency == 'urgent'"
+                       decoration-danger="procurement_urgency == 'emergency'"
+                       optional="show"/>
+                <field name="procurement_category"
+                       string="ประเภทจัดซื้อจัดจ้าง" optional="show"/>
+                <field name="procurement_fulfillment_status"
+                       string="สถานะติดตาม"
+                       widget="badge"
+                       decoration-info="procurement_fulfillment_status == 'awaiting_receipt'"
+                       decoration-warning="procurement_fulfillment_status in ('partial_receipt', 'awaiting_payment')"
+                       decoration-success="procurement_fulfillment_status in ('received', 'paid')"
+                       optional="show"/>
+                <field name="pr_purchase_type_id"
+                       string="ประเภทการซื้อจาก PR" optional="show"/>
+                <field name="procurement_due_date"
+                       string="วันครบกำหนด" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_main_list_urgency" model="ir.ui.view">
+        <field name="name">purchase.order.main.list.urgency</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_view_tree"/>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="decoration-danger">procurement_urgency == 'emergency'</attribute>
+                <attribute name="decoration-warning">procurement_urgency == 'urgent'</attribute>
+            </xpath>
+            <field name="name" position="after">
+                <field name="procurement_urgency"
+                       string="ความเร่งด่วน"
+                       widget="badge"
+                       decoration-warning="procurement_urgency == 'urgent'"
+                       decoration-danger="procurement_urgency == 'emergency'"
+                       optional="show"/>
+                <field name="procurement_fulfillment_status"
+                       string="สถานะติดตาม"
+                       widget="badge"
+                       decoration-info="procurement_fulfillment_status == 'awaiting_receipt'"
+                       decoration-warning="procurement_fulfillment_status in ('partial_receipt', 'awaiting_payment')"
+                       decoration-success="procurement_fulfillment_status in ('received', 'paid')"
+                       optional="show"/>
+                <field name="hospital_item_type_summary"
+                       string="กลุ่มพัสดุ"
+                       optional="show"/>
+                <field name="pr_purchase_type_id"
+                       string="ประเภทการซื้อจาก PR"
+                       optional="show"/>
+                <field name="free_item_count"
+                       string="รายการของแถม"
+                       optional="show"/>
+                <field name="total_discount_amount"
+                       string="ส่วนลดรวม"
+                       optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_kpis_list_urgency" model="ir.ui.view">
+        <field name="name">purchase.order.kpis.list.urgency</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_kpis_tree"/>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="procurement_urgency"
+                       string="ความเร่งด่วน"
+                       widget="badge"
+                       decoration-warning="procurement_urgency == 'urgent'"
+                       decoration-danger="procurement_urgency == 'emergency'"
+                       optional="show"/>
+                <field name="procurement_fulfillment_status"
+                       string="สถานะติดตาม"
+                       widget="badge"
+                       decoration-info="procurement_fulfillment_status == 'awaiting_receipt'"
+                       decoration-warning="procurement_fulfillment_status in ('partial_receipt', 'awaiting_payment')"
+                       decoration-success="procurement_fulfillment_status in ('received', 'paid')"
+                       optional="show"/>
+                <field name="pr_purchase_type_id"
+                       string="ประเภทการซื้อจาก PR"
+                       optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_line_hospital_item_type"
+            model="ir.ui.view">
+        <field name="name">purchase.request.line.hospital.item.type</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id"
+               ref="purchase_request.view_purchase_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='line_ids']/list/field[@name='product_id']"
+                   position="after">
+                <field name="hospital_item_type"
+                       string="ประเภทพัสดุ"
+                       optional="show"/>
+                <field name="latest_vendor_id"
+                       string="ผู้จำหน่ายล่าสุด"
+                       optional="show"/>
+                <field name="latest_vendor_po_id"
+                       string="PO ล่าสุด"
+                       optional="show"/>
+                <field name="latest_vendor_price"
+                       string="ราคาซื้อล่าสุด"
+                       optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_product_template_hospital_item_type"
+            model="ir.ui.view">
+        <field name="name">product.template.hospital.item.type</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <field name="categ_id" position="after">
+                <field name="hospital_item_type"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_product_product_list_hospital_item_type"
+            model="ir.ui.view">
+        <field name="name">product.product.list.hospital.item.type</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_product_tree_view"/>
+        <field name="arch" type="xml">
+            <field name="categ_id" position="after">
+                <field name="hospital_item_type"
+                       string="ประเภทพัสดุโรงพยาบาล"
+                       optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_contract_due_date" model="ir.ui.view">
+        <field name="name">purchase.contract.form.due.date</field>
+        <field name="model">purchase.contract</field>
+        <field name="inherit_id"
+               ref="vpk_purchase_contract.view_purchase_contract_form"/>
+        <field name="arch" type="xml">
+            <field name="date_start" position="after">
+                <field name="contract_term_days"
+                       readonly="state != 'draft'"/>
+                <field name="confirmed_date"/>
+            </field>
+            <field name="date_end" position="attributes">
+                <attribute name="help">เว้นว่างได้ ระบบจะคำนวณจากวันเริ่มสัญญาและระยะเวลาสัญญาเมื่อกดยืนยัน</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_requisition_procurement_classification"
+            model="ir.ui.view">
+        <field name="name">purchase.requisition.procurement.classification</field>
+        <field name="model">purchase.requisition</field>
+        <field name="inherit_id"
+               ref="vpk_purchase_agreement_egp.view_purchase_requisition_form_egp"/>
+        <field name="arch" type="xml">
+            <field name="purchase_type_id" position="after">
+                <field name="procurement_nature"
+                       invisible="requisition_type != 'egp_procurement'"/>
+                <field name="procurement_document"
+                       invisible="requisition_type != 'egp_procurement'"/>
+                <field name="procurement_category"
+                       invisible="requisition_type != 'egp_procurement'"/>
+            </field>
+        </field>
+    </record>
+</odoo>

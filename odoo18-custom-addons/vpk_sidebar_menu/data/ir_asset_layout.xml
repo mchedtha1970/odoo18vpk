@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <delete model="ir.asset" search="[('path', '=', 'vpk_sidebar_menu/static/src/scss/form_fields.scss')]"/>
+    <record id="ir_asset_vpk_layout_responsive" model="ir.asset">
+        <field name="name">VPK Layout Responsive (load last)</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">vpk_sidebar_menu/static/src/scss/layout_responsive.scss</field>
+        <field name="directive">append</field>
+        <field name="sequence">101</field>
+    </record>
+    <record id="ir_asset_vpk_list_view_theme" model="ir.asset">
+        <field name="name">VPK List View Theme (load last)</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">vpk_sidebar_menu/static/src/scss/list_view_theme.scss</field>
+        <field name="directive">append</field>
+        <field name="sequence">102</field>
+    </record>
+    <record id="ir_asset_vpk_form_view_theme" model="ir.asset">
+        <field name="name">VPK Form View Theme (Spiffy-like, load last)</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">vpk_sidebar_menu/static/src/scss/form_view_theme.scss</field>
+        <field name="directive">append</field>
+        <field name="sequence">103</field>
+    </record>
+    <record id="ir_asset_vpk_form_fields" model="ir.asset">
+        <field name="name">VPK Form Fields Boxed Borders (load last)</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">vpk_sidebar_menu/static/src/scss/form_fields.scss</field>
+        <field name="directive">append</field>
+        <field name="sequence">104</field>
+    </record>
+    <record id="ir_asset_vpk_theme_fonts" model="ir.asset">
+        <field name="name">VPK Theme Fonts (date picker + chatter)</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">vpk_sidebar_menu/static/src/scss/theme_fonts.scss</field>
+        <field name="directive">append</field>
+        <field name="sequence">105</field>
+    </record>
+    <record id="ir_asset_vpk_form_notebook_theme" model="ir.asset">
+        <field name="name">VPK Form Notebook Theme (unified tab layout)</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">vpk_sidebar_menu/static/src/scss/form_notebook_theme.scss</field>
+        <field name="directive">append</field>
+        <field name="sequence">110</field>
+    </record>
+    <record id="ir_asset_vpk_text_field_theme" model="ir.asset">
+        <field name="name">VPK Text Field Resizable</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">vpk_sidebar_menu/static/src/scss/text_field_theme.scss</field>
+        <field name="directive">append</field>
+        <field name="sequence">111</field>
+    </record>
+    <record id="ir_asset_vpk_dialog_theme" model="ir.asset">
+        <field name="name">VPK Dialog / Wizard Theme</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">vpk_sidebar_menu/static/src/scss/dialog_theme.scss</field>
+        <field name="directive">append</field>
+        <field name="sequence">112</field>
+    </record>
+    <record id="ir_asset_vpk_systray_spiffy" model="ir.asset">
+        <field name="name">VPK Systray Icons (load last)</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">vpk_sidebar_menu/static/src/scss/systray_spiffy.scss</field>
+        <field name="directive">append</field>
+        <field name="sequence">113</field>
+    </record>
+</odoo>

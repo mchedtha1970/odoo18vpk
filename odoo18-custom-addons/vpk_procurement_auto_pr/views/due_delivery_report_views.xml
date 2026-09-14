@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_due_delivery_report_list" model="ir.ui.view">
+        <field name="name">purchase.order.line.due.delivery.report.list</field>
+        <field name="model">purchase.order.line</field>
+        <field name="arch" type="xml">
+            <list string="ใบสั่งซื้อ/จ้าง/ซ่อม ถึงกำหนดส่ง"
+                  create="false" edit="false" delete="false"
+                  default_order="delivery_due_date, order_id, id"
+                  decoration-danger="delivery_due_status == 'overdue'"
+                  decoration-warning="delivery_due_status in ('today', 'due_7')"
+                  decoration-info="delivery_due_status == 'due_30'">
+                <field name="delivery_order_type" widget="badge"/>
+                <field name="delivery_due_status" widget="badge"
+                       decoration-danger="delivery_due_status == 'overdue'"
+                       decoration-warning="delivery_due_status in ('today', 'due_7')"
+                       decoration-info="delivery_due_status == 'due_30'"/>
+                <field name="delivery_due_date"/>
+                <field name="delivery_days_remaining"/>
+                <field name="order_id" string="เลขที่ใบสั่ง"/>
+                <field name="partner_id" string="ผู้จำหน่าย/ผู้รับจ้าง"/>
+                <field name="product_id" string="สินค้า/บริการ"/>
+                <field name="name" string="รายละเอียด"
+                       optional="hide"/>
+                <field name="product_qty" string="จำนวนสั่ง"
+                       sum="รวมจำนวนสั่ง"/>
+                <field name="qty_received" string="รับแล้ว"
+                       sum="รวมจำนวนรับ"/>
+                <field name="qty_pending_receipt"
+                       sum="รวมจำนวนค้างรับ"/>
+                <field name="product_uom" string="หน่วย"/>
+                <field name="company_currency_id" column_invisible="True"/>
+                <field name="pending_receipt_amount"
+                       sum="รวมมูลค่าค้างรับ"/>
+                <field name="company_id" groups="base.group_multi_company"
+                       optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_due_delivery_report_pivot" model="ir.ui.view">
+        <field name="name">purchase.order.line.due.delivery.report.pivot</field>
+        <field name="model">purchase.order.line</field>
+        <field name="arch" type="xml">
+            <pivot string="สรุปใบสั่งถึงกำหนดส่ง">
+                <field name="delivery_order_type" type="row"/>
+                <field name="partner_id" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="delivery_due_date" type="col" interval="month"/>
+                <field name="product_qty" type="measure"/>
+                <field name="qty_received" type="measure"/>
+                <field name="qty_pending_receipt" type="measure"/>
+                <field name="pending_receipt_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_due_delivery_report_graph" model="ir.ui.view">
+        <field name="name">purchase.order.line.due.delivery.report.graph</field>
+        <field name="model">purchase.order.line</field>
+        <field name="arch" type="xml">
+            <graph string="มูลค่าค้างรับตามประเภทใบสั่ง" type="bar">
+                <field name="delivery_order_type"/>
+                <field name="pending_receipt_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_due_delivery_report_search" model="ir.ui.view">
+        <field name="name">purchase.order.line.due.delivery.report.search</field>
+        <field name="model">purchase.order.line</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาใบสั่งถึงกำหนดส่ง">
+                <field name="order_id"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="delivery_order_type"/>
+                <field name="delivery_due_date"/>
+                <filter string="เกินกำหนด" name="delivery_overdue"
+                        domain="[('delivery_due_status', '=', 'overdue')]"/>
+                <filter string="ครบกำหนดวันนี้" name="delivery_today"
+                        domain="[('delivery_due_status', '=', 'today')]"/>
+                <filter string="ภายใน 7 วัน" name="delivery_due_7"
+                        domain="[('delivery_due_status', '=', 'due_7')]"/>
+                <filter string="ภายใน 30 วัน" name="delivery_due_30"
+                        domain="[('delivery_due_status', '=', 'due_30')]"/>
+                <separator/>
+                <filter string="ใบสั่งซื้อ" name="delivery_purchase"
+                        domain="[('delivery_order_type', '=', 'purchase')]"/>
+                <filter string="ใบสั่งจ้าง" name="delivery_hire"
+                        domain="[('delivery_order_type', '=', 'hire')]"/>
+                <filter string="ใบสั่งซ่อม" name="delivery_repair"
+                        domain="[('delivery_order_type', '=', 'repair')]"/>
+                <separator/>
+                <filter string="ประเภทใบสั่ง" name="group_delivery_type"
+                        domain="[]" context="{'group_by': 'delivery_order_type'}"/>
+                <filter string="ผู้จำหน่าย/ผู้รับจ้าง" name="group_delivery_partner"
+                        domain="[]" context="{'group_by': 'partner_id'}"/>
+                <filter string="เดือนกำหนดส่ง" name="group_delivery_month"
+                        domain="[]" context="{'group_by': 'delivery_due_date:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_due_delivery_report" model="ir.actions.act_window">
+        <field name="name">ใบสั่งซื้อ/จ้าง/ซ่อม ถึงกำหนดส่ง</field>
+        <field name="res_model">purchase.order.line</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_id" ref="view_due_delivery_report_list"/>
+        <field name="search_view_id" ref="view_due_delivery_report_search"/>
+        <field name="domain">
+            [('order_id.state', '=', 'purchase'),
+             ('qty_pending_receipt', '&gt;', 0)]
+        </field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ไม่พบใบสั่งที่มีรายการค้างส่ง
+            </p>
+        </field>
+    </record>
+
+    <record id="action_due_delivery_report_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field><field name="view_mode">list</field>
+        <field name="view_id" ref="view_due_delivery_report_list"/>
+        <field name="act_window_id" ref="action_due_delivery_report"/>
+    </record>
+    <record id="action_due_delivery_report_pivot" model="ir.actions.act_window.view">
+        <field name="sequence">2</field><field name="view_mode">pivot</field>
+        <field name="view_id" ref="view_due_delivery_report_pivot"/>
+        <field name="act_window_id" ref="action_due_delivery_report"/>
+    </record>
+    <record id="action_due_delivery_report_graph" model="ir.actions.act_window.view">
+        <field name="sequence">3</field><field name="view_mode">graph</field>
+        <field name="view_id" ref="view_due_delivery_report_graph"/>
+        <field name="act_window_id" ref="action_due_delivery_report"/>
+    </record>
+
+    <menuitem id="menu_due_delivery_report"
+              name="ใบสั่งซื้อ/จ้าง/ซ่อม ถึงกำหนดส่ง"
+              parent="purchase.purchase_report_main"
+              action="action_due_delivery_report"
+              sequence="42" groups="purchase.group_purchase_user"/>
+</odoo>

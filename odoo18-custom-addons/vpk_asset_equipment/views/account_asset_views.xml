@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_asset_form_equipment" model="ir.ui.view">
+        <field name="name">account.asset.form.equipment</field>
+        <field name="model">account.asset</field>
+        <field name="inherit_id" ref="account_asset_management.account_asset_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_create_equipment"
+                    type="object"
+                    string="สร้าง Equipment"
+                    class="oe_highlight"
+                    invisible="equipment_id or state == 'removed'"
+                    groups="maintenance.group_equipment_manager,account.group_account_user"
+                />
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <field name="equipment_id" invisible="1"/>
+                <button
+                    name="action_open_equipment"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-wrench"
+                    invisible="not equipment_id"
+                >
+                    <field name="equipment_count" widget="statinfo" string="Equipment"/>
+                </button>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="ข้อมูลทรัพย์สิน" name="asset_equipment_info">
+                    <group>
+                        <group>
+                            <field name="equipment_model"/>
+                            <field name="equipment_serial_no"/>
+                        </group>
+                        <group>
+                            <field name="equipment_location"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

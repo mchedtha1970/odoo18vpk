@@ -1,0 +1,17 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_proc_plan_pr_user,procurement.annual.plan.pr.user,model_procurement_annual_plan,purchase_request.group_purchase_request_user,1,0,0,0
+access_proc_plan_user,procurement.annual.plan.user,model_procurement_annual_plan,purchase.group_purchase_user,1,0,0,0
+access_proc_plan_mgr,procurement.annual.plan.manager,model_procurement_annual_plan,purchase.group_purchase_manager,1,1,1,1
+access_proc_plan_line_pr_user,procurement.annual.plan.line.pr.user,model_procurement_annual_plan_line,purchase_request.group_purchase_request_user,1,0,0,0
+access_proc_plan_line_user,procurement.annual.plan.line.user,model_procurement_annual_plan_line,purchase.group_purchase_user,1,0,0,0
+access_proc_plan_line_mgr,procurement.annual.plan.line.manager,model_procurement_annual_plan_line,purchase.group_purchase_manager,1,1,1,1
+access_proc_amd_user,procurement.plan.amendment.user,model_procurement_plan_amendment,purchase.group_purchase_user,1,1,1,0
+access_proc_amd_mgr,procurement.plan.amendment.manager,model_procurement_plan_amendment,purchase.group_purchase_manager,1,1,1,1
+access_proc_amd_line_user,procurement.plan.amendment.line.user,model_procurement_plan_amendment_line,purchase.group_purchase_user,1,1,1,0
+access_proc_amd_line_mgr,procurement.plan.amendment.line.manager,model_procurement_plan_amendment_line,purchase.group_purchase_manager,1,1,1,1
+access_proc_purchase_penalty_user,procurement.purchase.penalty.user,model_procurement_purchase_penalty,purchase.group_purchase_user,1,1,1,0
+access_proc_purchase_penalty_manager,procurement.purchase.penalty.manager,model_procurement_purchase_penalty,purchase.group_purchase_manager,1,1,1,1
+access_proc_guarantee_user,procurement.guarantee.user,model_procurement_guarantee,purchase.group_purchase_user,1,1,1,0
+access_proc_guarantee_manager,procurement.guarantee.manager,model_procurement_guarantee,purchase.group_purchase_manager,1,1,1,1
+access_proc_vendor_group_user,procurement.vendor.group.user,model_procurement_vendor_group,purchase.group_purchase_user,1,0,0,0
+access_proc_vendor_group_manager,procurement.vendor.group.manager,model_procurement_vendor_group,purchase.group_purchase_manager,1,1,1,1

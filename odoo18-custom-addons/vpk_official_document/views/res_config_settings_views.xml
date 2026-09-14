@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_official_document" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.official.document</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="purchase.res_config_settings_view_form_purchase"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='purchase']" position="inside">
+                <block title="หนังสือราชการ" name="vpk_official_document_setting">
+                    <setting string="หน่วยงานในหัวคำสั่ง"
+                             help="ข้อความต่อจากคำว่า คำสั่ง เช่น โรงพยาบาลวชิระภูเก็ต">
+                        <field name="official_doc_agency"/>
+                    </setting>
+                    <setting string="ผู้ลงนามคำสั่ง">
+                        <field name="official_doc_signer_id" options="{'no_create': True}"/>
+                    </setting>
+                    <setting string="ตำแหน่งผู้ลงนามคำสั่ง">
+                        <field name="official_doc_signer_position"/>
+                    </setting>
+                    <setting string="หัวหน้าเจ้าหน้าที่"
+                             help="ใช้ในแบบแสดงความบริสุทธิ์ใจและรายงานขออนุมัติจัดซื้อจัดจ้าง">
+                        <field name="official_doc_head_officer_id" options="{'no_create': True}"/>
+                    </setting>
+                    <setting string="ตำแหน่งหัวหน้าเจ้าหน้าที่">
+                        <field name="official_doc_head_officer_position"/>
+                    </setting>
+                    <setting string="เจ้าหน้าที่"
+                             help="ใช้ในแบบแสดงความบริสุทธิ์ใจและรายงานขออนุมัติจัดซื้อจัดจ้าง">
+                        <field name="official_doc_officer_id" options="{'no_create': True}"/>
+                    </setting>
+                    <setting string="ตำแหน่งเจ้าหน้าที่">
+                        <field name="official_doc_officer_position"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

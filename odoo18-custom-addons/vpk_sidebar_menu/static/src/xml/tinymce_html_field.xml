@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="vpk_sidebar_menu.TinymceHtmlField">
+        <div class="o_field_widget o_field_text o_tinymce_html_field w-100">
+            <t t-if="props.readonly">
+                <div class="o_readonly" t-out="props.record.data[props.name] or ''"/>
+            </t>
+            <t t-else="">
+                <textarea
+                    class="o_input"
+                    t-att-id="props.id"
+                    t-att-placeholder="props.placeholder"
+                    t-ref="textarea"
+                />
+            </t>
+        </div>
+    </t>
+
+</templates>

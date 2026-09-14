@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_official_document_form" model="ir.ui.view">
+        <field name="name">vpk.official.document.form</field>
+        <field name="model">vpk.official.document</field>
+        <field name="arch" type="xml">
+            <form js_class="vpk_official_document_form">
+                <header>
+                    <button name="action_load_committee_from_source" type="object"
+                            string="ดึงรายชื่อจากแท็บคณะกรรมการ"
+                            invisible="state == 'cancelled'"/>
+                    <button name="action_refresh_text" type="object"
+                            string="สร้างข้อความจากข้อมูล"
+                            invisible="state == 'cancelled' or document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval')"/>
+                    <button name="action_generate_docx" type="object"
+                            string="สร้างไฟล์ Word"
+                            class="btn-primary"
+                            invisible="state == 'cancelled'"/>
+                    <button name="action_generate_pdf" type="object"
+                            string="พิมพ์ PDF"
+                            class="btn-primary"
+                            invisible="state == 'cancelled'"/>
+                    <button name="action_send_for_signature" type="object"
+                            string="ส่งเพื่อลงนาม"
+                            class="btn-primary"
+                            icon="fa-paper-plane"
+                            groups="purchase.group_purchase_user"
+                            invisible="state in ('to_approve', 'approved', 'cancelled')"/>
+                    <button name="action_open_sign_viewer" type="object"
+                            string="เปิดไฟล์เพื่อลงนาม"
+                            class="btn-success"
+                            icon="fa-pencil"
+                            invisible="state != 'to_approve' or not can_review"/>
+                    <button name="action_request_saraban_number" type="object"
+                            string="ขอเลขจากระบบสารบรรณ"
+                            class="btn-primary"
+                            icon="fa-bookmark"
+                            groups="purchase.group_purchase_user"
+                            invisible="state == 'cancelled' or saraban_document_id"/>
+                    <button name="action_open_saraban_document" type="object"
+                            string="เปิดงานสารบรรณ"
+                            class="btn-secondary"
+                            icon="fa-book"
+                            groups="purchase.group_purchase_user"
+                            invisible="not saraban_document_id"/>
+                    <button name="action_cancel" type="object"
+                            string="ยกเลิก"
+                            invisible="state == 'cancelled'"/>
+                    <button name="action_draft" type="object"
+                            string="กลับเป็นร่าง"
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,generated,to_approve,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <field name="can_review" invisible="1"/>
+                    <group>
+                        <group>
+                            <field name="document_type"/>
+                            <field name="template_id"/>
+                            <field name="date"/>
+                            <field name="saraban_book_no" placeholder="เช่น ภก ๐๐๓๓.๒๐๑/๒๕๖๙/๐๐๐๓"/>
+                            <field name="saraban_document_id" readonly="1"
+                                   invisible="not saraban_document_id"/>
+                            <field name="order_no" invisible="document_type != 'wa_committee_order'"/>
+                            <field name="year_be" invisible="document_type != 'wa_committee_order'"/>
+                            <field name="agency" invisible="document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval')"/>
+                            <field name="recipient" invisible="document_type not in ('spec_price_committee', 'specific_method_approval')"/>
+                        </group>
+                        <group>
+                            <field name="request_id"/>
+                            <field name="purchase_id"/>
+                            <field name="wa_id"/>
+                            <field name="department_id"/>
+                            <field name="department_name"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="item_summary"/>
+                            <field name="procurement_method"/>
+                        </group>
+                        <group>
+                            <field name="signer_id" widget="many2one_avatar_user"
+                                   options="{'no_create': True}"
+                                   invisible="document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval')"/>
+                            <field name="signer_name" invisible="1"/>
+                            <field name="signer_position" invisible="document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval')"/>
+                            <field name="approver_signature" widget="image" class="oe_avatar" invisible="not approver_signature"/>
+                            <field name="signature_state" widget="badge"
+                                   decoration-muted="signature_state == 'not_sent'"
+                                   decoration-warning="signature_state == 'waiting'"
+                                   decoration-success="signature_state == 'signed'"/>
+                            <field name="signed_on" invisible="not signed_on"/>
+                            <field name="approver_acting" invisible="document_type != 'specific_method_approval'"/>
+                            <field name="head_officer_id" widget="many2one_avatar_user"
+                                   options="{'no_create': True}"
+                                   invisible="document_type not in ('integrity_over_100k', 'specific_method_approval')"/>
+                            <field name="head_officer_name" invisible="1"/>
+                            <field name="head_officer_position" invisible="document_type not in ('integrity_over_100k', 'specific_method_approval')"/>
+                            <field name="officer_id" widget="many2one_avatar_user"
+                                   options="{'no_create': True}"
+                                   invisible="document_type not in ('integrity_over_100k', 'specific_method_approval')"/>
+                            <field name="officer_name" invisible="1"/>
+                            <field name="officer_position" invisible="document_type not in ('integrity_over_100k', 'specific_method_approval')"/>
+                        </group>
+                    </group>
+                    <group invisible="document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval')">
+                        <field name="subject"/>
+                    </group>
+                    <group string="ย่อหน้าแรก" invisible="document_type != 'specific_method_approval'">
+                        <field name="body" nolabel="1" widget="text" colspan="2"/>
+                    </group>
+                    <group string="๑. เหตุผลและความจำเป็น" invisible="document_type != 'specific_method_approval'">
+                        <field name="reason_text" nolabel="1" widget="text" colspan="2"/>
+                    </group>
+                    <group string="๒. รายละเอียดงานที่จัดซื้อ จัดจ้าง" invisible="document_type != 'specific_method_approval'">
+                        <field name="work_detail" nolabel="1" widget="text" colspan="2"/>
+                    </group>
+                    <group string="๓. ราคากลางของพัสดุ" invisible="document_type != 'specific_method_approval'">
+                        <field name="price_mid_text" nolabel="1" widget="text" colspan="2"/>
+                    </group>
+                    <group string="๔. วงเงิน" invisible="document_type != 'specific_method_approval'">
+                        <field name="budget_text" nolabel="1" widget="text" colspan="2"/>
+                    </group>
+                    <group string="๕. กำหนดเวลาที่ต้องการใช้พัสดุนั้น หรือให้งานนั้นแล้วเสร็จ" invisible="document_type != 'specific_method_approval'">
+                        <field name="delivery_text" nolabel="1" widget="text" colspan="2"/>
+                    </group>
+                    <group string="๖. วิธีที่จะซื้อ/จ้าง/เช่า และเหตุผลที่จะซื้อ/จ้าง" invisible="document_type != 'specific_method_approval'">
+                        <field name="method_text" nolabel="1" widget="text" colspan="2"/>
+                    </group>
+                    <group string="๗. หลักเกณฑ์การพิจารณาคัดเลือกข้อเสนอ" invisible="document_type != 'specific_method_approval'">
+                        <field name="criteria_text" nolabel="1" widget="text" colspan="2"/>
+                    </group>
+                    <group string="๘. ร่างประกาศ และร่างเอกสารประกวดราคา" invisible="document_type != 'specific_method_approval'">
+                        <field name="announcement_text" nolabel="1" widget="text" colspan="2"/>
+                    </group>
+                    <group string="๙. ข้อระเบียบและกฎหมาย" invisible="document_type != 'specific_method_approval'">
+                        <field name="legal_text" nolabel="1" widget="text" colspan="2"/>
+                    </group>
+                    <group string="๑๐. ข้อเสนออื่นๆ" invisible="document_type != 'specific_method_approval'">
+                        <field name="other_proposal_text" nolabel="1" widget="text" colspan="2"/>
+                    </group>
+                    <group string="ไฟล์เอกสาร">
+                        <field name="generated_attachment_ids" widget="vpk_attachment_cards"
+                               nolabel="1" colspan="2" readonly="1"/>
+                        <field name="pdf_file" invisible="1"/>
+                        <field name="docx_file" invisible="1"/>
+                    </group>
+                    <notebook>
+                        <page string="คณะกรรมการ" name="committee">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="employee_id"/>
+                                    <field name="name"/>
+                                    <field name="position"/>
+                                    <field name="role"/>
+                                    <field name="note" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="ข้อความในหนังสือ" name="body"
+                              invisible="document_type not in ('wa_committee_order', 'spec_price_committee')">
+                            <field name="body" widget="text"/>
+                            <group invisible="document_type != 'wa_committee_order'">
+                                <field name="duty"/>
+                                <field name="effective"/>
+                            </group>
+                        </page>
+                        <page string="ไฟล์ที่สร้าง" name="file">
+                            <field name="generated_attachment_ids" widget="vpk_attachment_cards"
+                                   nolabel="1" readonly="1"/>
+                            <group>
+                                <field name="docx_filename" invisible="1"/>
+                                <field name="pdf_filename" invisible="1"/>
+                                <field name="docx_attachment_id" invisible="1"/>
+                                <field name="pdf_attachment_id" invisible="1"/>
+                            </group>
+                        </page>
+                        <page string="หมายเหตุ" name="note">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_official_document_list" model="ir.ui.view">
+        <field name="name">vpk.official.document.list</field>
+        <field name="model">vpk.official.document</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="has_pdf" widget="vpk_pdf_icon" string="ไฟล์"/>
+                <field name="pdf_filename" column_invisible="1"/>
+                <field name="pdf_attachment_id" column_invisible="1"/>
+                <field name="can_review" column_invisible="1"/>
+                <field name="name"/>
+                <field name="saraban_book_no" optional="show"/>
+                <field name="saraban_document_id" optional="hide"/>
+                <field name="document_type"/>
+                <field name="date"/>
+                <field name="order_no" optional="hide"/>
+                <field name="subject"/>
+                <field name="request_id"/>
+                <field name="department_id" optional="show"/>
+                <field name="line_count"/>
+                <field name="signature_state" widget="badge"
+                       decoration-muted="signature_state == 'not_sent'"
+                       decoration-warning="signature_state == 'waiting'"
+                       decoration-success="signature_state == 'signed'"/>
+                <button name="action_send_for_signature" type="object"
+                        string="ส่งเพื่อลงนาม"
+                        icon="fa-paper-plane"
+                        groups="purchase.group_purchase_user"
+                        invisible="signature_state != 'not_sent' or state == 'cancelled'"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state in ('generated', 'approved')"
+                       decoration-warning="state == 'to_approve'"
+                       decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_official_document_search" model="ir.ui.view">
+        <field name="name">vpk.official.document.search</field>
+        <field name="model">vpk.official.document</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="saraban_book_no"/>
+                <field name="order_no"/>
+                <field name="subject"/>
+                <field name="request_id"/>
+                <filter name="draft" string="ร่าง" domain="[('state', '=', 'draft')]"/>
+                <filter name="generated" string="สร้างไฟล์แล้ว" domain="[('state', '=', 'generated')]"/>
+                <filter name="waiting_signature" string="รอลงนาม" domain="[('signature_state', '=', 'waiting')]"/>
+                <filter name="signed" string="ลงนามแล้ว" domain="[('signature_state', '=', 'signed')]"/>
+                <filter name="wa_committee_order" string="คำสั่งแต่งตั้ง"
+                        domain="[('document_type', '=', 'wa_committee_order')]"/>
+                <filter name="integrity_over_100k" string="แบบแสดงความบริสุทธิ์ใจ"
+                        domain="[('document_type', '=', 'integrity_over_100k')]"/>
+                <filter name="spec_price_committee" string="ขออนุมัติแต่งตั้งคณะกรรมการกำหนดคุณลักษณะ"
+                        domain="[('document_type', '=', 'spec_price_committee')]"/>
+                <filter name="specific_method_approval" string="รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง"
+                        domain="[('document_type', '=', 'specific_method_approval')]"/>
+                <group>
+                    <filter name="group_state" string="สถานะ" context="{'group_by': 'state'}"/>
+                    <filter name="group_type" string="ประเภท" context="{'group_by': 'document_type'}"/>
+                    <filter name="group_pr" string="ใบขอซื้อ" context="{'group_by': 'request_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_official_document" model="ir.actions.act_window">
+        <field name="name">คำสั่งแต่งตั้งคณะกรรมการตรวจรับ</field>
+        <field name="res_model">vpk.official.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'wa_committee_order')]</field>
+        <field name="context">{'default_document_type': 'wa_committee_order'}</field>
+    </record>
+
+    <record id="action_integrity_over_100k" model="ir.actions.act_window">
+        <field name="name">แบบแสดงความบริสุทธิ์ใจ</field>
+        <field name="res_model">vpk.official.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'integrity_over_100k')]</field>
+        <field name="context">{'default_document_type': 'integrity_over_100k'}</field>
+    </record>
+
+    <record id="action_spec_price_committee" model="ir.actions.act_window">
+        <field name="name">ขออนุมัติแต่งตั้งคณะกรรมการกำหนดคุณลักษณะ</field>
+        <field name="res_model">vpk.official.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'spec_price_committee')]</field>
+        <field name="context">{'default_document_type': 'spec_price_committee'}</field>
+    </record>
+
+    <record id="action_specific_method_approval" model="ir.actions.act_window">
+        <field name="name">รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง</field>
+        <field name="res_model">vpk.official.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'specific_method_approval')]</field>
+        <field name="context">{'default_document_type': 'specific_method_approval'}</field>
+    </record>
+</odoo>

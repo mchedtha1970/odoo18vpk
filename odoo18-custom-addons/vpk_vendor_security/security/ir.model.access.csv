@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_partner_vendor_viewer,res.partner.vendor.viewer,base.model_res_partner,group_vendor_viewer,1,0,0,0
+access_partner_vendor_editor,res.partner.vendor.editor,base.model_res_partner,group_vendor_editor,1,1,1,0
+access_partner_vendor_admin,res.partner.vendor.admin,base.model_res_partner,group_vendor_admin,1,1,1,1
+access_partner_category_viewer,res.partner.category.vendor.viewer,base.model_res_partner_category,group_vendor_viewer,1,0,0,0
+access_partner_category_editor,res.partner.category.vendor.editor,base.model_res_partner_category,group_vendor_editor,1,1,1,0
+access_partner_category_admin,res.partner.category.vendor.admin,base.model_res_partner_category,group_vendor_admin,1,1,1,1
+access_partner_bank_viewer,res.partner.bank.vendor.viewer,base.model_res_partner_bank,group_vendor_viewer,1,0,0,0
+access_partner_bank_editor,res.partner.bank.vendor.editor,base.model_res_partner_bank,group_vendor_editor,1,1,1,0
+access_partner_bank_admin,res.partner.bank.vendor.admin,base.model_res_partner_bank,group_vendor_admin,1,1,1,1

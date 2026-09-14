@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_vendor_api_log_manager,vpk.vendor.api.log manager,model_vpk_vendor_api_log,group_vendor_api_manager,1,1,1,1
+access_vpk_vendor_api_log_purchase,vpk.vendor.api.log purchase manager,model_vpk_vendor_api_log,purchase.group_purchase_manager,1,0,0,0

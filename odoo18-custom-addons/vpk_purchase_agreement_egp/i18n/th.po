@@ -1,0 +1,248 @@
+# Translation of Odoo Server.
+# License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
+
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-22 00:00+0000\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: vpk_purchase_agreement_egp
+msgid "e-GP Procurement"
+msgstr "e-GP จัดซื้อจัดจ้าง"
+
+#. module: vpk_purchase_agreement_egp
+#: model:ir.model.fields,field_description:vpk_purchase_agreement_egp.field_purchase_requisition__egp_reference
+msgid "e-GP Project Reference"
+msgstr "เลขที่โครงการ (e-GP)"
+
+#. module: vpk_purchase_agreement_egp
+#: model:ir.model.fields,field_description:vpk_purchase_agreement_egp.field_purchase_requisition__egp_project_name
+msgid "Project Name"
+msgstr "ชื่อโครงการ"
+
+#. module: vpk_purchase_agreement_egp
+#: model:ir.model.fields,field_description:vpk_purchase_agreement_egp.field_purchase_requisition__purchase_request_id
+msgid "การอ้างอิง"
+msgstr "การอ้างอิง"
+
+#. module: vpk_purchase_agreement_egp
+#: model:ir.model.fields,field_description:vpk_purchase_agreement_egp.field_purchase_requisition__purchase_request_amount_total
+msgid "วงเงินงบประมาณ"
+msgstr "วงเงินงบประมาณ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "e-GP Documents"
+msgstr "เอกสาร e-GP"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Title"
+msgstr "หัวข้อ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "e-GP Documents"
+msgstr "เอกสาร e-GP"
+
+#. module: vpk_purchase_agreement_egp
+msgid "ประกาศร่าง"
+msgstr "ประกาศร่าง"
+
+#. module: vpk_purchase_agreement_egp
+msgid "ประกาศเชิญชวน"
+msgstr "ประกาศเชิญชวน"
+
+#. module: vpk_purchase_agreement_egp
+msgid "ประกาศผู้ชนะ"
+msgstr "ประกาศผู้ชนะ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "สัญญา"
+msgstr "สัญญา"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Create RFQ"
+msgstr "สร้าง RFQ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "RFQs / Comparison"
+msgstr "RFQs / เปรียบเทียบ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Compare Product Lines"
+msgstr "เปรียบเทียบรายการ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Close Agreement"
+msgstr "ปิด Purchase Agreement"
+
+#. module: vpk_purchase_agreement_egp
+msgid "e-GP Bid Reference"
+msgstr "เลขอ้างอิงใบเสนอราคา e-GP"
+
+#. module: vpk_purchase_agreement_egp
+msgid "View"
+msgstr "ดูเอกสาร"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Please attach a PDF file before previewing."
+msgstr "กรุณาแนบไฟล์ PDF ก่อนดูเอกสาร"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Please confirm the purchase agreement before creating RFQs."
+msgstr "กรุณายืนยัน Purchase Agreement ก่อนสร้าง RFQ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Purchase requests configured for Purchase Agreement must create an e-GP Purchase Agreement first. Use Create Purchase Agreements instead of Create RFQ."
+msgstr "ใบขอซื้อประเภท Purchase Agreement ต้องสร้าง Purchase Agreement e-GP ก่อน กรุณาใช้ Create Purchase Agreements แทน Create RFQ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Submit PR"
+msgstr "ส่ง PR"
+
+#. module: vpk_purchase_agreement_egp
+msgid "PR Approved"
+msgstr "PR อนุมัติ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Draft PA"
+msgstr "ร่าง PA"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Confirm PA"
+msgstr "ยืนยัน PA"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Collect RFQs"
+msgstr "รับ RFQ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Compare Prices"
+msgstr "เปรียบเทียบราคา"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Award Vendor"
+msgstr "เลือกผู้ชนะ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Closed"
+msgstr "ปิดงาน"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Cancelled"
+msgstr "ยกเลิก"
+
+#. module: vpk_purchase_agreement_egp
+msgid "1. Submit PR"
+msgstr "1. ส่ง PR"
+
+#. module: vpk_purchase_agreement_egp
+msgid "2. PR Approved"
+msgstr "2. PR อนุมัติ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "3. Draft PA"
+msgstr "3. ร่าง PA"
+
+#. module: vpk_purchase_agreement_egp
+msgid "4. Confirm PA"
+msgstr "4. ยืนยัน PA"
+
+#. module: vpk_purchase_agreement_egp
+msgid "5. e-GP Documents"
+msgstr "5. เอกสาร e-GP"
+
+#. module: vpk_purchase_agreement_egp
+msgid "6. Collect RFQs"
+msgstr "6. รับ RFQ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "7. Compare Prices"
+msgstr "7. เปรียบเทียบราคา"
+
+#. module: vpk_purchase_agreement_egp
+msgid "8. Award Vendor"
+msgstr "8. เลือกผู้ชนะ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "9. Closed"
+msgstr "9. ปิดงาน"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Create purchase request and submit for approval."
+msgstr "สร้างใบขอซื้อและส่งขออนุมัติ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Create Purchase Agreement from approved PR."
+msgstr "สร้าง Purchase Agreement จาก PR ที่อนุมัติแล้ว"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Review products and confirm purchase agreement."
+msgstr "ตรวจสอบรายการสินค้าและยืนยัน Purchase Agreement"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Start e-GP procurement on the agreement."
+msgstr "เริ่มขั้นตอนจัดซื้อจัดจ้าง e-GP"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Record announcements, TOR, and contract in e-GP tab."
+msgstr "บันทึกประกาศ TOR และสัญญาในแท็บเอกสาร e-GP"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Create RFQ for each vendor from e-GP."
+msgstr "สร้าง RFQ ให้แต่ละผู้ขายจาก e-GP"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Compare vendor quotations and select the winner."
+msgstr "เปรียบเทียบใบเสนอราคาและเลือกผู้ชนะ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Confirm purchase order for the selected vendor."
+msgstr "ยืนยัน Purchase Order ของผู้ชนะ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Purchase agreement is completed."
+msgstr "Purchase Agreement เสร็จสมบูรณ์"
+
+#. module: vpk_purchase_agreement_egp
+msgid "e-GP Flow Stage"
+msgstr "ขั้นตอน e-GP"
+
+#. module: vpk_purchase_agreement_egp
+msgid "e-GP Workflow"
+msgstr "Flow การทำงาน e-GP"
+
+#. module: vpk_purchase_agreement_egp
+msgid "e-GP Purchase Agreement"
+msgstr "เอกสาร e-GP"
+
+#. module: vpk_purchase_agreement_egp
+msgid "เอกสาร e-GP"
+msgstr "เอกสาร e-GP"
+
+#. module: vpk_purchase_agreement_egp
+#: model:ir.model.fields,field_description:vpk_purchase_agreement_egp.field_purchase_requisition_egp_bid__amount_total
+msgid "ราคาที่เสนอ"
+msgstr "ราคาที่เสนอ"
+
+#. module: vpk_purchase_agreement_egp
+#: model:ir.model.fields,field_description:vpk_purchase_agreement_egp.field_purchase_order__egp_project_reference
+msgid "เลขที่โครงการ (e-GP)"
+msgstr "เลขที่โครงการ (e-GP)"
+
+#. module: vpk_purchase_agreement_egp
+#: model:ir.model.fields,field_description:vpk_purchase_agreement_egp.field_purchase_order__egp_project_name
+msgid "ชื่อโครงการ"
+msgstr "ชื่อโครงการ"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Please create a Purchase Agreement from this request first."
+msgstr "กรุณาสร้าง Purchase Agreement จากใบขอซื้อนี้ก่อน"
+
+#. module: vpk_purchase_agreement_egp
+msgid "Please confirm Purchase Agreement %(agreement)s before creating RFQs."
+msgstr "กรุณายืนยัน Purchase Agreement %(agreement)s ก่อนสร้าง RFQ"

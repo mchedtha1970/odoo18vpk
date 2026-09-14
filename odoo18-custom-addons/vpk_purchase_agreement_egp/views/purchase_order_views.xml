@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="purchase_order_form_egp" model="ir.ui.view">
+        <field name="name">purchase.order.form.egp</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <field name="origin" position="after">
+                <field
+                    name="egp_bid_reference"
+                    readonly="state in ('purchase', 'done', 'cancel')"
+                    invisible="not requisition_id or requisition_type != 'egp_procurement'"
+                />
+            </field>
+            <field name="partner_ref" position="after">
+                <field name="requisition_type" invisible="1"/>
+                <field
+                    name="egp_project_reference"
+                    invisible="not requisition_id or requisition_type != 'egp_procurement'"
+                    readonly="1"
+                />
+                <field
+                    name="egp_project_name"
+                    invisible="not requisition_id or requisition_type != 'egp_procurement'"
+                    readonly="1"
+                />
+            </field>
+        </field>
+    </record>
+</odoo>

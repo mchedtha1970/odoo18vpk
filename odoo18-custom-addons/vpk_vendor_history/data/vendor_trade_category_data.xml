@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- กลุ่มสถานะทางการค้า -->
+    <record id="partner_category_vendor_trade_root" model="res.partner.category">
+        <field name="name">สถานะทางการค้า</field>
+        <field name="color">4</field>
+    </record>
+
+    <record id="partner_category_regular_vendor" model="res.partner.category">
+        <field name="name">ผู้ค้าปกติ</field>
+        <field name="parent_id" ref="partner_category_vendor_trade_root"/>
+        <field name="color">10</field>
+    </record>
+
+    <record id="partner_category_unselected_bidder" model="res.partner.category">
+        <field name="name">ผู้เสนอราคาที่ไม่ได้รับการคัดเลือก</field>
+        <field name="parent_id" ref="partner_category_vendor_trade_root"/>
+        <field name="color">1</field>
+    </record>
+</odoo>

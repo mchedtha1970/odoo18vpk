@@ -1,0 +1,33 @@
+# -*- coding: utf-8 -*-
+{
+    "name": "VPK Asset Disposal",
+    "version": "18.0.1.1.1",
+    "category": "Accounting",
+    "summary": "ใบขออนุมัติจำหน่ายทรัพย์สิน (ดึงรายการ Sub-Status รอจำหน่าย)",
+    "author": "VPK",
+    "depends": [
+        "account_asset_management",
+        "account_asset_number",
+        "l10n_th_account_asset_management",
+        "analytic",
+        "mail",
+        "vpk_asset_menu",
+        "vpk_asset_transfer",
+        "vpk_asset_equipment",
+        "vpk_maintenance",
+        "base_tier_validation",
+    ],
+    "data": [
+        "security/asset_disposal_security.xml",
+        "security/ir.model.access.csv",
+        "data/ir_sequence_data.xml",
+        "data/tier_definition_data.xml",
+        "views/asset_disposal_views.xml",
+        "views/account_asset_views.xml",
+        "views/menuitem.xml",
+    ],
+    "license": "LGPL-3",
+    "installable": True,
+    "application": False,
+    "auto_install": False,
+}

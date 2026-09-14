@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_order_tree_tracking" model="ir.ui.view">
+        <field name="name">purchase.order.list.tracking</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_kpis_tree"/>
+        <field name="priority">150</field>
+        <field name="arch" type="xml">
+            <field name="partner_id" position="after">
+                <field name="has_purchase_request" optional="show" string="จาก PR"/>
+                <field name="purchase_request_ids" widget="many2many_tags" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_search_tracking" model="ir.ui.view">
+        <field name="name">purchase.order.search.tracking</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_filter"/>
+        <field name="arch" type="xml">
+            <filter name="draft" position="before">
+                <filter string="อ้างอิงจาก PR" name="filter_has_pr"
+                        domain="[('has_purchase_request', '=', True)]"/>
+                <filter string="ไม่มี PR" name="filter_no_pr"
+                        domain="[('has_purchase_request', '=', False)]"/>
+                <separator/>
+                <filter string="วันที่สั่งซื้อ" name="filter_date_order" date="date_order"/>
+                <separator/>
+            </filter>
+            <xpath expr="//group" position="inside">
+                <filter string="วัน" name="groupby_date_day"
+                        context="{'group_by': 'date_order:day'}"/>
+                <filter string="สัปดาห์" name="groupby_date_week"
+                        context="{'group_by': 'date_order:week'}"/>
+                <filter string="เดือน" name="groupby_date_month"
+                        context="{'group_by': 'date_order:month'}"/>
+                <filter string="ปี" name="groupby_date_year"
+                        context="{'group_by': 'date_order:year'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_pivot_tracking" model="ir.ui.view">
+        <field name="name">purchase.order.pivot.tracking</field>
+        <field name="model">purchase.order</field>
+        <field name="arch" type="xml">
+            <pivot string="สรุปการสั่งซื้อ/จ้าง/เช่า">
+                <field name="date_order" type="row" interval="month"/>
+                <field name="state" type="col"/>
+                <field name="amount_total" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_purchase_order_graph_tracking" model="ir.ui.view">
+        <field name="name">purchase.order.graph.tracking</field>
+        <field name="model">purchase.order</field>
+        <field name="arch" type="xml">
+            <graph string="กราฟการสั่งซื้อ/จ้าง/เช่า" type="bar">
+                <field name="date_order" type="row" interval="month"/>
+                <field name="amount_total" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_purchase_order_tracking" model="ir.actions.act_window">
+        <field name="name">รายงานสั่งซื้อ/จ้าง/เช่า</field>
+        <field name="res_model">purchase.order</field>
+        <field name="view_mode">list,pivot,graph,form</field>
+        <field name="domain">[('state', '!=', 'cancel')]</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ยังไม่มีใบสั่งซื้อ/จ้าง/เช่า
+            </p>
+        </field>
+    </record>
+
+    <record id="action_purchase_order_tracking_pivot" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">pivot</field>
+        <field name="view_id" ref="view_purchase_order_pivot_tracking"/>
+        <field name="act_window_id" ref="action_purchase_order_tracking"/>
+    </record>
+    <record id="action_purchase_order_tracking_graph" model="ir.actions.act_window.view">
+        <field name="sequence" eval="3"/>
+        <field name="view_mode">graph</field>
+        <field name="view_id" ref="view_purchase_order_graph_tracking"/>
+        <field name="act_window_id" ref="action_purchase_order_tracking"/>
+    </record>
+</odoo>

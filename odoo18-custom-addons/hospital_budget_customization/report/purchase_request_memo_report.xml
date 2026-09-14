@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_purchase_request_memo" model="report.paperformat">
+        <field name="name">Purchase Request Memo (A4)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">10</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">12</field>
+        <field name="margin_right">12</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_purchase_request_memo" model="ir.actions.report">
+        <field name="name">บันทึกข้อความขอซื้อ</field>
+        <field name="model">purchase.request</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hospital_budget_customization.report_purchase_request_memo</field>
+        <field name="report_file">hospital_budget_customization.report_purchase_request_memo</field>
+        <field name="print_report_name">'บันทึกข้อความขอซื้อ - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="purchase_request.model_purchase_request"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_purchase_request_memo"/>
+    </record>
+
+    <template id="report_purchase_request_memo">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <div
+                    t-attf-class="article o_th_memo_doc memo-style-#{o.memo_style_preset or 'official'}"
+                    t-attf-style="font-family: 'Sarabun', 'TH Sarabun New', sans-serif; font-size: 16px; color: #000;"
+                >
+                    <style type="text/css">
+                        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&amp;display=swap');
+                        .o_th_memo_doc { line-height: 1.4; }
+                        .o_th_memo_doc,
+                        .o_th_memo_doc * {
+                            font-family: 'Sarabun', 'TH Sarabun New', sans-serif !important;
+                            color: #000;
+                        }
+                        .memo-head-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                        }
+                        .memo-head-table td {
+                            vertical-align: middle;
+                        }
+                        .memo-emblem-cell {
+                            width: 16%;
+                            text-align: center;
+                        }
+                        .memo-title-cell {
+                            width: 84%;
+                            text-align: center;
+                            padding-right: 16%;
+                        }
+                        .memo-title {
+                            font-size: 48px;
+                            font-weight: 700;
+                            letter-spacing: 0.4px;
+                        }
+                        .memo-row {
+                            margin: 2px 0;
+                        }
+                        .memo-label {
+                            display: inline-block;
+                            min-width: 78px;
+                        }
+                        .memo-line {
+                            border-bottom: 1px dotted #000;
+                            display: inline-block;
+                            min-height: 20px;
+                            vertical-align: baseline;
+                            padding: 0 4px;
+                        }
+                        .memo-body {
+                            margin-top: 16px;
+                            text-align: left;
+                            line-height: 1.55;
+                        }
+                        .memo-style-formal .memo-body {
+                            line-height: 1.45;
+                        }
+                        .memo-style-compact .memo-body {
+                            line-height: 1.3;
+                            font-size: 15px;
+                        }
+                        .memo-body p {
+                            margin: 0 0 10px 0;
+                        }
+                        .memo-style-compact .memo-body p {
+                            margin: 0 0 6px 0;
+                        }
+                        .memo-body .html-content p {
+                            margin: 0 0 10px 0;
+                        }
+                        .memo-body .html-content ul,
+                        .memo-body .html-content ol {
+                            margin: 0 0 10px 28px;
+                            padding: 0;
+                        }
+                        .memo-body .html-content li {
+                            margin: 0 0 4px 0;
+                        }
+                        .memo-signature-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 34px;
+                        }
+                        .memo-signature-table td {
+                            width: 50%;
+                            text-align: center;
+                            vertical-align: top;
+                            padding-top: 8px;
+                        }
+                        .memo-sign-space {
+                            margin-top: 42px;
+                        }
+                    </style>
+                    <table class="memo-head-table" style="margin-bottom: 6px;">
+                        <tr>
+                            <td class="memo-emblem-cell">
+                                <img
+                                    t-if="o.company_id.th_garuda_emblem"
+                                    t-att-src="image_data_uri(o.company_id.th_garuda_emblem)"
+                                    style="max-height: 78px; max-width: 78px;"
+                                    alt="garuda"
+                                />
+                                <img
+                                    t-elif="o.company_id.logo"
+                                    t-att-src="image_data_uri(o.company_id.logo)"
+                                    style="max-height: 78px; max-width: 78px;"
+                                    alt="logo"
+                                />
+                            </td>
+                            <td class="memo-title-cell">
+                                <div class="memo-title">บันทึกข้อความ</div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div class="memo-row">
+                        <span class="memo-label">ส่วนราชการ</span>
+                        <span class="memo-line" style="width: 86%;">
+                            <t t-esc="o.memo_department_name or o.company_id.name or ''"/>
+                            <t t-if="o.memo_phone">
+                                <span> โทร </span>
+                                <t t-esc="o.memo_phone"/>
+                            </t>
+                        </span>
+                    </div>
+                    <div class="memo-row">
+                        <span class="memo-label">ที่</span>
+                        <span class="memo-line" style="width: 42%;">
+                            <t t-esc="o.memo_document_no or o.name or ''"/>
+                        </span>
+                        <span class="memo-label" style="margin-left: 18px; min-width: 64px;">วันที่</span>
+                        <span class="memo-line" style="width: 33%;">
+                            <span t-field="o.memo_date"/>
+                        </span>
+                    </div>
+                    <div class="memo-row">
+                        <span class="memo-label">เรื่อง</span>
+                        <span class="memo-line" style="width: 86%;">
+                            <t t-esc="o.memo_subject or ''"/>
+                        </span>
+                    </div>
+                    <div class="memo-row" style="margin-bottom: 8px;">
+                        <span class="memo-label">เรียน</span>
+                        <span class="memo-line" style="width: 86%;">
+                            <t t-esc="o.memo_to or ''"/>
+                        </span>
+                    </div>
+
+                    <div class="memo-body">
+                        <div class="html-content" t-if="o.memo_body_html" t-raw="o.memo_body_html"/>
+                        <div class="html-content" t-if="not o.memo_body_html and o.memo_intro" t-raw="o.memo_intro"/>
+                        <div class="html-content" t-if="not o.memo_body_html and o.memo_reason" t-raw="o.memo_reason"/>
+                        <div class="html-content" t-if="not o.memo_body_html and o.memo_scope" t-raw="o.memo_scope"/>
+                        <div class="html-content" t-if="not o.memo_body_html and not o.memo_scope">
+                            <t t-foreach="o.line_ids" t-as="line">
+                                <div t-if="not line.cancelled">
+                                    - <span t-field="line.name"/>
+                                    (<span t-field="line.product_qty"/> <span t-field="line.product_uom_id"/>)
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                    <table class="memo-signature-table">
+                        <tr>
+                            <td>
+                                <div>ผู้จัดทำ</div>
+                                <div class="memo-sign-space">ลงชื่อ ....................................................</div>
+                                <div>(<t t-esc="o.memo_signer_name or o.requested_by.name or ''"/>)</div>
+                                <div><t t-esc="o.memo_signer_position or ''"/></div>
+                            </td>
+                            <td>
+                                <div>ผู้อนุมัติ</div>
+                                <div class="memo-sign-space">ลงชื่อ ....................................................</div>
+                                <div>(<t t-esc="o.memo_approver_name or o.assigned_to.name or ''"/>)</div>
+                                <div><t t-esc="o.memo_approver_position or ''"/></div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_purchase_request_committee_memo" model="ir.actions.report">
+        <field name="name">บันทึกแต่งตั้งคณะกรรมการขอซื้อ</field>
+        <field name="model">purchase.request</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">hospital_budget_customization.report_purchase_request_committee_memo</field>
+        <field name="report_file">hospital_budget_customization.report_purchase_request_committee_memo</field>
+        <field
+            name="print_report_name"
+        >'บันทึกแต่งตั้งคณะกรรมการ - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="purchase_request.model_purchase_request"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_purchase_request_memo"/>
+    </record>
+
+    <template id="report_purchase_request_committee_memo">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <div
+                    class="article o_th_order_doc"
+                    style="font-family: 'Sarabun', 'TH Sarabun New', sans-serif; font-size: 15px; color: #000;"
+                >
+                    <style type="text/css">
+                        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&amp;display=swap');
+                        .o_th_order_doc,
+                        .o_th_order_doc * {
+                            font-family: 'Sarabun', 'TH Sarabun New', sans-serif !important;
+                            color: #000;
+                        }
+                        .order-head {
+                            text-align: center;
+                            margin-bottom: 8px;
+                        }
+                        .order-head .garuda {
+                            max-height: 96px;
+                            max-width: 96px;
+                            margin-bottom: 6px;
+                        }
+                        .order-title {
+                            font-size: 30px;
+                            font-weight: 700;
+                            line-height: 1.2;
+                            margin-bottom: 2px;
+                        }
+                        .order-no {
+                            font-size: 28px;
+                            font-weight: 700;
+                            line-height: 1.2;
+                            margin-bottom: 8px;
+                        }
+                        .order-subject {
+                            text-align: center;
+                            font-size: 23px;
+                            font-weight: 600;
+                            line-height: 1.55;
+                            margin: 6px 20px 12px 20px;
+                        }
+                        .order-body {
+                            line-height: 1.72;
+                            margin-top: 8px;
+                        }
+                        .order-body p {
+                            margin: 0 0 10px 0;
+                            text-indent: 60px;
+                        }
+                        .order-body .html-content p {
+                            margin: 0 0 10px 0;
+                            text-indent: 60px;
+                        }
+                        .committee-heading {
+                            margin: 10px 0 4px 0;
+                            font-weight: 700;
+                            text-indent: 0 !important;
+                        }
+                        .committee-line {
+                            margin: 0 0 5px 0;
+                            text-indent: 0 !important;
+                            padding-left: 42px;
+                        }
+                        .duty-heading {
+                            margin: 10px 0 2px 0;
+                            text-indent: 0 !important;
+                        }
+                        .duty-line {
+                            margin: 0 0 6px 0;
+                            text-indent: 0 !important;
+                            padding-left: 42px;
+                        }
+                        .order-signature {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 24px;
+                        }
+                        .order-signature td {
+                            width: 50%;
+                            text-align: center;
+                            vertical-align: top;
+                        }
+                        .sign-space {
+                            margin-top: 42px;
+                        }
+                    </style>
+
+                    <div class="order-head">
+                        <img
+                            t-if="o.company_id.th_garuda_emblem"
+                            t-att-src="image_data_uri(o.company_id.th_garuda_emblem)"
+                            class="garuda"
+                            alt="garuda"
+                        />
+                        <img
+                            t-elif="o.company_id.logo"
+                            t-att-src="image_data_uri(o.company_id.logo)"
+                            class="garuda"
+                            alt="logo"
+                        />
+                        <div class="order-title">คําสั่ง <t t-esc="o.memo_department_name or o.company_id.name or ''"/></div>
+                        <div class="order-no">ที่ <t t-esc="o.memo_document_no or o.name or ''"/></div>
+                    </div>
+
+                    <div class="order-subject">
+                        เรื่อง <t t-esc="o.committee_memo_subject or 'การแต่งตั้งคณะกรรมการขอซื้อ'"/>
+                    </div>
+
+                    <div class="order-body">
+                        <div class="html-content" t-if="o.committee_memo_body_html" t-raw="o.committee_memo_body_html"/>
+
+                        <t t-if="'procurement_committee_ids' in o._fields and o.procurement_committee_ids">
+                            <p class="committee-heading">๑. คณะกรรมการพิจารณาผลการประกวดราคาอิเล็กทรอนิกส์</p>
+                            <p
+                                class="committee-line"
+                                t-foreach="o.procurement_committee_ids"
+                                t-as="line"
+                            >
+                                (<t t-esc="line_index + 1"/>) <t t-esc="line.name or line.employee_id.name or '-'"/>
+                                <span t-if="line.approve_role == 'chairman'"> ประธานกรรมการ</span>
+                                <span t-elif="line.approve_role == 'committee'"> กรรมการ</span>
+                                <t t-if="line.department_id">
+                                    <br/>ตำแหน่ง <t t-esc="line.department_id.name"/>
+                                </t>
+                            </p>
+                        </t>
+
+                        <t t-if="'work_acceptance_committee_ids' in o._fields and o.work_acceptance_committee_ids">
+                            <p class="committee-heading">๒. คณะกรรมการตรวจรับพัสดุ</p>
+                            <p
+                                class="committee-line"
+                                t-foreach="o.work_acceptance_committee_ids"
+                                t-as="line"
+                            >
+                                (<t t-esc="line_index + 1"/>) <t t-esc="line.name or line.employee_id.name or '-'"/>
+                                <span t-if="line.approve_role == 'chairman'"> ประธานกรรมการ</span>
+                                <span t-elif="line.approve_role == 'committee'"> กรรมการ</span>
+                                <t t-if="line.department_id">
+                                    <br/>ตำแหน่ง <t t-esc="line.department_id.name"/>
+                                </t>
+                            </p>
+                        </t>
+
+                        <p class="duty-heading">โดยให้มีอำนาจและหน้าที่ ดังนี้</p>
+                        <p class="duty-line">๑) ดำเนินการตามระเบียบกระทรวงการคลังว่าด้วยการจัดซื้อจัดจ้างและการบริหารพัสดุภาครัฐ พ.ศ. ๒๕๖๐ และที่แก้ไขเพิ่มเติม</p>
+                        <p class="duty-line">๒) ปฏิบัติงานตามที่ได้รับมอบหมายให้แล้วเสร็จโดยถูกต้อง โปร่งใส และเป็นไปตามประโยชน์ของทางราชการ</p>
+                        <p>ทั้งนี้ ตั้งแต่บัดนี้เป็นต้นไป</p>
+                    </div>
+
+                    <table class="order-signature">
+                        <tr>
+                            <td></td>
+                            <td>
+                                <div>สั่ง ณ วันที่ <span t-field="o.committee_memo_date"/></div>
+                                <div class="sign-space">ลงชื่อ ....................................................</div>
+                                <div>(<t t-esc="o.memo_approver_name or o.assigned_to.name or ''"/>)</div>
+                                <div><t t-esc="o.memo_approver_position or ''"/></div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

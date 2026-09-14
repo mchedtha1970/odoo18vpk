@@ -1,0 +1,242 @@
+// Spiffy-like systray layout under user profile
+body.o_web_client.o_vpk_sidebar_menu .o_vpk_sidebar_systray {
+    --vpk-systray-icon-size: 18px;
+    --vpk-systray-item-size: 30px;
+    --vpk-systray-columns: 5;
+    --vpk-systray-gap: 6px;
+
+    display: grid !important;
+    grid-template-columns: repeat(var(--vpk-systray-columns), var(--vpk-systray-item-size)) !important;
+    justify-content: center !important;
+    justify-items: center;
+    align-items: center;
+    column-gap: var(--vpk-systray-gap) !important;
+    row-gap: var(--vpk-systray-gap) !important;
+    margin-bottom: 30px;
+    padding: 0 12px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+
+    .o_menu_systray {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        background: transparent;
+        border: none;
+        list-style: none;
+    }
+
+    .o_vpk_systray_primary,
+    .o_vpk_systray_secondary {
+        display: contents;
+    }
+
+    .o_vpk_systray_placeholder {
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .o_vpk_systray_item {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--vpk-systray-item-size) !important;
+        max-width: var(--vpk-systray-item-size) !important;
+        height: auto;
+        min-width: 0;
+        min-height: var(--vpk-systray-item-size);
+        padding: 0 !important;
+        margin: 0 !important;
+        flex: none;
+        --NavBar-entry-padding-left: 0 !important;
+        --NavBar-entry-padding-right: 0 !important;
+
+        > a,
+        > div,
+        .o-dropdown,
+        .dropdown {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        a,
+        button,
+        .dropdown-toggle,
+        .o_MessagingMenu_toggler,
+        .o_nav_entry {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            width: var(--vpk-systray-item-size) !important;
+            height: var(--vpk-systray-item-size) !important;
+            line-height: var(--vpk-systray-item-size) !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            --NavBar-entry-padding-left: 0 !important;
+            --NavBar-entry-padding-right: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            color: var(--vpk-sidebar-text) !important;
+            box-shadow: none !important;
+            text-decoration: none;
+            cursor: pointer;
+
+            &:hover,
+            &:focus,
+            &:active {
+                background: rgba(255, 255, 255, 0.05) !important;
+                color: var(--vpk-sidebar-text) !important;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03) !important;
+            }
+
+            .ri {
+                font-size: var(--vpk-systray-icon-size);
+                color: var(--vpk-sidebar-text);
+                vertical-align: middle;
+            }
+
+            .fa {
+                font-size: var(--vpk-systray-icon-size);
+                color: var(--vpk-sidebar-text);
+                vertical-align: middle;
+            }
+        }
+    }
+
+    // Remix icons for standard Odoo FA systray glyphs (Spiffy font_icons)
+    .fa.fa-bug {
+        font-family: "remixicon" !important;
+
+        &::before {
+            content: "\eb07" !important;
+        }
+    }
+
+    .fa.fa-comments {
+        font-family: "remixicon" !important;
+
+        &::before {
+            content: "\eb51" !important;
+        }
+    }
+
+    .fa.fa-clock-o {
+        font-family: "remixicon" !important;
+
+        &::before {
+            content: "\f215" !important;
+        }
+    }
+
+    // Company switcher
+    .o_switch_company_menu {
+        display: block !important;
+        width: auto !important;
+        margin: 0 !important;
+
+        .dropdown-toggle::after {
+            display: none !important;
+        }
+
+        .oe_topbar_name,
+        .fa-building {
+            display: none !important;
+        }
+
+        .o_vpk_company_icon {
+            font-size: var(--vpk-systray-icon-size);
+        }
+
+        .dropdown-menu {
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) !important;
+            min-width: max-content;
+            border: 0 !important;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+    }
+
+    // Debug manager dropdown
+    .o_debug_manager {
+        .dropdown-menu {
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) !important;
+            top: 30px;
+            border: 0 !important;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+    }
+
+    // Messaging / activity dropdowns
+    .o_MessagingMenu,
+    .o_mail_systray_item {
+        .o_MessagingMenu_dropdownMenu,
+        .o_mail_systray_dropdown {
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) !important;
+            top: 30px;
+            border: 0 !important;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+    }
+
+    // White notification badges (Spiffy style)
+    .o-mail-MessagingMenu-counter,
+    .o-mail-ActivityMenu-counter,
+    .o_notification_counter,
+    .badge.rounded-pill {
+        position: absolute !important;
+        top: -4px !important;
+        right: -8px !important;
+        left: auto !important;
+        transform: none !important;
+        margin: 0 !important;
+        min-width: 20px;
+        padding: 1px 5px !important;
+        border-radius: 2px !important;
+        background: #ffffff !important;
+        color: var(--vpk-sidebar-bg) !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        line-height: 14px !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .o_vpk_systray_edit a {
+        opacity: 0.5;
+
+        &:hover {
+            opacity: 0.75;
+        }
+    }
+
+    .pin_sidebar {
+        > * {
+            pointer-events: none;
+        }
+
+        &.pinned .ri-lock-unlock-line::before {
+            content: "\eece";
+        }
+    }
+
+    .theme_selector,
+    .sidebar_size_selector,
+    .debug_activator,
+    .vertical_sidemenu_behaviour,
+    .header_to_do_list,
+    .o_vpk_systray_tips {
+        a {
+            color: var(--vpk-sidebar-text) !important;
+        }
+    }
+}

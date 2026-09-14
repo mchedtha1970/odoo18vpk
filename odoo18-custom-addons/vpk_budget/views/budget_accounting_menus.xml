@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <delete model="ir.asset" search="[('path', '=', 'vpk_budget/static/src/scss/budget_form.scss')]"/>
+
+    <!-- Keep original Accounting menus visible -->
+    <record id="base_account_budget.menu_act_budget_view" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+    <record id="base_account_budget.menu_budget_post_form" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+    <record id="base_account_budget.menu_act_crossovered_budget_lines_view" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+    <record id="account.account_analytic_def_account" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+
+    <!-- Budget operations in VPK Budget app -->
+    <menuitem
+        id="menu_vpk_budget_budgets"
+        name="งบประมาณประจำปี"
+        parent="menu_vpk_budget_configuration"
+        action="base_account_budget.act_budget_view"
+        sequence="5"
+        groups="account.group_account_user,group_vpk_budget_user,group_vpk_budget_manager"
+    />
+
+    <menuitem
+        id="menu_vpk_budget_budget_lines"
+        name="รายการงบประมาณ"
+        parent="menu_vpk_budget_root"
+        action="base_account_budget.act_budget_lines_view"
+        sequence="20"
+        groups="account.group_account_user,group_vpk_budget_user"
+    />
+
+    <!-- Configuration: budget master from base_account_budget -->
+    <menuitem
+        id="menu_vpk_budget_budgetary_position"
+        name="หมวดงบประมาณ"
+        parent="menu_vpk_budget_configuration"
+        action="base_account_budget.open_budget_post_form"
+        sequence="30"
+        groups="account.group_account_manager,group_vpk_budget_manager"
+    />
+
+    <menuitem
+        id="menu_vpk_budget_analytic_account"
+        name="บัญชีวิเคราะห์"
+        parent="menu_vpk_budget_configuration"
+        action="analytic.action_account_analytic_account_form"
+        sequence="40"
+        groups="analytic.group_analytic_accounting,group_vpk_budget_manager"
+    />
+</odoo>

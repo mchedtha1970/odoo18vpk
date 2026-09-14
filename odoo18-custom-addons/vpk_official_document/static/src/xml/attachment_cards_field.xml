@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_official_document.AttachmentCardsField">
+        <div class="o_vpk_attachment_cards o-mail-AttachmentList d-flex flex-wrap align-items-start">
+            <div t-if="!files.length" class="text-muted">ยังไม่มีไฟล์ กดพิมพ์ PDF เพื่อสร้าง</div>
+            <div t-foreach="files" t-as="file" t-key="file.id"
+                 class="o-mail-AttachmentCard o_vpk_attachment_card d-flex rounded mb-1 me-2 mw-100 overflow-hidden bg-300"
+                 t-att-class="{ 'o-viewable': file.isViewable }"
+                 t-att-title="file.displayName"
+                 t-on-click="() => this.open(file)"
+                 role="button">
+                <div class="o-mail-AttachmentCard-image o_image flex-shrink-0 m-1"
+                     t-att-data-mimetype="file.mimetype"
+                     t-att-data-ext="file.extension"/>
+                <div class="overflow-hidden d-flex justify-content-center flex-column px-1">
+                    <div class="text-truncate" t-esc="file.displayName"/>
+                    <small class="text-uppercase" t-esc="file.extension"/>
+                </div>
+                <div class="flex-grow-1"/>
+                <div class="o-mail-AttachmentCard-aside d-flex flex-shrink-0">
+                    <button type="button"
+                            class="btn btn-link text-nowrap px-2"
+                            t-on-click.stop="() => this.open(file)"
+                            title="Open">
+                        Open
+                    </button>
+                    <a class="btn d-flex align-items-center justify-content-center rounded-0 border-0 bg-300 px-2"
+                       t-att-href="file.downloadUrl"
+                       t-on-click.stop=""
+                       title="Download">
+                        <i class="fa fa-download" role="img" aria-label="Download"/>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

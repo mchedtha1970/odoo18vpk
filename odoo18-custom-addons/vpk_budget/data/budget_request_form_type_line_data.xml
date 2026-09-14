@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="vpk.budget.request.form.type" name="_ensure_default_line_type_mappings"/>
+</odoo>

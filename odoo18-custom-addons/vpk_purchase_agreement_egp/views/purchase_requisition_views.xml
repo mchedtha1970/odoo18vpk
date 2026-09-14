@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_requisition_form_egp" model="ir.ui.view">
+        <field name="name">purchase.requisition.form.egp</field>
+        <field name="model">purchase.requisition</field>
+        <field name="inherit_id" ref="purchase_requisition.view_purchase_requisition_form"/>
+        <field name="arch" type="xml">
+            <field name="vendor_id" position="before">
+                <field name="user_id" position="move"/>
+            </field>
+            <field name="user_id" position="before">
+                <field name="requisition_type" position="move"/>
+            </field>
+            <field name="user_id" position="after">
+                <field name="is_egp_procurement" invisible="1"/>
+                <field
+                    name="egp_reference"
+                    invisible="requisition_type != 'egp_procurement'"
+                />
+                <field
+                    name="egp_project_name"
+                    invisible="requisition_type != 'egp_procurement'"
+                />
+                <field
+                    name="procurement_type_id"
+                    invisible="requisition_type != 'egp_procurement'"
+                    readonly="state != 'draft'"
+                />
+                <field
+                    name="purchase_type_id"
+                    invisible="requisition_type != 'egp_procurement'"
+                    readonly="state != 'draft'"
+                />
+                <field
+                    name="procurement_method_id"
+                    invisible="requisition_type != 'egp_procurement'"
+                    readonly="state != 'draft'"
+                />
+            </field>
+
+            <field name="reference" position="attributes">
+                <attribute name="invisible">requisition_type == 'egp_procurement'</attribute>
+            </field>
+            <field name="reference" position="after">
+                <field
+                    name="purchase_request_id"
+                    invisible="requisition_type != 'egp_procurement'"
+                    options="{'no_create': True}"
+                />
+                <field
+                    name="purchase_request_amount_total"
+                    invisible="requisition_type != 'egp_procurement'"
+                    readonly="1"
+                />
+            </field>
+
+            <button name="%(purchase_requisition.action_purchase_requisition_to_so)d" position="attributes">
+                <attribute name="invisible">state != 'confirmed' or requisition_type == 'egp_procurement'</attribute>
+            </button>
+
+            <button name="%(purchase_requisition.action_purchase_requisition_to_so)d" position="after">
+                <button
+                    name="action_open_create_rfq_wizard"
+                    type="object"
+                    string="Create RFQ"
+                    class="oe_highlight"
+                    invisible="requisition_type != 'egp_procurement' or state not in ('confirmed', 'done')"
+                />
+            </button>
+
+            <button name="action_done" position="attributes">
+                <attribute name="invisible">state != 'confirmed' or requisition_type in ('purchase_template', 'egp_procurement')</attribute>
+            </button>
+
+            <field name="state" position="attributes">
+                <attribute name="invisible">requisition_type in ('purchase_template', 'egp_procurement')</attribute>
+            </field>
+            <field name="state" position="after">
+                <field
+                    name="egp_flow_stage"
+                    widget="statusbar"
+                    invisible="requisition_type != 'egp_procurement'"
+                    statusbar_visible="draft,confirmed,egp_docs,rfq,compare,awarded,done"
+                />
+            </field>
+
+            <xpath expr="//sheet" position="before">
+                <field name="egp_flow_html" invisible="1"/>
+            </xpath>
+
+            <field name="product_description_variants" position="attributes">
+                <attribute name="string">คำอธิบายรายการซื้อใน e-GP</attribute>
+                <attribute name="invisible">parent.requisition_type != 'egp_procurement' and product_description_variants == ''</attribute>
+            </field>
+
+            <page name="products" position="before">
+                <page
+                    string="ขั้นตอนการทำงาน"
+                    name="egp_flow"
+                    invisible="1"
+                >
+                    <field name="egp_flow_html" nolabel="1"/>
+                </page>
+            </page>
+
+            <label for="date_start" position="attributes">
+                <attribute name="invisible">requisition_type in ('purchase_template', 'egp_procurement')</attribute>
+            </label>
+            <div class="o_row" position="attributes">
+                <attribute name="invisible">requisition_type in ('purchase_template', 'egp_procurement')</attribute>
+            </div>
+
+            <page name="products" position="after">
+                <page
+                    string="เอกสาร e-GP"
+                    name="egp_documents"
+                    invisible="requisition_type != 'egp_procurement'"
+                >
+                    <field name="egp_document_ids" context="{'default_requisition_id': id, 'default_egp_reference': egp_reference}">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field
+                                name="document_type_id"
+                                string="Title"
+                                options="{'no_create': True, 'no_open': True}"
+                            />
+                            <field name="egp_reference"/>
+                            <field name="document_date"/>
+                            <field name="document_filename" column_invisible="1"/>
+                            <field name="document_file" filename="document_filename" widget="binary"/>
+                            <button name="action_preview_document" type="object" string="View" icon="fa-eye"/>
+                            <field name="notes" optional="hide"/>
+                        </list>
+                    </field>
+                </page>
+                <page
+                    string="เปรียบเทียบราคา"
+                    name="egp_rfqs"
+                    invisible="requisition_type != 'egp_procurement'"
+                >
+                    <group>
+                        <button
+                            name="action_close_after_award"
+                            type="object"
+                            string="ปิดข้อตกลง (เลือกผู้ชนะแล้ว)"
+                            class="btn-primary"
+                            invisible="state != 'confirmed'"
+                        />
+                    </group>
+                    <field name="egp_bid_ids" context="{'default_requisition_id': id}">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field
+                                name="partner_id"
+                                options="{'no_create_edit': True}"
+                                context="{'res_partner_search_mode': 'supplier', 'default_supplier_rank': 1}"
+                            />
+                            <field name="egp_bid_reference"/>
+                            <field name="bid_date"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="amount_total" sum="รวม" string="ราคาที่เสนอ"/>
+                            <field name="is_winner"/>
+                            <field name="notes" optional="show"/>
+                        </list>
+                        <form string="ผู้เสนอราคา">
+                            <group>
+                                <group>
+                                    <field
+                                        name="partner_id"
+                                        options="{'no_create_edit': True}"
+                                        context="{'res_partner_search_mode': 'supplier', 'default_supplier_rank': 1}"
+                                    />
+                                    <field name="egp_bid_reference"/>
+                                    <field name="bid_date"/>
+                                </group>
+                                <group>
+                                    <field name="currency_id" invisible="1"/>
+                                    <field name="amount_total" string="ราคาที่เสนอ"/>
+                                    <field name="is_winner"/>
+                                    <field name="notes"/>
+                                </group>
+                            </group>
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="name" string="คำอธิบายรายการซื้อใน e-GP"/>
+                                    <field name="product_qty"/>
+                                    <field name="product_uom_id" groups="uom.group_uom"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="price_unit"/>
+                                    <field name="price_subtotal" sum="รวม"/>
+                                </list>
+                            </field>
+                        </form>
+                    </field>
+                </page>
+            </page>
+        </field>
+    </record>
+</odoo>

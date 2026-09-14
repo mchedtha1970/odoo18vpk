@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-inherit="vpk_sidebar_menu.AppMenuItem" t-inherit-mode="extension">
+        <xpath expr="//span[hasclass('o_vpk_app_name')]" position="after">
+            <span
+                t-if="getMenuBadge(app)"
+                class="o_vpk_menu_badge badge rounded-pill text-bg-warning"
+                t-esc="getMenuBadge(app)"
+            />
+        </xpath>
+    </t>
+
+    <t t-inherit="vpk_sidebar_menu.SubMenuItem" t-inherit-mode="extension">
+        <xpath expr="//a[hasclass('o_vpk_sub_link')]" position="inside">
+            <span
+                t-if="getMenuBadge(menu)"
+                class="o_vpk_menu_badge badge rounded-pill text-bg-warning"
+                t-esc="getMenuBadge(menu)"
+            />
+        </xpath>
+    </t>
+
+</templates>

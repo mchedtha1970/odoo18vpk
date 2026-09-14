@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_budget_comparison_report_wizard_form" model="ir.ui.view">
+        <field name="name">budget.comparison.report.wizard.form</field>
+        <field name="model">budget.comparison.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Budget Comparison Report">
+                <group>
+                    <field name="budget_id"/>
+                    <field name="fund_source_id"/>
+                    <field name="analytic_account_id"/>
+                </group>
+                <footer>
+                    <button
+                        name="action_print_report"
+                        type="object"
+                        string="Print PDF"
+                        class="btn-primary"
+                    />
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_budget_comparison_report_wizard" model="ir.actions.act_window">
+        <field name="name">Budget Comparison Report</field>
+        <field name="res_model">budget.comparison.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_budget_id': active_id}</field>
+    </record>
+
+    <record id="view_budget_form_hospital_report_action" model="ir.ui.view">
+        <field name="name">budget.view.form.hospital.report.action</field>
+        <field name="model">budget.budget</field>
+        <field name="inherit_id" ref="base_account_budget.crossovered_budget_view_form"/>
+        <field name="arch" type="xml">
+            <header position="inside">
+                <button
+                    name="%(action_budget_comparison_report_wizard)d"
+                    string="Budget Comparison Report"
+                    type="action"
+                    class="oe_highlight"
+                />
+            </header>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_vendor_product_issue" model="ir.actions.act_window">
+        <field name="name">สินค้าที่มีปัญหา</field>
+        <field name="res_model">vendor.product.issue</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                บันทึกสินค้าที่มีปัญหาของเจ้าหนี้
+            </p>
+            <p>เก็บประวัติปัญหาคุณภาพ ชำรุด หมดอายุ จำนวนไม่ครบ ฯลฯ ของแต่ละผู้จำหน่าย</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_vendor_history_root"
+              name="ประวัติเจ้าหนี้"
+              parent="purchase.menu_purchase_root"
+              sequence="85"/>
+
+    <menuitem id="menu_vendor_product_issue"
+              name="สินค้าที่มีปัญหา"
+              parent="menu_vendor_history_root"
+              action="action_vendor_product_issue"
+              sequence="10"/>
+
+    <menuitem id="menu_vendor_purchase_line_history"
+              name="ประวัติซื้อรายสินค้า"
+              parent="menu_vendor_history_root"
+              action="action_vendor_purchase_line_history"
+              sequence="20"/>
+</odoo>

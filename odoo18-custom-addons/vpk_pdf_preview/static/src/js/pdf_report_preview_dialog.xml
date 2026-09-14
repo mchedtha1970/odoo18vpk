@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_pdf_preview.PdfReportPreviewDialog">
+        <Dialog
+            size="'fs'"
+            title="props.title"
+            contentClass="'o_vpk_pdf_preview_dialog'"
+            bodyClass="'o_vpk_pdf_preview_body p-0'"
+            withBodyPadding="false"
+        >
+            <div class="o_vpk_pdf_preview_container position-relative">
+                <div t-if="state.loading" class="o_vpk_pdf_preview_loading d-flex align-items-center justify-content-center">
+                    <div class="text-center text-muted">
+                        <i class="fa fa-spinner fa-spin fa-2x mb-2"/>
+                        <div>กำลังสร้างตัวอย่าง PDF...</div>
+                    </div>
+                </div>
+                <div t-if="state.error" class="o_vpk_pdf_preview_error alert alert-danger m-3 mb-0">
+                    ไม่สามารถแสดงตัวอย่าง PDF ได้ กรุณาลองดาวน์โหลดแทน
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-secondary" t-on-click="onDownload">
+                            <i class="fa fa-download me-1"/>ดาวน์โหลด
+                        </button>
+                    </div>
+                </div>
+                <iframe
+                    t-if="state.viewerUrl"
+                    t-ref="pdfFrame"
+                    class="o_vpk_pdf_preview_iframe"
+                    t-att-src="state.viewerUrl"
+                    t-on-load="onIframeLoad"
+                    allowfullscreen="allowfullscreen"
+                />
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary o_vpk_pdf_preview_close" t-on-click="onClose">
+                    Close
+                </button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

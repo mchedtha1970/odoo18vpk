@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_product_form_fy_history" model="ir.ui.view">
+        <field name="name">product.product.form.fy.history</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='purchase']" position="inside">
+                <group string="เคยซื้อในปีงบประมาณ" name="fy_purchase_history"
+                       invisible="product_variant_count &gt; 1">
+                    <field name="fy_period_label" readonly="1"/>
+                    <field name="fy_purchased_qty" readonly="1"/>
+                    <field name="fy_last_price_unit" readonly="1"/>
+                    <field name="fy_avg_price_unit" readonly="1"/>
+                    <field name="fy_min_price_unit" readonly="1"/>
+                    <field name="fy_max_price_unit" readonly="1"/>
+                    <field name="fy_purchase_count" readonly="1"/>
+                    <field name="fy_purchase_amount" readonly="1"/>
+                    <button name="action_view_fy_purchase_history"
+                            type="object"
+                            string="ดูประวัติซื้อปีงบฯ"
+                            class="btn-link"
+                            icon="fa-history"
+                            invisible="fy_purchase_count == 0"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

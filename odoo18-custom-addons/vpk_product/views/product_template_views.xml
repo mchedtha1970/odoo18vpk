@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Left sidebar: show every category even when it has no products -->
+    <record id="product_template_search_view_searchpanel" model="ir.ui.view">
+        <field name="name">product.template.search.searchpanel</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <search position="inside">
+                <searchpanel view_types="kanban,list">
+                    <field name="categ_id"
+                           string="Product Category"
+                           icon="fa-th-list"
+                           enable_counters="1"
+                           expand="1"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+
+    <record id="product_template_form_view_uom_change" model="ir.ui.view">
+        <field name="name">product.template.form.uom.change</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_open_uom_change_wizard"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-exchange"
+                        groups="stock.group_stock_manager">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Change UoM</span>
+                    </div>
+                </button>
+            </div>
+            <field name="categ_id" position="after">
+                <field name="egp_purchase_name"
+                       widget="text"
+                       placeholder="ชื่อสินค้าที่ใช้ตอนจัดซื้อในระบบ e-GP"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="product_template_tree_view_egp_name" model="ir.ui.view">
+        <field name="name">product.template.list.egp.name</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="egp_purchase_name" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="product_template_search_view_egp_name" model="ir.ui.view">
+        <field name="name">product.template.search.egp.name</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="egp_purchase_name"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Kanban: เปลี่ยนป้าย "On hand / ในมือ" เป็น "คงเหลือ" -->
+    <record id="product_template_kanban_stock_qty_label" model="ir.ui.view">
+        <field name="name">product.template.kanban.stock.qty.label</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="stock.product_template_kanban_stock_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='qty_available']/.." position="replace">
+                <div groups="stock.group_stock_user" t-if="record.show_on_hand_qty_status_button.raw_value">
+                    คงเหลือ: <field name="qty_available"/> <field name="uom_id" groups="uom.group_uom"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="product_view_kanban_catalog_qty_label" model="ir.ui.view">
+        <field name="name">product.product.kanban.catalog.qty.label</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="stock.product_view_kanban_catalog"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='o_kanban_qty_available']" position="replace">
+                <div t-if="record.is_storable.raw_value" name="o_kanban_qty_available">
+                    <span>คงเหลือ: </span>
+                    <field name="qty_available"/>
+                    <field name="uom_id" class="ms-1" groups="uom.group_uom"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

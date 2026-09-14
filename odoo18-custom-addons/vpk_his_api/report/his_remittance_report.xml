@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_his_remittance" model="report.paperformat">
+        <field name="name">HIS Remittance A4</field>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">10</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">12</field>
+        <field name="margin_right">12</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_his_remittance" model="ir.actions.report">
+        <field name="name">ใบนำส่งเงิน</field>
+        <field name="model">vpk.his.remittance.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_his_api.report_his_remittance</field>
+        <field name="report_file">vpk_his_api.report_his_remittance</field>
+        <field name="print_report_name">'ใบนำส่งเงิน-%s' % (object.date_from)</field>
+        <field name="paperformat_id" ref="paperformat_his_remittance"/>
+    </record>
+
+    <template id="report_his_remittance">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="d" t-value="o.prepare_report_data()"/>
+                <t t-call="web.basic_layout">
+                    <style type="text/css">
+                        @font-face {
+                            font-family: "THSarabunNew";
+                            src: url("/l10n_th_base_utils/static/fonts/thai/THSarabunNew/THSarabunNew-Regular.ttf") format("truetype");
+                        }
+                        @font-face {
+                            font-family: "THSarabunNew-Bold";
+                            src: url("/l10n_th_base_utils/static/fonts/thai/THSarabunNew/THSarabunNew-Bold.ttf") format("truetype");
+                        }
+                        .vpk-remit, .vpk-remit * {
+                            font-family: "THSarabunNew", sans-serif !important;
+                        }
+                        .vpk-remit {
+                            font-size: 16pt;
+                            line-height: 1.35;
+                            color: #000;
+                        }
+                        .vpk-remit h2, .vpk-remit strong, .vpk-remit th {
+                            font-family: "THSarabunNew-Bold", "THSarabunNew", sans-serif !important;
+                            font-weight: normal !important;
+                        }
+                        .vpk-remit table { width: 100%; border-collapse: collapse; }
+                        .vpk-remit th, .vpk-remit td { border: 1px solid #000; padding: 3px 6px; }
+                        .vpk-remit th { text-align: center; background: #f0f0f0; }
+                        .vpk-remit .num { text-align: right; white-space: nowrap; }
+                        .vpk-remit .ctr { text-align: center; }
+                        .vpk-remit .sig { width: 48%; display: inline-block; text-align: center; vertical-align: top; }
+                        .vpk-remit h2 { margin: 0 0 4px 0; font-size: 22pt; }
+                    </style>
+                    <div class="page vpk-remit">
+                        <div class="text-center">
+                            <h2>ใบนำส่งเงิน</h2>
+                                <div t-esc="d['hospital_name']"/>
+                            </div>
+                            <p class="mt-3 mb-1">
+                                ข้าพเจ้า <strong t-esc="d['cashier_name']"/>
+                                ตำแหน่ง <t t-esc="d['cashier_job'] or '-'"/>
+                                <t t-if="d.get('shift')"> กะ <t t-esc="d['shift']"/></t>
+                            </p>
+                            <p class="mb-1">
+                                ได้จัดเก็บเงินจากใบเสร็จเลขที่
+                                <t t-esc="d['receipt_from'] or '-'"/>
+                                ถึง
+                                <t t-esc="d['receipt_to'] or '-'"/>
+                            </p>
+                            <p class="mb-3">
+                                ตั้งแต่วันที่ <t t-esc="d['datetime_from_disp']"/>
+                                ถึงวันที่ <t t-esc="d['datetime_to_disp']"/>
+                            </p>
+
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width:6%">ลำดับ</th>
+                                        <th>สิทธิการรักษา</th>
+                                        <th style="width:10%">OPD(ราย)</th>
+                                        <th style="width:14%">OPD</th>
+                                        <th style="width:10%">IPD(ราย)</th>
+                                        <th style="width:14%">IPD</th>
+                                        <th style="width:16%">จำนวนเงินรวม (บาท)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="d['rows']" t-as="row">
+                                        <td class="ctr" t-esc="row['no']"/>
+                                        <td t-esc="row['label']"/>
+                                        <td class="ctr" t-esc="row['op_count']"/>
+                                        <td class="num" t-esc="row['op_amount_disp']"/>
+                                        <td class="ctr" t-esc="row['ip_count']"/>
+                                        <td class="num" t-esc="row['ip_amount_disp']"/>
+                                        <td class="num" t-esc="row['total_disp']"/>
+                                    </tr>
+                                    <tr t-if="not d['rows']">
+                                        <td colspan="7" class="ctr">ไม่มีรายการ</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2" class="ctr"><strong>รวม</strong></td>
+                                        <td class="ctr"><strong t-esc="d['total_op_count']"/></td>
+                                        <td class="num"><strong t-esc="d['total_op_disp']"/></td>
+                                        <td class="ctr"><strong t-esc="d['total_ip_count']"/></td>
+                                        <td class="num"><strong t-esc="d['total_ip_disp']"/></td>
+                                        <td class="num"><strong t-esc="d['grand_total_disp']"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <p class="mt-2 mb-0">
+                                ยอดเงินตามใบเสร็จ จำนวน <strong t-esc="d['receipt_count']"/> ใบ
+                                &#160;&#160; จำนวนใบเสร็จที่ยกเลิก <strong t-esc="d['cancelled_count']"/> ใบ
+                            </p>
+                            <p class="mt-2 mb-1">
+                                จำนวนเงินรวมทั้งสิ้น
+                                <strong t-esc="d['grand_total_disp']"/>
+                                บาท
+                                (<t t-esc="d['amount_in_words']"/>)
+                            </p>
+
+                            <table class="mt-2">
+                                <tr>
+                                    <td style="width:40%">ได้รับเงินสด [OPD]</td>
+                                    <td class="num" style="width:20%" t-esc="d['cash_op_disp']"/>
+                                    <td class="ctr" style="width:10%">[IPD]</td>
+                                    <td class="num" t-esc="d['cash_ip_disp']"/>
+                                </tr>
+                                <tr>
+                                    <td>ชำระผ่านบัตรเครดิต [OPD]</td>
+                                    <td class="num" t-esc="d['card_op_disp']"/>
+                                    <td class="ctr">[IPD]</td>
+                                    <td class="num" t-esc="d['card_ip_disp']"/>
+                                </tr>
+                                <tr>
+                                    <td>โอนเงิน [OPD]</td>
+                                    <td class="num" t-esc="d['transfer_op_disp']"/>
+                                    <td class="ctr">[IPD]</td>
+                                    <td class="num" t-esc="d['transfer_ip_disp']"/>
+                                </tr>
+                                <tr>
+                                    <td>ลูกหนี้สิทธิ์ (รอเคลียร์)</td>
+                                    <td class="num" t-esc="d['entitlement_ar_disp']"/>
+                                    <td colspan="2"/>
+                                </tr>
+                            </table>
+
+                            <div class="mt-4">
+                                <div class="sig">
+                                    <div>ลงชื่อ ................................................. ผู้ส่งเงิน</div>
+                                    <div class="mt-2">(<t t-esc="d['cashier_name']"/>)</div>
+                                    <div>ตำแหน่ง <t t-esc="d['cashier_job'] or '.................................'"/></div>
+                                    <div>วันที่ <t t-esc="d['printed_at_disp']"/></div>
+                                </div>
+                                <div class="sig">
+                                    <div>ลงชื่อ ................................................. ผู้รับเงิน</div>
+                                    <div class="mt-2">(.................................................)</div>
+                                    <div>ตำแหน่ง .................................................</div>
+                                    <div>วันที่ ........../........../................</div>
+                                </div>
+                            </div>
+
+                            <p class="mt-4" style="font-size:11px; color:#444;">
+                                พิมพ์จาก <t t-esc="d['terminal']"/>
+                                วันที่ <t t-esc="d['printed_at_disp']"/>
+                                โดย <t t-esc="d['printer_user']"/>
+                            </p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

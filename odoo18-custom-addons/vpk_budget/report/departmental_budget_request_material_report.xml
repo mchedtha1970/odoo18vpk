@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_departmental_budget_material" model="report.paperformat">
+        <field name="name">Departmental Budget Material (A4 Landscape)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">8</field>
+        <field name="margin_bottom">8</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_departmental_budget_material" model="ir.actions.report">
+        <field name="name">แบบตั้งงบวัสดุ</field>
+        <field name="model">departmental.budget.request</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_budget.report_departmental_budget_material</field>
+        <field name="report_file">vpk_budget.report_departmental_budget_material</field>
+        <field name="print_report_name">'แบบตั้งงบวัสดุ - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_departmental_budget_request"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_departmental_budget_material"/>
+    </record>
+
+    <template id="report_departmental_budget_material">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="fy" t-value="doc._get_material_print_fiscal_years()"/>
+                <t t-set="lines" t-value="doc._get_material_print_lines()"/>
+                <div
+                    class="article o_vpk_budget_material_report"
+                    t-attf-style="font-family: 'Sarabun', 'TH Sarabun New', sans-serif; font-size: 14px; color: #000;"
+                >
+                    <style type="text/css">
+                        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&amp;display=swap');
+                        .o_vpk_budget_material_report,
+                        .o_vpk_budget_material_report * {
+                            font-family: 'Sarabun', 'TH Sarabun New', sans-serif !important;
+                            color: #000;
+                        }
+                        .vpk-budget-title {
+                            text-align: center;
+                            font-size: 16px;
+                            font-weight: 700;
+                            line-height: 1.35;
+                            margin-bottom: 8px;
+                        }
+                        .vpk-budget-material-type {
+                            margin: 6px 0 10px 0;
+                            font-size: 15px;
+                        }
+                        .vpk-budget-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            table-layout: fixed;
+                            font-size: 12px;
+                        }
+                        .vpk-budget-table th,
+                        .vpk-budget-table td {
+                            border: 1px solid #000;
+                            padding: 4px 3px;
+                            vertical-align: middle;
+                        }
+                        .vpk-budget-table th {
+                            text-align: center;
+                            font-weight: 700;
+                            line-height: 1.25;
+                        }
+                        .vpk-budget-table td.text-center {
+                            text-align: center;
+                        }
+                        .vpk-budget-table td.text-end {
+                            text-align: right;
+                        }
+                        .vpk-budget-reason {
+                            margin-top: 14px;
+                            font-size: 14px;
+                            line-height: 1.8;
+                        }
+                        .vpk-budget-signature {
+                            margin-top: 28px;
+                            width: 45%;
+                            margin-left: auto;
+                            text-align: center;
+                            font-size: 14px;
+                            line-height: 1.8;
+                        }
+                        .vpk-budget-note {
+                            margin-top: 18px;
+                            color: #c00000;
+                            font-size: 13px;
+                            font-weight: 700;
+                        }
+                    </style>
+
+                    <div class="vpk-budget-title">
+                        <div>
+                            สรุปแผนการใช้<t t-esc="doc.fund_source_id.name or 'เงินบำรุง'"/>
+                            หมวดค่าวัสดุ ปีงบประมาณ <t t-esc="fy['prior_year']"/>
+                            (<t t-esc="fy['prior_period']"/>) และ
+                        </div>
+                        <div>
+                            คำขอตั้งปรับแผน<t t-esc="doc.fund_source_id.name or 'เงินบำรุง'"/>
+                            หมวดค่าวัสดุ ประจำปีงบประมาณ <t t-esc="fy['current_year']"/>
+                        </div>
+                    </div>
+
+                    <div class="vpk-budget-material-type">
+                        <strong>ประเภทวัสดุ</strong>
+                        <span t-esc="doc._get_material_print_type_label()"/>
+                    </div>
+
+                    <table class="vpk-budget-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="width: 4%;">ลำดับที่</th>
+                                <th rowspan="2" style="width: 11%;">
+                                    แผนปีงบฯ <t t-esc="fy['prior_year']"/><br/>(บาท)
+                                </th>
+                                <th colspan="3" style="width: 33%;">
+                                    ผลการดำเนินงาน ณ 30 มิ.ย. <t t-esc="fy['prior_year']"/> (บาท)
+                                </th>
+                                <th rowspan="2" style="width: 10%;">ยอดเงินคงเหลือ<br/>(บาท)</th>
+                                <th rowspan="2" style="width: 10%;">วัสดุคงคลัง<br/>(บาท)</th>
+                                <th rowspan="2" style="width: 11%;">
+                                    คำขอตั้งแผนปีงบฯ <t t-esc="fy['current_year']"/><br/>(บาท)
+                                </th>
+                                <th rowspan="2" style="width: 11%;">หมายเหตุ</th>
+                            </tr>
+                            <tr>
+                                <th style="width: 11%;">เบิกจ่ายแล้ว</th>
+                                <th style="width: 11%;">เจ้าหนี้ค้างจ่าย</th>
+                                <th style="width: 11%;">ก่อหนี้/ยังไม่ตรวจรับ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-if="not lines">
+                                <tr>
+                                    <td colspan="9" class="text-center">-</td>
+                                </tr>
+                            </t>
+                            <t t-foreach="lines" t-as="line">
+                                <tr>
+                                    <td class="text-center">
+                                        <span t-esc="line_index + 1"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-field="line.prior_year_plan_amount" t-options="{'widget': 'float', 'precision': 2}"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-field="line.disbursed_amount" t-options="{'widget': 'float', 'precision': 2}"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-field="line.payable_amount" t-options="{'widget': 'float', 'precision': 2}"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-field="line.committed_not_received_amount" t-options="{'widget': 'float', 'precision': 2}"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-field="line.remaining_amount" t-options="{'widget': 'float', 'precision': 2}"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-field="line.stock_amount" t-options="{'widget': 'float', 'precision': 2}"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-field="line.requested_plan_amount" t-options="{'widget': 'float', 'precision': 2}"/>
+                                    </td>
+                                    <td>
+                                        <span t-esc="line.material_note or ''"/>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+
+                    <div class="vpk-budget-reason">
+                        <div><strong>เหตุผลประกอบคำขอตั้ง (ถ้ามี)</strong></div>
+                        <div t-if="doc.request_justification" t-esc="doc.request_justification"/>
+                        <t t-if="not doc.request_justification">
+                            <div>................................................................................................................................................................................................................................</div>
+                            <div>................................................................................................................................................................................................................................</div>
+                            <div>................................................................................................................................................................................................................................</div>
+                        </t>
+                    </div>
+
+                    <div class="vpk-budget-signature">
+                        <div>ลงชื่อ....................................................................(หัวหน้าฝ่าย/กลุ่มงาน/งาน)</div>
+                        <div>
+                            ลงวันที่..................
+                            <t t-if="doc.request_date">
+                                <t t-set="month_names" t-value="['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']"/>
+                                <t t-esc="doc.request_date.day"/>
+                                <t t-esc="month_names[doc.request_date.month]"/>
+                                พ.ศ.
+                                <t t-esc="doc.request_date.year + 543"/>
+                            </t>
+                            <t t-if="not doc.request_date">ส.ค. พ.ศ. 256...</t>
+                        </div>
+                    </div>
+
+                    <div class="vpk-budget-note">
+                        *** กรุณาส่งคืน ก.ยุทธศาสตร์และแผนงานโครงการ ภายในวันที่ 15 สิงหาคม <t t-esc="fy['prior_year']"/>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

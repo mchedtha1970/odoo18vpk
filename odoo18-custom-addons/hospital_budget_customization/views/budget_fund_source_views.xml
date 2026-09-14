@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_budget_fund_source_tree" model="ir.ui.view">
+        <field name="name">budget.fund.source.tree</field>
+        <field name="model">budget.fund.source</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_budget_fund_source_form" model="ir.ui.view">
+        <field name="name">budget.fund.source.form</field>
+        <field name="model">budget.fund.source</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="analytic_tag_ids" widget="many2many_tags"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_budget_fund_source" model="ir.actions.act_window">
+        <field name="name">แหล่งเงินงบประมาณ</field>
+        <field name="res_model">budget.fund.source</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="menu_budget_master_root"
+        name="ตั้งค่าข้อมูลงบประมาณ"
+        parent="account.menu_finance_configuration"
+        sequence="40"
+        groups="account.group_account_manager"
+    />
+
+    <menuitem
+        id="menu_budget_fund_source"
+        name="Master แหล่งเงิน"
+        parent="menu_budget_master_root"
+        action="action_budget_fund_source"
+        sequence="10"
+        groups="account.group_account_manager"
+    />
+</odoo>

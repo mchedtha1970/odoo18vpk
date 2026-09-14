@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="ir_config_soffice_path" model="ir.config_parameter">
+        <field name="key">vpk_official_document.soffice_path</field>
+        <field name="value">/opt/odoo18vpk/tools/libreoffice/opt/libreoffice25.8/program/soffice</field>
+    </record>
+</odoo>

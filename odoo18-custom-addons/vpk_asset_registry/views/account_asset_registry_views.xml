@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_asset_form_registry" model="ir.ui.view">
+        <field name="name">account.asset.form.registry.traceability</field>
+        <field name="model">account.asset</field>
+        <field name="inherit_id"
+               ref="account_asset_management.account_asset_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_sync_purchase_source"
+                        type="object"
+                        string="อัปเดตแหล่งที่มาจากเอกสารซื้อ"
+                        icon="fa-refresh"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_maintenance_history"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-wrench"
+                        invisible="maintenance_request_count == 0">
+                    <field name="maintenance_request_count"
+                           widget="statinfo"
+                           string="ประวัติการซ่อม"/>
+                </button>
+                <button name="action_view_related_contracts"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-file-text-o"
+                        invisible="related_contract_count == 0">
+                    <field name="related_contract_count"
+                           widget="statinfo"
+                           string="สัญญาที่เกี่ยวข้อง"/>
+                </button>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="ทะเบียนและแหล่งที่มา"
+                      name="asset_registry_traceability">
+                    <group>
+                        <group string="รายละเอียดสินทรัพย์">
+                            <field name="fiscal_year"/>
+                            <field name="profile_id"
+                                   string="ประเภทสินทรัพย์"/>
+                            <field name="product_id"/>
+                            <field name="acquisition_date"/>
+                            <field name="useful_life_years"/>
+                            <field name="asset_age_years" readonly="1"/>
+                        </group>
+                        <group string="มูลค่า">
+                            <field name="purchase_value" readonly="1"/>
+                            <field name="value_residual" readonly="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="คำอธิบายรายการสินทรัพย์">
+                        <field name="asset_description" nolabel="1"/>
+                    </group>
+                    <group>
+                        <group string="แหล่งที่มาจากการจัดซื้อ">
+                            <field name="partner_id"
+                                   string="ชื่อผู้ขาย"/>
+                            <field name="vendor_code"/>
+                            <field name="purchase_order_id"/>
+                            <field name="purchase_order_date"/>
+                            <field name="vendor_bill_id"/>
+                            <field name="vendor_bill_reference"/>
+                            <field name="vendor_bill_date"/>
+                        </group>
+                        <group string="เลขอ้างอิงภาครัฐ">
+                            <field name="gfmis_document_number"/>
+                            <field name="gfmis_commitment_number"/>
+                            <field name="vcr_number"/>
+                            <field name="vcr_date"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="หน่วยงานและผู้ดูแล">
+                            <field name="owning_analytic_account_id"
+                                   string="หน่วยงานที่เป็นเจ้าของ"
+                                   options="{'no_create': True}"/>
+                            <field name="owner_department_code"/>
+                            <field name="custodian_user_id"/>
+                        </group>
+                        <group string="โครงการและแหล่งเงิน">
+                            <field name="project_code"/>
+                            <field name="project_name"/>
+                            <field name="budget_id"/>
+                            <field name="fund_source_id"/>
+                        </group>
+                    </group>
+                    <group string="หมายเหตุ">
+                        <field name="registry_note" nolabel="1"/>
+                    </group>
+                </page>
+                <page string="ประวัติการซ่อม"
+                      name="asset_maintenance_history">
+                    <group>
+                        <group>
+                            <field name="maintenance_request_count"
+                                   readonly="1"/>
+                            <field name="open_maintenance_count"
+                                   readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="last_maintenance_date"
+                                   readonly="1"/>
+                            <field name="last_maintenance_stage_id"
+                                   readonly="1"/>
+                            <field name="total_repair_parts_value"
+                                   readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="maintenance_request_ids"
+                           readonly="1"
+                           context="{'default_equipment_id': equipment_id}">
+                        <list create="false" delete="false"
+                              decoration-success="sub_state == 'repaired'"
+                              decoration-warning="sub_state != 'repaired'">
+                            <field name="request_date"/>
+                            <field name="name"/>
+                            <field name="equipment_id"/>
+                            <field name="maintenance_type"/>
+                            <field name="sub_state"/>
+                            <field name="assessment_result_id"
+                                   optional="show"/>
+                            <field name="stage_id"/>
+                            <field name="user_id"/>
+                            <field name="close_date"/>
+                            <field name="duration"/>
+                            <field name="parts_total_value"
+                                   sum="รวมมูลค่าอะไหล่"/>
+                            <field name="priority" optional="hide"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="สัญญาที่เกี่ยวข้อง"
+                      name="asset_related_contracts">
+                    <group>
+                        <group>
+                            <field name="related_contract_count"
+                                   readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="active_contract_count"
+                                   readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="related_contract_ids"
+                           mode="list,form"
+                           context="{
+                               'default_asset_id': id,
+                               'default_partner_id': partner_id
+                           }"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_asset_registry_list" model="ir.ui.view">
+        <field name="name">account.asset.registry.traceability.list</field>
+        <field name="model">account.asset</field>
+        <field name="arch" type="xml">
+            <list string="ทะเบียนสินทรัพย์และแหล่งที่มา"
+                  default_order="fiscal_year desc, number, name">
+                <field name="number" string="เลขสินทรัพย์"/>
+                <field name="name"/>
+                <field name="fiscal_year"/>
+                <field name="profile_id" string="ประเภทสินทรัพย์"/>
+                <field name="acquisition_date"/>
+                <field name="vendor_code"/>
+                <field name="partner_id" string="ชื่อผู้ขาย"/>
+                <field name="purchase_order_id"/>
+                <field name="purchase_order_date" optional="show"/>
+                <field name="vendor_bill_id"/>
+                <field name="gfmis_document_number"/>
+                <field name="vcr_number"/>
+                <field name="owner_department_code"/>
+                <field name="owning_analytic_account_id"
+                       string="หน่วยงานเจ้าของ"/>
+                <field name="custodian_user_id"/>
+                <field name="maintenance_request_count"
+                       string="ประวัติซ่อม"/>
+                <field name="open_maintenance_count"
+                       string="กำลังซ่อม"
+                       optional="show"/>
+                <field name="last_maintenance_date"
+                       optional="show"/>
+                <field name="related_contract_count"
+                       string="สัญญา"
+                       optional="show"/>
+                <field name="active_contract_count"
+                       string="สัญญามีผล"
+                       optional="show"/>
+                <field name="purchase_value"
+                       sum="รวมมูลค่าสินทรัพย์"/>
+                <field name="value_residual"
+                       sum="รวมมูลค่าคงเหลือ"/>
+                <field name="asset_age_years" optional="show"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_account_asset_registry_search" model="ir.ui.view">
+        <field name="name">account.asset.registry.traceability.search</field>
+        <field name="model">account.asset</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาทะเบียนสินทรัพย์">
+                <field name="number"/>
+                <field name="name"/>
+                <field name="fiscal_year"/>
+                <field name="profile_id"/>
+                <field name="product_id"/>
+                <field name="partner_id"/>
+                <field name="vendor_code"/>
+                <field name="purchase_order_id"/>
+                <field name="vendor_bill_id"/>
+                <field name="gfmis_document_number"/>
+                <field name="vcr_number"/>
+                <field name="owning_analytic_account_id"/>
+                <field name="custodian_user_id"/>
+                <field name="project_code"/>
+                <field name="fund_source_id"/>
+                <filter string="ไม่มี PO" name="asset_without_po"
+                        domain="[('purchase_order_id', '=', False)]"/>
+                <filter string="ไม่มีใบแจ้งหนี้" name="asset_without_bill"
+                        domain="[('vendor_bill_id', '=', False)]"/>
+                <filter string="ไม่มีผู้ดูแล" name="asset_without_custodian"
+                        domain="[('custodian_user_id', '=', False)]"/>
+                <filter string="มีประวัติการซ่อม" name="asset_has_maintenance"
+                        domain="[('maintenance_request_ids', '!=', False)]"/>
+                <filter string="ไม่มีประวัติการซ่อม" name="asset_without_maintenance"
+                        domain="[('maintenance_request_ids', '=', False)]"/>
+                <filter string="มีสัญญาที่เกี่ยวข้อง" name="asset_has_contract"
+                        domain="[('related_contract_ids', '!=', False)]"/>
+                <filter string="ไม่มีสัญญาที่เกี่ยวข้อง"
+                        name="asset_without_contract"
+                        domain="[('related_contract_ids', '=', False)]"/>
+                <separator/>
+                <filter string="ปีงบประมาณ" name="group_asset_fiscal_year"
+                        domain="[]" context="{'group_by': 'fiscal_year'}"/>
+                <filter string="ประเภทสินทรัพย์" name="group_asset_profile"
+                        domain="[]" context="{'group_by': 'profile_id'}"/>
+                <filter string="ผู้ขาย" name="group_asset_vendor"
+                        domain="[]" context="{'group_by': 'partner_id'}"/>
+                <filter string="หน่วยงานเจ้าของ" name="group_asset_owner"
+                        domain="[]" context="{'group_by': 'owning_analytic_account_id'}"/>
+                <filter string="แหล่งเงิน" name="group_asset_fund"
+                        domain="[]" context="{'group_by': 'fund_source_id'}"/>
+                <filter string="ผู้ดูแล" name="group_asset_custodian"
+                        domain="[]" context="{'group_by': 'custodian_user_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_account_asset_registry" model="ir.actions.act_window">
+        <field name="name">ทะเบียนสินทรัพย์และแหล่งที่มา</field>
+        <field name="res_model">account.asset</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_account_asset_registry_list"/>
+        <field name="search_view_id"
+               ref="view_account_asset_registry_search"/>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_account_asset_registry_list"
+            model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_account_asset_registry_list"/>
+        <field name="act_window_id" ref="action_account_asset_registry"/>
+    </record>
+
+    <record id="action_account_asset_registry_form"
+            model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">form</field>
+        <field name="view_id"
+               ref="account_asset_management.account_asset_view_form"/>
+        <field name="act_window_id" ref="action_account_asset_registry"/>
+    </record>
+
+    <menuitem id="menu_account_asset_registry"
+              name="ทะเบียนสินทรัพย์และแหล่งที่มา"
+              parent="account_asset_management.menu_finance_assets"
+              action="action_account_asset_registry"
+              sequence="15"
+              groups="account.group_account_user"/>
+</odoo>

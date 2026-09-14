@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_official_document.PdfIconField">
+        <button t-if="hasFile"
+                type="button"
+                class="o_vpk_pdf_icon btn btn-link p-0"
+                t-att-title="fileName"
+                t-on-click.stop.prevent="open">
+            <img class="o_vpk_pdf_icon_img"
+                 src="/web/static/img/mimetypes/pdf.svg"
+                 width="28"
+                 height="28"
+                 alt="PDF"/>
+        </button>
+        <span t-else="" class="text-muted">—</span>
+    </t>
+</templates>

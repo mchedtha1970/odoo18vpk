@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_asset_parent_form_set" model="ir.ui.view">
+        <field name="name">account.asset.parent.form.asset.set</field>
+        <field name="model">account.asset.parent</field>
+        <field name="inherit_id"
+               ref="l10n_th_account_asset_management.account_asset_parent_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_view_assets']"
+                   position="inside">
+                <field name="component_count"
+                       widget="statinfo"
+                       string="ส่วนประกอบ"/>
+            </xpath>
+            <xpath expr="//group[@name='group_left']/field[@name='name']"
+                   position="after">
+                <field name="set_type"/>
+                <field name="location"/>
+                <field name="owning_analytic_account_id"/>
+                <field name="responsible_user_id"/>
+                <field name="project_code"/>
+            </xpath>
+            <xpath expr="//group[@name='group_right']/field[@name='note']"
+                   position="before">
+                <field name="component_count" readonly="1"/>
+                <field name="active_component_count" readonly="1"/>
+                <field name="total_purchase_value" readonly="1"/>
+                <field name="total_residual_value" readonly="1"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="description"/>
+            </xpath>
+            <xpath expr="//sheet/group" position="after">
+                <notebook>
+                    <page string="รายการสินทรัพย์ส่วนประกอบ"
+                          name="asset_set_components">
+                        <field name="asset_ids"
+                               context="{'default_parent_id': id}">
+                            <list editable="bottom"
+                                  default_order="component_sequence, number, id"
+                                  decoration-muted="state == 'removed'">
+                                <field name="component_sequence"
+                                       widget="handle"/>
+                                <field name="number"/>
+                                <field name="name"/>
+                                <field name="component_role"/>
+                                <field name="profile_id"/>
+                                <field name="acquisition_date"/>
+                                <field name="owning_analytic_account_id"
+                                       optional="show"/>
+                                <field name="purchase_value"
+                                       sum="รวมมูลค่าซื้อ"/>
+                                <field name="value_residual"
+                                       sum="รวมมูลค่าคงเหลือ"/>
+                                <field name="currency_id"
+                                       column_invisible="True"/>
+                                <field name="state" widget="badge"/>
+                                <field name="component_note"
+                                       optional="hide"/>
+                            </list>
+                        </field>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_asset_parent_list_set" model="ir.ui.view">
+        <field name="name">account.asset.parent.list.asset.set</field>
+        <field name="model">account.asset.parent</field>
+        <field name="inherit_id"
+               ref="l10n_th_account_asset_management.account_asset_parent_view_list"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="set_type"/>
+                <field name="location"/>
+                <field name="component_count"/>
+                <field name="active_component_count"
+                       optional="show"/>
+                <field name="total_purchase_value"
+                       sum="รวมมูลค่าซื้อ"/>
+                <field name="total_residual_value"
+                       sum="รวมมูลค่าคงเหลือ"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="responsible_user_id" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_account_asset_parent_search_set" model="ir.ui.view">
+        <field name="name">account.asset.parent.search.asset.set</field>
+        <field name="model">account.asset.parent</field>
+        <field name="inherit_id"
+               ref="l10n_th_account_asset_management.account_asset_parent_view_search"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="set_type"/>
+                <field name="location"/>
+                <field name="project_code"/>
+                <field name="responsible_user_id"/>
+            </field>
+            <xpath expr="//group[@name='groupby']" position="inside">
+                <filter name="group_by_set_type"
+                        string="ประเภทสินทรัพย์ชุด"
+                        context="{'group_by': 'set_type'}"/>
+                <filter name="group_by_responsible"
+                        string="ผู้รับผิดชอบ"
+                        context="{'group_by': 'responsible_user_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_asset_form_set_relation" model="ir.ui.view">
+        <field name="name">account.asset.form.asset.set.relation</field>
+        <field name="model">account.asset</field>
+        <field name="inherit_id"
+               ref="account_asset_management.account_asset_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="ความสัมพันธ์สินทรัพย์ชุด"
+                      name="asset_set_relation">
+                    <group>
+                        <group>
+                            <field name="parent_id"
+                                   string="สินทรัพย์ชุด/งานระบบ"/>
+                            <field name="component_sequence"/>
+                            <field name="component_role"/>
+                        </group>
+                        <group>
+                            <field name="component_note"
+                                   placeholder="อธิบายหน้าที่และความเชื่อมโยงกับส่วนประกอบอื่น..."/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_asset_registry_list_set" model="ir.ui.view">
+        <field name="name">account.asset.registry.list.asset.set</field>
+        <field name="model">account.asset</field>
+        <field name="inherit_id"
+               ref="vpk_asset_registry.view_account_asset_registry_list"/>
+        <field name="arch" type="xml">
+            <field name="profile_id" position="after">
+                <field name="parent_id"
+                       string="สินทรัพย์ชุด"
+                       optional="show"/>
+                <field name="component_role"
+                       optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="l10n_th_account_asset_management.action_account_asset_parent"
+            model="ir.actions.act_window">
+        <field name="name">สินทรัพย์ประกอบเป็นชุด</field>
+    </record>
+
+    <record id="l10n_th_account_asset_management.account_asset_parent_menu"
+            model="ir.ui.menu">
+        <field name="name">สินทรัพย์ประกอบเป็นชุด</field>
+    </record>
+</odoo>

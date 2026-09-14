@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="partner_category_entitlement_payer" model="res.partner.category">
+        <field name="name">ลูกหนี้สิทธิ HIS</field>
+    </record>
+    <record id="partner_category_ipd_patient" model="res.partner.category">
+        <field name="name">ลูกหนี้คนไข้ IPD HIS</field>
+    </record>
+</odoo>

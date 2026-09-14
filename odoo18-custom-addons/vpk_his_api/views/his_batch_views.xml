@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_his_batch_list" model="ir.ui.view">
+        <field name="name">vpk.his.batch.list</field>
+        <field name="model">vpk.his.batch</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_open_remittance_wizard" type="object"
+                            string="ใบนำส่งเงิน"/>
+                </header>
+                <field name="name"/>
+                <field name="business_date"/>
+                <field name="batch_type"/>
+                <field name="source_system"/>
+                <field name="external_id"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'posted'"
+                       decoration-warning="state == 'ready'"
+                       decoration-danger="state == 'error'"
+                       decoration-muted="state in ('draft', 'cancelled')"/>
+                <field name="sales_total" optional="show"/>
+                <field name="payments_total" optional="show"/>
+                <field name="stock_qty_total" optional="hide"/>
+                <field name="line_error_count" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_his_batch_search" model="ir.ui.view">
+        <field name="name">vpk.his.batch.search</field>
+        <field name="model">vpk.his.batch</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="external_id"/>
+                <field name="source_system"/>
+                <field name="stock_line_ids" string="HN / VN"
+                       filter_domain="['|', ('stock_line_ids.hn', 'ilike', self), ('stock_line_ids.vn', 'ilike', self)]"/>
+                <filter string="Ready" name="ready" domain="[('state', '=', 'ready')]"/>
+                <filter string="Error" name="error" domain="[('state', '=', 'error')]"/>
+                <filter string="Posted" name="posted" domain="[('state', '=', 'posted')]"/>
+                <separator/>
+                <filter string="Revenue" name="revenue" domain="[('batch_type', '=', 'revenue')]"/>
+                <filter string="Stock Issue" name="stock_issue" domain="[('batch_type', '=', 'stock_issue')]"/>
+                <filter string="Stock Requisition" name="stock_requisition" domain="[('batch_type', '=', 'stock_requisition')]"/>
+                <group>
+                    <filter string="State" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Date" name="group_date" context="{'group_by': 'business_date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_his_batch_form" model="ir.ui.view">
+        <field name="name">vpk.his.batch.form</field>
+        <field name="model">vpk.his.batch</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_validate" type="object" string="Validate"
+                            class="btn-secondary"
+                            invisible="state in ('posted', 'cancelled')"/>
+                    <button name="action_post" type="object" string="Post"
+                            class="btn-primary"
+                            invisible="state != 'ready'"
+                            confirm="Post this HIS batch to accounting/inventory?"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state in ('posted', 'cancelled')"/>
+                    <button name="action_open_remittance_wizard" type="object"
+                            string="ใบนำส่งเงิน" class="btn-secondary"
+                            invisible="batch_type != 'revenue'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,ready,posted"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_invoices" type="object"
+                                class="oe_stat_button" icon="fa-file-text-o"
+                                invisible="invoice_count == 0">
+                            <field name="invoice_count" widget="statinfo" string="Invoices"/>
+                        </button>
+                        <button name="action_open_payments" type="object"
+                                class="oe_stat_button" icon="fa-money"
+                                invisible="payment_count == 0">
+                            <field name="payment_count" widget="statinfo" string="Payments"/>
+                        </button>
+                        <button name="action_open_pickings" type="object"
+                                class="oe_stat_button" icon="fa-truck"
+                                invisible="picking_count == 0">
+                            <field name="picking_count" widget="statinfo" string="Pickings"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="batch_type" readonly="state == 'posted'"/>
+                            <field name="source_system" readonly="state == 'posted'"/>
+                            <field name="external_id" readonly="state == 'posted'"/>
+                            <field name="original_external_id"
+                                   invisible="batch_type != 'reversal'"
+                                   readonly="state == 'posted'"/>
+                            <field name="original_batch_id"
+                                   invisible="batch_type != 'reversal'"/>
+                        </group>
+                        <group>
+                            <field name="business_date" readonly="state == 'posted'"/>
+                            <field name="shift" readonly="state == 'posted'"/>
+                            <field name="currency_id" readonly="state == 'posted'"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="line_error_count" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Error" invisible="not error_message">
+                        <field name="error_message" nolabel="1" colspan="2"/>
+                    </group>
+                    <notebook>
+                        <page string="Sales" name="sales"
+                              invisible="batch_type in ('stock_issue', 'stock_requisition')">
+                            <group>
+                                <field name="control_sales_total"/>
+                                <field name="sales_total"/>
+                            </group>
+                            <field name="sale_line_ids" readonly="state == 'posted'">
+                                <list editable="bottom"
+                                      decoration-danger="line_state == 'error'">
+                                    <field name="line_external_id"/>
+                                    <field name="ticket_external_id" optional="show"/>
+                                    <field name="entitlement_code"/>
+                                    <field name="entitlement_map_id" optional="hide"/>
+                                    <field name="service_type"/>
+                                    <field name="item_type"/>
+                                    <field name="department_code" optional="hide"/>
+                                    <field name="qty" optional="hide"/>
+                                    <field name="amount_total"/>
+                                    <field name="income_account_id" optional="show"/>
+                                    <field name="invoice_id" optional="hide"/>
+                                    <field name="line_state"/>
+                                    <field name="error_message" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Payments" name="payments"
+                              invisible="batch_type in ('stock_issue', 'stock_requisition')">
+                            <group>
+                                <field name="control_payments_total"/>
+                                <field name="payments_total"/>
+                            </group>
+                            <field name="payment_line_ids" readonly="state == 'posted'">
+                                <list editable="bottom"
+                                      decoration-danger="line_state == 'error'">
+                                    <field name="line_external_id"/>
+                                    <field name="ticket_external_id" optional="show"/>
+                                    <field name="payment_method_code"/>
+                                    <field name="payment_method_map_id" optional="hide"/>
+                                    <field name="entitlement_code"/>
+                                    <field name="service_type" optional="show"/>
+                                    <field name="amount"/>
+                                    <field name="journal_id"/>
+                                    <field name="payment_id" optional="hide"/>
+                                    <field name="line_state"/>
+                                    <field name="error_message" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="ตัดจ่ายสินค้า" name="stock"
+                              invisible="batch_type not in ('stock_issue', 'reversal') or (batch_type == 'reversal' and original_batch_id.batch_type == 'stock_requisition')">
+                            <group>
+                                <field name="control_qty_total"/>
+                                <field name="stock_qty_total"/>
+                            </group>
+                            <field name="stock_line_ids" readonly="state == 'posted'">
+                                <list editable="bottom"
+                                      decoration-danger="line_state == 'error'">
+                                    <field name="line_external_id"/>
+                                    <field name="hn"/>
+                                    <field name="vn"/>
+                                    <field name="item_type" optional="show"/>
+                                    <field name="product_code"/>
+                                    <field name="product_id"/>
+                                    <field name="warehouse_code"/>
+                                    <field name="warehouse_id" optional="hide"/>
+                                    <field name="location_id" optional="show"/>
+                                    <field name="department_code" optional="hide"/>
+                                    <field name="qty"/>
+                                    <field name="uom_id"/>
+                                    <field name="lot_name"/>
+                                    <field name="lot_id" optional="hide"/>
+                                    <field name="reason"/>
+                                    <field name="picking_id" optional="hide"/>
+                                    <field name="line_state"/>
+                                    <field name="error_message" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="เบิกเติมคลัง" name="requisition"
+                              invisible="batch_type not in ('stock_requisition', 'reversal') or (batch_type == 'reversal' and original_batch_id.batch_type != 'stock_requisition')">
+                            <group>
+                                <group string="เส้นทางเบิก">
+                                    <field name="source_warehouse_code" readonly="state == 'posted'"/>
+                                    <field name="source_warehouse_id" readonly="state == 'posted'"/>
+                                    <field name="source_location_id" readonly="state == 'posted'"/>
+                                    <field name="department_code" readonly="state == 'posted'"/>
+                                </group>
+                                <group>
+                                    <field name="dest_warehouse_code" readonly="state == 'posted'"/>
+                                    <field name="dest_warehouse_id" readonly="state == 'posted'"/>
+                                    <field name="dest_location_code" readonly="state == 'posted'"/>
+                                    <field name="dest_location_id" readonly="state == 'posted'"/>
+                                </group>
+                            </group>
+                            <group>
+                                <field name="control_qty_total"/>
+                                <field name="requisition_qty_total"/>
+                            </group>
+                            <field name="requisition_line_ids" readonly="state == 'posted'">
+                                <list editable="bottom"
+                                      decoration-danger="line_state == 'error'">
+                                    <field name="line_external_id"/>
+                                    <field name="item_type" optional="show"/>
+                                    <field name="product_code"/>
+                                    <field name="product_id"/>
+                                    <field name="qty"/>
+                                    <field name="uom_id"/>
+                                    <field name="lot_name"/>
+                                    <field name="lot_id" optional="hide"/>
+                                    <field name="picking_id" optional="hide"/>
+                                    <field name="line_state"/>
+                                    <field name="error_message" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_his_batch" model="ir.actions.act_window">
+        <field name="name">HIS Batches</field>
+        <field name="res_model">vpk.his.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_his_batch_revenue" model="ir.actions.act_window">
+        <field name="name">HIS Revenue Queue</field>
+        <field name="res_model">vpk.his.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('batch_type', 'in', ('revenue', 'reversal'))]</field>
+        <field name="context">{'search_default_revenue': 1}</field>
+    </record>
+
+    <record id="action_his_batch_stock" model="ir.actions.act_window">
+        <field name="name">HIS ตัดจ่ายสินค้า</field>
+        <field name="res_model">vpk.his.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('batch_type', 'in', ('stock_issue', 'reversal'))]</field>
+        <field name="context">{'search_default_stock_issue': 1}</field>
+    </record>
+
+    <record id="action_his_batch_requisition" model="ir.actions.act_window">
+        <field name="name">HIS เบิกเติมคลัง</field>
+        <field name="res_model">vpk.his.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('batch_type', 'in', ('stock_requisition', 'reversal'))]</field>
+        <field name="context">{'search_default_stock_requisition': 1}</field>
+    </record>
+</odoo>

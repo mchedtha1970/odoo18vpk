@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================
+         หมวดสิทธิ์: บริหารผู้จำหน่าย (Vendor Management)
+         ============================================================ -->
+    <record id="module_category_vendor_management" model="ir.module.category">
+        <field name="name">บริหารผู้จำหน่าย</field>
+        <field name="description">สิทธิ์ในการจัดการฐานข้อมูลผู้จำหน่ายและเจ้าหนี้</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────
+         กลุ่ม 1: ผู้ดูข้อมูล (Viewer)
+         - ดูข้อมูลผู้จำหน่ายได้อย่างเดียว
+         - ไม่สามารถเพิ่ม/แก้ไข/ลบ
+         ───────────────────────────────────────────── -->
+    <record id="group_vendor_viewer" model="res.groups">
+        <field name="name">ผู้ดูข้อมูลผู้จำหน่าย (Viewer)</field>
+        <field name="category_id" ref="module_category_vendor_management"/>
+        <field name="comment">สิทธิ์ดูข้อมูลผู้จำหน่ายเท่านั้น ไม่สามารถสร้างหรือแก้ไขได้</field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────
+         กลุ่ม 2: ผู้จัดการข้อมูล (Editor)
+         - ดู + เพิ่ม + แก้ไข ข้อมูลผู้จำหน่าย
+         - ไม่สามารถลบ
+         - สืบทอดสิทธิ์จาก Viewer
+         - ให้สิทธิ์ partner_readonly_security.group_partner_edition
+           เพื่อปลดล็อกการสร้าง/แก้ไข
+         ───────────────────────────────────────────── -->
+    <record id="group_vendor_editor" model="res.groups">
+        <field name="name">ผู้จัดการข้อมูลผู้จำหน่าย (Editor)</field>
+        <field name="category_id" ref="module_category_vendor_management"/>
+        <field name="implied_ids" eval="[
+            Command.link(ref('group_vendor_viewer')),
+            Command.link(ref('partner_readonly_security.group_partner_edition')),
+        ]"/>
+        <field name="comment">สิทธิ์สร้างและแก้ไขข้อมูลผู้จำหน่ายได้ แต่ไม่สามารถลบ</field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────
+         กลุ่ม 3: ผู้ดูแลระบบผู้จำหน่าย (Administrator)
+         - ดู + เพิ่ม + แก้ไข + ลบ ข้อมูลผู้จำหน่าย
+         - สืบทอดสิทธิ์จาก Editor
+         ───────────────────────────────────────────── -->
+    <record id="group_vendor_admin" model="res.groups">
+        <field name="name">ผู้ดูแลระบบผู้จำหน่าย (Administrator)</field>
+        <field name="category_id" ref="module_category_vendor_management"/>
+        <field name="implied_ids" eval="[
+            Command.link(ref('group_vendor_editor')),
+        ]"/>
+        <field name="comment">สิทธิ์เต็มรูปแบบ: สร้าง แก้ไข ลบ และจัดการข้อมูลผู้จำหน่ายทั้งหมด</field>
+    </record>
+
+    <!-- ============================================================
+         Record Rules: จำกัดการลบเฉพาะ Administrator
+         ============================================================ -->
+
+    <!-- ผู้ใช้ทั่วไป (Internal User) — ดูอย่างเดียว ไม่ให้ลบ -->
+    <record id="rule_partner_no_unlink_user" model="ir.rule">
+        <field name="name">Vendor: ผู้ใช้ทั่วไปลบไม่ได้</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[Command.link(ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Vendor Administrator — ลบได้ -->
+    <record id="rule_partner_unlink_admin" model="ir.rule">
+        <field name="name">Vendor: ผู้ดูแลระบบลบได้</field>
+        <field name="model_id" ref="base.model_res_partner"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[Command.link(ref('group_vendor_admin'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+</odoo>

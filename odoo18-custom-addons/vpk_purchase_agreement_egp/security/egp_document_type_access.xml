@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_purchase_requisition_egp_document_type_user" model="ir.model.access">
+        <field name="name">purchase.requisition.egp.document.type user</field>
+        <field name="model_id" search="[('model', '=', 'purchase.requisition.egp.document.type')]"/>
+        <field name="group_id" ref="purchase.group_purchase_user"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_purchase_requisition_egp_document_type_manager" model="ir.model.access">
+        <field name="name">purchase.requisition.egp.document.type manager</field>
+        <field name="model_id" search="[('model', '=', 'purchase.requisition.egp.document.type')]"/>
+        <field name="group_id" ref="purchase.group_purchase_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+</odoo>

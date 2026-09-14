@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- เพิ่ม MOQ fields ใน Supplier Pricelist (tree view ที่ใช้ใน Product Form) -->
+    <record id="view_supplierinfo_tree_moq" model="ir.ui.view">
+        <field name="name">product.supplierinfo.tree.moq</field>
+        <field name="model">product.supplierinfo</field>
+        <field name="inherit_id" ref="purchase.product_supplierinfo_tree_view2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='delay']" position="after">
+                <field name="moq_qty" string="MOQ" optional="show"/>
+                <field name="order_multiple" string="ทวีคูณ" optional="show"/>
+                <field name="moq_uom_id" string="หน่วย MOQ" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- เพิ่มใน standalone supplierinfo form (ถ้าเปิดจาก menu) -->
+    <record id="view_supplierinfo_form_moq" model="ir.ui.view">
+        <field name="name">product.supplierinfo.form.moq</field>
+        <field name="model">product.supplierinfo</field>
+        <field name="inherit_id" ref="product.product_supplierinfo_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='delay']" position="after">
+                <field name="moq_qty" string="จำนวนสั่งซื้อขั้นต่ำ (MOQ)"/>
+                <field name="moq_uom_id" string="หน่วยนับ MOQ"/>
+                <field name="order_multiple" string="จำนวนทวีคูณ (Order Multiple)"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

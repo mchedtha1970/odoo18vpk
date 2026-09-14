@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Apply VPK backend theme font on portal / login / vendor pages -->
+    <template id="vpk_portal_theme_font" inherit_id="web.frontend_layout" name="VPK Portal Theme Font">
+        <xpath expr="//head/meta[@charset='utf-8']" position="before">
+            <t t-set="vpk_portal_font" t-value="request.env['vpk.theme.config'].sudo()._get_portal_font_settings()"/>
+        </xpath>
+        <xpath expr="//head" position="inside">
+            <t t-if="vpk_portal_font.get('load_google_fonts')">
+                <link rel="preconnect" href="https://fonts.googleapis.com"/>
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+                <link rel="stylesheet" t-att-href="vpk_portal_font['google_fonts_url']"/>
+            </t>
+            <style id="vpk-portal-theme-font">
+                :root {
+                    --vpk-font-family: <t t-esc="vpk_portal_font['font_family_css']"/>;
+                    --bs-body-font-family: <t t-esc="vpk_portal_font['font_family_css']"/>;
+                    --vpk-font-size-md: <t t-esc="vpk_portal_font['font_size_md']"/>;
+                }
+                html body,
+                html body #wrapwrap,
+                html body .o_portal,
+                html body .oe_website_login_container,
+                html body .card,
+                html body .btn,
+                html body input,
+                html body select,
+                html body textarea,
+                html body label,
+                html body table,
+                html body .nav,
+                html body .navbar {
+                    font-family: var(--vpk-font-family, inherit) !important;
+                }
+                html body,
+                html body #wrapwrap,
+                html body .o_portal {
+                    font-size: var(--vpk-font-size-md, inherit);
+                }
+                html body .fa {
+                    font-family: FontAwesome !important;
+                }
+                html body [class^="ri-"],
+                html body [class*=" ri-"] {
+                    font-family: remixicon !important;
+                }
+                html body .oi {
+                    font-family: odoo_ui_icons !important;
+                }
+            </style>
+        </xpath>
+        <xpath expr="//div[@id='wrapwrap']" position="attributes">
+            <attribute name="t-attf-class" add="vpk_font_#{vpk_portal_font.get('font_family', 'default') if vpk_portal_font else 'default'} vpk_font_size_#{vpk_portal_font.get('font_size', 'medium') if vpk_portal_font else 'medium'}" separator=" "/>
+        </xpath>
+    </template>
+</odoo>

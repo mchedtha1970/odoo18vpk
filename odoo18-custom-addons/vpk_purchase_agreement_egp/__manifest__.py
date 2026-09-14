@@ -1,0 +1,43 @@
+{
+    "name": "VPK Purchase Agreement e-GP",
+    "version": "18.0.1.5.5",
+    "category": "Purchases",
+    "summary": "Purchase Agreement as e-GP procurement hub for Vachira Hospital",
+    "author": "VPK",
+    "license": "LGPL-3",
+    "depends": [
+        "purchase_requisition",
+        "purchase_request_to_requisition",
+        "l10n_th_gov_purchase_request",
+        "vpk_tier_validation",
+    ],
+    "data": [
+        "data/ir_sequence_data.xml",
+        "data/egp_document_type_data.xml",
+        "data/res_groups_data.xml",
+        "data/rename_purchase_agreement_labels.xml",
+        "views/purchase_requisition_views.xml",
+        "views/purchase_requisition_egp_invitation_views.xml",
+        "views/purchase_requisition_award_report_views.xml",
+        "views/purchase_requisition_winner_announcement_views.xml",
+        "views/purchase_order_views.xml",
+        "views/purchase_request_views.xml",
+        "wizard/purchase_requisition_create_rfq_views.xml",
+        "wizard/purchase_requisition_alternative_warning_views.xml",
+        "security/egp_document_type_access.xml",
+        "security/ir.model.access.csv",
+        "report/egp_invitation_report.xml",
+        "report/award_approval_report.xml",
+        "report/winner_announcement_report.xml",
+    ],
+    "installable": True,
+    "application": False,
+    "assets": {
+        "web.report_assets_common": [
+            "vpk_tier_validation/static/src/scss/thai_fonts_embedded.scss",
+        ],
+        "web.assets_backend": [
+            "vpk_purchase_agreement_egp/static/src/scss/egp_flow.scss",
+        ],
+    },
+}

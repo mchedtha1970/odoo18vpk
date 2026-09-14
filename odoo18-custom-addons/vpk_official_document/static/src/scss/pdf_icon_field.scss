@@ -1,0 +1,25 @@
+.o_field_widget.o_vpk_pdf_icon_field,
+.o_vpk_pdf_icon_field,
+.o_list_renderer .o_data_cell .o_vpk_pdf_icon_field,
+.o_field_widget.o_vpk_pdf_icon_field.o_field_empty {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+}
+
+.o_vpk_pdf_icon {
+    line-height: 1;
+    vertical-align: middle;
+
+    .o_vpk_pdf_icon_img {
+        width: 28px !important;
+        height: 28px !important;
+        max-width: 28px;
+        max-height: 28px;
+        display: inline-block;
+        cursor: pointer;
+        object-fit: contain;
+    }
+}

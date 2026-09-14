@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_vpk_budget_material_sub_type_user" model="ir.model.access">
+        <field name="name">vpk.budget.material.sub.type user</field>
+        <field name="model_id" search="[('model', '=', 'vpk.budget.material.sub.type')]"/>
+        <field name="group_id" ref="group_vpk_budget_user"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="access_vpk_budget_material_sub_type_department" model="ir.model.access">
+        <field name="name">vpk.budget.material.sub.type department</field>
+        <field name="model_id" search="[('model', '=', 'vpk.budget.material.sub.type')]"/>
+        <field name="group_id" ref="group_budget_request_department_user"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="access_vpk_budget_material_sub_type_manager" model="ir.model.access">
+        <field name="name">vpk.budget.material.sub.type manager</field>
+        <field name="model_id" search="[('model', '=', 'vpk.budget.material.sub.type')]"/>
+        <field name="group_id" ref="group_vpk_budget_manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+</odoo>

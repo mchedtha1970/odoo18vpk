@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend WA form with contract/committee fields -->
+    <record id="view_work_acceptance_form_vpk" model="ir.ui.view">
+        <field name="name">work.acceptance.form.vpk</field>
+        <field name="model">work.acceptance</field>
+        <field name="inherit_id" ref="purchase_work_acceptance.view_work_acceptance_form"/>
+        <field name="arch" type="xml">
+            <!-- Thai button labels -->
+            <button name="button_accept" position="attributes">
+                <attribute name="string">ตรวจรับ</attribute>
+            </button>
+            <button name="button_accept" position="after">
+                <button name="action_send_requester_notification"
+                        type="object"
+                        string="ส่งอีเมลแจ้งผู้ขอ"
+                        icon="fa-envelope"
+                        invisible="state != 'accept' or requester_notification_status == 'queued'"/>
+            </button>
+            <button name="button_draft" position="attributes">
+                <attribute name="string">กลับเป็นร่าง</attribute>
+            </button>
+            <button name="button_cancel" position="attributes">
+                <attribute name="string">ยกเลิก</attribute>
+            </button>
+
+            <!-- Contract and acceptance fields -->
+            <field name="purchase_id" position="after">
+                <field name="contract_id" readonly="1"/>
+                <field name="contract_installment_id"
+                       readonly="state != 'draft'"
+                       options="{'no_create': True}"/>
+            </field>
+
+            <field name="date_accept" position="after">
+                <field name="acceptance_date" readonly="state != 'draft'"/>
+                <field name="delivery_date" readonly="state != 'draft'"/>
+                <field name="due_date_contract" readonly="state != 'draft'"/>
+                <field name="is_late" invisible="not is_late"/>
+                <field name="late_days" invisible="not is_late"/>
+                <field name="requester_notification_status"
+                       widget="badge"
+                       decoration-success="requester_notification_status == 'queued'"
+                       decoration-warning="requester_notification_status == 'pending'"
+                       decoration-danger="requester_notification_status in ('no_email', 'error')"/>
+                <field name="requester_notified_at"
+                       invisible="not requester_notified_at"/>
+            </field>
+
+            <!-- Acceptance type and inspector above line items -->
+            <field name="wa_line_ids" position="before">
+                <group>
+                    <group>
+                        <field name="acceptance_type" readonly="state != 'draft'"/>
+                        <field name="inspector_id" readonly="state != 'draft'"/>
+                    </group>
+                    <group>
+                        <field name="amount_total" readonly="1"/>
+                        <field name="penalty_amount" readonly="state != 'draft'"/>
+                        <field name="warranty_end_date" readonly="state != 'draft'"/>
+                    </group>
+                </group>
+            </field>
+
+            <!-- Committee tab after existing notebook pages -->
+            <xpath expr="//notebook" position="inside">
+                <page string="คณะกรรมการตรวจรับ" name="committee">
+                    <field name="committee_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="role"/>
+                            <field name="name"/>
+                            <field name="position"/>
+                            <field name="employee_id" optional="show"/>
+                            <field name="note" optional="hide"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="หมายเหตุ" name="notes_page">
+                    <field name="acceptance_note"
+                           placeholder="รายละเอียดเพิ่มเติม..."
+                           readonly="state != 'draft'"/>
+                </page>
+                <page string="การแจ้งผู้ขอ" name="requester_notification">
+                    <group>
+                        <group string="ผู้รับอีเมล">
+                            <field name="requester_user_ids"
+                                   widget="many2many_tags"/>
+                            <field name="requester_email_to"/>
+                        </group>
+                        <group string="สถานะการส่ง">
+                            <field name="requester_notification_status"
+                                   widget="badge"/>
+                            <field name="requester_notified_at"/>
+                            <field name="requester_notification_error"
+                                   invisible="not requester_notification_error"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+
+            <!-- Late delivery banner -->
+            <xpath expr="//sheet" position="inside">
+                <div class="alert alert-warning text-center"
+                     role="alert"
+                     invisible="not is_late"
+                     style="font-size: 14px;">
+                    <strong>ส่งมอบงานล่าช้า</strong>
+                    <field name="late_days" readonly="1"/> วัน
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Extend WA list view -->
+    <record id="view_work_acceptance_list_vpk" model="ir.ui.view">
+        <field name="name">work.acceptance.list.vpk</field>
+        <field name="model">work.acceptance</field>
+        <field name="inherit_id" ref="purchase_work_acceptance.view_work_acceptance_list"/>
+        <field name="arch" type="xml">
+            <field name="purchase_id" position="after">
+                <field name="contract_id" optional="show" string="สัญญา"/>
+                <field name="contract_installment_id" optional="show" string="งวดงาน"/>
+                <field name="acceptance_type" optional="show" string="ผลตรวจรับ"/>
+                <field name="amount_total" sum="รวม" optional="show"/>
+                <field name="requester_notification_status"
+                       string="แจ้งผู้ขอ"
+                       widget="badge"
+                       optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Extend WA search view -->
+    <record id="view_work_acceptance_search_vpk" model="ir.ui.view">
+        <field name="name">work.acceptance.search.vpk</field>
+        <field name="model">work.acceptance</field>
+        <field name="inherit_id" ref="purchase_work_acceptance.view_work_acceptance_search"/>
+        <field name="arch" type="xml">
+            <field name="purchase_id" position="after">
+                <field name="contract_id"/>
+                <field name="contract_installment_id"/>
+            </field>
+            <filter name="purchase" position="after">
+                <filter string="สัญญา" name="group_contract"
+                        domain="[]" context="{'group_by': 'contract_id'}"/>
+                <filter string="ผลตรวจรับ" name="group_acceptance_type"
+                        domain="[]" context="{'group_by': 'acceptance_type'}"/>
+            </filter>
+        </field>
+    </record>
+
+    <!-- Rename menu item -->
+    <record id="purchase_work_acceptance.action_work_acceptance" model="ir.actions.act_window">
+        <field name="name">บันทึกรับมอบงาน</field>
+    </record>
+    <menuitem
+        id="purchase_work_acceptance.menu_work_acceptance"
+        name="บันทึกรับมอบงาน"
+        action="purchase_work_acceptance.action_work_acceptance"
+        parent="purchase.menu_procurement_management"
+    />
+</odoo>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_vpk_warehouse_overview" model="ir.actions.client">
+        <field name="name">คลังและตำแหน่ง</field>
+        <field name="tag">vpk_warehouse_overview</field>
+    </record>
+
+    <menuitem
+        id="menu_vpk_warehouse_overview"
+        name="คลังและตำแหน่ง"
+        parent="stock.menu_stock_root"
+        action="action_vpk_warehouse_overview"
+        sequence="1"
+        groups="stock.group_stock_user"/>
+</odoo>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="purchase_order_form_vendor_portal" model="ir.ui.view">
+        <field name="name">purchase.order.form.vendor.portal.egp</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_send_vendor_sign_request"
+                    type="object"
+                    string="ส่งให้ผู้จำหน่ายลงนาม"
+                    class="btn-primary"
+                    invisible="state not in ('draft', 'sent') or not require_vendor_signature or vendor_signed"
+                />
+                <button
+                    name="action_share_vendor_portal"
+                    type="object"
+                    string="แชร์ลิงก์พอร์ทัล"
+                    invisible="not partner_id"
+                />
+                <button
+                    name="action_invite_vendor_portal"
+                    type="object"
+                    string="สร้าง User Portal"
+                    invisible="state not in ('draft', 'sent', 'purchase') or not partner_id"
+                />
+                <button
+                    name="action_preview_vendor_portal"
+                    type="object"
+                    string="เปิดลิงก์พอร์ทัล"
+                    invisible="not id"
+                />
+            </xpath>
+            <xpath expr="//field[@name='partner_ref']" position="after">
+                <label
+                    for="vendor_portal_url"
+                    string="ลิงก์พอร์ทัลผู้จำหน่าย"
+                    invisible="not id or (not require_vendor_signature and not vendor_signed)"
+                />
+                <div
+                    class="o_row"
+                    invisible="not id or (not require_vendor_signature and not vendor_signed)"
+                >
+                    <field
+                        name="vendor_portal_url"
+                        widget="CopyClipboardChar"
+                        nolabel="1"
+                        readonly="1"
+                    />
+                    <field
+                        name="vendor_portal_url"
+                        widget="CopyClipboardButton"
+                        string="คัดลอกลิงก์"
+                        nolabel="1"
+                        invisible="not vendor_portal_url"
+                    />
+                </div>
+            </xpath>
+            <xpath expr="//page[@name='purchase_delivery_invoice']" position="after">
+                <page
+                    string="พอร์ทัลผู้จำหน่าย"
+                    name="vendor_portal"
+                    invisible="not require_vendor_signature and not vendor_signed and not partner_id"
+                >
+                    <group>
+                        <group string="ลิงก์เข้าพอร์ทัลผู้จำหน่าย" colspan="2">
+                            <label for="vendor_portal_login_url" string="Login Vendor Portal"/>
+                            <div class="o_row">
+                                <field
+                                    name="vendor_portal_login_url"
+                                    widget="CopyClipboardChar"
+                                    nolabel="1"
+                                    readonly="1"
+                                />
+                                <field
+                                    name="vendor_portal_login_url"
+                                    widget="CopyClipboardButton"
+                                    string="คัดลอกลิงก์ Login"
+                                    nolabel="1"
+                                    invisible="not vendor_portal_login_url"
+                                />
+                            </div>
+                            <label for="vendor_portal_url" string="ลิงก์เอกสาร (Access Token)"/>
+                            <div class="o_row">
+                                <field
+                                    name="vendor_portal_url"
+                                    widget="CopyClipboardChar"
+                                    nolabel="1"
+                                    readonly="1"
+                                />
+                                <field
+                                    name="vendor_portal_url"
+                                    widget="CopyClipboardButton"
+                                    string="คัดลอกลิงก์"
+                                    nolabel="1"
+                                    invisible="not vendor_portal_url"
+                                />
+                            </div>
+                            <div colspan="2" class="text-muted">
+                                Vendor login: <code>/vendor</code> — หลัง login จะเห็นรายการ PO ของตัวเองแล้วกดยืนยันได้
+                            </div>
+                        </group>
+                        <group string="การลงนามออนไลน์">
+                            <field name="require_vendor_signature"/>
+                            <field name="vendor_signed"/>
+                            <field name="signed_by" readonly="1"/>
+                            <field name="signed_on" readonly="1"/>
+                        </group>
+                        <group string="ลายเซ็น">
+                            <field name="signature" widget="image" readonly="1"/>
+                            <field name="access_token" readonly="1" groups="base.group_no_one"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

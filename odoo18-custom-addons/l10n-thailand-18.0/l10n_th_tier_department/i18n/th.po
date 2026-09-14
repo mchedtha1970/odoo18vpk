@@ -1,0 +1,113 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0\n"
+"Language-Team: Thai\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: l10n_th_tier_department
+#: model:res.groups,name:l10n_th_tier_department.group_allow_restart_validation
+msgid "Allow Restart Validation"
+msgstr "Allow Restart Validation"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_hr_department__tier_level_ids
+#: model_terms:ir.ui.view,arch_db:l10n_th_tier_department.view_department_form
+msgid "Approval Level"
+msgstr "Approval Level"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__user_id
+msgid "Approver"
+msgstr "Approver"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__company_id
+msgid "Company"
+msgstr "บริษัท"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,help:l10n_th_tier_department.field_tier_level__company_id
+msgid "Company related to this tier level"
+msgstr "Company related to this tier level"
+
+#. module: l10n_th_tier_department
+#: model_terms:ir.actions.act_window,help:l10n_th_tier_department.action_tier_level
+msgid "Create a new tier level"
+msgstr "Create a new tier level"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__create_uid
+msgid "Created by"
+msgstr "สร้างโดย"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__create_date
+msgid "Created on"
+msgstr "สร้างเมื่อ"
+
+#. module: l10n_th_tier_department
+#: model:ir.model,name:l10n_th_tier_department.model_hr_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__department_id
+msgid "Department"
+msgstr "Department"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__name
+msgid "Description"
+msgstr "คำอธิบาย"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__display_name
+msgid "Display Name"
+msgstr "ชื่อที่แสดง"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__id
+msgid "ID"
+msgstr "รหัส"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__write_uid
+msgid "Last Updated by"
+msgstr "อัปเดตล่าสุดโดย"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__write_date
+msgid "Last Updated on"
+msgstr "อัปเดตล่าสุดเมื่อ"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__level
+msgid "Level"
+msgstr "Level"
+
+#. module: l10n_th_tier_department
+#: model:res.groups,name:l10n_th_tier_department.group_manage_tier_level
+msgid "Manage Approval Levels"
+msgstr "Manage Approval Levels"
+
+#. module: l10n_th_tier_department
+#: model:ir.model.fields,field_description:l10n_th_tier_department.field_tier_level__sequence
+msgid "Sequence"
+msgstr "ลำดับ"
+
+#. module: l10n_th_tier_department
+#: model_terms:ir.ui.view,arch_db:l10n_th_tier_department.tier_validation_buttons
+msgid ""
+"This action will restart all tier validation it cannot be undone. Are you "
+"sure to continue?"
+msgstr ""
+"This action will restart all tier validation it cannot be undone. Are you "
+"sure to continue?"
+
+#. module: l10n_th_tier_department
+#: model:ir.actions.act_window,name:l10n_th_tier_department.action_tier_level
+#: model:ir.model,name:l10n_th_tier_department.model_tier_level
+#: model_terms:ir.ui.view,arch_db:l10n_th_tier_department.view_tier_level_form
+msgid "Tier Level"
+msgstr "ระดับการอนุมัติ"

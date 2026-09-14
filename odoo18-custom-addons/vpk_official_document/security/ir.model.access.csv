@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_official_document_pr_user,official.document.pr.user,model_vpk_official_document,purchase_request.group_purchase_request_user,1,0,0,0
+access_official_document_internal,official.document.internal,model_vpk_official_document,base.group_user,1,0,0,0
+access_official_document_user,official.document.user,model_vpk_official_document,purchase.group_purchase_user,1,1,1,0
+access_official_document_mgr,official.document.manager,model_vpk_official_document,purchase.group_purchase_manager,1,1,1,1
+access_official_document_line_pr_user,official.document.line.pr.user,model_vpk_official_document_line,purchase_request.group_purchase_request_user,1,0,0,0
+access_official_document_line_internal,official.document.line.internal,model_vpk_official_document_line,base.group_user,1,0,0,0
+access_official_document_line_user,official.document.line.user,model_vpk_official_document_line,purchase.group_purchase_user,1,1,1,0
+access_official_document_line_mgr,official.document.line.manager,model_vpk_official_document_line,purchase.group_purchase_manager,1,1,1,1
+access_official_document_template_user,official.document.template.user,model_vpk_official_document_template,purchase.group_purchase_user,1,0,0,0
+access_official_document_template_mgr,official.document.template.manager,model_vpk_official_document_template,purchase.group_purchase_manager,1,1,1,1

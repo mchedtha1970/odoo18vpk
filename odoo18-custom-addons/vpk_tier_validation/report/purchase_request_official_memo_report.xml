@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_report_purchase_request_official_memo" model="ir.actions.report">
+        <field name="name">บันทึกข้อความ</field>
+        <field name="model">purchase.request</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_tier_validation.report_purchase_request_official_memo</field>
+        <field name="report_file">vpk_tier_validation.report_purchase_request_official_memo</field>
+        <field name="print_report_name">'บันทึกข้อความ - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="purchase_request.model_purchase_request"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_vpk_official_memo"/>
+    </record>
+
+</odoo>

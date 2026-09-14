@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_form_committee_appointment" model="ir.ui.view">
+        <field name="name">purchase.request.form.committee.appointment</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_committee_appointments" type="object"
+                        class="oe_stat_button" icon="fa-users"
+                        groups="purchase.group_purchase_user">
+                    <field name="committee_appointment_count" widget="statinfo"
+                           string="แต่งตั้ง กก."/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add price mid committee on gov PR committee page -->
+    <record id="view_purchase_request_form_price_mid_committee" model="ir.ui.view">
+        <field name="name">purchase.request.form.price.mid.committee</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="l10n_th_gov_purchase_request.view_purchase_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='committee']" position="inside">
+                <group name="price_mid_committee" string="คณะกรรมการกำหนดราคากลาง">
+                    <field
+                        name="price_mid_committee_ids"
+                        nolabel="1"
+                        context="{'default_committee_type': 'price_mid'}"
+                        readonly="is_editable == False"
+                    >
+                        <list editable="bottom">
+                            <field name="committee_type" column_invisible="1"/>
+                            <field
+                                name="employee_id"
+                                options="{'no_create': True, 'no_open': True}"
+                            />
+                            <field name="name"/>
+                            <field name="approve_role"/>
+                            <field name="department_id"/>
+                            <field name="email"/>
+                            <field name="phone"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
