@@ -4,3 +4,4 @@ python-pptx
 beautifulsoup4
 openpyxl
 XlsxWriter
+qifparse
