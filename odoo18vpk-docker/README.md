@@ -13,7 +13,7 @@ odoo18vpk-docker/
 ## รันบนเครื่อง local
 
 ```bash
-git clone <url> odoo18vpk
+git clone https://github.com/mchedtha1970/odoo18vpk.git odoo18vpk
 cd odoo18vpk/odoo18vpk-docker
 ./docker/clone-oca-addons.sh
 cp .env.example .env

@@ -25,6 +25,7 @@ tools/
 .profile
 .sudo_as_admin_successful
 .wget-hsts
+.ssh/
 
 # Python
 __pycache__/
