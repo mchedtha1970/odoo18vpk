@@ -44,8 +44,21 @@ OCA ที่ยังไม่มีใน `odoo18-custom-addons/`:
 
 ## Restore ข้อมูลจากเซิร์ฟเวอร์
 
-วางไฟล์ใน `VPK_S1/` แล้ว:
+Dump + filestore **ไม่ได้อยู่ใน git** ต้องโหลดจากเซิร์ฟเวอร์แยก:
 
 ```bash
-docker compose exec -T db pg_restore -U odoo -C -d postgres < VPK_S1/VPK_S1.dump
+scp odoo18vpk@<server>:/opt/odoo18vpk/odoo18vpk-docker/VPK_S1/VPK-S1-backup-*.tar.gz .
+cd odoo18vpk-docker
+tar -xzf ../VPK-S1-backup-*.tar.gz -C VPK_S1
+./docker/restore-vpk-s1.sh
 ```
+
+หรือถ้า copy ทั้งโฟลเดอร์ `VPK_S1/` มาแล้ว:
+
+```bash
+cd odoo18vpk-docker
+./docker/restore-vpk-s1.sh
+```
+
+Filestore ถูก mount ที่ `./VPK_S1/filestore` → `/var/lib/odoo/filestore` อัตโนมัติ
+เปิด http://localhost:8069 แล้วเลือก database `VPK-S1`

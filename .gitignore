@@ -54,4 +54,6 @@ odoo18vpk-s1-test.conf
 odoo18vpk-docker/.env
 odoo18vpk-docker/VPK_S1/*.dump
 odoo18vpk-docker/VPK_S1/*.sql
+odoo18vpk-docker/VPK_S1/*.zip
+odoo18vpk-docker/VPK_S1/*.tar.gz
 odoo18vpk-docker/VPK_S1/filestore/

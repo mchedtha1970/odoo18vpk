@@ -1,10 +1,22 @@
-วาง dump / filestore ของ database VPK-S1 ไว้ที่นี่ (เทียบกับ APEXTH_LIVE)
+ข้อมูลสำรอง VPK-S1 (อย่า commit ขึ้น git)
 
-ตัวอย่าง:
+| ไฟล์ | รายละเอียด |
+|------|-------------|
+| `VPK-S1-backup-YYYYMMDD-HHMM.tar.gz` | โหลดไฟล์เดียว (dump + filestore) |
+| `VPK_S1.dump` | pg_dump -Fc |
+| `filestore/VPK-S1/` | ไฟล์แนบ Odoo |
+| `MANIFEST.txt` | วันที่และขนาด |
 
-    VPK_S1.dump          # pg_dump -Fc
-    filestore/VPK-S1/    # จาก /var/lib/odoo/filestore หรือ data_dir
+Download จากเซิร์ฟเวอร์:
 
-Restore หลัง docker compose up:
+```bash
+scp odoo18vpk@<server>:/opt/odoo18vpk/odoo18vpk-docker/VPK_S1/VPK-S1-backup-*.tar.gz .
+```
 
-    docker compose exec -T db pg_restore -U odoo -C -d postgres < VPK_S1.dump
+Restore ใน local docker:
+
+```bash
+cd odoo18vpk-docker
+tar -xzf VPK-S1-backup-*.tar.gz -C VPK_S1
+./docker/restore-vpk-s1.sh
+```
