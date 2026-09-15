@@ -1,6 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_budget_fund_source_user,budget.fund.source user,model_budget_fund_source,account.group_account_user,1,1,1,0
-access_budget_material_type_user,budget.material.type user,model_budget_material_type,account.group_account_user,1,1,1,0
-access_budget_line_adjustment_log_user,budget.line.adjustment.log user,model_budget_line_adjustment_log,account.group_account_user,1,0,0,0
-access_budget_line_adjustment_wizard_user,budget.line.adjustment.wizard user,model_budget_line_adjustment_wizard,account.group_account_user,1,1,1,1
-access_budget_comparison_report_wizard_user,budget.comparison.report.wizard user,model_budget_comparison_report_wizard,account.group_account_user,1,1,1,1
