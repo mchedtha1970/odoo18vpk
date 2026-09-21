@@ -23,6 +23,7 @@ services:
       PASSWORD: ${POSTGRES_PASSWORD:-odoo}
     volumes:
       - odoo-web-data:/var/lib/odoo
+      - ./VPK_S1/filestore:/var/lib/odoo/filestore
       - ./odoo18-custom-addons:/mnt/extra-addons
       - ./docker/odoo.conf:/etc/odoo/odoo.conf:ro
       - ./VPK_S1:/mnt/backup

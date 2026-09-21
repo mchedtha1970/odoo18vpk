@@ -1,6 +1,8 @@
 .env
 VPK_S1/*.dump
 VPK_S1/*.sql
+VPK_S1/*.zip
+VPK_S1/*.tar.gz
 VPK_S1/filestore/
 __pycache__/
 *.py[cod]
