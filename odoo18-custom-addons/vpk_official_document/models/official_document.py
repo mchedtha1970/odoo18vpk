@@ -31,6 +31,7 @@ DOCUMENT_TYPE_SELECTION = [
         "specific_method_approval",
         "รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง",
     ),
+    ("winner_announcement", "ประกาศผู้ชนะการเสนอราคา"),
 ]
 
 TEMPLATE_FILES = {
@@ -38,6 +39,7 @@ TEMPLATE_FILES = {
     "integrity_over_100k": "vpk_official_document/static/src/templates/integrity_over_100k.docx",
     "spec_price_committee": "vpk_official_document/static/src/templates/spec_price_committee.docx",
     "specific_method_approval": "vpk_official_document/static/src/templates/specific_method_approval.docx",
+    "winner_announcement": "vpk_purchase_agreement_egp/static/src/templates/winner_announcement.docx",
 }
 
 ROLE_LABELS = {
@@ -171,6 +173,13 @@ class OfficialDocument(models.Model):
         string="ใบตรวจรับ",
         index=True,
         ondelete="set null",
+    )
+    requisition_id = fields.Many2one(
+        comodel_name="purchase.requisition",
+        string="กระบวนการ e-GP",
+        index=True,
+        ondelete="set null",
+        domain=[("requisition_type", "=", "egp_procurement")],
     )
     department_id = fields.Many2one(
         comodel_name="hr.department",
@@ -1717,6 +1726,13 @@ class OfficialDocument(models.Model):
             return "รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง-{}-{}".format(
                 suffix, source
             )
+        if self.document_type == "winner_announcement":
+            source = (
+                self.sudo().requisition_id.egp_reference
+                or self.sudo().requisition_id.name
+                or source
+            )
+            return "ประกาศผู้ชนะ-{}".format(source)
         return "คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ-{}-{}".format(suffix, source)
 
     def _store_generated_file(self, content, filename, mimetype, kind):
@@ -1754,12 +1770,15 @@ class OfficialDocument(models.Model):
             attachment_ids=[attachment.id],
             subtype_xmlid="mail.mt_note",
         )
+        self._sync_winner_egp_attachment()
         return attachment
 
     def _render_docx_bytes(self):
         self.ensure_one()
         self._ensure_saraban_book_no()
         try:
+            if self.document_type == "winner_announcement":
+                return self._render_winner_announcement_docx()
             if self.document_type == "integrity_over_100k":
                 if not (
                     self.head_officer_name or self.officer_name or self.line_ids
@@ -1793,6 +1812,50 @@ class OfficialDocument(models.Model):
             )
         except OfficialDocumentRenderError as error:
             raise UserError(str(error)) from error
+
+    def _winner_egp_document(self):
+        self.ensure_one()
+        Egp = self.env["purchase.requisition.egp.document"]
+        found = Egp.search([("official_document_id", "=", self.id)], limit=1)
+        if found:
+            return found
+        if self.requisition_id:
+            return self.requisition_id.egp_document_ids.filtered(
+                lambda doc: doc.document_type_code == "winner_announcement"
+            )[:1]
+        return Egp
+
+    def _render_winner_announcement_docx(self):
+        self.ensure_one()
+        from odoo.addons.vpk_purchase_agreement_egp.models.winner_announcement_docx import (
+            WinnerAnnouncementRenderError,
+            load_template_bytes,
+            render_winner_announcement_docx,
+        )
+
+        egp = self._winner_egp_document()
+        if not egp:
+            raise UserError(_("ไม่พบเอกสารประกาศผู้ชนะในกระบวนการ e-GP"))
+        try:
+            return render_winner_announcement_docx(
+                load_template_bytes(),
+                egp._winner_announcement_values(),
+            )
+        except WinnerAnnouncementRenderError as error:
+            raise UserError(str(error)) from error
+
+    def _sync_winner_egp_attachment(self):
+        for rec in self.filtered(lambda doc: doc.document_type == "winner_announcement"):
+            egp = rec._winner_egp_document()
+            if not egp or not rec.pdf_file:
+                continue
+            vals = {
+                "document_file": rec.pdf_file,
+                "document_filename": rec.pdf_filename or egp.document_filename,
+            }
+            if rec.date and not egp.document_date:
+                vals["document_date"] = rec.date
+            egp.write(vals)
 
     def _soffice_path(self):
         path = (
@@ -1909,6 +1972,8 @@ class OfficialDocument(models.Model):
                 rec._vpk_create_sequential_sign_reviews()
             elif rec.document_type == "integrity_over_100k":
                 rec._vpk_create_integrity_sign_reviews()
+            elif rec.document_type == "winner_announcement":
+                rec._vpk_create_winner_sign_reviews()
             else:
                 rec._vpk_request_signature_reviews()
         return True
@@ -1918,8 +1983,10 @@ class OfficialDocument(models.Model):
         Definition = self.env["tier.definition"]
         created = Review.browse()
         for rec in self:
+            if rec.state in ("approved", "cancelled"):
+                continue
             if rec.review_ids.filtered(
-                lambda review: review.status in ("waiting", "pending")
+                lambda review: review.status in ("waiting", "pending", "approved")
             ):
                 continue
             request = rec.request_id
@@ -2088,6 +2155,7 @@ class OfficialDocument(models.Model):
         if self.document_type not in (
             "specific_method_approval",
             "integrity_over_100k",
+            "winner_announcement",
         ):
             vals["signed_on"] = fields.Datetime.now()
         self.write(vals)
@@ -2115,7 +2183,10 @@ class OfficialDocument(models.Model):
         for rec in self:
             rec.invalidate_recordset(["validation_status", "validated"])
             if rec.validation_status == "validated" and rec.state != "approved":
-                rec.sudo().with_context(skip_validation_check=True).write(
+                rec.sudo().with_context(
+                    skip_validation_check=True,
+                    skip_check_state_condition=True,
+                ).write(
                     {
                         "state": "approved",
                         "signed_on": rec.signed_on or fields.Datetime.now(),
@@ -2158,7 +2229,10 @@ class OfficialDocument(models.Model):
         integrity = self.filtered(
             lambda doc: doc.document_type == "integrity_over_100k"
         )
-        others = self - approval - integrity
+        winners = self.filtered(
+            lambda doc: doc.document_type == "winner_announcement"
+        )
+        others = self - approval - integrity - winners
         created = self.env["tier.review"]
         if others:
             created |= super(OfficialDocument, others).request_validation()
@@ -2166,6 +2240,8 @@ class OfficialDocument(models.Model):
             created |= approval._vpk_create_sequential_sign_reviews()
         if integrity:
             created |= integrity._vpk_create_integrity_sign_reviews()
+        if winners:
+            created |= winners._vpk_create_winner_sign_reviews()
         return created
 
     def _vpk_sequential_sign_definitions(self):
@@ -2254,6 +2330,89 @@ class OfficialDocument(models.Model):
             vals_list = []
             sequence = 0
             for definition in definitions.sorted("sequence"):
+                sequence += 1
+                vals_list.append(
+                    {
+                        "model": doc._name,
+                        "res_id": doc.id,
+                        "definition_id": definition.id,
+                        "requested_by": self.env.uid,
+                        "sequence": sequence,
+                    }
+                )
+            created |= Review.sudo().create(vals_list)
+        if created:
+            created._compute_reviewer_ids()
+            created._compute_can_review()
+            self._notify_review_requested(created)
+            self._update_counter({"review_created": True})
+        return created
+
+    def _vpk_ensure_winner_signers(self):
+        self.ensure_one()
+        vals = {}
+        if not self.officer_id:
+            vals["officer_id"] = self.env.user.id
+        if not self.signer_id:
+            signer = self._person_user_from_company(
+                self.company_id, "official_doc_signer_id", "official_doc_signer_name"
+            )
+            if signer:
+                vals["signer_id"] = signer.id
+        if vals:
+            self.with_context(skip_validation_check=True).write(vals)
+        missing = []
+        if not self.officer_id:
+            missing.append(_("ผู้จัดทำเอกสาร"))
+        if not self.signer_id:
+            missing.append(_("ผู้อำนวยการ"))
+        if missing:
+            raise UserError(
+                _("กรุณาระบุ %s ก่อนส่งประกาศผู้ชนะลงนาม") % " และ ".join(missing)
+            )
+        return True
+
+    def _vpk_winner_sign_definitions(self):
+        xmlids = (
+            "vpk_official_document.tier_definition_winner_announcement_generator",
+            "vpk_official_document.tier_definition_winner_announcement_director",
+        )
+        definitions = []
+        for xmlid in xmlids:
+            definition = self.env.ref(xmlid, raise_if_not_found=False)
+            if definition:
+                definitions.append(definition)
+        if len(definitions) == 2:
+            return definitions
+        found = self.env["tier.definition"].search(
+            [
+                ("model", "=", self._name),
+                ("review_type", "=", "field"),
+                ("approve_sequence", "=", True),
+                ("definition_domain", "ilike", "winner_announcement"),
+            ],
+            order="sequence, id",
+        )
+        return list(found)
+
+    def _vpk_create_winner_sign_reviews(self):
+        """Create generator → director reviews in order."""
+        Review = self.env["tier.review"]
+        created = Review.browse()
+        definitions = self._vpk_winner_sign_definitions()
+        if len(definitions) < 2:
+            raise UserError(_("ยังไม่ได้ตั้งลำดับลงนามของประกาศผู้ชนะ"))
+        for doc in self:
+            if doc.document_type != "winner_announcement":
+                continue
+            if doc.review_ids.filtered(
+                lambda review: review.status in ("waiting", "pending")
+            ):
+                continue
+            doc._vpk_ensure_winner_signers()
+            vals_list = []
+            sequence = 0
+            for definition in definitions:
                 sequence += 1
                 vals_list.append(
                     {
@@ -2477,7 +2636,11 @@ class OfficialDocument(models.Model):
             lambda doc: doc.document_type == "integrity_over_100k"
         )
         for doc in committee:
-            if doc.review_ids.filtered(lambda review: review.status in ("waiting", "pending")):
+            if doc.state in ("approved", "cancelled"):
+                continue
+            if doc.review_ids.filtered(
+                lambda review: review.status in ("waiting", "pending", "approved")
+            ):
                 continue
             request = doc.request_id
             source = pr_reviews.filtered(

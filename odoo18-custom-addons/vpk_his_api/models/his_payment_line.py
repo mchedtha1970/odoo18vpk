@@ -4,7 +4,11 @@
 from odoo import _, fields, models
 from odoo.tools.float_utils import float_is_zero
 
-from .his_payment_method_map import is_advance_apply_code, is_advance_in_code
+from .his_payment_method_map import (
+    is_advance_apply_code,
+    is_advance_in_code,
+    is_deposit_tender_code,
+)
 
 LINE_STATES = [
     ("ok", "OK"),
@@ -42,11 +46,21 @@ class HisPaymentLine(models.Model):
         [("op", "OP"), ("ip", "IP")],
         help="ประเภทบริการของใบนี้ ถ้าว่างจะอนุมานจากบรรทัดขายในใบเดียวกัน",
     )
+    transaction_type = fields.Selection(
+        [
+            ("receive", "รับมัดจำ"),
+            ("refund", "คืนมัดจำ"),
+        ],
+        default="receive",
+        required=True,
+        help="ใช้กับชุดรับมัดจำ: receive = คนไข้วางเงิน, refund = คืนเงินมัดจำ",
+    )
     amount = fields.Monetary(required=True)
     currency_id = fields.Many2one(related="batch_id.currency_id")
     journal_code = fields.Char()
     journal_id = fields.Many2one("account.journal")
     payment_id = fields.Many2one("account.payment", ondelete="set null")
+    deposit_move_id = fields.Many2one("account.move", ondelete="set null")
     line_state = fields.Selection(LINE_STATES, default="ok")
     error_message = fields.Text()
 
@@ -64,6 +78,19 @@ class HisPaymentLine(models.Model):
         is_entitlement = bool(pmap and pmap.is_entitlement)
         is_advance_in = is_advance_in_code(self.payment_method_code)
         is_advance_apply = is_advance_apply_code(self.payment_method_code)
+        is_deposit_batch = self.batch_id.batch_type == "deposit"
+        if is_deposit_batch:
+            if is_entitlement or is_advance_apply:
+                errors.append(
+                    _("Deposit line %s cannot use entitlement or advance-apply codes")
+                    % self.payment_method_code
+                )
+            elif not is_deposit_tender_code(self.payment_method_code):
+                errors.append(
+                    _("Deposit line requires cash, transfer, credit_card, or advance_in")
+                )
+            if not self.transaction_type:
+                self.transaction_type = "receive"
         if is_entitlement and not self.entitlement_code:
             inferred = METHOD_TO_ENTITLEMENT.get((self.payment_method_code or "").lower())
             if inferred:
@@ -85,7 +112,7 @@ class HisPaymentLine(models.Model):
                 errors.append(
                     _("Payment method %s has no journal") % self.payment_method_code
                 )
-        elif is_advance_in:
+        elif is_advance_in or is_deposit_batch:
             journal = pmap.journal_id if pmap else self.env["account.journal"]
             if not journal:
                 journal = self.env["vpk.his.receipt.journal.mixin"]._ensure_his_cash_journal(
@@ -102,7 +129,7 @@ class HisPaymentLine(models.Model):
             self.service_type = service_type
         if not self.entitlement_code and not is_entitlement:
             inferred = self._infer_self_pay_code()
-            if not inferred and (is_advance_apply or is_advance_in):
+            if not inferred and (is_advance_apply or is_advance_in or is_deposit_batch):
                 inferred = "SELF_PAY"
             self.entitlement_code = inferred
         if self.entitlement_code:

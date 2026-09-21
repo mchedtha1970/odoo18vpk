@@ -24,6 +24,7 @@ class OfficialDocumentTemplate(models.Model):
                 "specific_method_approval",
                 "รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง",
             ),
+            ("winner_announcement", "ประกาศผู้ชนะการเสนอราคา"),
         ],
         string="ประเภทเอกสาร",
         required=True,

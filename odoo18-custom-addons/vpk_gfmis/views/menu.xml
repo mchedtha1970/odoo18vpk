@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_gfmis_root"
+        name="กระบวนการ GFMIS"
+        web_icon="account,static/description/icon.png"
+        sequence="56"
+        groups="group_gfmis_user"
+    />
+
+    <menuitem
+        id="menu_gfmis_request"
+        name="ขอเบิกเงิน"
+        parent="menu_gfmis_root"
+        action="action_gfmis_document_request"
+        sequence="10"
+        groups="group_gfmis_user"
+    />
+
+    <menuitem
+        id="menu_gfmis_agency_pay"
+        name="ขอจ่ายโดยส่วนราชการ"
+        parent="menu_gfmis_root"
+        action="action_gfmis_document_agency_pay"
+        sequence="20"
+        groups="group_gfmis_user"
+    />
+
+    <menuitem
+        id="menu_gfmis_return"
+        name="เบิกเกินส่งคืน"
+        parent="menu_gfmis_root"
+        action="action_gfmis_document_return"
+        sequence="30"
+        groups="group_gfmis_user"
+    />
+
+    <menuitem
+        id="menu_gfmis_all"
+        name="เอกสารทั้งหมด"
+        parent="menu_gfmis_root"
+        action="action_gfmis_document"
+        sequence="40"
+        groups="group_gfmis_user"
+    />
+
+    <menuitem
+        id="menu_gfmis_config"
+        name="การกำหนดค่า"
+        parent="menu_gfmis_root"
+        sequence="90"
+        groups="group_gfmis_manager"
+    />
+
+    <menuitem
+        id="menu_gfmis_form_type"
+        name="แบบฟอร์ม GFMIS"
+        parent="menu_gfmis_config"
+        action="action_gfmis_form_type"
+        sequence="10"
+        groups="group_gfmis_manager"
+    />
+
+    <menuitem
+        id="menu_gfmis_settings"
+        name="รหัสหน่วยงาน"
+        parent="menu_gfmis_config"
+        action="account.action_account_config"
+        sequence="20"
+        groups="group_gfmis_manager"
+    />
+</odoo>

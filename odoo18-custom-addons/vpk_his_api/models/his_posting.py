@@ -20,6 +20,8 @@ class HisPostingService(models.AbstractModel):
             self._post_reversal(batch)
         elif batch.batch_type == "revenue":
             self._post_revenue(batch)
+        elif batch.batch_type == "deposit":
+            self._post_deposit(batch)
         elif batch.batch_type == "stock_issue":
             self._post_stock(batch)
         elif batch.batch_type == "stock_requisition":
@@ -57,7 +59,8 @@ class HisPostingService(models.AbstractModel):
             pmap = line.payment_method_map_id
             method = (line.payment_method_code or "").strip().lower()
             if is_advance_in_code(method):
-                self._create_advance_receipt(batch, line)
+                move = self._create_advance_receipt(batch, line)
+                line.deposit_move_id = move.id
                 continue
             if not pmap or not pmap.create_payment or pmap.is_entitlement:
                 continue
@@ -68,6 +71,25 @@ class HisPostingService(models.AbstractModel):
         self._reconcile_payments(invoices, payments)
         batch.invoice_ids = invoices
         batch.payment_ids = payments
+        deposit_moves = batch.payment_line_ids.mapped("deposit_move_id")
+        if deposit_moves:
+            batch.deposit_move_ids = deposit_moves
+
+    @api.model
+    def _post_deposit(self, batch):
+        """Receive/refund patient treatment deposits: Dr/Cr cash vs prepaid liability."""
+        if batch.sale_line_ids:
+            raise UserError(_("Deposit batch cannot include sales lines"))
+        if not batch.payment_line_ids:
+            raise UserError(_("Deposit batch has no deposit lines"))
+        moves = self.env["account.move"]
+        for line in batch.payment_line_ids:
+            move = self._create_advance_receipt(batch, line)
+            line.deposit_move_id = move.id
+            moves |= move
+        batch.deposit_move_ids = moves
+        batch.invoice_ids = self.env["account.move"]
+        batch.payment_ids = self.env["account.payment"]
 
     @api.model
     def _get_sale_journal(self, company):
@@ -183,7 +205,10 @@ class HisPostingService(models.AbstractModel):
 
     @api.model
     def _create_advance_receipt(self, batch, line):
-        """Dr cash / Cr prepaid liability when HIS receives a deposit."""
+        """Dr cash / Cr prepaid liability when HIS receives a deposit.
+
+        Refund lines reverse the entry (Dr liability / Cr cash).
+        """
         mixin = self.env["vpk.his.receipt.journal.mixin"]
         journal = line.journal_id or mixin._ensure_his_cash_journal(batch.company_id)
         cash_acc = journal.default_account_id
@@ -206,11 +231,22 @@ class HisPostingService(models.AbstractModel):
             partner = self.env.ref(
                 "vpk_his_api.partner_payer_self_pay_op", raise_if_not_found=False
             )
-        amount = line.amount
-        label = _("HIS รับเงินล่วงหน้า %s %s") % (
-            batch.external_id,
-            line.ticket_external_id or line.line_external_id or "",
-        )
+        amount = abs(line.amount)
+        is_refund = (line.transaction_type or "receive") == "refund"
+        if is_refund:
+            label = _("HIS คืนเงินมัดจำค่ารักษา %s %s") % (
+                batch.external_id,
+                line.ticket_external_id or line.line_external_id or "",
+            )
+            cash_debit, cash_credit = 0.0, amount
+            liab_debit, liab_credit = amount, 0.0
+        else:
+            label = _("HIS รับเงินมัดจำค่ารักษา %s %s") % (
+                batch.external_id,
+                line.ticket_external_id or line.line_external_id or "",
+            )
+            cash_debit, cash_credit = amount, 0.0
+            liab_debit, liab_credit = 0.0, amount
         move = (
             self.env["account.move"]
             .sudo()
@@ -228,16 +264,16 @@ class HisPostingService(models.AbstractModel):
                             {
                                 "name": label,
                                 "account_id": cash_acc.id,
-                                "debit": amount,
-                                "credit": 0.0,
+                                "debit": cash_debit,
+                                "credit": cash_credit,
                             }
                         ),
                         Command.create(
                             {
                                 "name": label,
                                 "account_id": liability.id,
-                                "debit": 0.0,
-                                "credit": amount,
+                                "debit": liab_debit,
+                                "credit": liab_credit,
                                 "partner_id": partner.id if partner else False,
                             }
                         ),
@@ -678,6 +714,22 @@ class HisPostingService(models.AbstractModel):
                     original_lines = original.requisition_line_ids
                 self._validate_picking(returned, original_lines)
                 new_pickings |= returned
+        new_deposit_moves = self.env["account.move"]
+        if original.deposit_move_ids:
+            default_values_list = [
+                {
+                    "date": batch.business_date,
+                    "ref": _("Reversal of %s") % original.external_id,
+                }
+                for _move in original.deposit_move_ids
+            ]
+            new_deposit_moves = original.deposit_move_ids.sudo()._reverse_moves(
+                default_values_list=default_values_list, cancel=False
+            )
+            to_post_dep = new_deposit_moves.filtered(lambda m: m.state == "draft")
+            if to_post_dep:
+                to_post_dep.action_post()
         batch.invoice_ids = new_invoices
         batch.payment_ids = new_payments
+        batch.deposit_move_ids = new_deposit_moves
         batch.picking_ids = new_pickings

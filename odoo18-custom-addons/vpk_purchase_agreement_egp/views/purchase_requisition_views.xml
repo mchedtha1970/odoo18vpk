@@ -33,6 +33,7 @@
                 />
                 <field
                     name="procurement_method_id"
+                    string="ซื้อด้วยวิธีการ"
                     invisible="requisition_type != 'egp_procurement'"
                     readonly="state != 'draft'"
                 />
@@ -127,7 +128,16 @@
                             <field name="egp_reference"/>
                             <field name="document_date"/>
                             <field name="document_filename" column_invisible="1"/>
+                            <field name="document_type_code" column_invisible="1"/>
                             <field name="document_file" filename="document_filename" widget="binary"/>
+                            <button
+                                name="action_generate_winner_document"
+                                type="object"
+                                string="Gen"
+                                class="btn-link"
+                                invisible="document_type_code != 'winner_announcement'"
+                                title="สร้างเอกสารประกาศผู้ชนะจากเทมเพลต Word"
+                            />
                             <button name="action_preview_document" type="object" string="View" icon="fa-eye"/>
                             <field name="notes" optional="hide"/>
                         </list>

@@ -46,6 +46,7 @@ class TestWithholdingTax(AccountTestInvoicingCommon):
         )
         cls.wht_1 = cls.account_wht_obj.create(
             {
+                "code": "WHT1",
                 "name": "Withholding Tax 1%",
                 "account_id": cls.wht_account.id,
                 "amount": 1,
@@ -53,6 +54,7 @@ class TestWithholdingTax(AccountTestInvoicingCommon):
         )
         cls.wht_3 = cls.account_wht_obj.create(
             {
+                "code": "WHT3",
                 "name": "Withholding Tax 3%",
                 "account_id": cls.wht_account.id,
                 "amount": 3,

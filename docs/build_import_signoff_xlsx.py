@@ -3,6 +3,10 @@
 """Export data-migration inventory + sign-off workbooks from live VPK-S1 counts."""
 from __future__ import annotations
 
+import io
+import os
+import re
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -14,8 +18,8 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 from psycopg2.extras import RealDictCursor
 
-OUT_DIR = Path("/opt/odoo18vpk/docs/UAT-Data-Migrate")
-DBNAME = "VPK-S1"
+OUT_DIR = Path(os.environ.get("UAT_OUT_DIR", "/opt/odoo18vpk/docs/UAT-Data-Migrate"))
+DBNAME = os.environ.get("PGDATABASE", "VPK-S1")
 FONT = "Prompt"
 NAVY, TEAL, RED, GREEN = "123A56", "0F7A72", "B4433A", "2C7A45"
 LINE, WHITE, SOFT = "D7DEE6", "FFFFFF", "E5F5F3"
@@ -82,6 +86,46 @@ def dated_xlsx(name: str, stamp: str | None = None) -> str:
     return f"{p.stem}-{stamp or file_stamp()}{p.suffix}"
 
 
+def make_excel_safe(path: Path) -> None:
+    """Rewrite OOXML so Excel for Mac opens without the recover dialog.
+
+    openpyxl 3.1 writes a few invalid bits: core.xml dates like 2026-09-18T20:56:20+00:00Z,
+    empty workbookProtection, and absolute /xl/... relationship targets.
+    """
+    src = Path(path)
+    buf = io.BytesIO()
+    with zipfile.ZipFile(src, "r") as zin, zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            name = item.filename.replace("\\", "/")
+            if name.endswith((".xml", ".rels")):
+                text = data.decode("utf-8")
+                if name == "docProps/core.xml":
+                    text = re.sub(
+                        r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})[+-]\d{2}:\d{2}Z",
+                        r"\1Z",
+                        text,
+                    )
+                    text = text.replace("+00:00Z", "Z")
+                if name == "xl/workbook.xml":
+                    text = text.replace("<workbookProtection/>", "")
+                if name == "xl/_rels/workbook.xml.rels":
+                    text = text.replace('Target="/xl/', 'Target="')
+                if name.startswith("xl/worksheets/"):
+                    text = text.replace("<evenHeader></evenHeader>", "")
+                    text = text.replace("<evenFooter></evenFooter>", "")
+                    text = text.replace("<firstHeader></firstHeader>", "")
+                    text = text.replace("<firstFooter></firstFooter>", "")
+                    text = re.sub(r'\s+showDropDown="0"', "", text)
+                if not text.lstrip().startswith("<?xml"):
+                    text = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + text
+                data = text.encode("utf-8")
+            info = zipfile.ZipInfo(filename=item.filename, date_time=item.date_time)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            zout.writestr(info, data)
+    src.write_bytes(buf.getvalue())
+
+
 def jname_sql(alias="name"):
     return f"COALESCE({alias}->>'th_TH', {alias}->>'en_US', {alias}::text)"
 
@@ -94,13 +138,17 @@ def account_code_sql(alias):
 
 
 def connect():
-    return psycopg2.connect(
-        dbname=DBNAME,
-        user="odoo18vpk",
-        password="odoo18vpk",
-        host="/var/run/postgresql",
-        connect_timeout=15,
-    )
+    kwargs = {
+        "dbname": DBNAME,
+        "user": os.environ.get("PGUSER", "odoo18vpk"),
+        "password": os.environ.get("PGPASSWORD", "odoo18vpk"),
+        "host": os.environ.get("PGHOST", "/var/run/postgresql"),
+        "connect_timeout": 15,
+    }
+    port = os.environ.get("PGPORT")
+    if port:
+        kwargs["port"] = int(port)
+    return psycopg2.connect(**kwargs)
 
 
 def fetch_all(cur, sql):
@@ -153,6 +201,67 @@ REAL_VENDOR_SQL = """
         'EXT-001', 'EXT-002', 'HTTP-EXT-100', 'DOC-EXT-200', 'TRCS'
     )
 """
+
+
+def debtor_category_filter(tag_name: str) -> str:
+    escaped = tag_name.replace("'", "''")
+    return f"{jname_sql('c.name')} = '{escaped}'"
+
+
+def debtor_dataset(ds_id, tag_name, sheet, source_file):
+    filt = debtor_category_filter(tag_name)
+    return {
+        "id": ds_id,
+        "mod": "finance",
+        "kind": "Master",
+        "name": tag_name,
+        "related": "ลูกหนี้, บัญชี",
+        "model": "res.partner + res.partner.category",
+        "key": "ref / ชื่อ + แท็ก",
+        "sheet": sheet,
+        "count": f"""
+            SELECT COUNT(DISTINCT p.id)
+            FROM res_partner p
+            JOIN res_partner_res_partner_category_rel r ON r.partner_id = p.id
+            JOIN res_partner_category c ON c.id = r.category_id
+            WHERE {filt}
+        """,
+        "list": f"""
+            SELECT p.ref AS รหัสอ้างอิง,
+                   p.name AS ชื่อ,
+                   CASE WHEN p.is_company THEN 'นิติบุคคล' ELSE 'บุคคล' END AS ประเภท,
+                   COALESCE(p.street, '') AS ที่อยู่,
+                   COALESCE(p.street2, '') AS ตำบล,
+                   COALESCE(p.city, '') AS อำเภอ,
+                   COALESCE(s.name, '') AS จังหวัด,
+                   COALESCE(p.zip, '') AS รหัสไปรษณีย์,
+                   COALESCE(p.phone, p.mobile, '') AS โทร,
+                   CASE
+                     WHEN COALESCE(p.zip_id, 0) <> 0
+                       OR (
+                            COALESCE(p.street2, '') <> ''
+                            AND COALESCE(p.city, '') <> ''
+                            AND COALESCE(p.zip, '') <> ''
+                          )
+                     THEN 'มีที่อยู่'
+                     ELSE 'ยังไม่มีที่อยู่'
+                   END AS ที่อยู่ในฟอร์ม,
+                   {jname_sql('c.name')} AS แท็ก,
+                   CASE WHEN p.active THEN 'ใช้งาน' ELSE 'ปิด' END AS สถานะ
+            FROM res_partner p
+            JOIN res_partner_res_partner_category_rel r ON r.partner_id = p.id
+            JOIN res_partner_category c ON c.id = r.category_id
+            LEFT JOIN res_country_state s ON s.id = p.state_id
+            WHERE {filt}
+            ORDER BY p.ref NULLS LAST, p.name, p.id
+        """,
+        "footer_note": (
+            f"ยืนยันเฉพาะรายการที่มีแท็ก “{tag_name}”  "
+            f"คีย์จับคู่คือรหัสอ้างอิง (ref) จากไฟล์ต้นทาง {source_file}  "
+            "แยกชีตตามประเภท ไม่รวมรายการคนละแท็กแม้ชื่อซ้ำ  "
+            "คอลัมน์ที่อยู่ในฟอร์ม = มี zip_id หรือมีตำบล+อำเภอ+รหัสไปรษณีย์"
+        ),
+    }
 
 
 DATASETS = [
@@ -844,6 +953,42 @@ DATASETS = [
             FROM account_payment_term ORDER BY id
         """,
     },
+    debtor_dataset(
+        "ar_his_entitlement",
+        "ลูกหนี้สิทธิ HIS",
+        "ยืนยัน-ลูกหนี้สิทธิHIS",
+        "HIS / สิทธิการรักษา",
+    ),
+    debtor_dataset(
+        "ar_his_ipd",
+        "ลูกหนี้คนไข้ IPD HIS",
+        "ยืนยัน-ลูกหนี้IPD HIS",
+        "HIS / คนไข้ IPD",
+    ),
+    debtor_dataset(
+        "ar_prb",
+        "ลูกหนี้ พรบ",
+        "ยืนยัน-ลูกหนี้พรบ",
+        "ลูกหนี้ พรบ.xls",
+    ),
+    debtor_dataset(
+        "ar_company",
+        "ลูกหนี้ บริษัท",
+        "ยืนยัน-ลูกหนี้บริษัท",
+        "ลูกหนี้บริษัท.xls",
+    ),
+    debtor_dataset(
+        "ar_insurance",
+        "ลูกหนี้ ประกัน",
+        "ยืนยัน-ลูกหนี้ประกัน",
+        "ลูกหนี้ประกัน.xls",
+    ),
+    debtor_dataset(
+        "ar_sso",
+        "ลูกหนี้ ประกันสังคม",
+        "ยืนยัน-ลูกหนี้ประกันสังคม",
+        "ลูกหนี้ประกันสังคม.xls",
+    ),
     {
         "id": "aprofile",
         "mod": "finance",
@@ -1305,10 +1450,17 @@ MODULES = {
     "finance": {
         "file": "UAT-นำเข้าข้อมูล-เจ้าหนี้บัญชีการเงิน.xlsx",
         "doc": "DM-SIGNOFF-FIN-001",
-        "title": "ยืนยันข้อมูลนำเข้า เจ้าหนี้ บัญชี การเงิน",
-        "system": "Odoo 18 · Accounting / AP / Asset",
+        "title": "ยืนยันข้อมูลนำเข้า เจ้าหนี้ ลูกหนี้ บัญชี การเงิน",
+        "system": "Odoo 18 · Accounting / AP / AR / Asset",
         "owner": "บัญชี / การเงิน",
-        "roles": ["บัญชี (เจ้าของผังบัญชี/สินทรัพย์)", "การเงิน (เจ้าของจ่ายชำระ)", "พัสดุ (ตรวจรับ/เจ้าหนี้)", "IT / ผู้ดูแลระบบ", "ผู้บริหารโครงการ"],
+        "roles": [
+            "บัญชี (เจ้าของผังบัญชี/สินทรัพย์)",
+            "การเงิน (เจ้าของจ่ายชำระ)",
+            "บัญชีลูกหนี้ / HIS (เจ้าของข้อมูลลูกหนี้)",
+            "พัสดุ (ตรวจรับ/เจ้าหนี้)",
+            "IT / ผู้ดูแลระบบ",
+            "ผู้บริหารโครงการ",
+        ],
     },
     "asset": {
         "file": "UAT-นำเข้าข้อมูล-สินทรัพย์ถาวร.xlsx",
@@ -1514,6 +1666,7 @@ def write_listing(wb, spec, ds, cols, rows):
         short = {
             "หมดอายุ", "อายุ (วัน)", "ติดตาม", "คุมสต็อก", "สถานะ", "ประเภท",
             "ต้นทุน", "รับเข้า", "จ่ายออก", "เดบิต", "เครดิต",
+            "รหัสอ้างอิง", "รหัสไปรษณีย์", "ที่อยู่ในฟอร์ม", "แท็ก",
         }
         for i, c in enumerate(cols, 2):
             if c in long or "ชื่อ" in c:
@@ -1635,6 +1788,12 @@ def write_howto(wb, spec):
                 "งบทดลอง TB ปี 2569",
                 "ชีตยืนยัน-TB2569 รวมยอดบัญชีที่ผ่านรายการ ระหว่าง 1 ต.ค. 2568 ถึง 30 ก.ย. 2569 ถ้าว่างให้ยืนยันว่ายังไม่นำเข้า TB / ยอดยกเข้า",
             ),
+            (
+                "2ง",
+                "ลูกหนี้แยกประเภท",
+                "ตรวจชีตยืนยัน-ลูกหนี้สิทธิHIS, ลูกหนี้IPD HIS, ลูกหนี้พรบ, ลูกหนี้บริษัท, ลูกหนี้ประกัน, ลูกหนี้ประกันสังคม แยกแท็ก "
+                "รหัสอ้างอิงตรงกับไฟล์ต้นทาง ไม่รวมรายการข้ามประเภทแม้ชื่อซ้ำ และดูคอลัมน์ที่อยู่ในฟอร์ม",
+            ),
         ]
     if spec.get("file", "").endswith("คลังสินค้า.xlsx"):
         steps[2:2] = [
@@ -1683,6 +1842,7 @@ def build_module(mod_key, snapshot, cur):
     write_howto(wb, spec)
     path = OUT_DIR / dated_xlsx(spec["file"])
     wb.save(path)
+    make_excel_safe(path)
     n_list = sum(1 for d in items if d.get("list"))
     print(f"{len(items):2d} ประเภท  {n_list:2d} ชีตรายการ  {path.name}")
     return path
@@ -1747,6 +1907,7 @@ def build_overview(snapshot):
     write_howto(wb, spec)
     path = OUT_DIR / dated_xlsx("UAT-นำเข้าข้อมูล-สรุปและลงนาม.xlsx")
     wb.save(path)
+    make_excel_safe(path)
     print(f"ภาพรวม  {path.name}")
     return path
 

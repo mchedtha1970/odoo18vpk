@@ -237,8 +237,15 @@ class PurchaseRequest(models.Model):
             if hasattr(rec, "_vpk_auto_confirm_if_validated"):
                 rec._vpk_auto_confirm_if_validated()
             if rec.state in ("draft", "to_approve", "sent_to_procurement"):
-                rec.sudo().with_user(self.env.user).with_context(
-                    skip_validation_check=True
+                # with_user() clears su; sudo() after keeps acting user for
+                # approved_by while bypassing PR line record rules for signers
+                # who are not the requester (e.g. director).
+                # skip_check_state_condition: packet docs are the validation
+                # gate — do not re-open PR tier validation on approve write.
+                rec.with_user(self.env.user).sudo().with_context(
+                    skip_validation_check=True,
+                    skip_check_state_condition=True,
+                    vpk_in_auto_confirm=True,
                 ).button_approved()
 
     def _vpk_reset_approval_packet_reviews(self, status="rejected"):

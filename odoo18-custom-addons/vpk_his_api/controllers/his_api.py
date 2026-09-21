@@ -140,6 +140,34 @@ class HisApiController(http.Controller):
             )
 
     @http.route(
+        "/vpk/api/v1/his/deposits",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        csrf=False,
+        save_session=False,
+        website=False,
+    )
+    def his_deposits(self, **kwargs):
+        auth_error = self._authenticate()
+        if auth_error:
+            return auth_error
+        try:
+            payload = self._parse_json_body()
+            result = self._service().ingest_deposits(
+                payload,
+                request_meta=self._request_meta("/vpk/api/v1/his/deposits"),
+            )
+            return self._json_response(result, status=result.get("http_status", 202))
+        except (UserError, ValidationError) as err:
+            return self._json_response({"ok": False, "error": str(err)}, status=400)
+        except Exception:  # noqa: BLE001
+            _logger.exception("HIS deposits endpoint failed")
+            return self._json_response(
+                {"ok": False, "error": "Internal server error"}, status=500
+            )
+
+    @http.route(
         "/vpk/api/v1/his/stock-issues",
         type="http",
         auth="public",

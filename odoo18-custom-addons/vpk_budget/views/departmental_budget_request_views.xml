@@ -98,20 +98,71 @@
                             <field name="total_received_budget_amount" string="งบประมาณที่ได้รับ" readonly="1" force_save="1"/>
                         </group>
                     </group>
-                    <group invisible="not show_material_lines">
-                        <field
-                            name="budget_group_ids"
-                            string="กลุ่มวัสดุ"
-                            widget="many2many_tags"
-                            readonly="1"
-                            colspan="2"
-                        />
-                        <field
-                            name="material_sub_type_ids"
-                            widget="many2many_tags"
-                            readonly="1"
-                            colspan="2"
-                        />
+                    <group invisible="not show_material_lines" string="โหลดรายการวัสดุ">
+                        <group>
+                            <field name="form_section_key" invisible="1"/>
+                            <field
+                                name="load_budget_post_id"
+                                string="หมวดงบประมาณ"
+                                options="{'no_create': True}"
+                                readonly="not can_edit_request_content"
+                            />
+                            <field
+                                name="load_budget_group_id"
+                                string="กลุ่มวัสดุ"
+                                options="{'no_create': True, 'no_open': True}"
+                                readonly="not can_edit_request_content"
+                            />
+                            <field
+                                name="load_material_sub_type_id"
+                                string="ประเภทวัสดุ"
+                                options="{'no_create': True, 'no_open': True}"
+                                context="{'material_sub_type_budget_group_id': load_budget_group_id}"
+                                readonly="not can_edit_request_content"
+                            />
+                        </group>
+                        <group>
+                            <div class="o_row" colspan="2">
+                                <button
+                                    name="action_load_material_category_products"
+                                    type="object"
+                                    string="โหลดรายการสินค้าทั้งหมวด"
+                                    class="btn-primary"
+                                    invisible="not can_edit_request_content"
+                                    confirm="ระบบจะสร้างรายการสินค้าทั้งหมดในหมวด/กลุ่มที่เลือก (ข้ามรายการที่มีอยู่แล้ว) ต้องการดำเนินการต่อหรือไม่?"
+                                />
+                                <button
+                                    name="action_fill_demo_material_detail_qty_price"
+                                    type="object"
+                                    string="สร้างตัวอย่างปริมาณ/ราคา"
+                                    class="btn-secondary"
+                                    invisible="not can_edit_request_content or not has_material_details"
+                                    confirm="ระบบจะใส่ปริมาณที่ขอและราคาต่อหน่วยแบบตัวอย่างให้รายการสินค้าทั้งหมดในคำของบนี้ ต้องการดำเนินการต่อหรือไม่?"
+                                />
+                                <button
+                                    name="action_copy_material_request_to_allocation"
+                                    type="object"
+                                    string="จัดสรรเท่ากับที่ขอ"
+                                    class="btn-secondary"
+                                    invisible="not has_material_details or (not can_edit_request_content and not can_edit_allocation)"
+                                    confirm="ระบบจะกำหนดปริมาณ/มูลค่าที่จัดสรรให้เท่ากับที่ขอทุกรายการ ต้องการดำเนินการต่อหรือไม่?"
+                                />
+                            </div>
+                            <field
+                                name="budget_group_ids"
+                                string="กลุ่มวัสดุในคำขอ"
+                                widget="many2many_tags"
+                                readonly="1"
+                                colspan="2"
+                            />
+                            <field
+                                name="material_sub_type_ids"
+                                string="ประเภทวัสดุในคำขอ"
+                                widget="many2many_tags"
+                                readonly="1"
+                                colspan="2"
+                            />
+                        </group>
                     </group>
                     <group invisible="not show_asset_lines">
                         <field
@@ -175,6 +226,89 @@
                                         readonly="not parent.can_edit_allocation"
                                     />
                                     <field name="reason" readonly="not parent.can_edit_request_content"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="รายการวัสดุ" invisible="not show_material_lines">
+                            <div class="text-muted mb-2">
+                                เพิ่มรายการสินค้าในแท็บนี้ก่อน จากนั้นตรวจยอดรวมในแท็บ
+                                <strong>แบบตั้งงบภาพรวม</strong> — ยอด
+                                <strong>คำขอตั้งแผนปีงบ</strong> จะถูกคำนวณตามประเภทวัสดุอัตโนมัติ
+                            </div>
+                            <field name="usage_history_be_y3" invisible="1"/>
+                            <field name="usage_history_be_y2" invisible="1"/>
+                            <field name="usage_history_be_y1" invisible="1"/>
+                            <field name="plan_year_be" invisible="1"/>
+                            <field
+                                name="material_detail_ids"
+                                context="{'vpk_usage_fiscal_year': fiscal_year}"
+                                class="o_vpk_material_detail_lines"
+                                readonly="not can_edit_request_content and not can_edit_allocation"
+                                options="{'limit': 40}"
+                            >
+                                <list editable="bottom" limit="40" default_order="sequence, id">
+                                    <field name="sequence" widget="handle" readonly="not parent.can_edit_request_content"/>
+                                    <field name="company_id" column_invisible="1"/>
+                                    <field name="form_section_key" column_invisible="1"/>
+                                    <field name="product_categ_id" column_invisible="1"/>
+                                    <field
+                                        name="material_sub_type_id"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        optional="hide"
+                                        readonly="not parent.can_edit_request_content"
+                                    />
+                                    <field
+                                        name="budget_post_id"
+                                        string="หมวดงบประมาณ"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        domain="[('company_id', 'in', [False, company_id]), '|', ('section_key', '=', False), ('section_key', '=', form_section_key)]"
+                                        readonly="not parent.can_edit_request_content"
+                                    />
+                                    <field name="budget_group_id" string="กลุ่มวัสดุ" readonly="1" optional="hide"/>
+                                    <field
+                                        name="product_id"
+                                        string="รายการ"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        domain="[('purchase_ok', '=', True), ('categ_id', 'child_of', product_categ_id)]"
+                                        readonly="not parent.can_edit_request_content"
+                                    />
+                                    <field name="name" optional="hide" readonly="not parent.can_edit_request_content"/>
+                                    <field
+                                        name="product_uom_id"
+                                        string="หน่วยนับ"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        readonly="not parent.can_edit_request_content"
+                                    />
+                                    <field name="usage_qty_y3" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
+                                    <field name="usage_qty_y2" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
+                                    <field name="usage_qty_y1" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
+                                    <field name="opening_qty" string="ปริมาณคงเหลือยกมา" sum="รวมปริมาณคงเหลือยกมา" readonly="not parent.can_edit_request_content"/>
+                                    <field name="opening_amount" string="มูลค่าคงเหลือยกมา" class="o_vpk_amount_right" sum="รวมมูลค่าคงเหลือยกมา" readonly="not parent.can_edit_request_content"/>
+                                    <field name="plan_usage_qty" class="o_vpk_plan_col" sum="รวมปริมาณใช้" optional="hide" readonly="not parent.can_edit_request_content"/>
+                                    <field name="quantity" class="o_vpk_plan_col" sum="รวมปริมาณที่ของบ" readonly="not parent.can_edit_request_content"/>
+                                    <field name="unit_price" string="ราคา/หน่วยนับ" class="o_vpk_plan_col" readonly="not parent.can_edit_request_content"/>
+                                    <field
+                                        name="total_amount"
+                                        string="มูลค่าที่ของบ"
+                                        class="o_vpk_plan_col o_vpk_amount_right"
+                                        readonly="1"
+                                        sum="รวมมูลค่าที่ของบ"
+                                    />
+                                    <field
+                                        name="allocated_qty"
+                                        string="ปริมาณที่จัดสรร"
+                                        class="o_vpk_plan_col o_vpk_allocated_col"
+                                        sum="รวมปริมาณที่จัดสรร"
+                                        readonly="not parent.can_edit_allocation"
+                                    />
+                                    <field
+                                        name="allocated_amount"
+                                        string="มูลค่าที่จัดสรร"
+                                        class="o_vpk_plan_col o_vpk_amount_right o_vpk_allocated_col"
+                                        readonly="1"
+                                        sum="รวมมูลค่าที่จัดสรร"
+                                    />
+                                    <field name="note" readonly="not parent.can_edit_request_content"/>
                                 </list>
                             </field>
                         </page>
@@ -246,80 +380,6 @@
                                         <field name="reason" readonly="not parent.can_edit_request_content"/>
                                     </group>
                                 </form>
-                            </field>
-                        </page>
-                        <page string="รายการวัสดุ" invisible="not show_material_lines">
-                            <div class="text-muted mb-2" invisible="material_line_ids">
-                                กรุณาเพิ่มบรรทัดในแท็บ <strong>แบบตั้งงบภาพรวม</strong> ให้ครบก่อน
-                                จากนั้นเพิ่มรายการสินค้าในแท็บนี้ — ยอดรวมจะถูกคำนวณไปที่
-                                <strong>คำขอตั้งแผนปีงบ</strong> ตามประเภทวัสดุอัตโนมัติ
-                            </div>
-                            <field name="usage_history_be_y3" invisible="1"/>
-                            <field name="usage_history_be_y2" invisible="1"/>
-                            <field name="usage_history_be_y1" invisible="1"/>
-                            <field name="plan_year_be" invisible="1"/>
-                            <field
-                                name="material_detail_ids"
-                                context="{'vpk_usage_fiscal_year': fiscal_year}"
-                                class="o_vpk_material_detail_lines"
-                                readonly="not can_edit_request_content and not can_edit_allocation"
-                            >
-                                <list editable="bottom">
-                                    <field name="sequence" widget="handle" readonly="not parent.can_edit_request_content"/>
-                                    <field name="company_id" column_invisible="1"/>
-                                    <field name="allowed_material_sub_type_ids" column_invisible="1"/>
-                                    <field name="sibling_product_ids" column_invisible="1"/>
-                                    <field
-                                        name="material_sub_type_id"
-                                        options="{'no_create': True, 'no_open': True}"
-                                        optional="hide"
-                                        readonly="not parent.can_edit_request_content"
-                                    />
-                                    <field name="budget_group_id" string="กลุ่มวัสดุ" readonly="1" optional="hide"/>
-                                    <field
-                                        name="product_id"
-                                        string="รายการ"
-                                        options="{'no_create': True}"
-                                        readonly="not parent.can_edit_request_content"
-                                    />
-                                    <field name="name" optional="hide" readonly="not parent.can_edit_request_content"/>
-                                    <field
-                                        name="product_uom_id"
-                                        string="หน่วยนับ"
-                                        options="{'no_create': True, 'no_open': True}"
-                                        readonly="not parent.can_edit_request_content"
-                                    />
-                                    <field name="usage_qty_y3" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
-                                    <field name="usage_qty_y2" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
-                                    <field name="usage_qty_y1" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
-                                    <field name="opening_qty" string="ปริมาณคงเหลือยกมา" sum="รวมปริมาณคงเหลือยกมา" readonly="not parent.can_edit_request_content"/>
-                                    <field name="opening_amount" string="มูลค่าคงเหลือยกมา" class="o_vpk_amount_right" sum="รวมมูลค่าคงเหลือยกมา" readonly="not parent.can_edit_request_content"/>
-                                    <field name="plan_usage_qty" class="o_vpk_plan_col" sum="รวมปริมาณใช้" optional="hide" readonly="not parent.can_edit_request_content"/>
-                                    <field name="quantity" class="o_vpk_plan_col" sum="รวมปริมาณที่ของบ" readonly="not parent.can_edit_request_content"/>
-                                    <field name="unit_price" string="ราคา/หน่วยนับ" class="o_vpk_plan_col" readonly="not parent.can_edit_request_content"/>
-                                    <field
-                                        name="total_amount"
-                                        string="มูลค่าที่ของบ"
-                                        class="o_vpk_plan_col o_vpk_amount_right"
-                                        readonly="1"
-                                        sum="รวมมูลค่าที่ของบ"
-                                    />
-                                    <field
-                                        name="allocated_qty"
-                                        string="ปริมาณที่จัดสรร"
-                                        class="o_vpk_plan_col o_vpk_allocated_col"
-                                        sum="รวมปริมาณที่จัดสรร"
-                                        readonly="not parent.can_edit_allocation"
-                                    />
-                                    <field
-                                        name="allocated_amount"
-                                        string="มูลค่าที่จัดสรร"
-                                        class="o_vpk_plan_col o_vpk_amount_right o_vpk_allocated_col"
-                                        readonly="1"
-                                        sum="รวมมูลค่าที่จัดสรร"
-                                    />
-                                    <field name="note" readonly="not parent.can_edit_request_content"/>
-                                </list>
                             </field>
                         </page>
                         <page string="แบบตั้งงบก่อสร้าง" invisible="not show_construction_lines">
@@ -445,6 +505,7 @@
                                     <field name="product_id"/>
                                     <field name="name" optional="hide"/>
                                     <field name="material_sub_type_id"/>
+                                    <field name="budget_post_id" string="หมวดงบประมาณ"/>
                                     <field name="budget_group_id" string="กลุ่มวัสดุ"/>
                                     <field name="quantity" string="จำนวนที่ขอ"/>
                                     <field name="product_uom_id"/>

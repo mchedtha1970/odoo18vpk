@@ -634,6 +634,133 @@ class TestHisPosting(TestHisApiCommon):
         self.assertEqual(inv.amount_residual, 0.0)
         self.assertEqual(visit_batch.payment_ids.journal_id.code, "HADV")
 
+    def test_ingest_patient_deposit_and_refund(self):
+        self.env["vpk.his.receipt.journal.mixin"]._bind_his_advance_journal()
+        result = self.service.ingest_deposits(
+            {
+                "external_id": "HIS-DEP-TEST-001",
+                "source_system": "front_his",
+                "business_date": "2026-09-21",
+                "shift": "1",
+                "deposits": [
+                    {
+                        "line_external_id": "DEP-CASH-1",
+                        "ticket_external_id": "RCP-DEP-001",
+                        "payment_method_code": "cash",
+                        "service_type": "ip",
+                        "amount": 20000.00,
+                    }
+                ],
+                "control_totals": {"payments_total": 20000.00},
+            }
+        )
+        self.assertEqual(result["state"], "ready", result.get("errors"))
+        self.assertEqual(result["batch_type"], "deposit")
+        batch = self.env["vpk.his.batch"].browse(result["batch_id"])
+        self.assertFalse(batch.sale_line_ids)
+        self.assertEqual(batch.payment_line_ids.service_type, "ip")
+        self.assertEqual(batch.payment_line_ids.transaction_type, "receive")
+        batch.action_post()
+        self.assertEqual(batch.state, "posted")
+        self.assertFalse(batch.invoice_ids)
+        self.assertFalse(batch.payment_ids)
+        self.assertEqual(len(batch.deposit_move_ids), 1)
+        move = batch.deposit_move_ids
+        liability = self.env["vpk.his.receipt.journal.mixin"]._advance_liability_account()
+        credit_line = move.line_ids.filtered(lambda l: l.account_id == liability)
+        self.assertEqual(credit_line.credit, 20000.00)
+        self.assertTrue(move.line_ids.filtered(lambda l: l.debit == 20000.00))
+
+        refund = self.service.ingest_deposits(
+            {
+                "external_id": "HIS-DEP-TEST-REFUND-001",
+                "source_system": "front_his",
+                "business_date": "2026-09-22",
+                "deposits": [
+                    {
+                        "line_external_id": "DEP-REF-1",
+                        "ticket_external_id": "RCP-DEP-001",
+                        "payment_method_code": "cash",
+                        "service_type": "ip",
+                        "transaction_type": "refund",
+                        "amount": 5000.00,
+                    }
+                ],
+                "control_totals": {"payments_total": 5000.00},
+            }
+        )
+        self.assertEqual(refund["state"], "ready", refund.get("errors"))
+        refund_batch = self.env["vpk.his.batch"].browse(refund["batch_id"])
+        refund_batch.action_post()
+        refund_move = refund_batch.deposit_move_ids
+        debit_liab = refund_move.line_ids.filtered(lambda l: l.account_id == liability)
+        self.assertEqual(debit_liab.debit, 5000.00)
+
+    def test_deposit_rejects_sales_and_entitlement(self):
+        result = self.service.ingest_deposits(
+            {
+                "external_id": "HIS-DEP-TEST-BAD-ENT",
+                "source_system": "front_his",
+                "business_date": "2026-09-21",
+                "deposits": [
+                    {
+                        "payment_method_code": "sso",
+                        "amount": 1000.00,
+                    }
+                ],
+            }
+        )
+        self.assertEqual(result["state"], "error")
+        with self.assertRaises(UserError):
+            self.service.ingest_deposits(
+                {
+                    "external_id": "HIS-DEP-TEST-BAD-SALE",
+                    "source_system": "front_his",
+                    "business_date": "2026-09-21",
+                    "sales": [{"entitlement_code": "SELF_PAY", "amount_total": 1}],
+                    "deposits": [
+                        {"payment_method_code": "cash", "amount": 1.00}
+                    ],
+                }
+            )
+
+    def test_deposit_reversal_reverses_entry(self):
+        self.env["vpk.his.receipt.journal.mixin"]._bind_his_advance_journal()
+        result = self.service.ingest_deposits(
+            {
+                "external_id": "HIS-DEP-TEST-ORIG",
+                "source_system": "front_his",
+                "business_date": "2026-09-21",
+                "deposits": [
+                    {
+                        "payment_method_code": "advance_in",
+                        "amount": 8000.00,
+                    }
+                ],
+                "control_totals": {"payments_total": 8000.00},
+            }
+        )
+        batch = self.env["vpk.his.batch"].browse(result["batch_id"])
+        batch.action_post()
+        orig_move = batch.deposit_move_ids
+        reversal = self.service.ingest_deposits(
+            {
+                "external_id": "HIS-DEP-TEST-REV",
+                "source_system": "front_his",
+                "business_date": "2026-09-23",
+                "batch_type": "reversal",
+                "original_external_id": "HIS-DEP-TEST-ORIG",
+            }
+        )
+        self.assertEqual(reversal["state"], "ready", reversal.get("errors"))
+        rev_batch = self.env["vpk.his.batch"].browse(reversal["batch_id"])
+        rev_batch.action_post()
+        self.assertEqual(rev_batch.state, "posted")
+        self.assertTrue(rev_batch.deposit_move_ids)
+        self.assertTrue(
+            any(m.reversed_entry_id == orig_move for m in rev_batch.deposit_move_ids)
+        )
+
     def test_post_stock_consumption(self):
         warehouse = self.env["stock.warehouse"].search(
             [("company_id", "=", self.env.company.id)], limit=1
@@ -1115,6 +1242,14 @@ class TestHisApiHttp(HttpCase):
     def test_revenue_requires_api_key(self):
         response = self.url_open(
             "/vpk/api/v1/his/revenue",
+            data='{"external_id": "X"}',
+            headers={"Content-Type": "application/json"},
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_deposits_requires_api_key(self):
+        response = self.url_open(
+            "/vpk/api/v1/his/deposits",
             data='{"external_id": "X"}',
             headers={"Content-Type": "application/json"},
         )

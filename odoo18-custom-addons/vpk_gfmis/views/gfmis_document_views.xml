@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_gfmis_document_search" model="ir.ui.view">
+        <field name="name">gfmis.document.search</field>
+        <field name="model">gfmis.document</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="gfmis_doc_number"/>
+                <field name="reference"/>
+                <field name="partner_id"/>
+                <field name="form_type_id"/>
+                <field name="invoice_id"/>
+                <field name="purchase_id"/>
+                <filter name="filter_request" string="ขอเบิกเงิน" domain="[('doc_class', '=', 'request')]"/>
+                <filter name="filter_agency_pay" string="ขอจ่ายโดยส่วนราชการ" domain="[('doc_class', '=', 'agency_pay')]"/>
+                <filter name="filter_return" string="เบิกเกินส่งคืน" domain="[('doc_class', '=', 'return')]"/>
+                <separator/>
+                <filter name="filter_draft" string="ร่าง" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_waiting" string="รออนุมัติ" domain="[('state', 'in', ('wait_approve_request', 'wait_approve_pay'))]"/>
+                <filter name="filter_paid" string="จ่ายแล้ว" domain="[('state', 'in', ('paid', 'agency_paid'))]"/>
+                <separator/>
+                <filter name="filter_direct" string="จ่ายตรง" domain="[('payment_method', '=', 'direct')]"/>
+                <filter name="filter_through" string="จ่ายผ่านส่วนราชการ" domain="[('payment_method', '=', 'through')]"/>
+                <group>
+                    <filter name="group_form" string="แบบฟอร์ม" context="{'group_by': 'form_type_id'}"/>
+                    <filter name="group_state" string="สถานะ" context="{'group_by': 'state'}"/>
+                    <filter name="group_partner" string="เจ้าหนี้" context="{'group_by': 'partner_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_gfmis_document_list" model="ir.ui.view">
+        <field name="name">gfmis.document.list</field>
+        <field name="model">gfmis.document</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancelled'" decoration-info="state in ('wait_approve_request', 'wait_approve_pay')" decoration-success="state in ('paid', 'agency_paid')">
+                <field name="name"/>
+                <field name="document_date"/>
+                <field name="form_code"/>
+                <field name="form_type_id" optional="hide"/>
+                <field name="partner_id"/>
+                <field name="reference" optional="show"/>
+                <field name="gfmis_doc_number"/>
+                <field name="payment_method"/>
+                <field name="amount_net" sum="รวม"/>
+                <field name="state" widget="badge" decoration-info="state in ('recorded', 'sent_treasury')" decoration-warning="state in ('wait_approve_request', 'wait_approve_pay', 'wait_agency_pay')" decoration-success="state in ('paid', 'agency_paid')" decoration-danger="state == 'cancelled'"/>
+                <field name="invoice_id" optional="hide"/>
+                <field name="purchase_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_gfmis_document_form" model="ir.ui.view">
+        <field name="name">gfmis.document.form</field>
+        <field name="model">gfmis.document</field>
+        <field name="arch" type="xml">
+            <form string="เอกสารกระบวนการ GFMIS">
+                <header>
+                    <button name="action_record_gfmis" type="object" string="บันทึกใน GFMIS" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_submit_approve" type="object" string="ส่งอนุมัติขอเบิก (อม.01)" class="btn-primary" invisible="state != 'recorded'"/>
+                    <button name="action_approve_request" type="object" string="อนุมัติขอเบิก (อม.01)" class="btn-primary" invisible="state != 'wait_approve_request'" groups="vpk_gfmis.group_gfmis_manager"/>
+                    <button name="action_approve_pay" type="object" string="อนุมัติสั่งจ่าย (อม.02)" class="btn-primary" invisible="state != 'wait_approve_pay'" groups="vpk_gfmis.group_gfmis_manager"/>
+                    <button name="action_mark_paid" type="object" string="บันทึกจ่ายแล้ว" invisible="state not in ('sent_treasury', 'wait_agency_pay')"/>
+                    <button name="action_mark_returned" type="object" string="เบิกเกินส่งคืน" invisible="state not in ('paid', 'agency_paid', 'wait_agency_pay', 'sent_treasury')"/>
+                    <button name="action_cancel" type="object" string="ยกเลิก" invisible="state not in ('draft', 'recorded', 'wait_approve_request', 'wait_approve_pay')"/>
+                    <button name="action_draft" type="object" string="ตั้งเป็นร่าง" invisible="state not in ('cancelled', 'recorded')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,recorded,wait_approve_request,wait_approve_pay,sent_treasury,paid"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_invoice" type="object" class="oe_stat_button" icon="fa-pencil-square-o" invisible="not invoice_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">ใบแจ้งหนี้ ERP</span>
+                            </div>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="ยกเลิก" bg_color="text-bg-danger" invisible="state != 'cancelled'"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="แบบฟอร์มและสถานะ">
+                            <field name="doc_class" readonly="state != 'draft'"/>
+                            <field name="form_type_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="form_code" invisible="1"/>
+                            <field name="requires_po" invisible="1"/>
+                            <field name="fund_type" readonly="state != 'draft'"/>
+                            <field name="payment_method" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="ส่วนหัวตามคู่มือ AP">
+                            <field name="agency_code" readonly="state != 'draft'"/>
+                            <field name="area_code" readonly="state != 'draft'"/>
+                            <field name="disbursing_unit_code" readonly="state != 'draft'"/>
+                            <field name="document_date" readonly="state != 'draft'"/>
+                            <field name="posting_date" readonly="state != 'draft'"/>
+                            <field name="period"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="ผู้รับเงิน">
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="vat"/>
+                            <field name="partner_bank_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="company_bank_id" readonly="state != 'draft'" options="{'no_create': True}" invisible="payment_method != 'through'"/>
+                            <field name="company_partner_id" invisible="1"/>
+                        </group>
+                        <group string="เลขที่เอกสาร">
+                            <field name="reference" readonly="state != 'draft'"/>
+                            <field name="gfmis_po_number" readonly="state != 'draft'"/>
+                            <field name="gfmis_doc_number"/>
+                            <field name="description" readonly="state != 'draft'"/>
+                            <field name="source_document_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <group string="เชื่อมโยง ERP">
+                        <group>
+                            <field name="purchase_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="invoice_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="payment_id" options="{'no_create': True}"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="รายการขอเบิก" name="lines">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="quantity"/>
+                                    <field name="price_unit"/>
+                                    <field name="amount" sum="รวม"/>
+                                    <field name="fund_source_code" optional="show"/>
+                                    <field name="activity_code" optional="hide"/>
+                                    <field name="budget_code" optional="hide"/>
+                                    <field name="purchase_line_id" optional="hide"/>
+                                    <field name="invoice_line_id" optional="hide"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                            <group class="oe_subtotal_footer oe_right">
+                                <field name="amount_untaxed"/>
+                                <field name="amount_wht"/>
+                                <field name="amount_penalty"/>
+                                <field name="amount_net" class="oe_subtotal_footer_separator"/>
+                                <field name="currency_id" invisible="1"/>
+                            </group>
+                        </page>
+                        <page string="ภาษีหัก ณ ที่จ่าย / ค่าปรับ" name="wht">
+                            <field name="wht_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="person_type"/>
+                                    <field name="wht_base"/>
+                                    <field name="wht_amount" sum="รวมภาษี"/>
+                                    <field name="penalty_type"/>
+                                    <field name="penalty_base"/>
+                                    <field name="penalty_amount" sum="รวมค่าปรับ"/>
+                                    <field name="note"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="ผลการตรวจสอบ / หมายเหตุ" name="notes">
+                            <field name="gfmis_message" placeholder="รหัสข้อความจาก GFMIS หลังจำลองบันทึก"/>
+                            <field name="note" placeholder="หมายเหตุภายใน"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_gfmis_document" model="ir.actions.act_window">
+        <field name="name">เอกสาร GFMIS</field>
+        <field name="res_model">gfmis.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_gfmis_document_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">สร้างเอกสารกระบวนการ GFMIS</p>
+            <p>เก็บข้อมูลขอเบิก / ขอจ่าย / เบิกเกินส่งคืน ตามคู่มือระบบเบิกจ่าย (AP) ส่วนราชการ และเชื่อมโยงใบแจ้งหนี้ ใบสั่งซื้อ การจ่ายใน ERP</p>
+        </field>
+    </record>
+
+    <record id="action_gfmis_document_request" model="ir.actions.act_window">
+        <field name="name">ขอเบิกเงิน</field>
+        <field name="res_model">gfmis.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('doc_class', '=', 'request')]</field>
+        <field name="context">{'default_doc_class': 'request', 'search_default_filter_request': 1}</field>
+        <field name="search_view_id" ref="view_gfmis_document_search"/>
+    </record>
+
+    <record id="action_gfmis_document_agency_pay" model="ir.actions.act_window">
+        <field name="name">ขอจ่ายโดยส่วนราชการ</field>
+        <field name="res_model">gfmis.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('doc_class', '=', 'agency_pay')]</field>
+        <field name="context">{'default_doc_class': 'agency_pay', 'default_payment_method': 'through', 'search_default_filter_agency_pay': 1}</field>
+        <field name="search_view_id" ref="view_gfmis_document_search"/>
+    </record>
+
+    <record id="action_gfmis_document_return" model="ir.actions.act_window">
+        <field name="name">เบิกเกินส่งคืน</field>
+        <field name="res_model">gfmis.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('doc_class', '=', 'return')]</field>
+        <field name="context">{'default_doc_class': 'return', 'search_default_filter_return': 1}</field>
+        <field name="search_view_id" ref="view_gfmis_document_search"/>
+    </record>
+</odoo>

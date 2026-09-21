@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="purchase_order_form_gfmis" model="ir.ui.view">
+        <field name="name">purchase.order.form.gfmis</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_gfmis_documents"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-university">
+                    <field name="gfmis_document_count" widget="statinfo" string="GFMIS"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

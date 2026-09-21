@@ -19,25 +19,40 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
         store=True,
         readonly=True,
     )
-    sibling_product_ids = fields.Many2many(
-        comodel_name="product.product",
-        compute="_compute_sibling_product_ids",
+    product_categ_id = fields.Many2one(
+        comodel_name="product.category",
+        string="หมวดสินค้า",
+        related="budget_group_id.product_categ_id",
+        store=True,
+        readonly=True,
     )
     product_id = fields.Many2one(
         comodel_name="product.product",
         string="รายการ",
-        domain="[('purchase_ok', '=', True), ('id', 'not in', sibling_product_ids)]",
+        domain=(
+            "[('purchase_ok', '=', True),"
+            " ('categ_id', 'child_of', product_categ_id)]"
+        ),
     )
     name = fields.Char(string="รายการสินค้า")
-    allowed_material_sub_type_ids = fields.Many2many(
-        comodel_name="vpk.budget.material.sub.type",
-        compute="_compute_allowed_material_sub_type_ids",
-    )
     material_sub_type_id = fields.Many2one(
         comodel_name="vpk.budget.material.sub.type",
         string="ประเภทวัสดุ",
         required=True,
-        domain="[('id', 'in', allowed_material_sub_type_ids)]",
+    )
+    form_section_key = fields.Char(
+        string="กลุ่มแบบฟอร์ม",
+        related="request_id.form_section_key",
+        store=True,
+        readonly=True,
+    )
+    budget_post_id = fields.Many2one(
+        comodel_name="account.budget.post",
+        string="หมวดงบประมาณ",
+        domain=(
+            "[('company_id', 'in', [False, company_id]),"
+            " '|', ('section_key', '=', False), ('section_key', '=', form_section_key)]"
+        ),
     )
     budget_group_id = fields.Many2one(
         comodel_name="vpk.budget.group",
@@ -148,28 +163,6 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
             res["total_amount"]["string"] = _("มูลค่าที่ของบ")
         return res
 
-    @api.depends(
-        "request_id",
-        "request_id.material_detail_ids",
-        "request_id.material_detail_ids.product_id",
-    )
-    def _compute_sibling_product_ids(self):
-        for detail in self:
-            others = detail.request_id.material_detail_ids - detail
-            detail.sibling_product_ids = others.mapped("product_id")
-
-    @api.depends("request_id.material_sub_type_ids")
-    def _compute_allowed_material_sub_type_ids(self):
-        MaterialSubType = self.env["vpk.budget.material.sub.type"]
-        for detail in self:
-            request_sub_types = detail.request_id.material_sub_type_ids
-            if request_sub_types:
-                detail.allowed_material_sub_type_ids = request_sub_types
-            else:
-                detail.allowed_material_sub_type_ids = MaterialSubType.search(
-                    [("active", "=", True)]
-                )
-
     @api.depends("quantity", "unit_price")
     def _compute_total_amount(self):
         for detail in self:
@@ -256,16 +249,27 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
         self.ensure_one()
         if not self.request_id:
             return self.browse()
-        siblings = self.request_id.material_detail_ids - self
         if self.product_id:
-            return siblings.filtered(lambda line: line.product_id == self.product_id)
+            domain = [
+                ("request_id", "=", self.request_id.id),
+                ("product_id", "=", self.product_id.id),
+            ]
+            if self.id:
+                domain.append(("id", "!=", self.id))
+            return self.search(domain, limit=1)
         item_name = self._normalize_item_name(self.name)
         if not item_name or item_name == self._normalize_item_name("รายการสินค้า"):
             return self.browse()
-        return siblings.filtered(
-            lambda line: not line.product_id
-            and self._normalize_item_name(line.name) == item_name
+        siblings = self.search(
+            [
+                ("request_id", "=", self.request_id.id),
+                ("product_id", "=", False),
+                ("id", "!=", self.id if self.id else 0),
+            ]
         )
+        return siblings.filtered(
+            lambda line: self._normalize_item_name(line.name) == item_name
+        )[:1]
 
     @api.constrains("request_id", "product_id", "name")
     def _check_duplicate_material_detail(self):
@@ -299,7 +303,69 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
         if request and len(request.material_sub_type_ids) == 1:
             if "material_sub_type_id" in fields_list or not fields_list:
                 res["material_sub_type_id"] = request.material_sub_type_ids.id
+            if "budget_post_id" in fields_list or not fields_list:
+                match = request.material_line_ids.filtered(
+                    lambda line: line.material_sub_type_id
+                    == request.material_sub_type_ids
+                    and line.budget_post_id
+                )[:1]
+                if match:
+                    res["budget_post_id"] = match.budget_post_id.id
         return res
+
+    def _matching_material_line_budget_post(self):
+        self.ensure_one()
+        if not self.request_id or not self.material_sub_type_id:
+            return self.env["account.budget.post"]
+        match = self.request_id.material_line_ids.filtered(
+            lambda line: line.material_sub_type_id == self.material_sub_type_id
+            and line.budget_post_id
+        )[:1]
+        return match.budget_post_id
+
+    @api.onchange("material_sub_type_id")
+    def _onchange_material_sub_type_id_budget_post(self):
+        if not self.material_sub_type_id:
+            return
+        budget_post = self._matching_material_line_budget_post()
+        if budget_post:
+            section = self.form_section_key
+            post_section = budget_post.section_key
+            if not section or not post_section or section == post_section:
+                self.budget_post_id = budget_post
+        if self.product_id and self.product_categ_id:
+            still_valid = self.env["product.product"].search_count(
+                [
+                    ("id", "=", self.product_id.id),
+                    ("categ_id", "child_of", self.product_categ_id.id),
+                ]
+            )
+            if not still_valid:
+                self.product_id = False
+                self.name = False
+                self.product_uom_id = False
+                self.unit_price = 0.0
+
+    @api.constrains("budget_post_id", "request_id")
+    def _check_budget_post_matches_form_section(self):
+        for detail in self:
+            if not detail.budget_post_id or not detail.request_id.form_type_id:
+                continue
+            section = detail.request_id.form_type_id._get_primary_section()
+            post_section = detail.budget_post_id.section_key
+            if section and post_section and section != post_section:
+                raise ValidationError(
+                    _(
+                        "หมวดงบประมาณ \"%(post)s\" ไม่สอดคล้องกับแบบฟอร์มคำของบ "
+                        "(ต้องเป็นกลุ่ม %(section)s)"
+                    )
+                    % {
+                        "post": detail.budget_post_id.display_name,
+                        "section": dict(
+                            detail.budget_post_id._fields["section_key"].selection
+                        ).get(section, section),
+                    }
+                )
 
     @api.onchange("product_id")
     def _onchange_product_id(self):

@@ -42,6 +42,7 @@
                 <filter string="Posted" name="posted" domain="[('state', '=', 'posted')]"/>
                 <separator/>
                 <filter string="Revenue" name="revenue" domain="[('batch_type', '=', 'revenue')]"/>
+                <filter string="รับมัดจำ" name="deposit" domain="[('batch_type', '=', 'deposit')]"/>
                 <filter string="Stock Issue" name="stock_issue" domain="[('batch_type', '=', 'stock_issue')]"/>
                 <filter string="Stock Requisition" name="stock_requisition" domain="[('batch_type', '=', 'stock_requisition')]"/>
                 <group>
@@ -69,7 +70,7 @@
                             invisible="state in ('posted', 'cancelled')"/>
                     <button name="action_open_remittance_wizard" type="object"
                             string="ใบนำส่งเงิน" class="btn-secondary"
-                            invisible="batch_type != 'revenue'"/>
+                            invisible="batch_type not in ('revenue', 'deposit')"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,ready,posted"/>
                 </header>
@@ -84,6 +85,11 @@
                                 class="oe_stat_button" icon="fa-money"
                                 invisible="payment_count == 0">
                             <field name="payment_count" widget="statinfo" string="Payments"/>
+                        </button>
+                        <button name="action_open_deposit_moves" type="object"
+                                class="oe_stat_button" icon="fa-university"
+                                invisible="deposit_move_count == 0">
+                            <field name="deposit_move_count" widget="statinfo" string="มัดจำ"/>
                         </button>
                         <button name="action_open_pickings" type="object"
                                 class="oe_stat_button" icon="fa-truck"
@@ -118,7 +124,7 @@
                     </group>
                     <notebook>
                         <page string="Sales" name="sales"
-                              invisible="batch_type in ('stock_issue', 'stock_requisition')">
+                              invisible="batch_type in ('stock_issue', 'stock_requisition', 'deposit')">
                             <group>
                                 <field name="control_sales_total"/>
                                 <field name="sales_total"/>
@@ -154,6 +160,7 @@
                                     <field name="line_external_id"/>
                                     <field name="ticket_external_id" optional="show"/>
                                     <field name="payment_method_code"/>
+                                    <field name="transaction_type" optional="show"/>
                                     <field name="payment_method_map_id" optional="hide"/>
                                     <field name="entitlement_code"/>
                                     <field name="service_type" optional="show"/>
@@ -250,8 +257,16 @@
         <field name="name">HIS Revenue Queue</field>
         <field name="res_model">vpk.his.batch</field>
         <field name="view_mode">list,form</field>
-        <field name="domain">[('batch_type', 'in', ('revenue', 'reversal'))]</field>
+        <field name="domain">[('batch_type', 'in', ('revenue', 'deposit', 'reversal'))]</field>
         <field name="context">{'search_default_revenue': 1}</field>
+    </record>
+
+    <record id="action_his_batch_deposit" model="ir.actions.act_window">
+        <field name="name">HIS รับมัดจำค่ารักษา</field>
+        <field name="res_model">vpk.his.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('batch_type', '=', 'deposit')]</field>
+        <field name="context">{'search_default_deposit': 1}</field>
     </record>
 
     <record id="action_his_batch_stock" model="ir.actions.act_window">

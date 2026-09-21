@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Prompt webfont, only pulled in on the login / signup / reset pages -->
+    <template id="vpk_login_fonts" inherit_id="web.frontend_layout" priority="30"
+              name="VPK Login Fonts">
+        <xpath expr="//head" position="inside">
+            <t t-if="body_classname and 'vpk-login-body' in body_classname">
+                <link rel="preconnect" href="https://fonts.googleapis.com"/>
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+                <link rel="stylesheet"
+                      href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&amp;display=swap"/>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Two column login shell, replaces both the stock card and the
+         website.login_layout override (priority 20). -->
+    <template id="vpk_login_layout" inherit_id="web.login_layout" priority="30"
+              name="VPK Split Login Layout">
+        <xpath expr="t" position="replace">
+            <t t-call="web.frontend_layout">
+                <t t-set="html_data" t-value="{'style': 'height: 100%;'}"/>
+                <t t-set="body_classname" t-value="'vpk-login-body'"/>
+                <t t-set="no_header" t-value="True"/>
+                <t t-set="no_footer" t-value="True"/>
+
+                <t t-set="vpk_cfg" t-value="request.env['ir.config_parameter'].sudo()"/>
+                <t t-set="vpk_company" t-value="request.env['res.company'].sudo().search([], order='id', limit=1)"/>
+                <t t-set="vpk_headline"
+                   t-value="vpk_cfg.get_param('vpk_login_page.headline') or 'ระบบการจัดการและวางแผนทรัพยากร (Enterprise Resource Planning : ERP)'"/>
+                <t t-set="vpk_organisation"
+                   t-value="vpk_cfg.get_param('vpk_login_page.organisation') or 'โรงพยาบาลวชิระภูเก็ต สำนักงานสาธารณสุขจังหวัดภูเก็ต'"/>
+                <t t-set="vpk_tagline"
+                   t-value="vpk_cfg.get_param('vpk_login_page.tagline') or 'ระบบบริหารงานพัสดุ จัดซื้อ คลัง และงบประมาณ ในระบบเดียว ข้อมูลเชื่อมต่อกันทั้งกระบวนการ ติดตามสถานะเอกสารได้ทันที เข้าสู่ระบบเพื่อเริ่มใช้งาน'"/>
+                <!-- the same shell is reused by signup and reset password -->
+                <t t-set="vpk_path" t-value="request.httprequest.path or '/web/login'"/>
+                <t t-set="vpk_is_reset" t-value="'reset_password' in vpk_path"/>
+                <t t-set="vpk_is_signup" t-value="'signup' in vpk_path"/>
+                <t t-set="vpk_subtitle_default"
+                   t-value="'กรอกอีเมลของคุณเพื่อรับลิงก์ตั้งรหัสผ่านใหม่' if vpk_is_reset else ('กรอกข้อมูลเพื่อสร้างบัญชีเข้าใช้งานระบบ' if vpk_is_signup else 'เข้าสู่ระบบด้วยบัญชีผู้ใช้ของโรงพยาบาล')"/>
+                <t t-set="vpk_subtitle"
+                   t-value="vpk_cfg.get_param('vpk_login_page.welcome_subtitle') if (vpk_cfg.get_param('vpk_login_page.welcome_subtitle') and not vpk_is_reset and not vpk_is_signup) else vpk_subtitle_default"/>
+                <t t-set="vpk_footnote" t-value="vpk_cfg.get_param('vpk_login_page.footnote')"/>
+
+                <div class="vpk-login-page">
+                    <div class="vpk-login-split">
+                        <aside class="vpk-login-hero">
+                            <img class="vpk-login-hero-art"
+                                 src="/vpk_login_page/static/src/img/login_hero.jpg" alt=""/>
+                            <div class="vpk-login-hero-content">
+                                <h1 class="vpk-login-headline" t-out="vpk_headline"/>
+                                <p class="vpk-login-org" t-if="vpk_organisation" t-out="vpk_organisation"/>
+                                <p class="vpk-login-tagline" t-out="vpk_tagline"/>
+                                <span class="vpk-login-divider"/>
+                            </div>
+                        </aside>
+
+                        <main class="vpk-login-panel">
+                            <div class="vpk-login-form-wrap">
+                                <div class="vpk-login-brand">
+                                    <img class="vpk-login-logo"
+                                         t-attf-src="/web/binary/company_logo{{ '?dbname=' + db if db else '' }}"
+                                         alt="Logo"/>
+                                </div>
+                                <p class="vpk-login-subtitle" t-out="vpk_subtitle"/>
+
+                                <t t-out="0"/>
+
+                                <p class="vpk-login-footnote" t-if="vpk_footnote" t-out="vpk_footnote"/>
+
+                                <div class="vpk-login-meta" t-if="not disable_footer">
+                                    <a t-if="not disable_database_manager"
+                                       href="/web/database/manager">Manage Databases</a>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Field labels / primary button tuned for the new layout -->
+    <template id="vpk_login_form" inherit_id="web.login" priority="30"
+              name="VPK Login Form Fields">
+        <!-- the "recent users" switcher is not part of this design and hides
+             the form behind d-none until a user card is picked -->
+        <xpath expr="//owl-component[@name='web.user_switch']" position="replace"/>
+        <xpath expr="//form[@role='form']" position="attributes">
+            <attribute name="t-attf-class">oe_login_form vpk-login-form</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('field-login')]/label[@for='login']" position="replace">
+            <label for="login" class="form-label vpk-login-label">ชื่อผู้ใช้ / Username</label>
+        </xpath>
+        <xpath expr="//label[@for='password']" position="replace">
+            <label for="password" class="form-label vpk-login-label vpk-login-label-password">รหัสผ่าน / Password
+                <a t-if="reset_password_enabled" class="btn btn-link btn-sm" tabindex="1"
+                   t-attf-href="/web/reset_password?{{ keep_query() }}">ลืมรหัสผ่าน?</a>
+            </label>
+        </xpath>
+        <xpath expr="//input[@id='login']" position="attributes">
+            <attribute name="placeholder">name@vachiraphuket.go.th</attribute>
+            <attribute name="class">form-control vpk-login-input</attribute>
+        </xpath>
+        <xpath expr="//input[@id='password']" position="attributes">
+            <attribute name="placeholder">รหัสผ่าน</attribute>
+            <attribute name="class">form-control vpk-login-input vpk-login-password</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('oe_login_buttons')]/button[1]" position="replace">
+            <button type="submit" class="btn btn-primary vpk-login-submit">เข้าสู่ระบบ</button>
+        </xpath>
+    </template>
+
+</odoo>

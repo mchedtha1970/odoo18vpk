@@ -62,7 +62,7 @@
                     context="{'group_by': 'purchase_type_id'}"
                 />
                 <filter
-                    string="Procurement Method"
+                    string="ซื้อด้วยวิธีการ"
                     name="procurement_method"
                     domain="[]"
                     context="{'group_by': 'procurement_method_id'}"
@@ -111,6 +111,7 @@
                 <field name="procurement_method_ids" invisible="True" />
                 <field
                     name="procurement_method_id"
+                    string="ซื้อด้วยวิธีการ"
                     required="True"
                     domain="[('id', 'in', procurement_method_ids)]"
                     readonly="is_editable == False"

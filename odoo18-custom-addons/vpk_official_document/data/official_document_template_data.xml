@@ -35,4 +35,13 @@
         <field name="datas" type="base64" file="vpk_official_document/static/src/templates/specific_method_approval.docx"/>
         <field name="note">ต้นฉบับรายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง ระบบจะแทนที่ส่วนราชการ ที่ วันที่ เรื่อง เรียน ต้นเรื่อง วงเงิน รายชื่อกรรมการตรวจรับ เจ้าหน้าที่ หัวหน้าเจ้าหน้าที่ และผู้อนุมัติ</field>
     </record>
+    <record id="template_winner_announcement" model="vpk.official.document.template">
+        <field name="name">แบบฟอร์มประกาศผู้ชนะการเสนอราคา</field>
+        <field name="code">winner_announcement</field>
+        <field name="document_type">winner_announcement</field>
+        <field name="sequence">50</field>
+        <field name="filename">แบบฟอร์ม_ประกาศผู้ชนะการเสนอราคา.docx</field>
+        <field name="datas" type="base64" file="vpk_purchase_agreement_egp/static/src/templates/winner_announcement.docx"/>
+        <field name="note">ต้นฉบับประกาศผู้ชนะการเสนอราคา ระบบจะแทนที่จังหวัด เรื่อง เนื้อหา ผู้ลงนาม และผู้รับรองสำเนาจากข้อมูลกระบวนการ e-GP</field>
+    </record>
 </odoo>

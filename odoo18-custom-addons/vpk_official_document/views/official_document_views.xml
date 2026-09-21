@@ -75,6 +75,7 @@
                             <field name="request_id"/>
                             <field name="purchase_id"/>
                             <field name="wa_id"/>
+                            <field name="requisition_id" invisible="document_type != 'winner_announcement'"/>
                             <field name="department_id"/>
                             <field name="department_name"/>
                             <field name="company_id" groups="base.group_multi_company"/>
@@ -88,9 +89,9 @@
                         <group>
                             <field name="signer_id" widget="many2one_avatar_user"
                                    options="{'no_create': True}"
-                                   invisible="document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval')"/>
+                                   invisible="document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval', 'winner_announcement')"/>
                             <field name="signer_name" invisible="1"/>
-                            <field name="signer_position" invisible="document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval')"/>
+                            <field name="signer_position" invisible="document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval', 'winner_announcement')"/>
                             <field name="approver_signature" widget="image" class="oe_avatar" invisible="not approver_signature"/>
                             <field name="signature_state" widget="badge"
                                    decoration-muted="signature_state == 'not_sent'"
@@ -106,11 +107,17 @@
                             <field name="officer_id" widget="many2one_avatar_user"
                                    options="{'no_create': True}"
                                    invisible="document_type not in ('integrity_over_100k', 'specific_method_approval')"/>
+                            <field name="officer_id" widget="many2one_avatar_user"
+                                   string="ผู้จัดทำเอกสาร"
+                                   options="{'no_create': True}"
+                                   invisible="document_type != 'winner_announcement'"/>
                             <field name="officer_name" invisible="1"/>
                             <field name="officer_position" invisible="document_type not in ('integrity_over_100k', 'specific_method_approval')"/>
+                            <field name="officer_position" string="ตำแหน่งผู้จัดทำ"
+                                   invisible="document_type != 'winner_announcement'"/>
                         </group>
                     </group>
-                    <group invisible="document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval')">
+                    <group invisible="document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval', 'winner_announcement')">
                         <field name="subject"/>
                     </group>
                     <group string="ย่อหน้าแรก" invisible="document_type != 'specific_method_approval'">
@@ -252,6 +259,8 @@
                         domain="[('document_type', '=', 'spec_price_committee')]"/>
                 <filter name="specific_method_approval" string="รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง"
                         domain="[('document_type', '=', 'specific_method_approval')]"/>
+                <filter name="winner_announcement" string="ประกาศผู้ชนะ"
+                        domain="[('document_type', '=', 'winner_announcement')]"/>
                 <group>
                     <filter name="group_state" string="สถานะ" context="{'group_by': 'state'}"/>
                     <filter name="group_type" string="ประเภท" context="{'group_by': 'document_type'}"/>

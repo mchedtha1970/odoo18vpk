@@ -186,6 +186,7 @@
                     </div>
                     <group>
                         <group>
+                            <field name="section_key"/>
                             <field name="account_code" readonly="1"/>
                             <field
                                 name="company_id"
@@ -215,6 +216,7 @@
         <field name="inherit_id" ref="base_account_budget.view_budget_post_tree"/>
         <field name="arch" type="xml">
             <field name="name" position="after">
+                <field name="section_key"/>
                 <field name="account_code"/>
             </field>
         </field>
@@ -226,7 +228,14 @@
         <field name="inherit_id" ref="base_account_budget.view_budget_post_search"/>
         <field name="arch" type="xml">
             <field name="name" position="after">
+                <field name="section_key"/>
                 <field name="account_code"/>
+                <filter string="วัสดุ" name="section_material" domain="[('section_key', '=', 'material')]"/>
+                <filter string="ครุภัณฑ์" name="section_asset" domain="[('section_key', '=', 'asset')]"/>
+                <filter string="ก่อสร้าง" name="section_construction" domain="[('section_key', '=', 'construction')]"/>
+                <filter string="โครงการ" name="section_project" domain="[('section_key', '=', 'project')]"/>
+                <separator/>
+                <filter string="กลุ่มแบบฟอร์ม" name="group_section_key" context="{'group_by': 'section_key'}"/>
             </field>
         </field>
     </record>

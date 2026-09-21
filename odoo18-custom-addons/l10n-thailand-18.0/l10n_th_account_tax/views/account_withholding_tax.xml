@@ -8,6 +8,7 @@
                 <sheet>
                     <group>
                         <group>
+                            <field name="code" />
                             <field name="name" />
                             <field name="is_pit" />
                             <field name="income_tax_form" />
@@ -29,7 +30,11 @@
                                 <span class="o_form_label oe_inline">%</span>
                             </div>
                             <field name="pit_id" invisible="not is_pit" />
+                            <field name="min_base_amount" />
                         </group>
+                    </group>
+                    <group string="เงื่อนไข / หมายเหตุ">
+                        <field name="note" nolabel="1" colspan="2" />
                     </group>
                 </sheet>
             </form>
@@ -40,7 +45,11 @@
         <field name="model">account.withholding.tax</field>
         <field name="arch" type="xml">
             <list>
+                <field name="code" />
                 <field name="name" />
+                <field name="amount" />
+                <field name="min_base_amount" />
+                <field name="income_tax_form" optional="show" />
                 <field name="account_id" />
                 <field name="company_id" groups="base.group_multi_company" />
             </list>
@@ -51,6 +60,8 @@
         <field name="model">account.withholding.tax</field>
         <field name="arch" type="xml">
             <search>
+                <field name="code" />
+                <field name="name" />
                 <group expand="0" string="Group By">
                     <filter
                         string="Company"

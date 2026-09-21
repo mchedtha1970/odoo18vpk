@@ -51,6 +51,10 @@ class HisApiService(models.AbstractModel):
         return self._ingest(payload, "revenue", request_meta=request_meta)
 
     @api.model
+    def ingest_deposits(self, payload, request_meta=None):
+        return self._ingest(payload, "deposit", request_meta=request_meta)
+
+    @api.model
     def ingest_stock_issues(self, payload, request_meta=None):
         return self._ingest(payload, "stock_issue", request_meta=request_meta)
 
@@ -255,7 +259,13 @@ class HisApiService(models.AbstractModel):
         batch_type = self._clean_str(payload.get("batch_type")) or default_type
         if payload.get("original_external_id") and batch_type != "reversal":
             batch_type = "reversal"
-        if batch_type not in ("revenue", "stock_issue", "stock_requisition", "reversal"):
+        if batch_type not in (
+            "revenue",
+            "deposit",
+            "stock_issue",
+            "stock_requisition",
+            "reversal",
+        ):
             raise UserError(_("Invalid batch_type"))
         if batch_type == "revenue" and default_type == "stock_issue":
             # stock endpoint must stay stock unless explicit reversal
@@ -270,6 +280,11 @@ class HisApiService(models.AbstractModel):
         ):
             if not payload.get("original_external_id"):
                 batch_type = "stock_requisition"
+        if default_type == "deposit" and batch_type not in ("deposit", "reversal"):
+            if not payload.get("original_external_id"):
+                batch_type = "deposit"
+        if default_type == "revenue" and batch_type == "deposit":
+            batch_type = "revenue"
 
         Batch = self.env["vpk.his.batch"].sudo()
         existing = Batch.search(
@@ -324,6 +339,13 @@ class HisApiService(models.AbstractModel):
         if batch_type in ("revenue", "reversal") and default_type == "revenue":
             self._create_sale_lines(batch, payload.get("sales") or [])
             self._create_payment_lines(batch, payload.get("payments") or [])
+        if batch_type in ("deposit", "reversal") and default_type == "deposit":
+            if payload.get("sales"):
+                raise UserError(_("Deposit batch cannot include sales"))
+            deposit_lines = payload.get("deposits")
+            if deposit_lines is None:
+                deposit_lines = payload.get("payments") or []
+            self._create_payment_lines(batch, deposit_lines, deposit=True)
         if batch_type in ("stock_issue", "reversal") and default_type == "stock_issue":
             issues = payload.get("issues")
             if issues is None:
@@ -393,19 +415,40 @@ class HisApiService(models.AbstractModel):
             )
 
     @api.model
-    def _create_payment_lines(self, batch, payments):
+    def _create_payment_lines(self, batch, payments, deposit=False):
         if not isinstance(payments, list):
-            raise UserError(_("payments must be a list"))
+            raise UserError(_("payments must be a list") if not deposit else _("deposits must be a list"))
         Line = self.env["vpk.his.payment.line"].sudo()
         for item in payments:
             if not isinstance(item, dict):
-                raise UserError(_("Each payment line must be an object"))
+                raise UserError(
+                    _("Each payment line must be an object")
+                    if not deposit
+                    else _("Each deposit line must be an object")
+                )
             method = self._clean_str(item.get("payment_method_code"))
             if not method:
-                raise UserError(_("payments[].payment_method_code is required"))
+                raise UserError(
+                    _("payments[].payment_method_code is required")
+                    if not deposit
+                    else _("deposits[].payment_method_code is required")
+                )
             service_type = (self._clean_str(item.get("service_type")) or "").lower()
             if service_type and service_type not in ("op", "ip"):
-                raise UserError(_("payments[].service_type must be op or ip"))
+                raise UserError(
+                    _("payments[].service_type must be op or ip")
+                    if not deposit
+                    else _("deposits[].service_type must be op or ip")
+                )
+            transaction_type = (
+                self._clean_str(item.get("transaction_type")) or ""
+            ).lower()
+            if item.get("is_refund") in (True, "true", "True", 1, "1"):
+                transaction_type = "refund"
+            if transaction_type not in ("receive", "refund"):
+                transaction_type = "receive"
+            if deposit and not service_type:
+                service_type = "op"
             Line.create(
                 {
                     "batch_id": batch.id,
@@ -419,7 +462,8 @@ class HisApiService(models.AbstractModel):
                     )
                     or False,
                     "service_type": service_type or False,
-                    "amount": self._to_float(item.get("amount")),
+                    "transaction_type": transaction_type,
+                    "amount": abs(self._to_float(item.get("amount"))),
                     "journal_code": self._clean_str(item.get("journal_code")) or False,
                 }
             )

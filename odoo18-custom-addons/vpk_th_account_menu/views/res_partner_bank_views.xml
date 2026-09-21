@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hospital_bank_account_list" model="ir.ui.view">
+        <field name="name">res.partner.bank.hospital.list</field>
+        <field name="model">res.partner.bank</field>
+        <field name="arch" type="xml">
+            <list string="บัญชีธนาคารโรงพยาบาล" multi_edit="1" decoration-muted="not active">
+                <field name="sequence" widget="handle"/>
+                <field name="journal_code" optional="show"/>
+                <field name="acc_number"/>
+                <field name="acc_holder_name" optional="show"/>
+                <field name="bank_name" string="ธนาคาร" optional="show"/>
+                <field name="journal_name" optional="hide"/>
+                <field name="allow_out_payment" widget="boolean_toggle" optional="show"/>
+                <field name="active" widget="boolean_toggle" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_hospital_bank_account" model="ir.actions.server">
+        <field name="name">บัญชีธนาคารโรงพยาบาล</field>
+        <field name="model_id" ref="base.model_res_partner_bank"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_company_bank_accounts()</field>
+        <field name="groups_id" eval="[(4, ref('account.group_account_manager'))]"/>
+    </record>
+
+    <menuitem
+        id="menu_hospital_bank_account"
+        name="บัญชีธนาคารโรงพยาบาล"
+        parent="account.account_banks_menu"
+        action="action_hospital_bank_account"
+        sequence="2"
+        groups="account.group_account_manager"
+    />
+</odoo>

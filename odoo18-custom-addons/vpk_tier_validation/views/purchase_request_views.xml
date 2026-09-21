@@ -41,6 +41,18 @@
         </field>
     </record>
 
+    <record id="view_purchase_request_form_procurement_method_label" model="ir.ui.view">
+        <field name="name">purchase.request.form.procurement.method.label</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="l10n_th_gov_purchase_request.view_purchase_request_form"/>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <field name="procurement_method_id" position="attributes">
+                <attribute name="string">ซื้อด้วยวิธีการ</attribute>
+            </field>
+        </field>
+    </record>
+
     <record id="view_purchase_request_form_hide_gov_verify_approve" model="ir.ui.view">
         <field name="name">purchase.request.form.hide.gov.verify.approve</field>
         <field name="model">purchase.request</field>

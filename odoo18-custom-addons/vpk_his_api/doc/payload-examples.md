@@ -223,9 +223,74 @@ Payment method (POS tenders):
 
 `control_totals.payments_total` รวมเงินจริง + ยอดสิทธิ์ + ยอดค้างคนไข้ (`ar_claim`) ให้เท่ากับยอดขาย
 
+## รับเงินมัดจำค่ารักษาจากคนไข้
+
+ใช้ endpoint นี้เมื่อ HIS รับเงินมัดจำ/เงินประกันค่ารักษา **ก่อนวันมารักษา** (เช่น มัดจำ Admit IPD)  
+ไม่ลงรายได้ — เดบิตเงินสดหรือธนาคาร / เครดิตหนี้สินรับล่วงหน้า `2103010103.101`
+
+HIS เก็บยอดคงเหลือราย HN เอง ERP รับยอดรวมรายวัน **ห้ามส่ง HN** ใช้ `ticket_external_id` เป็นเลขใบเสร็จมัดจำ
+
+`POST /vpk/api/v1/his/deposits`
+
+```json
+{
+  "external_id": "HIS-DEP-2026-09-21-1",
+  "source_system": "front_his",
+  "business_date": "2026-09-21",
+  "shift": "1",
+  "currency": "THB",
+  "deposits": [
+    {
+      "line_external_id": "DEP-1",
+      "ticket_external_id": "RCP-DEP-0001",
+      "payment_method_code": "cash",
+      "service_type": "ip",
+      "amount": 20000.00
+    },
+    {
+      "line_external_id": "DEP-2",
+      "ticket_external_id": "RCP-DEP-0002",
+      "payment_method_code": "transfer",
+      "service_type": "op",
+      "amount": 5000.00
+    }
+  ],
+  "control_totals": {
+    "payments_total": 25000.00
+  }
+}
+```
+
+`payment_method_code` คือวิธีที่คนไข้จ่ายมัดจำ: `cash` | `transfer` | `credit_card` (หรือ `advance_in` ถ้าต้องการใช้รหัสเดิม)
+
+คืนมัดจำให้คนไข้:
+
+```json
+{
+  "external_id": "HIS-DEP-2026-09-22-REF",
+  "source_system": "front_his",
+  "business_date": "2026-09-22",
+  "deposits": [
+    {
+      "line_external_id": "DEP-REF-1",
+      "ticket_external_id": "RCP-DEP-0001",
+      "payment_method_code": "cash",
+      "service_type": "ip",
+      "transaction_type": "refund",
+      "amount": 5000.00
+    }
+  ],
+  "control_totals": {
+    "payments_total": 5000.00
+  }
+}
+```
+
+วันมารักษาให้ตัดมัดจำด้วย `POST /vpk/api/v1/his/revenue` รหัส `advance` ตามตัวอย่างด้านล่าง
+
 ## เงินล่วงหน้า — รับมัดจำแล้วตัดเมื่อมาใช้บริการ (จ่ายเพิ่มถ้าไม่พอ)
 
-รับมัดจำก่อนวันมารักษา ส่งเฉพาะ `payments` ด้วย `advance_in` (ไม่ส่ง sales ไม่ลงรายได้)
+รับมัดจำก่อนวันมารักษา ใช้ `POST /vpk/api/v1/his/deposits` (ด้านบน) หรือยังส่ง `POST /vpk/api/v1/his/revenue` เฉพาะ `payments` ด้วย `advance_in` ได้
 
 เมื่อมาใช้บริการ ส่งยอดขายส่วนคนไข้ตามจริง แล้วตัดด้วย `advance` เท่าที่ใช้จากมัดจำ ถ้ามัดจำไม่พอให้ส่ง `cash` / `transfer` / `credit_card` ส่วนต่าง
 

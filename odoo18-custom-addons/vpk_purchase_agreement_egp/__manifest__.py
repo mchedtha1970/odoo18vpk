@@ -1,6 +1,6 @@
 {
     "name": "VPK Purchase Agreement e-GP",
-    "version": "18.0.1.5.5",
+    "version": "18.0.1.5.8",
     "category": "Purchases",
     "summary": "Purchase Agreement as e-GP procurement hub for Vachira Hospital",
     "author": "VPK",
@@ -30,6 +30,7 @@
         "report/award_approval_report.xml",
         "report/winner_announcement_report.xml",
     ],
+    "external_dependencies": {"python": ["python-docx"]},
     "installable": True,
     "application": False,
     "assets": {

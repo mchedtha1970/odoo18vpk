@@ -20,6 +20,7 @@ class HisBatch(models.Model):
     batch_type = fields.Selection(
         [
             ("revenue", "Revenue"),
+            ("deposit", "Patient Deposit"),
             ("stock_issue", "Stock Issue"),
             ("stock_requisition", "Stock Requisition"),
             ("reversal", "Reversal"),
@@ -100,6 +101,14 @@ class HisBatch(models.Model):
         "payment_id",
         string="Payments",
     )
+    deposit_move_ids = fields.Many2many(
+        "account.move",
+        "vpk_his_batch_deposit_move_rel",
+        "batch_id",
+        "move_id",
+        string="Deposit Entries",
+    )
+    deposit_move_count = fields.Integer(compute="_compute_doc_counts")
     picking_ids = fields.Many2many(
         "stock.picking",
         "vpk_his_batch_stock_picking_rel",
@@ -140,12 +149,13 @@ class HisBatch(models.Model):
             rec.stock_qty_total = sum(rec.stock_line_ids.mapped("qty"))
             rec.requisition_qty_total = sum(rec.requisition_line_ids.mapped("qty"))
 
-    @api.depends("invoice_ids", "payment_ids", "picking_ids")
+    @api.depends("invoice_ids", "payment_ids", "picking_ids", "deposit_move_ids")
     def _compute_doc_counts(self):
         for rec in self:
             rec.invoice_count = len(rec.invoice_ids)
             rec.payment_count = len(rec.payment_ids)
             rec.picking_count = len(rec.picking_ids)
+            rec.deposit_move_count = len(rec.deposit_move_ids)
 
     @api.depends(
         "sale_line_ids.line_state",
@@ -208,7 +218,7 @@ class HisBatch(models.Model):
             if original and original.batch_type == "reversal":
                 errors.append(_("Cannot reverse a reversal batch"))
 
-        if self.batch_type in ("revenue", "reversal"):
+        if self.batch_type in ("revenue", "deposit", "reversal"):
             for line in self.sale_line_ids:
                 line._validate_line()
             for line in self.payment_line_ids:
@@ -220,6 +230,14 @@ class HisBatch(models.Model):
                 and not self.original_external_id
             ):
                 errors.append(_("Revenue batch requires sales or payments"))
+            if (
+                self.batch_type == "deposit"
+                and not self.payment_line_ids
+                and not self.original_external_id
+            ):
+                errors.append(_("Deposit batch requires deposits"))
+            if self.batch_type == "deposit" and self.sale_line_ids:
+                errors.append(_("Deposit batch cannot include sales lines"))
             if self.control_sales_total and float_compare(
                 self.sales_total, self.control_sales_total, precision_digits=2
             ):
@@ -338,7 +356,7 @@ class HisBatch(models.Model):
         batch_kind = self.batch_type
         if batch_kind == "reversal" and self.original_batch_id:
             batch_kind = self.original_batch_id.batch_type
-        if batch_kind == "revenue" and not user.has_group(
+        if batch_kind in ("revenue", "deposit") and not user.has_group(
             "vpk_his_api.group_his_accountant"
         ):
             raise UserError(_("Only HIS accountants can post revenue batches."))
@@ -379,6 +397,16 @@ class HisBatch(models.Model):
             "res_model": "account.payment",
             "view_mode": "list,form",
             "domain": [("id", "in", self.payment_ids.ids)],
+        }
+
+    def action_open_deposit_moves(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("Deposit Entries"),
+            "res_model": "account.move",
+            "view_mode": "list,form",
+            "domain": [("id", "in", self.deposit_move_ids.ids)],
         }
 
     def action_open_pickings(self):
@@ -428,6 +456,7 @@ class HisBatch(models.Model):
             "department_code": self.department_code or False,
             "invoice_ids": self.invoice_ids.ids,
             "payment_ids": self.payment_ids.ids,
+            "deposit_move_ids": self.deposit_move_ids.ids,
             "picking_ids": self.picking_ids.ids,
             "errors": errors,
         }

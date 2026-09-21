@@ -143,16 +143,26 @@ class TierReview(models.Model):
                 ("request_id", "!=", False),
             ]
         )
+        hidden_ids = []
         pr_ids = pending_docs.mapped("request_id").ids
-        if not pr_ids:
-            return []
-        return self.search(
-            [
-                ("model", "=", "purchase.request"),
-                ("res_id", "in", pr_ids),
-                ("status", "in", ("pending", "waiting")),
-            ]
-        ).ids
+        if pr_ids:
+            hidden_ids = self.search(
+                [
+                    ("model", "=", "purchase.request"),
+                    ("res_id", "in", pr_ids),
+                    ("status", "in", ("pending", "waiting")),
+                ]
+            ).ids
+        leftover_docs = Document.search([("state", "in", ("approved", "cancelled"))])
+        if leftover_docs:
+            hidden_ids += self.search(
+                [
+                    ("model", "=", "vpk.official.document"),
+                    ("res_id", "in", leftover_docs.ids),
+                    ("status", "in", ("pending", "waiting")),
+                ]
+            ).ids
+        return hidden_ids
 
     @api.model
     def _search_vpk_inbox_visible(self, operator, value):

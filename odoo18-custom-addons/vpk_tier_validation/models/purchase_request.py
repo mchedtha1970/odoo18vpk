@@ -13,6 +13,11 @@ class PurchaseRequest(models.Model):
     _inherit = "purchase.request"
     _state_from = ["draft", "sent_to_procurement"]
 
+    procurement_method_id = fields.Many2one(
+        comodel_name="procurement.method",
+        string="ซื้อด้วยวิธีการ",
+    )
+
     state = fields.Selection(
         selection_add=[
             ("sent_to_procurement", "ส่งพัสดุแล้ว"),
@@ -52,13 +57,22 @@ class PurchaseRequest(models.Model):
     def _vpk_auto_confirm_if_validated(self):
         """Confirm PR automatically once every tier review is approved."""
         self.ensure_one()
+        if self.env.context.get("vpk_in_auto_confirm"):
+            return
         self.invalidate_recordset(["validation_status", "validated"])
         if self.validation_status != "validated":
             return
         if self.state not in ("draft", "to_approve", "sent_to_procurement"):
             return
-        # Keep acting user for approved_by; sudo only for ACL on confirm.
-        self.sudo().with_user(self.env.user).button_approved()
+        # Keep acting user for approved_by; sudo after with_user so su stays on
+        # (with_user alone clears su and breaks record rules for non-requesters).
+        # skip_check_state_condition avoids re-entering tier validation on
+        # write(state=approved), which would recurse via this method.
+        self.with_user(self.env.user).sudo().with_context(
+            vpk_in_auto_confirm=True,
+            skip_validation_check=True,
+            skip_check_state_condition=True,
+        ).button_approved()
 
     def button_approved(self):
         return super(

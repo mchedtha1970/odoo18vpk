@@ -3,6 +3,7 @@ from . import pdf_converter
 from . import pdf_stamp
 from . import official_document_template
 from . import official_document
+from . import purchase_requisition_egp_document
 from . import ir_actions_report
 from . import res_company
 from . import res_config_settings

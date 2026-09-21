@@ -10,6 +10,9 @@
                 <field name="name"/>
                 <field name="guarantee_type"/>
                 <field name="contract_id" optional="show"/>
+                <field name="official_contract_number" optional="show"/>
+                <field name="egp_number" optional="show"/>
+                <field name="project_name" optional="show"/>
                 <field name="purchase_order_id" optional="show"/>
                 <field name="partner_id"/>
                 <field name="instrument_type" optional="show"/>
@@ -89,6 +92,9 @@
                             <field name="contract_id"
                                    readonly="state != 'draft'"
                                    options="{'no_create': True}"/>
+                            <field name="official_contract_number"/>
+                            <field name="egp_number"/>
+                            <field name="project_name"/>
                             <field name="purchase_order_id"
                                    readonly="state != 'draft'"
                                    options="{'no_create': True}"/>
@@ -156,6 +162,9 @@
                 <field name="reference"/>
                 <field name="partner_id"/>
                 <field name="contract_id"/>
+                <field name="official_contract_number"/>
+                <field name="egp_number"/>
+                <field name="project_name"/>
                 <field name="purchase_order_id"/>
                 <filter name="active"
                         string="หลักประกันที่ถืออยู่"

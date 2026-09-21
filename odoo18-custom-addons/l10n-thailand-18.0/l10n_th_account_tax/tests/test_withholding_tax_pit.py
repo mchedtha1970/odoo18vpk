@@ -43,6 +43,7 @@ class TestWithholdingTaxPIT(AccountTestInvoicingCommon):
         )
         cls.wht_pit = cls.account_wht_obj.create(
             {
+                "code": "PIT",
                 "name": "PIT",
                 "account_id": cls.account_pit.id,
                 "is_pit": True,
@@ -50,6 +51,7 @@ class TestWithholdingTaxPIT(AccountTestInvoicingCommon):
         )
         cls.wht_1 = cls.account_wht_obj.create(
             {
+                "code": "WHT1",
                 "name": "Withholding Tax 1%",
                 "account_id": cls.account_pit.id,
                 "amount": 1,
@@ -115,6 +117,7 @@ class TestWithholdingTaxPIT(AccountTestInvoicingCommon):
         with self.assertRaises(ValidationError):
             self.wht_pit = self.account_wht_obj.create(
                 {
+                    "code": "PIT2",
                     "name": "PIT2",
                     "account_id": self.account_pit.id,
                     "is_pit": True,

@@ -211,7 +211,7 @@ msgstr "คณะกรรมการจัดซื้อจัดจ้าง
 #: model:ir.model.fields,field_description:l10n_th_gov_purchase_request.field_purchase_request__procurement_method_id
 #: model_terms:ir.ui.view,arch_db:l10n_th_gov_purchase_request.view_purchase_request_search
 msgid "Procurement Method"
-msgstr "วิธีการจัดซื้อจัดจ้าง"
+msgstr "ซื้อด้วยวิธีการ"
 
 #. module: l10n_th_gov_purchase_request
 #: model:ir.actions.act_window,name:l10n_th_gov_purchase_request.procurement_method_action

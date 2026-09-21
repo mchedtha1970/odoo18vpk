@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_requisition_form_egp_winner_sign" model="ir.ui.view">
+        <field name="name">purchase.requisition.form.egp.winner.sign</field>
+        <field name="model">purchase.requisition</field>
+        <field name="inherit_id" ref="vpk_purchase_agreement_egp.view_purchase_requisition_form_egp"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='egp_document_ids']//field[@name='document_type_code']" position="after">
+                <field name="official_document_id" column_invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='egp_document_ids']//field[@name='document_file']" position="after">
+                <field name="signature_state" widget="badge" optional="show"
+                       decoration-muted="signature_state == 'not_sent'"
+                       decoration-warning="signature_state == 'waiting'"
+                       decoration-success="signature_state == 'signed'"/>
+            </xpath>
+            <xpath expr="//button[@name='action_generate_winner_document']" position="attributes">
+                <attribute name="invisible">document_type_code != 'winner_announcement' or signature_state in ('waiting', 'signed')</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_generate_winner_document']" position="after">
+                <button
+                    name="action_send_for_signature"
+                    type="object"
+                    string="ส่งลงนาม"
+                    class="btn-link"
+                    groups="purchase.group_purchase_user"
+                    invisible="document_type_code != 'winner_announcement' or signature_state in ('waiting', 'signed')"
+                    title="ส่งประกาศผู้ชนะให้ผู้อำนวยการลงนาม"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

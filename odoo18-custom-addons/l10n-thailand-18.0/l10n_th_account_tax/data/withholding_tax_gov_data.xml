@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <!-- ชุด WHT หน่วยงานรัฐ ตาม ท.ป. 4/2528 — โหลดเมื่อติดตั้ง/อัปเกรดโมดูล -->
+    <function model="account.withholding.tax" name="_load_government_wht_set" />
+</odoo>

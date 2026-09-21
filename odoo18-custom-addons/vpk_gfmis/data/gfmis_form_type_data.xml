@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- ตามคู่มือระบบเบิกจ่าย (AP) ส่วนราชการ New GFMIS Thai กรมบัญชีกลาง 20230308 -->
+    <record id="form_kb01" model="gfmis.form.type">
+        <field name="code">ขบ.01</field>
+        <field name="name">ขอเบิกเงินงบประมาณ จ่ายตรงผู้ขาย ผ่านใบสั่งซื้อสั่งจ้าง</field>
+        <field name="sequence">10</field>
+        <field name="doc_class">request</field>
+        <field name="requires_po">True</field>
+        <field name="fund_type">budget</field>
+        <field name="payment_method">direct</field>
+        <field name="note">ต้องค้นหา/อ้างเลขที่ใบสั่งซื้อสั่งจ้างใน GFMIS</field>
+    </record>
+    <record id="form_kb02" model="gfmis.form.type">
+        <field name="code">ขบ.02</field>
+        <field name="name">ขอเบิกเงินงบประมาณ จ่ายตรงผู้ขาย ไม่ผ่านใบสั่งซื้อสั่งจ้าง</field>
+        <field name="sequence">20</field>
+        <field name="doc_class">request</field>
+        <field name="fund_type">budget</field>
+        <field name="payment_method">direct</field>
+    </record>
+    <record id="form_kb03" model="gfmis.form.type">
+        <field name="code">ขบ.03</field>
+        <field name="name">ขอเบิกเงินงบประมาณ จ่ายผ่านส่วนราชการ</field>
+        <field name="sequence">30</field>
+        <field name="doc_class">request</field>
+        <field name="fund_type">budget</field>
+        <field name="payment_method">through</field>
+        <field name="note">เงินเข้าบัญชีหน่วยงานก่อน จ่ายต่อผู้มีสิทธิด้วย ขจ.05</field>
+    </record>
+    <record id="form_kb11" model="gfmis.form.type">
+        <field name="code">ขบ.11</field>
+        <field name="name">ขอเบิกเงินนอกงบประมาณ จ่ายตรงผู้ขาย ผ่านใบสั่งซื้อสั่งจ้าง</field>
+        <field name="sequence">40</field>
+        <field name="doc_class">request</field>
+        <field name="requires_po">True</field>
+        <field name="fund_type">extra</field>
+        <field name="payment_method">direct</field>
+    </record>
+    <record id="form_kb12" model="gfmis.form.type">
+        <field name="code">ขบ.12</field>
+        <field name="name">ขอเบิกเงินนอกงบประมาณ จ่ายตรงผู้ขาย ไม่ผ่านใบสั่งซื้อสั่งจ้าง</field>
+        <field name="sequence">50</field>
+        <field name="doc_class">request</field>
+        <field name="fund_type">extra</field>
+        <field name="payment_method">direct</field>
+    </record>
+    <record id="form_kb13" model="gfmis.form.type">
+        <field name="code">ขบ.13</field>
+        <field name="name">ขอเบิกเงินนอกงบประมาณ จ่ายผ่านส่วนราชการ</field>
+        <field name="sequence">60</field>
+        <field name="doc_class">request</field>
+        <field name="fund_type">extra</field>
+        <field name="payment_method">through</field>
+    </record>
+    <record id="form_tk01" model="gfmis.form.type">
+        <field name="code">ทข.01</field>
+        <field name="name">ขอเบิกเงินทดรองราชการ จ่ายตรง ผ่านใบสั่งซื้อสั่งจ้าง</field>
+        <field name="sequence">70</field>
+        <field name="doc_class">request</field>
+        <field name="requires_po">True</field>
+        <field name="payment_method">direct</field>
+    </record>
+    <record id="form_tk02" model="gfmis.form.type">
+        <field name="code">ทข.02</field>
+        <field name="name">ขอเบิกเงินทดรองราชการ จ่ายตรง ไม่ผ่านใบสั่งซื้อสั่งจ้าง</field>
+        <field name="sequence">80</field>
+        <field name="doc_class">request</field>
+        <field name="payment_method">direct</field>
+    </record>
+    <record id="form_kb23" model="gfmis.form.type">
+        <field name="code">ขบ.23</field>
+        <field name="name">ใบลดหนี้ จ่ายตรง ผ่านใบสั่งซื้อสั่งจ้าง</field>
+        <field name="sequence">90</field>
+        <field name="doc_class">request</field>
+        <field name="requires_po">True</field>
+        <field name="payment_method">direct</field>
+    </record>
+    <record id="form_kb24" model="gfmis.form.type">
+        <field name="code">ขบ.24</field>
+        <field name="name">ใบลดหนี้ จ่ายตรง ไม่ผ่านใบสั่งซื้อสั่งจ้าง</field>
+        <field name="sequence">100</field>
+        <field name="doc_class">request</field>
+        <field name="payment_method">direct</field>
+    </record>
+    <record id="form_kj05" model="gfmis.form.type">
+        <field name="code">ขจ.05</field>
+        <field name="name">ขอจ่ายเงินโดยส่วนราชการ</field>
+        <field name="sequence">110</field>
+        <field name="doc_class">agency_pay</field>
+        <field name="payment_method">through</field>
+        <field name="note">ใช้เมื่อเงินเข้าบัญชีหน่วยงานแล้ว จ่ายต่อให้ผู้มีสิทธิ</field>
+    </record>
+    <record id="form_am01" model="gfmis.form.type">
+        <field name="code">อม.01</field>
+        <field name="name">อนุมัติเอกสารขอเบิก</field>
+        <field name="sequence">200</field>
+        <field name="doc_class">approve</field>
+        <field name="note">ขั้นตอนในเอกสารขอเบิก ไม่สร้างเอกสารแยกใน ERP</field>
+    </record>
+    <record id="form_am02" model="gfmis.form.type">
+        <field name="code">อม.02</field>
+        <field name="name">อนุมัติเอกสารเพื่อสั่งจ่าย</field>
+        <field name="sequence">210</field>
+        <field name="doc_class">approve</field>
+        <field name="note">ขั้นตอนในเอกสารขอเบิก ไม่สร้างเอกสารแยกใน ERP</field>
+    </record>
+    <record id="form_return" model="gfmis.form.type">
+        <field name="code">บส.01</field>
+        <field name="name">เบิกเกินส่งคืน</field>
+        <field name="sequence">300</field>
+        <field name="doc_class">return</field>
+        <field name="note">อ้างเอกสารขอเบิกเดิมที่จ่ายแล้ว</field>
+    </record>
+</odoo>

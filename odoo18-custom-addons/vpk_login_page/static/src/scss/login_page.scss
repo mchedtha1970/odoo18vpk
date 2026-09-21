@@ -1,0 +1,387 @@
+// VPK full screen login / signup / reset password page
+$vpk-login-font: "Prompt", "Sarabun", system-ui, -apple-system, "Segoe UI", sans-serif;
+$vpk-teal-500: #14696e;
+$vpk-teal-600: #115f60;
+$vpk-teal-700: #0e5250;
+$vpk-green-500: #2f8168;
+$vpk-green-600: #276b57;
+$vpk-ink: #16232b;
+$vpk-muted: #5f7280;
+$vpk-border: #cdd8dd;
+
+// vpk_sidebar_menu forces `font-family: inherit !important` on body / inputs /
+// labels, so the login font needs the same weight with a stronger selector.
+body.vpk-login-body,
+body.vpk-login-body h1,
+body.vpk-login-body h2,
+body.vpk-login-body h3,
+body.vpk-login-body p,
+body.vpk-login-body div,
+body.vpk-login-body span,
+body.vpk-login-body a,
+body.vpk-login-body label,
+body.vpk-login-body input,
+body.vpk-login-body select,
+body.vpk-login-body textarea,
+body.vpk-login-body button,
+body.vpk-login-body .btn,
+body.vpk-login-body .form-control,
+body.vpk-login-body .alert {
+    font-family: $vpk-login-font !important;
+}
+
+html:has(body.vpk-login-body),
+body.vpk-login-body {
+    height: 100%;
+    background: #fff;
+}
+
+.vpk-login-body {
+    #wrapwrap {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+    }
+
+    main {
+        flex: 1 1 auto;
+        display: flex;
+    }
+}
+
+.vpk-login-page {
+    flex: 1 1 auto;
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+.vpk-login-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    width: 100%;
+    min-height: 100vh;
+    background: #fff;
+}
+
+// ---------------------------------------------------------------- left panel
+.vpk-login-hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow: hidden;
+    padding: 3.5rem;
+    color: #fff;
+    background: $vpk-teal-600;
+
+    // readability layer, darkest behind the copy at the top
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            180deg,
+            rgba(12, 71, 70, 0.92) 0%,
+            rgba(14, 82, 80, 0.72) 38%,
+            rgba(14, 82, 80, 0.28) 100%
+        );
+    }
+}
+
+.vpk-login-hero-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.vpk-login-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 34rem;
+}
+
+.vpk-login-headline {
+    font-size: clamp(1.5rem, 2.1vw, 2.1rem);
+    font-weight: 600;
+    line-height: 1.35;
+    margin: 0 0 0.75rem;
+    color: #fff;
+}
+
+.vpk-login-org {
+    font-size: clamp(1.05rem, 1.35vw, 1.3rem);
+    font-weight: 500;
+    line-height: 1.6;
+    margin: 0 0 1.35rem;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.vpk-login-tagline {
+    font-size: 1.05rem;
+    font-weight: 300;
+    line-height: 1.9;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.vpk-login-divider {
+    display: block;
+    width: 5.5rem;
+    height: 3px;
+    margin: 2rem 0 0;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+// --------------------------------------------------------------- right panel
+.vpk-login-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 3.5rem;
+    background: #fff;
+}
+
+.vpk-login-form-wrap {
+    width: 100%;
+    max-width: 25rem;
+}
+
+// company logo takes the place of the welcome heading
+.vpk-login-brand {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.vpk-login-logo {
+    max-height: 132px;
+    max-width: 100%;
+    width: auto;
+}
+
+.vpk-login-subtitle {
+    text-align: center;
+    color: $vpk-muted;
+    font-size: 0.98rem;
+    margin: 0 0 2rem;
+}
+
+.vpk-login-panel {
+    .oe_login_form,
+    .oe_signup_form,
+    .oe_reset_password_form {
+        margin: 0;
+    }
+
+    .form-label,
+    .vpk-login-label {
+        font-weight: 500;
+        color: $vpk-ink;
+        margin-bottom: 0.4rem;
+        font-size: 0.95rem;
+    }
+
+    // square fields
+    .form-control {
+        height: 3rem;
+        padding: 0.65rem 0.9rem;
+        border: 1px solid $vpk-border;
+        border-radius: 0;
+        background: #fff;
+        color: $vpk-ink;
+        box-shadow: none;
+
+        &::placeholder {
+            color: #9bacb6;
+        }
+
+        &:focus {
+            border-color: $vpk-green-500;
+            box-shadow: 0 0 0 2px rgba(47, 129, 104, 0.18);
+        }
+    }
+
+    .mb-3 {
+        margin-bottom: 1.15rem !important;
+    }
+
+    .alert {
+        border-radius: 0;
+        font-size: 0.92rem;
+    }
+
+    .oe_login_buttons,
+    .oe_signup_form .text-center,
+    .oe_reset_password_form .oe_login_buttons {
+        padding-top: 0.5rem !important;
+    }
+
+    .btn-primary,
+    .vpk-login-submit {
+        width: 100%;
+        height: 3rem;
+        border: 0;
+        border-radius: 0;
+        font-weight: 500;
+        font-size: 1.02rem;
+        background: $vpk-green-500;
+        color: #fff;
+
+        &:hover,
+        &:focus,
+        &:active {
+            background: $vpk-green-600;
+            color: #fff;
+            box-shadow: none;
+        }
+    }
+
+    .btn-link {
+        color: $vpk-green-500;
+        font-weight: 500;
+        text-decoration: none;
+
+        &:hover {
+            color: $vpk-green-600;
+            text-decoration: underline;
+        }
+    }
+
+    a {
+        color: $vpk-green-500;
+    }
+
+    // OAuth provider buttons (auth_oauth), rendered inside .o_login_auth
+    .o_login_auth {
+        display: grid;
+        gap: 0.5rem;
+
+        &:not(:empty) {
+            margin-top: 0.75rem;
+        }
+
+        a,
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            height: 3rem;
+            border: 1px solid $vpk-border;
+            border-radius: 0;
+            background: #fff;
+            color: $vpk-ink;
+            font-weight: 500;
+
+            &:hover {
+                border-color: $vpk-green-500;
+                color: $vpk-green-600;
+            }
+        }
+    }
+}
+
+// password field with show / hide button
+.vpk-password-field {
+    position: relative;
+
+    .form-control {
+        padding-right: 2.9rem;
+    }
+}
+
+.vpk-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 0.25rem;
+    transform: translateY(-50%);
+    width: 2.25rem;
+    height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: $vpk-muted;
+
+    &:hover {
+        color: $vpk-green-500;
+        background: rgba(47, 129, 104, 0.08);
+    }
+}
+
+.vpk-login-forgot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.4rem;
+
+    .btn-link {
+        padding: 0;
+        font-size: 0.88rem;
+    }
+}
+
+.vpk-login-label-password {
+    // the "Reset Password" link is moved below the input by login_page.js
+    a {
+        display: none;
+    }
+}
+
+.vpk-login-footnote {
+    margin: 1.5rem 0 0;
+    font-size: 0.82rem;
+    color: $vpk-muted;
+    text-align: center;
+    font-style: italic;
+}
+
+.vpk-login-meta {
+    margin-top: 1.75rem;
+    text-align: center;
+    font-size: 0.82rem;
+
+    a {
+        color: $vpk-muted;
+        text-decoration: none;
+
+        &:hover {
+            color: $vpk-green-500;
+            text-decoration: underline;
+        }
+    }
+}
+
+// ------------------------------------------------------------------ responsive
+@media (max-width: 991.98px) {
+    .vpk-login-split {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto 1fr;
+    }
+
+    .vpk-login-hero {
+        min-height: 42vh;
+        padding: 2.5rem 1.75rem;
+    }
+
+    .vpk-login-panel {
+        padding: 2.5rem 1.75rem 3rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .vpk-login-hero {
+        min-height: 32vh;
+        padding: 2rem 1.5rem;
+    }
+
+    .vpk-login-logo {
+        max-height: 96px;
+    }
+}

@@ -33,6 +33,7 @@ class TestHrExpenseWithholdingTax(TestExpenseCommon):
         )
         cls.wht_1 = cls.account_wht.create(
             {
+                "code": "WHT1",
                 "name": "Withholding Tax 1%",
                 "account_id": cls.wht_account.id,
                 "amount": 1,

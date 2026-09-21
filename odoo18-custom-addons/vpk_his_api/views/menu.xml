@@ -9,6 +9,14 @@
         groups="vpk_his_api.group_his_user"
     />
     <menuitem
+        id="menu_his_deposit_queue"
+        name="HIS รับมัดจำค่ารักษา"
+        parent="account.menu_finance_receivables"
+        action="action_his_batch_deposit"
+        sequence="25"
+        groups="vpk_his_api.group_his_user"
+    />
+    <menuitem
         id="menu_his_remittance"
         name="ใบนำส่งเงิน"
         parent="account.menu_finance_receivables"

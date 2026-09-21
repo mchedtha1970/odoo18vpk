@@ -73,6 +73,11 @@ class DepartmentalBudgetRequest(models.Model):
     show_material_lines = fields.Boolean(compute="_compute_form_line_sections")
     show_construction_lines = fields.Boolean(compute="_compute_form_line_sections")
     show_project_lines = fields.Boolean(compute="_compute_form_line_sections")
+    form_section_key = fields.Char(
+        string="กลุ่มแบบฟอร์ม",
+        compute="_compute_form_section_key",
+        store=True,
+    )
     is_form_type_locked = fields.Boolean(compute="_compute_is_form_type_locked")
     budget_record_id = fields.Many2one(
         comodel_name="budget.budget",
@@ -176,6 +181,26 @@ class DepartmentalBudgetRequest(models.Model):
         compute="_compute_budget_group_ids",
         store=True,
         readonly=True,
+    )
+    load_budget_post_id = fields.Many2one(
+        comodel_name="account.budget.post",
+        string="หมวดงบประมาณ",
+        domain=(
+            "[('company_id', 'in', [False, company_id]),"
+            " '|', ('section_key', '=', False), ('section_key', '=', form_section_key)]"
+        ),
+        copy=False,
+    )
+    load_budget_group_id = fields.Many2one(
+        comodel_name="vpk.budget.group",
+        string="กลุ่มวัสดุ",
+        copy=False,
+    )
+    load_material_sub_type_id = fields.Many2one(
+        comodel_name="vpk.budget.material.sub.type",
+        string="ประเภทวัสดุ",
+        domain="[('budget_group_id', '=', load_budget_group_id)]",
+        copy=False,
     )
     asset_type_ids = fields.Many2many(
         comodel_name="vpk.budget.asset.type",
@@ -420,6 +445,18 @@ class DepartmentalBudgetRequest(models.Model):
                 form_type.has_section("project") if form_type else False
             )
 
+    @api.depends(
+        "form_type_id",
+        "form_type_id.line_type_ids",
+        "form_type_id.line_type_ids.section_key",
+    )
+    def _compute_form_section_key(self):
+        for rec in self:
+            form_type = rec.form_type_id
+            rec.form_section_key = (
+                form_type._get_primary_section() if form_type else False
+            )
+
     @api.depends_context("default_form_type_id")
     def _compute_is_form_type_locked(self):
         locked = bool(self.env.context.get("default_form_type_id"))
@@ -523,6 +560,359 @@ class DepartmentalBudgetRequest(models.Model):
                 lambda line: line.line_type == "supplies_budget"
             ).mapped("budget_group_id")
             rec.budget_group_ids = budget_groups
+
+    def _resolve_material_sub_type_from_budget_post(self, budget_post):
+        """Match material subtype from post name like 'หมวดค่าวัสดุ - กลุ่ม - ประเภท'."""
+        self.ensure_one()
+        SubType = self.env["vpk.budget.material.sub.type"]
+        if not budget_post:
+            return SubType.browse()
+        parts = [part.strip() for part in (budget_post.name or "").split(" - ") if part.strip()]
+        subtype_name = parts[-1] if parts else False
+        group_name = parts[-2] if len(parts) >= 2 else False
+        if not subtype_name:
+            return SubType.browse()
+        domain = [("active", "=", True), ("name", "=", subtype_name)]
+        if group_name:
+            group = self.env["vpk.budget.group"].search(
+                [("name", "=", group_name)], limit=1
+            )
+            if group:
+                domain.append(("budget_group_id", "=", group.id))
+        subtype = SubType.search(domain, limit=1)
+        if subtype:
+            return subtype
+        return SubType.search(
+            [("active", "=", True), ("name", "ilike", subtype_name)],
+            limit=1,
+        )
+
+    def _product_categories_for_material_load(self, subtype):
+        """Prefer product categories matching subtype; else whole budget group."""
+        self.ensure_one()
+        group = subtype.budget_group_id
+        Category = self.env["product.category"]
+        if not group:
+            return Category.browse()
+        root = group._material_product_root()
+        needle = (subtype.name or "").strip()
+        strip = group._strip_categ_prefix
+
+        def _rank_matches(categs):
+            exact = categs.filtered(
+                lambda categ: strip(categ.name) == needle or categ.name == needle
+            )
+            if exact:
+                return exact
+            ends = categs.filtered(
+                lambda categ: strip(categ.name).endswith(needle)
+                or needle in strip(categ.name)
+            )
+            return ends or categs
+
+        if root and needle:
+            under_root = Category.search(
+                [("id", "child_of", root.id), ("id", "!=", root.id)]
+            )
+            named = under_root.filtered(
+                lambda categ: strip(categ.name) == needle
+                or categ.name == needle
+                or needle in strip(categ.name)
+                or strip(categ.name) in needle
+            )
+            if named:
+                return _rank_matches(named)
+
+        main = group.product_categ_id or group._match_main_product_categ()
+        if main and needle:
+            matches = Category.search(
+                [
+                    ("id", "child_of", main.id),
+                    ("id", "!=", main.id),
+                    "|",
+                    ("name", "ilike", needle),
+                    ("complete_name", "ilike", needle),
+                ]
+            )
+            if matches:
+                return _rank_matches(matches)
+
+        return group._get_filter_product_categories()
+
+    def _ensure_material_overview_line(self, subtype, budget_post):
+        """Ensure overview material line exists for the loaded subtype."""
+        self.ensure_one()
+        existing = self.material_line_ids.filtered(
+            lambda line: line.material_sub_type_id == subtype
+        )[:1]
+        if existing:
+            vals = {}
+            if budget_post and existing.budget_post_id != budget_post:
+                vals["budget_post_id"] = budget_post.id
+            if subtype.budget_group_id and existing.budget_group_id != subtype.budget_group_id:
+                vals["budget_group_id"] = subtype.budget_group_id.id
+            if vals:
+                existing.with_context(skip_budget_request_lock=True).write(vals)
+            return existing
+        budget_type = self._budget_type_from_code("supplies_budget")
+        return self.env["departmental.budget.request.line"].create(
+            {
+                "request_id": self.id,
+                "budget_type_id": budget_type.id if budget_type else False,
+                "budget_post_id": budget_post.id if budget_post else False,
+                "budget_group_id": subtype.budget_group_id.id,
+                "material_sub_type_id": subtype.id,
+                "requested_plan_amount": 0.0,
+            }
+        )
+
+    @api.onchange("load_budget_post_id")
+    def _onchange_load_budget_post_id(self):
+        if not self.load_budget_post_id:
+            return
+        subtype = self._resolve_material_sub_type_from_budget_post(self.load_budget_post_id)
+        if subtype:
+            self.load_material_sub_type_id = subtype
+            self.load_budget_group_id = subtype.budget_group_id
+
+    @api.onchange("load_budget_group_id")
+    def _onchange_load_budget_group_id(self):
+        if (
+            self.load_material_sub_type_id
+            and self.load_material_sub_type_id.budget_group_id
+            != self.load_budget_group_id
+        ):
+            self.load_material_sub_type_id = False
+
+    @api.onchange("load_material_sub_type_id")
+    def _onchange_load_material_sub_type_id(self):
+        if self.load_material_sub_type_id:
+            self.load_budget_group_id = self.load_material_sub_type_id.budget_group_id
+
+    def action_load_material_category_products(self):
+        """Create material detail lines for all products in the selected category."""
+        self.ensure_one()
+        if self.state != "draft":
+            raise ValidationError(_("โหลดรายการสินค้าได้เฉพาะคำของบสถานะ Draft"))
+        if not self.show_material_lines:
+            raise ValidationError(_("ใช้ได้เฉพาะแบบฟอร์มคำของบวัสดุ"))
+        if not self.load_budget_post_id:
+            raise ValidationError(_("กรุณาเลือกหมวดงบประมาณก่อนโหลดรายการ"))
+        subtype = self.load_material_sub_type_id
+        if not subtype:
+            subtype = self._resolve_material_sub_type_from_budget_post(
+                self.load_budget_post_id
+            )
+        if not subtype:
+            raise ValidationError(_("กรุณาเลือกประเภทวัสดุให้ตรงกับหมวดงบประมาณ"))
+
+        categs = self._product_categories_for_material_load(subtype)
+        if not categs:
+            raise ValidationError(
+                _("ไม่พบหมวดสินค้าสำหรับกลุ่มวัสดุ \"%s\"") % (subtype.budget_group_id.display_name,)
+            )
+
+        products = self.env["product.product"].search(
+            [
+                ("purchase_ok", "=", True),
+                ("active", "=", True),
+                ("categ_id", "child_of", categs.ids),
+            ],
+            order="default_code, id",
+        )
+        existing_ids = set(self.material_detail_ids.mapped("product_id").ids)
+        to_create = products.filtered(lambda product: product.id not in existing_ids)
+        if not to_create:
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "title": _("โหลดรายการสินค้า"),
+                    "message": _("รายการในหมวดนี้ถูกโหลดครบแล้ว"),
+                    "type": "warning",
+                },
+            }
+
+        base_seq = max(self.material_detail_ids.mapped("sequence") or [0])
+        vals_list = []
+        for index, product in enumerate(to_create, start=1):
+            seed = product.id or index
+            vals_list.append(
+                {
+                    "request_id": self.id,
+                    "sequence": base_seq + (index * 10),
+                    "product_id": product.id,
+                    "name": product.display_name,
+                    "material_sub_type_id": subtype.id,
+                    "budget_post_id": self.load_budget_post_id.id,
+                    "product_uom_id": product.uom_id.id,
+                    "unit_price": self._demo_material_detail_unit_price(seed, product),
+                    "quantity": self._demo_material_detail_quantity(seed),
+                }
+            )
+        self.env["departmental.budget.request.material.detail"].with_context(
+            skip_budget_request_lock=True
+        ).create(vals_list)
+        self._ensure_material_overview_line(subtype, self.load_budget_post_id)
+        self._sync_material_amounts_from_details()
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("โหลดรายการสินค้า"),
+                "message": _(
+                    "เพิ่ม %s รายการจากหมวด \"%s\""
+                )
+                % (len(vals_list), self.load_budget_post_id.display_name),
+                "type": "success",
+                "next": {"type": "ir.actions.client", "tag": "reload"},
+            },
+        }
+
+    @api.model
+    def _demo_material_detail_quantity(self, seed):
+        seed = int(seed or 1)
+        return float(1 + (seed % 48))
+
+    @api.model
+    def _demo_material_detail_unit_price(self, seed, product=None):
+        if product:
+            price = product.standard_price or product.lst_price or 0.0
+            if price:
+                return round(price, 2)
+        seed = int(seed or 1)
+        return round(25 + ((seed * 17) % 9750), 2)
+
+    def action_fill_demo_material_detail_qty_price(self):
+        """Fill sample quantity and unit price on loaded material detail lines."""
+        self.ensure_one()
+        if self.state != "draft":
+            raise ValidationError(_("สร้างข้อมูลตัวอย่างได้เฉพาะคำของบสถานะ Draft"))
+        if not self.show_material_lines:
+            raise ValidationError(_("ใช้ได้เฉพาะแบบฟอร์มคำของบวัสดุ"))
+        details = self.material_detail_ids
+        if not details:
+            raise ValidationError(_("ยังไม่มีรายการสินค้า ให้โหลดหมวดก่อน"))
+
+        # Prefetch product prices once, then batch-SQL update for speed.
+        details.mapped("product_id")
+        rows = []
+        for detail in details:
+            seed = detail.product_id.id or detail.id
+            qty = self._demo_material_detail_quantity(seed)
+            price = self._demo_material_detail_unit_price(seed, detail.product_id)
+            total = round(qty * price, 2)
+            rows.append((detail.id, qty, price, total))
+
+        cr = self.env.cr
+        for start in range(0, len(rows), 200):
+            chunk = rows[start : start + 200]
+            for detail_id, qty, price, total in chunk:
+                cr.execute(
+                    """
+                    UPDATE departmental_budget_request_material_detail
+                       SET quantity = %s,
+                           unit_price = %s,
+                           total_amount = %s,
+                           allocated_qty = %s,
+                           allocated_amount = %s,
+                           write_date = (now() at time zone 'UTC'),
+                           write_uid = %s
+                     WHERE id = %s
+                    """,
+                    (qty, price, total, qty, total, self.env.uid, detail_id),
+                )
+        details.invalidate_recordset(
+            [
+                "quantity",
+                "unit_price",
+                "total_amount",
+                "allocated_qty",
+                "allocated_amount",
+                "write_date",
+                "write_uid",
+            ]
+        )
+        self._sync_material_amounts_from_details()
+        self._sync_material_allocation_from_details()
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("ข้อมูลตัวอย่างปริมาณ/ราคา"),
+                "message": _(
+                    "อัปเดตปริมาณ/ราคาที่ขอ และยอดจัดสรรให้เท่ากันแล้ว %s รายการ"
+                )
+                % len(rows),
+                "type": "success",
+                "next": {"type": "ir.actions.client", "tag": "reload"},
+            },
+        }
+
+    def action_copy_material_request_to_allocation(self):
+        """Set allocated qty/amount equal to requested qty/amount on detail lines."""
+        self.ensure_one()
+        if self.state != "draft" and not self.can_edit_allocation:
+            raise ValidationError(_("ไม่สามารถระบุยอดจัดสรรในสถานะปัจจุบันได้"))
+        details = self.material_detail_ids
+        if not details:
+            raise ValidationError(_("ยังไม่มีรายการสินค้า"))
+
+        self.env.cr.execute(
+            """
+            UPDATE departmental_budget_request_material_detail
+               SET allocated_qty = quantity,
+                   allocated_amount = total_amount,
+                   write_date = (now() at time zone 'UTC'),
+                   write_uid = %s
+             WHERE request_id = %s
+            """,
+            (self.env.uid, self.id),
+        )
+        details.invalidate_recordset(
+            ["allocated_qty", "allocated_amount", "write_date", "write_uid"]
+        )
+        self._sync_material_allocation_from_details()
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("ยอดจัดสรร"),
+                "message": _(
+                    "กำหนดปริมาณ/มูลค่าที่จัดสรรให้เท่ากับที่ขอแล้ว %s รายการ"
+                )
+                % len(details),
+                "type": "success",
+                "next": {"type": "ir.actions.client", "tag": "reload"},
+            },
+        }
+
+    def _sync_material_allocation_from_details(self):
+        """Persist overview allocated amounts from material detail allocated totals."""
+        Line = self.env["departmental.budget.request.line"]
+        for rec in self:
+            if not rec.material_detail_ids:
+                rec._sync_header_totals()
+                continue
+            amounts = {}
+            for detail in rec.material_detail_ids:
+                subtype_id = detail.material_sub_type_id.id
+                if not subtype_id:
+                    continue
+                amounts[subtype_id] = amounts.get(subtype_id, 0.0) + (
+                    detail.allocated_amount or 0.0
+                )
+            for line in rec.material_line_ids:
+                subtype_id = line.material_sub_type_id.id
+                if not subtype_id or subtype_id not in amounts:
+                    continue
+                amount = amounts[subtype_id]
+                if line.allocated_budget_amount != amount:
+                    Line.browse(line.id).with_context(
+                        skip_material_detail_sync=True,
+                        skip_budget_request_lock=True,
+                    ).write({"allocated_budget_amount": amount})
+            rec._sync_header_totals()
 
     @api.depends(
         "asset_line_ids.asset_type_ids",
@@ -1053,10 +1443,30 @@ class DepartmentalBudgetRequest(models.Model):
         return res
 
     def unlink(self):
-        if self._budget_request_lock_enabled() and self.filtered(
-            lambda rec: rec.state != "draft"
-        ):
-            raise ValidationError(_("ไม่สามารถลบคำของบที่ไม่ใช่ร่างได้"))
+        if self._budget_request_lock_enabled():
+            if self.filtered(lambda rec: rec.state != "draft"):
+                raise ValidationError(_("ไม่สามารถลบคำของบที่ไม่ใช่ร่างได้"))
+            # Department users may only delete their own draft requests.
+            # Budget Unit / Manager keep broader unlink rights via ACL.
+            if (
+                self.env.user.has_group(
+                    "vpk_budget.group_budget_request_department_user"
+                )
+                and not self.env.user.has_group(
+                    "vpk_budget.group_budget_request_budget_unit"
+                )
+                and not self.env.user.has_group(
+                    "vpk_budget.group_vpk_budget_manager"
+                )
+            ):
+                foreign = self.filtered(
+                    lambda rec: rec.requester_id != self.env.user
+                    and rec.create_uid != self.env.user
+                )
+                if foreign:
+                    raise ValidationError(
+                        _("คุณสามารถลบได้เฉพาะใบคำของบของตัวเองที่อยู่ในสถานะร่างเท่านั้น")
+                    )
         return super().unlink()
 
     def action_submit(self):
@@ -1295,7 +1705,7 @@ class DepartmentalBudgetRequestLine(models.Model):
         comodel_name="account.budget.post",
         string="หมวดงบประมาณ",
         required=True,
-        domain="[('company_id', '=', company_id)]",
+        domain="[('company_id', '=', company_id), ('section_key', '=', section_key)]",
     )
     item_name = fields.Text(string="รายการ/ชื่อโครงการ")
     item_description = fields.Text(string="รายละเอียดค่าใช้จ่าย")

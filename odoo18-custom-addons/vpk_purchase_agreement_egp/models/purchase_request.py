@@ -197,8 +197,10 @@ class PurchaseRequest(models.Model):
                 )
             )
         if self.state != "approved":
-            self.sudo().with_user(self.env.user).with_context(
-                skip_validation_check=True
+            self.with_user(self.env.user).sudo().with_context(
+                skip_validation_check=True,
+                skip_check_state_condition=True,
+                vpk_in_auto_confirm=True,
             ).button_approved()
         action = self.env["ir.actions.act_window"]._for_xml_id(
             "purchase_request_to_requisition.action_purchase_request_make_purchase_requisition"

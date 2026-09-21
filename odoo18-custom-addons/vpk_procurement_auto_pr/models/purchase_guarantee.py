@@ -1,6 +1,9 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
+VENDOR_GUARANTEE_TAG_NAME = "มีเงินประกันสัญญา"
+HELD_GUARANTEE_STATES = ("active", "eligible_return")
+
 
 class ProcurementGuarantee(models.Model):
     _name = "procurement.guarantee"
@@ -42,6 +45,23 @@ class ProcurementGuarantee(models.Model):
         ondelete="restrict",
         tracking=True,
         index=True,
+    )
+    official_contract_number = fields.Char(
+        string="เลขที่สัญญาหลัก",
+        tracking=True,
+        index=True,
+        help="เลขที่สัญญาหลักของโรงพยาบาล (ไม่ใช่รหัสเปิดบัญชี OPEN-DEP)",
+    )
+    egp_number = fields.Char(
+        string="เลขที่ eGP",
+        tracking=True,
+        index=True,
+        help="เลขที่โครงการในระบบ e-GP",
+    )
+    project_name = fields.Char(
+        string="ชื่อโครงการ",
+        tracking=True,
+        help="ชื่อโครงการตามประกาศ/สัญญา",
     )
     partner_id = fields.Many2one(
         comodel_name="res.partner",
@@ -243,6 +263,26 @@ class ProcurementGuarantee(models.Model):
         if self.contract_id:
             self.coverage_start_date = self.contract_id.date_start
             self.coverage_end_date = self.contract_id.date_end
+            self._fill_contract_display_fields()
+
+    def _fill_contract_display_fields(self):
+        """Copy contract / e-GP identity onto the guarantee when still empty."""
+        for guarantee in self:
+            contract = guarantee.contract_id
+            if not contract:
+                continue
+            name = contract.name or ""
+            if (
+                not guarantee.official_contract_number
+                and name
+                and not name.startswith("OPEN-DEP-")
+            ):
+                guarantee.official_contract_number = name
+            if not guarantee.egp_number and contract.egp_reference:
+                guarantee.egp_number = contract.egp_reference
+            project = contract.requisition_id.egp_project_name
+            if not guarantee.project_name and project:
+                guarantee.project_name = project
 
     @api.onchange("base_amount", "guarantee_percent")
     def _onchange_guarantee_amount(self):
@@ -274,6 +314,51 @@ class ProcurementGuarantee(models.Model):
             if guarantee.amount < 0:
                 raise ValidationError(_("มูลค่าหลักประกันต้องไม่ติดลบ"))
 
+    @api.model
+    def _get_contract_guarantee_tag(self):
+        Category = self.env["res.partner.category"].sudo()
+        tag = self.env.ref(
+            "vpk_procurement_auto_pr.partner_tag_has_contract_guarantee",
+            raise_if_not_found=False,
+        )
+        if tag:
+            return tag
+        tag = Category.search(
+            [("name", "=", VENDOR_GUARANTEE_TAG_NAME)], limit=1
+        )
+        if not tag:
+            tag = Category.create(
+                {"name": VENDOR_GUARANTEE_TAG_NAME, "color": 11}
+            )
+        return tag
+
+    def _sync_vendor_guarantee_tags(self, partners=None):
+        """Keep vendor tag มีเงินประกันสัญญา only while a guarantee is still held."""
+        partners = (
+            partners if partners is not None else self.mapped("partner_id")
+        ).sudo()
+        partners = partners.filtered(lambda partner: partner.exists())
+        if not partners:
+            return
+        tag = self._get_contract_guarantee_tag()
+        held = self.sudo().search(
+            [
+                ("partner_id", "in", partners.ids),
+                ("state", "in", HELD_GUARANTEE_STATES),
+            ]
+        )
+        held_ids = set(held.mapped("partner_id").ids)
+        to_add = partners.filtered(
+            lambda partner: partner.id in held_ids and tag not in partner.category_id
+        )
+        to_remove = partners.filtered(
+            lambda partner: partner.id not in held_ids and tag in partner.category_id
+        )
+        if to_add:
+            to_add.write({"category_id": [(4, tag.id)]})
+        if to_remove:
+            to_remove.write({"category_id": [(3, tag.id)]})
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -284,7 +369,23 @@ class ProcurementGuarantee(models.Model):
                     )
                     or _("New")
                 )
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        records._sync_vendor_guarantee_tags()
+        return records
+
+    def write(self, vals):
+        old_partners = self.mapped("partner_id")
+        result = super().write(vals)
+        self._sync_vendor_guarantee_tags(
+            old_partners | self.mapped("partner_id")
+        )
+        return result
+
+    def unlink(self):
+        partners = self.mapped("partner_id")
+        result = super().unlink()
+        self.env["procurement.guarantee"]._sync_vendor_guarantee_tags(partners)
+        return result
 
     def action_activate(self):
         self.write({"state": "active"})

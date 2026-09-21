@@ -1,6 +1,10 @@
 # Copyright 2026 VPK
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 
+import base64
+from io import BytesIO
+
+from odoo.exceptions import UserError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
@@ -109,6 +113,65 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
         self.assertIn(str(document.attachment_id.id), action["url"])
         self.requisition._update_egp_reference_from_documents()
         self.assertEqual(self.requisition.egp_reference, "EGP-INV-001")
+
+    def test_generate_winner_announcement_document(self):
+        winner_type = self.env.ref(
+            "vpk_purchase_agreement_egp.egp_document_type_winner_announcement"
+        )
+        self.env["purchase.requisition.egp.bid"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "partner_id": self.partner.id,
+                "amount_total": 97370.0,
+                "is_winner": True,
+            }
+        )
+        document = self.env["purchase.requisition.egp.document"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "document_type_id": winner_type.id,
+                "egp_reference": "6904571",
+            }
+        )
+        values = document._winner_announcement_values()
+        self.assertIn("Vendor A", values["body"])
+        self.assertIn("ประกาศผู้ชนะการเสนอราคา", values["subject"])
+        document.action_generate_winner_document()
+        self.assertTrue(document.document_file)
+        self.assertTrue(document.document_filename)
+        self.assertTrue(document.attachment_id)
+        content = base64.b64decode(document.document_file)
+        if document.document_filename.endswith(".docx"):
+            from docx import Document
+
+            text = "\n".join(p.text for p in Document(BytesIO(content)).paragraphs)
+            self.assertIn("Vendor A", text)
+            self.assertIn("ประกาศผู้ชนะการเสนอราคา", text)
+            self.assertNotIn("{{", text)
+
+    def test_generate_winner_announcement_requires_type_and_winner(self):
+        invitation_type = self.env.ref(
+            "vpk_purchase_agreement_egp.egp_document_type_invitation"
+        )
+        winner_type = self.env.ref(
+            "vpk_purchase_agreement_egp.egp_document_type_winner_announcement"
+        )
+        invitation = self.env["purchase.requisition.egp.document"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "document_type_id": invitation_type.id,
+            }
+        )
+        with self.assertRaises(UserError):
+            invitation.action_generate_winner_document()
+        winner_doc = self.env["purchase.requisition.egp.document"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "document_type_id": winner_type.id,
+            }
+        )
+        with self.assertRaises(UserError):
+            winner_doc.action_generate_winner_document()
 
     def test_egp_flow_stage_progression(self):
         self.assertEqual(self.requisition.egp_flow_stage, "draft")

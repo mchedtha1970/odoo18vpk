@@ -5,7 +5,7 @@ import { standardFieldProps } from "@web/views/fields/standard_field_props";
 import { useInputField } from "@web/views/fields/input_field_hook";
 import { Component, useEffect, useRef } from "@odoo/owl";
 
-const LOCAL_TINYMCE_BASE = "/hospital_budget_customization/static/lib/tinymce";
+const LOCAL_TINYMCE_BASE = "/vpk_sidebar_menu/static/lib/tinymce";
 const OFFICIAL_FONT_STACK = "'TH Sarabun New','Sarabun',sans-serif";
 const OFFICIAL_PARAGRAPH_STYLE = "margin:0 0 10px 0; line-height:1.8;";
 

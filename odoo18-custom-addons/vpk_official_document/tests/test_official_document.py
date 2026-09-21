@@ -529,3 +529,95 @@ class TestOfficialDocument(TransactionCase):
         reviews = document.review_ids.sorted("sequence")
         self.assertEqual(len(reviews), 3)
         self.assertIn(officer, reviews[0].reviewer_ids)
+
+    def test_send_winner_announcement_from_egp_document(self):
+        from odoo.exceptions import UserError
+
+        winner_type = self.env.ref(
+            "vpk_purchase_agreement_egp.egp_document_type_winner_announcement"
+        )
+        invitation_type = self.env.ref(
+            "vpk_purchase_agreement_egp.egp_document_type_invitation"
+        )
+        partner = self.env["res.partner"].create(
+            {"name": "Vendor A", "supplier_rank": 1}
+        )
+        product = self.env["product.product"].create(
+            {"name": "Medical Supply", "purchase_ok": True, "type": "consu"}
+        )
+        requisition = self.env["purchase.requisition"].create(
+            {
+                "requisition_type": "egp_procurement",
+                "egp_reference": "EGP-WIN-001",
+                "line_ids": [(0, 0, {"product_id": product.id, "product_qty": 1.0})],
+            }
+        )
+        self.env["purchase.requisition.egp.bid"].create(
+            {
+                "requisition_id": requisition.id,
+                "partner_id": partner.id,
+                "amount_total": 97370.0,
+                "is_winner": True,
+            }
+        )
+        invitation = self.env["purchase.requisition.egp.document"].create(
+            {
+                "requisition_id": requisition.id,
+                "document_type_id": invitation_type.id,
+            }
+        )
+        with self.assertRaises(UserError):
+            invitation.action_send_for_signature()
+        document = self.env["purchase.requisition.egp.document"].create(
+            {
+                "requisition_id": requisition.id,
+                "document_type_id": winner_type.id,
+                "egp_reference": "6904571",
+            }
+        )
+        document.action_generate_winner_document()
+        official = document.official_document_id
+        self.assertTrue(official)
+        self.assertEqual(official.document_type, "winner_announcement")
+        self.assertEqual(official.officer_id, self.env.user)
+        from odoo.fields import Command
+
+        director = self.env["res.users"].create(
+            {
+                "name": "นายทดสอบ ผู้อำนวยการประกาศผู้ชนะ",
+                "login": "winner.director",
+                "password": "WinnerSign@2569",
+                "groups_id": [Command.set([self.env.ref("base.group_user").id])],
+            }
+        )
+        official.signer_id = director
+        if not official._get_pdf_attachment():
+            fake_pdf = "JVBERi0xLjQK"
+            attachment = self.env["ir.attachment"].create(
+                {
+                    "name": "%s.pdf" % official.name,
+                    "datas": fake_pdf,
+                    "res_model": official._name,
+                    "res_id": official.id,
+                    "mimetype": "application/pdf",
+                }
+            )
+            official.with_context(skip_validation_check=True).write(
+                {
+                    "pdf_file": fake_pdf,
+                    "pdf_filename": "%s.pdf" % official.name,
+                    "pdf_attachment_id": attachment.id,
+                    "state": "generated",
+                }
+            )
+        document.action_send_for_signature()
+        self.assertEqual(official.state, "to_approve")
+        self.assertEqual(document.signature_state, "waiting")
+        reviews = official.review_ids.sorted("sequence")
+        self.assertEqual(len(reviews), 2)
+        self.assertEqual(reviews[0].status, "pending")
+        self.assertEqual(reviews[1].status, "waiting")
+        self.assertIn(self.env.user, reviews[0].reviewer_ids)
+        self.assertIn(director, reviews[1].reviewer_ids)
+        self.assertTrue(official.with_user(self.env.user).can_review)
+        self.assertFalse(official.with_user(director).can_review)

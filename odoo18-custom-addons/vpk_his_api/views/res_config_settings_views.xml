@@ -21,6 +21,7 @@
                         <field name="vpk_his_api_key" password="True"/>
                         <div class="text-muted">
                             POST /vpk/api/v1/his/revenue ·
+                            POST /vpk/api/v1/his/deposits ·
                             POST /vpk/api/v1/his/stock-issues ·
                             GET /vpk/api/v1/his/lookups/products ·
                             GET /vpk/api/v1/his/batches/&lt;external_id&gt;

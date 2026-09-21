@@ -1,6 +1,6 @@
 {
     "name": "VPK Sequential Approval Workflow",
-    "version": "18.0.1.5.47",
+    "version": "18.0.1.5.50",
     "category": "Tools",
     "summary": "Multi-level sequential approval for Purchase, Stock, Bills and more",
     "description": """

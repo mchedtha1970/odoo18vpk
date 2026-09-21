@@ -3,7 +3,7 @@
 
 {
     "name": "VPK HIS Interface",
-    "version": "18.0.1.8.0",
+    "version": "18.0.1.9.0",
     "category": "Accounting",
     "summary": "REST API รับสรุปรายวันจาก HIS เข้าคิว staging แล้วลงบัญชีรายได้และตัดสต็อก",
     "author": "VPK",

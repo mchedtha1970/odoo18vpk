@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_gfmis" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.gfmis</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='account']" position="inside">
+                <block title="กระบวนการ GFMIS" name="vpk_gfmis_setting">
+                    <setting string="รหัสหน่วยงาน" help="รหัสหน่วยงาน 5 หลัก ตามสิทธิ New GFMIS Thai">
+                        <field name="gfmis_agency_code"/>
+                    </setting>
+                    <setting string="รหัสพื้นที่" help="รหัสพื้นที่ 4 หลัก">
+                        <field name="gfmis_area_code"/>
+                    </setting>
+                    <setting string="รหัสหน่วยเบิกจ่าย" help="รหัสหน่วยเบิกจ่าย 10 หลัก">
+                        <field name="gfmis_disbursing_unit_code"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

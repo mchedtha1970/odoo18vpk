@@ -15,6 +15,20 @@ ADVANCE_APPLY_CODES = frozenset(
     {"advance", "prepaid", "deposit", "advance_apply"}
 )
 ADVANCE_IN_CODES = frozenset({"advance_in", "prepaid_in", "deposit_in"})
+DEPOSIT_TENDER_CODES = frozenset(
+    {
+        "cash",
+        "transfer",
+        "bank",
+        "promptpay",
+        "credit_card",
+        "card",
+        "creditcard",
+        "advance_in",
+        "prepaid_in",
+        "deposit_in",
+    }
+)
 
 
 def canonical_payment_method_code(code):
@@ -27,6 +41,12 @@ def is_advance_apply_code(code):
 
 def is_advance_in_code(code):
     return canonical_payment_method_code(code) == "advance_in"
+
+
+def is_deposit_tender_code(code):
+    """Cash/transfer/card (or advance_in) used to collect a patient deposit."""
+    raw = (code or "").strip().lower()
+    return raw in DEPOSIT_TENDER_CODES or is_advance_in_code(raw)
 
 
 class HisPaymentMethodMap(models.Model):

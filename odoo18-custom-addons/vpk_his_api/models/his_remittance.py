@@ -28,9 +28,9 @@ class HisBatch(models.Model):
     _inherit = "vpk.his.batch"
 
     def action_open_remittance_wizard(self):
-        batches = self.filtered(lambda b: b.batch_type == "revenue")
+        batches = self.filtered(lambda b: b.batch_type in ("revenue", "deposit"))
         if not batches:
-            raise UserError(_("ใบนำส่งเงินใช้กับชุดรายได้ HIS เท่านั้น"))
+            raise UserError(_("ใบนำส่งเงินใช้กับชุดรายได้/รับมัดจำ HIS เท่านั้น"))
         dates = batches.mapped("business_date")
         tickets = [
             t
@@ -69,7 +69,7 @@ class HisBatch(models.Model):
     def prepare_remittance_data(self, batches, options=None):
         """Aggregate HIS sale/payment lines into ใบนำส่งเงิน rows."""
         options = options or {}
-        batches = batches.filtered(lambda b: b.batch_type == "revenue")
+        batches = batches.filtered(lambda b: b.batch_type in ("revenue", "deposit"))
         company = options.get("company") or (
             batches[:1].company_id if batches else self.env.company
         )
@@ -141,9 +141,13 @@ class HisBatch(models.Model):
         for index, row in enumerate(rows, 1):
             row["no"] = index
 
-        def _split_op_ip(amount, ticket):
+        def _split_op_ip(amount, ticket, pay=None):
             types = ticket_types.get(ticket) or set()
             if types == {"ip"}:
+                return 0.0, amount
+            if types == {"op"}:
+                return amount, 0.0
+            if pay and pay.service_type == "ip":
                 return 0.0, amount
             return amount, 0.0
 
@@ -158,14 +162,17 @@ class HisBatch(models.Model):
                 (pmap and pmap.is_entitlement) or method in ENTITLEMENT_TENDER_CODES
             )
             amount = pay.amount or 0.0
+            if (pay.transaction_type or "receive") == "refund":
+                amount = -amount
             if is_entitlement:
                 entitlement_ar += amount
                 continue
             if is_advance_apply_code(method):
                 continue
-            op_amt, ip_amt = _split_op_ip(
-                amount, (pay.ticket_external_id or "").strip()
-            )
+            ticket = (pay.ticket_external_id or "").strip()
+            if ticket:
+                all_tickets.add(ticket)
+            op_amt, ip_amt = _split_op_ip(amount, ticket, pay)
             if is_advance_in_code(method) or method in ("cash",):
                 cash_op += op_amt
                 cash_ip += ip_amt
@@ -267,7 +274,7 @@ class HisRemittanceWizard(models.TransientModel):
     batch_ids = fields.Many2many(
         "vpk.his.batch",
         string="ชุด HIS",
-        domain="[('batch_type', '=', 'revenue'), ('company_id', '=', company_id)]",
+        domain="[('batch_type', 'in', ('revenue', 'deposit')), ('company_id', '=', company_id)]",
     )
     cashier_name = fields.Char(
         string="ผู้ส่งเงิน",
@@ -299,10 +306,12 @@ class HisRemittanceWizard(models.TransientModel):
     def _get_batches(self):
         self.ensure_one()
         if self.batch_ids:
-            return self.batch_ids.filtered(lambda b: b.batch_type == "revenue")
+            return self.batch_ids.filtered(
+                lambda b: b.batch_type in ("revenue", "deposit")
+            )
         domain = [
             ("company_id", "=", self.company_id.id),
-            ("batch_type", "=", "revenue"),
+            ("batch_type", "in", ("revenue", "deposit")),
             ("business_date", ">=", self.date_from),
             ("business_date", "<=", self.date_to),
             ("state", "in", ("ready", "posted")),

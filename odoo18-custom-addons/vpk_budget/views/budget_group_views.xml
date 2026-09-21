@@ -8,6 +8,7 @@
                 <field name="sequence" widget="handle"/>
                 <field name="code"/>
                 <field name="name"/>
+                <field name="product_categ_id" optional="show"/>
                 <field name="active"/>
             </list>
         </field>
@@ -31,6 +32,7 @@
                         <group>
                             <field name="code"/>
                             <field name="sequence"/>
+                            <field name="product_categ_id"/>
                         </group>
                     </group>
                     <notebook>

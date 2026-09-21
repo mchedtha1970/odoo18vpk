@@ -61,7 +61,7 @@ class PurchaseRequisition(models.Model):
     )
     procurement_method_id = fields.Many2one(
         comodel_name="procurement.method",
-        string="Procurement Method",
+        string="ซื้อด้วยวิธีการ",
         ondelete="restrict",
         copy=False,
     )
