@@ -46,14 +46,24 @@ class ResPartner(models.Model):
                 self.property_account_position_id = fp
 
     def _vpk_vendor_payable_account(self):
-        return self.env["account.account"].sudo().search(
-            [
-                ("code", "=", VPK_VENDOR_PAYABLE_CODE),
-                ("account_type", "=", "liability_payable"),
-                ("deprecated", "=", False),
-            ],
-            limit=1,
+        company = self.env.company
+        if not company:
+            return self.env["account.account"]
+        # Search by code joins allowed companies and can emit SQL `IN ()`
+        # when the env comes from the public vendor API.
+        self.env.cr.execute(
+            """
+            SELECT id
+              FROM account_account
+             WHERE code_store->>%s = %s
+               AND account_type = 'liability_payable'
+               AND COALESCE(deprecated, false) = false
+             LIMIT 1
+            """,
+            (str(company.id), VPK_VENDOR_PAYABLE_CODE),
         )
+        row = self.env.cr.fetchone()
+        return self.env["account.account"].browse(row[0] if row else False)
 
     def _vpk_is_vendor_vals(self, vals):
         if vals.get("supplier_rank"):

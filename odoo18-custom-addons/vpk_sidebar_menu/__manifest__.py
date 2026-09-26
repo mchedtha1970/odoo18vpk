@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'VPK Sidebar App Menu',
-    'version': '18.0.1.7.67',
+    'version': '18.0.1.7.68',
     'category': 'Tools',
     'summary': 'Replace standard Odoo app menu with vertical sidebar navigation',
     'description': """
@@ -36,6 +36,7 @@
             'vpk_sidebar_menu/static/src/js/form_dropdown_patch.js',
             'vpk_sidebar_menu/static/src/js/theme_config_panel.js',
             'vpk_sidebar_menu/static/src/js/sidebar_menu.js',
+            'vpk_sidebar_menu/static/src/js/push_notification_patch.js',
             'vpk_sidebar_menu/static/src/xml/theme_config_panel.xml',
             'vpk_sidebar_menu/static/src/xml/dialog_inherit.xml',
             'vpk_sidebar_menu/static/src/xml/sidebar_menu.xml',

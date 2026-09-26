@@ -134,8 +134,9 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
             }
         )
         values = document._winner_announcement_values()
-        self.assertIn("Vendor A", values["body"])
+        self.assertIn("Vendor A", values["body_winner"])
         self.assertIn("ประกาศผู้ชนะการเสนอราคา", values["subject"])
+        self.assertIn("ตามที่", values["body_intro"])
         document.action_generate_winner_document()
         self.assertTrue(document.document_file)
         self.assertTrue(document.document_filename)
@@ -147,7 +148,9 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
             text = "\n".join(p.text for p in Document(BytesIO(content)).paragraphs)
             self.assertIn("Vendor A", text)
             self.assertIn("ประกาศผู้ชนะการเสนอราคา", text)
+            self.assertIn("ผู้ได้รับการคัดเลือก", text)
             self.assertNotIn("{{", text)
+            self.assertNotIn("สำเนา", text)
 
     def test_generate_winner_announcement_requires_type_and_winner(self):
         invitation_type = self.env.ref(

@@ -171,6 +171,162 @@ class PurchaseRequisitionWinnerAnnouncement(models.Model):
             "published_date": False,
         })
 
+    def _report_province(self):
+        self.ensure_one()
+        company = self.company_id
+        state = company.state_id or company.partner_id.state_id
+        name = state.name if state else "ภูเก็ต"
+        if name.startswith("จังหวัด"):
+            return name
+        return "จังหวัด%s" % name
+
+    def _report_agency(self):
+        self.ensure_one()
+        company = self.company_id
+        if "official_doc_agency" in company._fields and company.official_doc_agency:
+            return company.official_doc_agency
+        return company.name or ""
+
+    def _report_method_phrase(self):
+        self.ensure_one()
+        method = self.procurement_method_id.name or "วิธีเฉพาะเจาะจง"
+        if method.startswith("โดย"):
+            return method
+        if method.startswith("วิธี"):
+            return "โดย%s" % method
+        return "โดยวิธี%s" % method
+
+    def _report_thai_digits(self, value):
+        return str(value).translate(
+            str.maketrans("0123456789", "๐๑๒๓๔๕๖๗๘๙")
+        )
+
+    def _report_thai_date(self):
+        self.ensure_one()
+        date_value = self.date
+        if not date_value:
+            return ""
+        if "thai.utils" in self.env:
+            formatted = self.env["thai.utils"].format_thai_date(
+                date_value,
+                format_date="{day} {month} พ.ศ. {year}",
+            )
+        else:
+            months = (
+                "",
+                "มกราคม",
+                "กุมภาพันธ์",
+                "มีนาคม",
+                "เมษายน",
+                "พฤษภาคม",
+                "มิถุนายน",
+                "กรกฎาคม",
+                "สิงหาคม",
+                "กันยายน",
+                "ตุลาคม",
+                "พฤศจิกายน",
+                "ธันวาคม",
+            )
+            formatted = "%s %s พ.ศ. %s" % (
+                date_value.day,
+                months[date_value.month],
+                date_value.year + 543,
+            )
+        return self._report_thai_digits(formatted)
+
+    def _report_amount_display(self):
+        self.ensure_one()
+        return self._report_thai_digits("{:,.2f}".format(self.winner_amount or 0.0))
+
+    def _report_amount_text(self):
+        self.ensure_one()
+        currency = self.currency_id
+        if not currency:
+            return ""
+        try:
+            return currency.with_context(lang="th_TH").amount_to_text(
+                self.winner_amount or 0.0
+            )
+        except Exception:
+            return currency.amount_to_text(self.winner_amount or 0.0) or ""
+
+    def _report_signer_full(self):
+        self.ensure_one()
+        company = self.company_id
+        if "official_doc_signer_name" in company._fields and company.official_doc_signer_name:
+            return company.official_doc_signer_name
+        return "นายวีระศักดิ์ หล่อทองคำ"
+
+    def _report_signer_title(self):
+        self.ensure_one()
+        company = self.company_id
+        if (
+            "official_doc_signer_position" in company._fields
+            and company.official_doc_signer_position
+        ):
+            return company.official_doc_signer_position
+        return "ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต"
+
+    def _winner_egp_document(self):
+        self.ensure_one()
+        return self.requisition_id.egp_document_ids.filtered(
+            lambda doc: doc.document_type_code == "winner_announcement"
+        )[:1]
+
+    def _docx_values(self):
+        """Values for Word template — same mapping as Gen บนแท็บเอกสาร e-GP."""
+        self.ensure_one()
+        egp = self._winner_egp_document()
+        if egp:
+            return egp._winner_announcement_values()
+        # Fallback เมื่อยังไม่มีแถวเอกสาร e-GP: สร้างค่าจากประกาศนี้โดยตรง
+        Document = self.env["purchase.requisition.egp.document"]
+        winner_type = self.env.ref(
+            "vpk_purchase_agreement_egp.egp_document_type_winner_announcement"
+        )
+        temp = Document.new(
+            {
+                "requisition_id": self.requisition_id.id,
+                "document_type_id": winner_type.id,
+                "egp_reference": self.egp_reference,
+                "document_date": self.date,
+            }
+        )
+        return temp._winner_announcement_values()
+
+    def _render_docx_bytes(self):
+        self.ensure_one()
+        from .winner_announcement_docx import (
+            WinnerAnnouncementRenderError,
+            load_template_bytes,
+            render_winner_announcement_docx,
+        )
+
+        try:
+            return render_winner_announcement_docx(
+                load_template_bytes(),
+                self._docx_values(),
+            )
+        except WinnerAnnouncementRenderError as error:
+            raise UserError(str(error)) from error
+
+    def _render_pdf_from_docx(self):
+        self.ensure_one()
+        docx_content = self._render_docx_bytes()
+        try:
+            from odoo.addons.vpk_official_document.models.pdf_converter import (
+                PdfConversionError,
+                convert_docx_bytes_to_pdf,
+            )
+        except ImportError as error:
+            raise UserError(
+                _("ไม่พบตัวแปลง PDF กรุณาติดตั้งโมดูลเอกสารราชการก่อนพิมพ์ประกาศผู้ชนะ")
+            ) from error
+        try:
+            return convert_docx_bytes_to_pdf(docx_content)
+        except PdfConversionError as error:
+            raise UserError(str(error)) from error
+
     def action_print(self):
         self.ensure_one()
         return self.env.ref(

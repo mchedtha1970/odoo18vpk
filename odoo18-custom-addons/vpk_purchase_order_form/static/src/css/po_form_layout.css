@@ -1,0 +1,164 @@
+/* VPK Purchase Order Form — ใบสั่งซื้อ/สั่งจ้าง */
+.container,
+.container-fluid,
+.article,
+.o_body_html {
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.vpk-po-form {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+    color: #000;
+}
+
+.vpk-po-form,
+.vpk-po-form * {
+    font-family: "THSarabunNew", "TH Sarabun New", sans-serif !important;
+    font-size: 15pt;
+    line-height: 1.35;
+    color: #000;
+}
+
+.vpk-po-form strong,
+.vpk-po-form b,
+.vpk-po-form .vpk-po-title {
+    font-family: "THSarabunNew-Bold", "TH Sarabun New", sans-serif !important;
+    font-weight: normal !important;
+}
+
+.vpk-po-title {
+    text-align: center;
+    font-size: 22pt !important;
+    margin: 0 0 10px 0;
+}
+
+.vpk-po-header {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+}
+
+.vpk-po-header td {
+    vertical-align: top;
+    padding: 0;
+}
+
+.vpk-po-header-left {
+    width: 58%;
+    padding-right: 12px !important;
+}
+
+.vpk-po-header-right {
+    width: 42%;
+}
+
+.vpk-po-label {
+    white-space: nowrap;
+}
+
+.vpk-po-meta-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.vpk-po-meta-table td {
+    padding: 1px 0;
+    vertical-align: top;
+}
+
+.vpk-po-meta-table .vpk-po-meta-label {
+    width: 42%;
+    white-space: nowrap;
+}
+
+.vpk-po-intro {
+    margin: 8px 0 10px 0;
+    text-align: justify;
+}
+
+.vpk-po-lines {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.vpk-po-lines th,
+.vpk-po-lines td {
+    border: 1px solid #000;
+    padding: 3px 4px;
+    vertical-align: top;
+}
+
+.vpk-po-lines th {
+    text-align: center;
+    font-family: "THSarabunNew-Bold", "TH Sarabun New", sans-serif !important;
+}
+
+.vpk-po-col-no { width: 8%; text-align: center; }
+.vpk-po-col-name { width: 38%; text-align: left; }
+.vpk-po-col-qty { width: 10%; text-align: center; }
+.vpk-po-col-uom { width: 10%; text-align: center; }
+.vpk-po-col-price { width: 17%; text-align: right; }
+.vpk-po-col-amount { width: 17%; text-align: right; }
+
+.vpk-po-lines .vpk-po-empty td {
+    height: 22px;
+}
+
+.vpk-po-baht-text {
+    text-align: center;
+    vertical-align: middle !important;
+}
+
+.vpk-po-total-label {
+    text-align: left;
+    padding-left: 6px !important;
+}
+
+.vpk-po-total-value {
+    text-align: right;
+}
+
+.vpk-po-conditions {
+    margin-top: 10px;
+}
+
+.vpk-po-conditions-title {
+    margin: 0 0 4px 0;
+}
+
+.vpk-po-conditions ol {
+    margin: 0;
+    padding-left: 1.6em;
+}
+
+.vpk-po-conditions li {
+    margin-bottom: 2px;
+}
+
+.vpk-po-sign {
+    width: 100%;
+    margin-top: 28px;
+    border-collapse: collapse;
+}
+
+.vpk-po-sign td {
+    width: 50%;
+    vertical-align: top;
+    text-align: center;
+    padding-top: 8px;
+}
+
+.vpk-po-sign-space {
+    height: 56px;
+}
+
+.vpk-po-sign-line {
+    margin-top: 4px;
+}

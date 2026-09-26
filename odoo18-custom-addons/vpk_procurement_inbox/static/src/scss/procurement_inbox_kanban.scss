@@ -1,0 +1,32 @@
+.o_vpk_procurement_inbox_kanban {
+    .o_vpk_inbox_card {
+        min-height: 170px;
+        padding: 4px 2px;
+    }
+
+    .o_vpk_inbox_card_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .o_vpk_inbox_card_meta {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.9rem;
+    }
+
+    .o_vpk_inbox_overdue {
+        border-left: 3px solid #c62828;
+        padding-left: 8px;
+    }
+
+    .o_vpk_inbox_card_actions {
+        .btn {
+            font-size: 0.8rem;
+        }
+    }
+}

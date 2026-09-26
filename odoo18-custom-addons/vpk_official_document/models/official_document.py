@@ -2361,46 +2361,70 @@ class OfficialDocument(models.Model):
                 vals["signer_id"] = signer.id
         if vals:
             self.with_context(skip_validation_check=True).write(vals)
-        missing = []
-        if not self.officer_id:
-            missing.append(_("ผู้จัดทำเอกสาร"))
         if not self.signer_id:
-            missing.append(_("ผู้อำนวยการ"))
-        if missing:
-            raise UserError(
-                _("กรุณาระบุ %s ก่อนส่งประกาศผู้ชนะลงนาม") % " และ ".join(missing)
-            )
+            raise UserError(_("กรุณาระบุผู้อำนวยการก่อนส่งประกาศผู้ชนะลงนาม"))
+        return True
+
+    @api.model
+    def _vpk_ensure_winner_tier_definitions(self):
+        """Winner announcement is signed by director only."""
+        signer_field = self.env.ref(
+            "vpk_official_document.field_vpk_official_document__signer_id",
+            raise_if_not_found=False,
+        )
+        generator = self.env.ref(
+            "vpk_official_document.tier_definition_winner_announcement_generator",
+            raise_if_not_found=False,
+        )
+        director = self.env.ref(
+            "vpk_official_document.tier_definition_winner_announcement_director",
+            raise_if_not_found=False,
+        )
+        if generator and generator.active:
+            generator.sudo().write({"active": False})
+        if director and signer_field:
+            vals = {}
+            if director.reviewer_field_id != signer_field:
+                vals["reviewer_field_id"] = signer_field.id
+            if director.sequence != 10:
+                vals["sequence"] = 10
+            if director.review_type != "field":
+                vals["review_type"] = "field"
+            if not director.approve_sequence:
+                vals["approve_sequence"] = True
+            if not director.active:
+                vals["active"] = True
+            if vals:
+                director.sudo().write(vals)
         return True
 
     def _vpk_winner_sign_definitions(self):
-        xmlids = (
-            "vpk_official_document.tier_definition_winner_announcement_generator",
+        self._vpk_ensure_winner_tier_definitions()
+        director = self.env.ref(
             "vpk_official_document.tier_definition_winner_announcement_director",
+            raise_if_not_found=False,
         )
-        definitions = []
-        for xmlid in xmlids:
-            definition = self.env.ref(xmlid, raise_if_not_found=False)
-            if definition:
-                definitions.append(definition)
-        if len(definitions) == 2:
-            return definitions
+        if director and director.active:
+            return [director]
         found = self.env["tier.definition"].search(
             [
                 ("model", "=", self._name),
                 ("review_type", "=", "field"),
-                ("approve_sequence", "=", True),
+                ("reviewer_field_id.name", "=", "signer_id"),
                 ("definition_domain", "ilike", "winner_announcement"),
+                ("active", "=", True),
             ],
             order="sequence, id",
+            limit=1,
         )
         return list(found)
 
     def _vpk_create_winner_sign_reviews(self):
-        """Create generator → director reviews in order."""
+        """Create director-only review for winner announcement."""
         Review = self.env["tier.review"]
         created = Review.browse()
         definitions = self._vpk_winner_sign_definitions()
-        if len(definitions) < 2:
+        if not definitions:
             raise UserError(_("ยังไม่ได้ตั้งลำดับลงนามของประกาศผู้ชนะ"))
         for doc in self:
             if doc.document_type != "winner_announcement":

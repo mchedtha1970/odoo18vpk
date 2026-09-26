@@ -1,0 +1,60 @@
+/* Winner announcement PDF — same look as แบบฟอร์ม_ประกาศชื่อผู้ชนะในการเสนอราคา
+ * Template font is TH SarabunIT๙; report embeds THSarabunNew (IT๙ maps to it).
+ */
+.vpk-winner-announcement {
+    font-family: "TH SarabunIT๙", "THSarabunIT๙", "THSarabunNew", "TH Sarabun New", sans-serif;
+    font-size: 16pt;
+    color: #000;
+    line-height: 1.35;
+}
+.vpk-winner-announcement,
+.vpk-winner-announcement * {
+    font-family: "TH SarabunIT๙", "THSarabunIT๙", "THSarabunNew", "TH Sarabun New", sans-serif !important;
+    color: #000;
+}
+.vpk-winner-announcement .winner-garuda {
+    text-align: center;
+    margin: 0 0 4px 0;
+}
+.vpk-winner-announcement .winner-garuda img {
+    height: 78px;
+    width: auto;
+}
+.vpk-winner-announcement .winner-title {
+    text-align: center;
+    font-family: "THSarabunNew-Bold", "TH SarabunIT๙", "THSarabunNew", sans-serif !important;
+    font-size: 16pt;
+    font-weight: bold;
+    margin: 0;
+}
+.vpk-winner-announcement .winner-center {
+    text-align: center;
+    margin: 0;
+}
+.vpk-winner-announcement .winner-sep {
+    text-align: center;
+    margin: 2px 0 8px 0;
+}
+.vpk-winner-announcement .winner-body {
+    text-align: justify;
+    text-indent: 2.5cm;
+    margin: 8px 0 6px 0;
+}
+.vpk-winner-announcement .winner-date {
+    text-align: justify;
+    text-indent: 6.25cm;
+    margin: 14px 0 0 0;
+}
+.vpk-winner-announcement .winner-signer {
+    margin: 1.6cm 0 0 0;
+}
+.vpk-winner-announcement .winner-signer .line {
+    margin: 0;
+    text-indent: 7.5cm;
+}
+.vpk-winner-announcement .winner-signer .line-name {
+    text-indent: 8.0cm;
+}
+.vpk-winner-announcement .winner-signer .line-acting {
+    text-indent: 6.5cm;
+}

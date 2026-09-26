@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="vpk_procurement_inbox.ProcurementInboxDashboard">
+        <Layout display="display">
+            <div class="o_vpk_procurement_inbox_dashboard h-100 d-flex flex-column">
+                <div class="o_vpk_dashboard_header">
+                    <div class="o_vpk_dashboard_header_text">
+                        <h2 class="mb-1">Dashboard พัสดุรับงาน</h2>
+                        <p class="text-muted mb-0">
+                            ใบขอซื้อที่หน่วยงานส่งมาแล้ว — กดการ์ด KPI เพื่อกรอง แล้วกดรับงานหรือเปิดทำรายการ
+                        </p>
+                    </div>
+                    <div class="o_vpk_dashboard_header_actions">
+                        <button
+                            type="button"
+                            class="btn btn-outline-secondary btn-sm"
+                            t-on-click="() => this.reload()"
+                        >
+                            รีเฟรช
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-outline-primary btn-sm"
+                            t-on-click="openList"
+                        >
+                            ดูรายการทั้งหมด
+                        </button>
+                    </div>
+                </div>
+
+                <div class="o_vpk_inbox_kpi_row" t-if="state.ready">
+                    <button
+                        type="button"
+                        class="o_vpk_inbox_kpi"
+                        t-att-class="state.activeFilter === 'total' ? 'active' : ''"
+                        t-on-click="() => this.selectFilter('total')"
+                    >
+                        <div class="o_vpk_inbox_kpi_value"><t t-esc="state.stats.total"/></div>
+                        <div class="o_vpk_inbox_kpi_label">ทั้งหมด</div>
+                    </button>
+                    <button
+                        type="button"
+                        class="o_vpk_inbox_kpi warn"
+                        t-att-class="state.activeFilter === 'unassigned' ? 'active' : ''"
+                        t-on-click="() => this.selectFilter('unassigned')"
+                    >
+                        <div class="o_vpk_inbox_kpi_value"><t t-esc="state.stats.unassigned"/></div>
+                        <div class="o_vpk_inbox_kpi_label">ยังไม่มีผู้รับ</div>
+                    </button>
+                    <button
+                        type="button"
+                        class="o_vpk_inbox_kpi ok"
+                        t-att-class="state.activeFilter === 'mine' ? 'active' : ''"
+                        t-on-click="() => this.selectFilter('mine')"
+                    >
+                        <div class="o_vpk_inbox_kpi_value"><t t-esc="state.stats.mine"/></div>
+                        <div class="o_vpk_inbox_kpi_label">ของฉัน</div>
+                    </button>
+                    <button
+                        type="button"
+                        class="o_vpk_inbox_kpi danger"
+                        t-att-class="state.activeFilter === 'overdue' ? 'active' : ''"
+                        t-on-click="() => this.selectFilter('overdue')"
+                    >
+                        <div class="o_vpk_inbox_kpi_value"><t t-esc="state.stats.overdue"/></div>
+                        <div class="o_vpk_inbox_kpi_label">ค้างเกิน 3 วัน</div>
+                    </button>
+                    <button
+                        type="button"
+                        class="o_vpk_inbox_kpi urgent"
+                        t-att-class="state.activeFilter === 'urgent' ? 'active' : ''"
+                        t-on-click="() => this.selectFilter('urgent')"
+                        t-if="state.stats.has_urgency"
+                    >
+                        <div class="o_vpk_inbox_kpi_value"><t t-esc="state.stats.urgent"/></div>
+                        <div class="o_vpk_inbox_kpi_label">เร่งด่วน</div>
+                    </button>
+                </div>
+
+                <div class="o_vpk_dashboard_body flex-grow-1" t-if="state.ready and viewProps">
+                    <t t-if="state.stats.total">
+                        <View t-props="viewProps"/>
+                    </t>
+                    <t t-else="">
+                        <div class="o_vpk_dashboard_empty text-center text-muted py-5">
+                            <i class="fa fa-inbox fa-3x mb-3 d-block opacity-50"/>
+                            <h4>ยังไม่มีใบขอซื้อจากหน่วยงาน</h4>
+                            <p>เมื่อหน่วยงานกด ส่งพัสดุ รายการจะแสดงที่นี่</p>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </Layout>
+    </t>
+
+</templates>

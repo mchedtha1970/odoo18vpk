@@ -7,6 +7,9 @@ RUN apt-get update \
         fonts-thai-tlwg \
         fonts-noto-core \
         fonts-noto-cjk \
+        libreoffice-writer-nogui \
+        libreoffice-java-common \
+        default-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements-extra.txt /tmp/requirements-extra.txt

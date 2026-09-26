@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_company_form_vpk_po" model="ir.ui.view">
+        <field name="name">res.company.form.vpk.po.form</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="ใบสั่งซื้อ VPK" name="vpk_po_form">
+                    <group>
+                        <group string="ส่วนราชการบนใบสั่งซื้อ">
+                            <field name="vpk_po_agency_name"/>
+                            <field name="vpk_po_agency_address"/>
+                        </group>
+                        <group string="เงื่อนไขเริ่มต้น">
+                            <field name="vpk_po_delivery_days"/>
+                            <field name="vpk_po_warranty_months"/>
+                            <field name="vpk_po_penalty_rate"/>
+                            <field name="vpk_po_penalty_min"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="สถานที่ส่งมอบ">
+                            <field name="vpk_po_delivery_place" nolabel="1"/>
+                        </group>
+                        <group string="ผู้ลงนาม">
+                            <field name="vpk_po_signer_name"/>
+                            <field name="vpk_po_signer_position"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

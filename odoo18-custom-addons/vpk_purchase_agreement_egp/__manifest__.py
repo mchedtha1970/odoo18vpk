@@ -1,6 +1,6 @@
 {
     "name": "VPK Purchase Agreement e-GP",
-    "version": "18.0.1.5.8",
+    "version": "18.0.1.5.10",
     "category": "Purchases",
     "summary": "Purchase Agreement as e-GP procurement hub for Vachira Hospital",
     "author": "VPK",
@@ -36,6 +36,7 @@
     "assets": {
         "web.report_assets_common": [
             "vpk_tier_validation/static/src/scss/thai_fonts_embedded.scss",
+            "vpk_purchase_agreement_egp/static/src/scss/winner_announcement_report.scss",
         ],
         "web.assets_backend": [
             "vpk_purchase_agreement_egp/static/src/scss/egp_flow.scss",

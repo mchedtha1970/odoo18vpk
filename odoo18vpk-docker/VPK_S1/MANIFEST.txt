@@ -1,0 +1,7 @@
+database: VPK-S1
+created: 20260921-1936
+source_host: Chadthas-MacBook-Pro
+postgres: 16.15(Debian16.15-1.pgdg13+2)
+db_size: 170MB
+dump: VPK_S1.dump (19M)
+filestore: filestore/VPK-S1 (183M) files=604

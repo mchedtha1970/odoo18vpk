@@ -3,80 +3,47 @@
 
 import json
 import logging
+import re
 
 from odoo import http
-from odoo.exceptions import UserError, ValidationError
-from odoo.http import request
+from odoo.exceptions import AccessDenied, AccessError, UserError, ValidationError
+from odoo.http import request, root
 
 _logger = logging.getLogger(__name__)
 
+CORS = "*"
+DEFAULT_DB = "VPK-S1"
+
+
+def sync_session_cookie():
+    session = request.session
+    if session.should_rotate:
+        root.session_store.rotate(session, request.env)
+        request.future_response.set_cookie(
+            "session_id",
+            session.sid,
+            max_age=http.get_session_max_inactivity(request.env),
+            httponly=True,
+        )
+    return session.sid
+
 
 class VendorApiController(http.Controller):
-    """Inbound vendor profile registration for external systems.
+    """REST API for the vendor portal mobile app.
 
-    Auth: Header ``X-Api-Key: <key>`` or ``Authorization: Bearer <key>``
-    Config: Settings → Purchases → Vendor API Key
-
-    Documents:
-    - JSON register with ``documents[].content_base64``
-    - multipart/form-data register: field ``payload`` (JSON) + files
-    - POST ``/vpk/api/v1/vendors/<external_id>/documents``
+    Base: ``/vpk/api/v1/vendor``
     """
 
-    def _api_enabled(self):
-        return (
-            request.env["ir.config_parameter"]
-            .sudo()
-            .get_param("vpk_vendor_api.enabled", "True")
-            not in ("False", "0", "false", "")
-        )
-
-    def _get_configured_api_key(self):
-        return (
-            request.env["ir.config_parameter"]
-            .sudo()
-            .get_param("vpk_vendor_api.api_key", "")
-            or ""
-        ).strip()
-
-    def _extract_api_key(self):
-        headers = request.httprequest.headers
-        key = headers.get("X-Api-Key") or headers.get("x-api-key")
-        if key:
-            return key.strip()
-        auth = headers.get("Authorization") or headers.get("authorization") or ""
-        if auth.lower().startswith("bearer "):
-            return auth[7:].strip()
-        return ""
-
-    def _authenticate(self):
-        if not self._api_enabled():
-            return self._json_response(
-                {"ok": False, "error": "Vendor API is disabled"}, status=503
-            )
-        configured = self._get_configured_api_key()
-        if not configured:
-            return self._json_response(
-                {
-                    "ok": False,
-                    "error": "Vendor API key is not configured on the server",
-                },
-                status=503,
-            )
-        provided = self._extract_api_key()
-        if not provided or provided != configured:
-            return self._json_response(
-                {"ok": False, "error": "Invalid or missing API key"}, status=401
-            )
-        return None
-
-    def _json_response(self, data, status=200):
+    def _json(self, data, status=200):
         return request.make_json_response(data, status=status)
+
+    def _error(self, message, status=400):
+        return self._json({"ok": False, "error": message}, status=status)
 
     def _parse_json_body(self):
         raw = request.httprequest.get_data(as_text=True) or ""
         if not raw.strip():
-            raise UserError("Empty request body")
+            return {}
         try:
             payload = json.loads(raw)
         except json.JSONDecodeError as err:
@@ -85,255 +52,311 @@ class VendorApiController(http.Controller):
             raise UserError("JSON body must be an object")
         return payload
 
-    def _is_multipart(self):
-        ctype = (request.httprequest.content_type or "").lower()
-        return "multipart/form-data" in ctype
+    def _bearer_token(self):
+        header = request.httprequest.headers.get("Authorization") or ""
+        match = re.match(r"^bearer\s+(.+)$", header, re.IGNORECASE)
+        return match.group(1).strip() if match else ""
 
-    def _parse_multipart_payload(self, require_payload=True):
-        """Build payload dict from multipart: JSON field + uploaded files."""
-        form = request.httprequest.form
-        payload_raw = form.get("payload") or form.get("data") or form.get("json")
-        if payload_raw:
+    def _explicit_session_candidates(self):
+        httprequest = request.httprequest
+        headers = httprequest.headers
+        values = [
+            self._bearer_token(),
+            headers.get("X-Openerp-Session-Id"),
+            headers.get("X-Session-Id"),
+            httprequest.args.get("session_id"),
+        ]
+        if httprequest.method in ("POST", "PUT", "PATCH"):
             try:
-                payload = json.loads(payload_raw)
-            except json.JSONDecodeError as err:
-                raise UserError("Invalid JSON in 'payload' form field") from err
-            if not isinstance(payload, dict):
-                raise UserError("'payload' must be a JSON object")
-        elif require_payload:
-            # Allow profile fields as plain form keys
-            payload = {}
-            skip = {"payload", "data", "json", "doc_type", "display_name", "replace"}
-            for key in form:
-                if key in skip or key.startswith("file"):
-                    continue
-                payload[key] = form.get(key)
-            if not payload and not request.httprequest.files:
-                raise UserError("Missing 'payload' JSON or form fields")
-        else:
-            payload = {}
-
-        documents = list(payload.get("documents") or payload.get("files") or [])
-        documents.extend(self._files_from_request())
-        if documents:
-            payload["documents"] = documents
-        return payload
-
-    def _files_from_request(self):
-        """Read uploaded files from multipart request into document dicts."""
-        form = request.httprequest.form
-        default_doc_type = form.get("doc_type") or "other"
-        default_display = form.get("display_name") or False
-        replace_raw = form.get("replace")
-        replace = True if replace_raw is None else str(replace_raw).lower() not in (
-            "0",
-            "false",
-            "no",
-        )
-
-        documents = []
-        files = request.httprequest.files
-        # Support files, file, documents, document
-        collected = []
-        for key in ("files", "file", "documents", "document"):
-            collected.extend(files.getlist(key))
-        # Any other file fields
-        for key in files:
-            if key not in ("files", "file", "documents", "document"):
-                collected.extend(files.getlist(key))
-
-        seen = set()
-        for storage in collected:
-            if not storage or not storage.filename:
-                continue
-            # de-dup same Werkzeug FileStorage object
-            obj_id = id(storage)
-            if obj_id in seen:
-                continue
-            seen.add(obj_id)
-            content = storage.read()
-            # Per-file optional metadata: doc_type_<filename> not practical;
-            # use form-level doc_type, or filename prefix "type__name.ext"
-            filename = storage.filename
-            doc_type = default_doc_type
-            display_name = default_display or filename
-            if "__" in filename and not form.get("doc_type"):
-                prefix, rest = filename.split("__", 1)
-                if prefix and rest:
-                    doc_type = prefix
-                    filename = rest
-                    display_name = rest
-            documents.append(
-                {
-                    "filename": filename,
-                    "display_name": display_name,
-                    "doc_type": doc_type,
-                    "mimetype": storage.mimetype or False,
-                    "content": content,
-                    "replace": replace,
-                }
-            )
-        return documents
-
-    def _request_meta(self, endpoint):
-        return {
-            "endpoint": endpoint,
-            "method": request.httprequest.method,
-            "remote_addr": request.httprequest.remote_addr,
-        }
-
-    def _find_partner(self, external_id):
-        return (
-            request.env["res.partner"]
-            .sudo()
-            .search([("vpk_vendor_external_id", "=", external_id)], limit=1)
-        )
-
-    @http.route(
-        "/vpk/api/v1/vendors/register",
-        type="http",
-        auth="public",
-        methods=["POST"],
-        csrf=False,
-        save_session=False,
-        website=False,
-    )
-    def vendor_register(self, **kwargs):
-        auth_error = self._authenticate()
-        if auth_error:
-            return auth_error
-        try:
-            if self._is_multipart():
-                payload = self._parse_multipart_payload(require_payload=True)
-            else:
                 payload = self._parse_json_body()
-            result = (
-                request.env["vpk.vendor.api.service"]
-                .sudo()
-                .register_vendor(
-                    payload,
-                    request_meta=self._request_meta("/vpk/api/v1/vendors/register"),
-                )
-            )
-            return self._json_response(result, status=200)
-        except (UserError, ValidationError) as err:
-            return self._json_response({"ok": False, "error": str(err)}, status=400)
-        except Exception:  # noqa: BLE001
-            _logger.exception("Vendor register endpoint failed")
-            return self._json_response(
-                {"ok": False, "error": "Internal server error"}, status=500
-            )
+            except UserError:
+                payload = {}
+            if isinstance(payload, dict):
+                values.append(payload.get("session_id"))
+        seen = set()
+        ordered = []
+        for value in values:
+            sid = (value or "").strip()
+            if sid and sid not in seen:
+                seen.add(sid)
+                ordered.append(sid)
+        return ordered
 
-    @http.route(
-        "/vpk/api/v1/vendors/<string:external_id>/documents",
-        type="http",
-        auth="public",
-        methods=["POST", "GET"],
-        csrf=False,
-        save_session=False,
-        website=False,
-    )
-    def vendor_documents(self, external_id, **kwargs):
-        auth_error = self._authenticate()
-        if auth_error:
-            return auth_error
-        partner = self._find_partner(external_id)
-        if not partner:
-            return self._json_response(
-                {"ok": False, "error": "Vendor not found"}, status=404
-            )
-        service = request.env["vpk.vendor.api.service"].sudo()
-        if request.httprequest.method == "GET":
-            return self._json_response(
-                {
-                    "ok": True,
-                    "partner_id": partner.id,
-                    "external_id": partner.vpk_vendor_external_id,
-                    "documents": service.list_vendor_documents(partner),
-                }
-            )
+    def _bind_session(self, sid):
+        if not sid or not root.session_store.is_valid_key(sid):
+            return False
+        if request.session.sid == sid and request.session.uid:
+            return True
+        session = root.session_store.get(sid)
+        if not session or not session.uid:
+            return False
+        session.sid = sid
+        request.session = session
+        request.update_env(user=session.uid)
+        return True
+
+    def _require_user(self):
+        if not request.db:
+            return self._error("กรุณาเข้าสู่ระบบ", 401)
+        bound = False
+        for sid in self._explicit_session_candidates():
+            if self._bind_session(sid):
+                bound = True
+                break
+        uid = request.session.uid
+        public_ids = request.env["ir.http"]._get_public_users()
+        if not bound:
+            if not uid or uid in public_ids:
+                return self._error("กรุณาเข้าสู่ระบบ", 401)
+            if request.env.uid != uid:
+                request.update_env(user=uid)
+        return None
+
+    def _handle(self, callback, auth=True):
+        if auth:
+            denied = self._require_user()
+            if denied:
+                return denied
         try:
-            if self._is_multipart():
-                payload = self._parse_multipart_payload(require_payload=False)
-                documents = payload.get("documents") or []
-            else:
-                body = self._parse_json_body()
-                documents = body.get("documents") or body.get("files") or []
-            if not documents:
-                raise UserError("No documents provided")
-            result = service.upload_vendor_documents(
-                partner,
-                documents,
-                request_meta=self._request_meta(
-                    "/vpk/api/v1/vendors/%s/documents" % external_id
-                ),
-            )
-            return self._json_response(result, status=200)
+            return callback()
+        except AccessDenied:
+            return self._error("เข้าสู่ระบบไม่สำเร็จ", 401)
+        except AccessError as err:
+            return self._error(str(err), 403)
         except (UserError, ValidationError) as err:
-            return self._json_response({"ok": False, "error": str(err)}, status=400)
-        except Exception:  # noqa: BLE001
-            _logger.exception("Vendor documents endpoint failed")
-            return self._json_response(
-                {"ok": False, "error": "Internal server error"}, status=500
-            )
+            return self._error(str(err), 400)
+        except Exception:
+            _logger.exception("vendor API failed")
+            return self._error("เกิดข้อผิดพลาดภายในระบบ", 500)
+
+    def _service(self):
+        return request.env["vpk.vendor.api.service"]
 
     @http.route(
-        "/vpk/api/v1/vendors/<string:external_id>",
+        ["/vpk/api/v1/vendor", "/vpk/api/v1/vendor/"],
         type="http",
-        auth="public",
+        auth="none",
         methods=["GET"],
         csrf=False,
+        cors=CORS,
         save_session=False,
-        website=False,
     )
-    def vendor_get(self, external_id, **kwargs):
-        auth_error = self._authenticate()
-        if auth_error:
-            return auth_error
-        partner = self._find_partner(external_id)
-        if not partner:
-            return self._json_response(
-                {"ok": False, "error": "Vendor not found"}, status=404
-            )
-        docs = (
-            request.env["vpk.vendor.api.service"].sudo().list_vendor_documents(partner)
-        )
-        return self._json_response(
-            {
-                "ok": True,
-                "partner_id": partner.id,
-                "external_id": partner.vpk_vendor_external_id,
-                "name": partner.name,
-                "name_company": partner.name_company or False,
-                "vat": partner.vat or False,
-                "company_registry": partner.company_registry or False,
-                "email": partner.email or False,
-                "phone": partner.phone or False,
-                "mobile": partner.mobile or False,
-                "supplier_rank": partner.supplier_rank,
-                "documents": docs,
-            },
-            status=200,
-        )
-
-    @http.route(
-        "/vpk/api/v1/vendors/health",
-        type="http",
-        auth="public",
-        methods=["GET"],
-        csrf=False,
-        save_session=False,
-        website=False,
-    )
-    def vendor_health(self, **kwargs):
-        """Liveness check (no auth). Does not expose secrets."""
-        enabled = self._api_enabled()
-        configured = bool(self._get_configured_api_key())
-        return self._json_response(
+    def index(self, **kwargs):
+        return self._json(
             {
                 "ok": True,
                 "service": "vpk_vendor_api",
-                "enabled": enabled,
-                "api_key_configured": configured,
+                "base": "/vpk/api/v1/vendor",
             }
         )
+
+    @http.route(
+        "/vpk/api/v1/vendor/auth/login",
+        type="http",
+        auth="none",
+        methods=["POST"],
+        csrf=False,
+        cors=CORS,
+        readonly=False,
+    )
+    def login(self, **kwargs):
+        def _run():
+            payload = self._parse_json_body()
+            login = (payload.get("login") or "").strip()
+            password = payload.get("password") or ""
+            if not login or not password:
+                raise UserError("กรุณาระบุ login และ password")
+            dbname = (payload.get("db") or request.db or DEFAULT_DB or "").strip()
+            if not dbname:
+                raise UserError("กรุณาระบุฐานข้อมูล")
+            if not http.db_filter([dbname]):
+                raise UserError("ไม่พบฐานข้อมูล")
+            request.session.authenticate(
+                dbname,
+                {"login": login, "password": password, "type": "password"},
+            )
+            if not request.session.uid:
+                raise AccessDenied()
+            user = request.env.user
+            if not user._is_portal():
+                request.session.logout(keep_db=True)
+                raise AccessError("บัญชีนี้ไม่ใช่ผู้ขาย")
+            session_id = sync_session_cookie()
+            me = request.env["vpk.vendor.api.service"].me()
+            return self._json(
+                {
+                    "ok": True,
+                    "uid": user.id,
+                    "session_id": session_id,
+                    "sid": session_id,
+                    "user": me["user"],
+                    "waiting_count": me["waiting_count"],
+                    "confirmed_count": me["confirmed_count"],
+                }
+            )
+
+        return self._handle(_run, auth=False)
+
+    @http.route(
+        "/vpk/api/v1/vendor/auth/register",
+        type="http",
+        auth="none",
+        methods=["POST"],
+        csrf=False,
+        cors=CORS,
+        readonly=False,
+    )
+    def register(self, **kwargs):
+        def _run():
+            payload = self._parse_json_body()
+            dbname = (payload.get("db") or request.db or DEFAULT_DB or "").strip()
+            if not dbname:
+                raise UserError("กรุณาระบุฐานข้อมูล")
+            if not http.db_filter([dbname]):
+                raise UserError("ไม่พบฐานข้อมูล")
+            if request.session.db != dbname:
+                request.session.db = dbname
+            result = (
+                request.env["vpk.vendor.api.service"]
+                .sudo()
+                .register_portal_account(payload)
+            )
+            return self._json(result)
+
+        return self._handle(_run, auth=False)
+
+    @http.route(
+        "/vpk/api/v1/vendor/address/zips",
+        type="http",
+        auth="none",
+        methods=["GET"],
+        csrf=False,
+        cors=CORS,
+        save_session=False,
+    )
+    def address_zips(self, q="", limit=20, **kwargs):
+        def _run():
+            data = request.env["vpk.vendor.api.service"].sudo().search_zips(q, limit=limit)
+            return self._json({"ok": True, **data})
+
+        return self._handle(_run, auth=False)
+
+    @http.route(
+        "/vpk/api/v1/vendor/auth/logout",
+        type="http",
+        auth="none",
+        methods=["POST"],
+        csrf=False,
+        cors=CORS,
+    )
+    def logout(self, **kwargs):
+        request.session.logout(keep_db=True)
+        return self._json({"ok": True})
+
+    @http.route(
+        "/vpk/api/v1/vendor/me",
+        type="http",
+        auth="none",
+        methods=["GET"],
+        csrf=False,
+        cors=CORS,
+    )
+    def me(self, **kwargs):
+        def _run():
+            return self._json({"ok": True, **self._service().me()})
+
+        return self._handle(_run)
+
+    @http.route(
+        "/vpk/api/v1/vendor/profile",
+        type="http",
+        auth="none",
+        methods=["GET", "POST"],
+        csrf=False,
+        cors=CORS,
+    )
+    def profile(self, **kwargs):
+        def _run():
+            service = self._service()
+            if request.httprequest.method == "POST":
+                payload = self._parse_json_body()
+                data = service.update_profile(payload)
+            else:
+                data = service.get_profile()
+            return self._json({"ok": True, **data})
+
+        return self._handle(_run)
+
+    @http.route(
+        "/vpk/api/v1/vendor/orders",
+        type="http",
+        auth="none",
+        methods=["GET"],
+        csrf=False,
+        cors=CORS,
+    )
+    def orders(self, status="waiting", limit=50, offset=0, **kwargs):
+        def _run():
+            payload = self._service().search_orders(
+                limit=limit, offset=offset, status=status
+            )
+            payload["ok"] = True
+            return self._json(payload)
+
+        return self._handle(_run)
+
+    @http.route(
+        "/vpk/api/v1/vendor/orders/<int:order_id>",
+        type="http",
+        auth="none",
+        methods=["GET"],
+        csrf=False,
+        cors=CORS,
+    )
+    def order_detail(self, order_id, **kwargs):
+        def _run():
+            return self._json({"ok": True, "item": self._service().get_order(order_id)})
+
+        return self._handle(_run)
+
+    @http.route(
+        "/vpk/api/v1/vendor/orders/<int:order_id>/pdf",
+        type="http",
+        auth="none",
+        methods=["GET"],
+        csrf=False,
+        cors=CORS,
+    )
+    def order_pdf(self, order_id, **kwargs):
+        def _run():
+            pdf = self._service().get_pdf(order_id)
+            return request.make_response(
+                pdf["content"],
+                headers=[
+                    ("Content-Type", "application/pdf"),
+                    ("Content-Disposition", pdf["content_disposition"]),
+                    ("Cache-Control", "private, no-store"),
+                ],
+            )
+
+        return self._handle(_run)
+
+    @http.route(
+        "/vpk/api/v1/vendor/orders/<int:order_id>/sign",
+        type="http",
+        auth="none",
+        methods=["POST"],
+        csrf=False,
+        cors=CORS,
+    )
+    def order_sign(self, order_id, **kwargs):
+        def _run():
+            payload = self._parse_json_body()
+            result = self._service().sign_order(
+                order_id,
+                signature=payload.get("signature"),
+                name=payload.get("name"),
+            )
+            return self._json(result)
+
+        return self._handle(_run)

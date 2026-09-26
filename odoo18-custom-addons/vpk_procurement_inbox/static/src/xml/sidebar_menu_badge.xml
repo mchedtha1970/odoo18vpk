@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Badge rendering already provided by vpk_tier_validation / vpk_sidebar_menu templates.
+         This file keeps asset structure consistent if those templates change. -->
+</templates>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_procurement_inbox_dashboard" model="ir.actions.client">
+        <field name="name">Dashboard พัสดุรับงาน</field>
+        <field name="tag">vpk_procurement_inbox_dashboard</field>
+    </record>
+
+    <menuitem
+        id="menu_procurement_inbox_dashboard"
+        name="Dashboard พัสดุรับงาน"
+        parent="vpk_th_purchase_menu.menu_purchase_request_data_root"
+        action="action_procurement_inbox_dashboard"
+        sequence="3"
+        groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+    />
+
+    <menuitem
+        id="menu_procurement_inbox_dashboard_pr"
+        name="Dashboard พัสดุรับงาน"
+        parent="purchase_request.menu_purchase_request"
+        action="action_procurement_inbox_dashboard"
+        sequence="3"
+        groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+    />
+
+    <!-- ชี้เมนูเดิมไป action ใหม่ที่มี kanban/รับงาน -->
+    <record id="vpk_tier_validation.menu_purchase_request_sent_to_procurement" model="ir.ui.menu">
+        <field name="action" ref="action_procurement_inbox"/>
+        <field name="sequence">4</field>
+    </record>
+    <record id="vpk_tier_validation.menu_purchase_request_sent_to_procurement_purchase" model="ir.ui.menu">
+        <field name="action" ref="action_procurement_inbox"/>
+        <field name="sequence">4</field>
+    </record>
+
+</odoo>

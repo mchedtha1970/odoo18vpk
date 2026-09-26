@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_form_vpk_po" model="ir.ui.view">
+        <field name="name">purchase.request.form.vpk.po</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="vpk_official_document.view_purchase_request_form_official_document"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='related_official_documents']" position="after">
+                <page string="ใบสั่งซื้อ" name="vpk_purchase_orders">
+                    <div class="text-muted mb-2">
+                        กด <b>พิมพ์ PDF</b> เพื่อบันทึกไฟล์ใบสั่งซื้อในรายการ
+                        แล้วกด <b>ส่งเข้าแอปผู้ขาย</b> เพื่อให้ผู้ขายลงนามยืนยันกลับมา
+                    </div>
+                    <field name="vpk_purchase_order_ids" readonly="1" create="false" delete="false">
+                        <list>
+                            <field name="vpk_po_type_label" string="ประเภท"/>
+                            <field name="has_pdf" widget="vpk_pdf_icon" string="ไฟล์"/>
+                            <field name="pdf_filename" column_invisible="1"/>
+                            <field name="pdf_attachment_id" column_invisible="1"/>
+                            <field name="name" string="เลขที่เอกสาร"/>
+                            <field name="partner_id" string="ผู้ขาย"/>
+                            <field name="date_order" string="วันที่"/>
+                            <field name="origin" string="เรื่อง" optional="show"/>
+                            <field name="vpk_vendor_confirm_state" widget="badge"
+                                   string="สถานะการยืนยัน"
+                                   decoration-muted="vpk_vendor_confirm_state == 'not_sent'"
+                                   decoration-warning="vpk_vendor_confirm_state == 'waiting'"
+                                   decoration-success="vpk_vendor_confirm_state == 'confirmed'"/>
+                            <button name="action_save_vpk_po_pdf" type="object"
+                                    string="พิมพ์ PDF"
+                                    icon="fa-print"
+                                    invisible="has_pdf or state == 'cancel'"/>
+                            <button name="action_send_vpk_po_to_winner" type="object"
+                                    string="ส่งเข้าแอปผู้ขาย"
+                                    icon="fa-paper-plane"
+                                    invisible="not has_pdf or vpk_vendor_confirm_state != 'not_sent' or state == 'cancel'"/>
+                            <field name="state" widget="badge"
+                                   decoration-info="state in ('draft', 'sent', 'to approve')"
+                                   decoration-success="state in ('purchase', 'done')"
+                                   decoration-muted="state == 'cancel'"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

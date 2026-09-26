@@ -7,10 +7,12 @@
 | `filestore/VPK-S1/` | ไฟล์แนบ Odoo |
 | `MANIFEST.txt` | วันที่และขนาด |
 
-Download จากเซิร์ฟเวอร์:
+Backup จาก Docker เครื่องนี้:
 
 ```bash
-scp odoo18vpk@<server>:/opt/odoo18vpk/odoo18vpk-docker/VPK_S1/VPK-S1-backup-*.tar.gz .
+cd odoo18vpk-docker
+./docker/backup-vpk-s1.sh
+scp VPK_S1/VPK-S1-backup-*.tar.gz user@other-host:
 ```
 
 Restore ใน local docker:

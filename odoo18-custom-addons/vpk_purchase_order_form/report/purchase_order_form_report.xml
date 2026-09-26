@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_purchase_order_vpk_form" model="ir.actions.report">
+        <field name="name">ใบสั่งซื้อ/สั่งจ้าง (VPK)</field>
+        <field name="model">purchase.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_purchase_order_form.report_purchase_order_vpk_form</field>
+        <field name="report_file">vpk_purchase_order_form.report_purchase_order_vpk_form</field>
+        <field name="print_report_name">'ใบสั่งซื้อ-สั่งจ้าง-%s' % (object.name)</field>
+        <field name="attachment">'ใบสั่งซื้อ-%s.pdf' % (object.name or object.id)</field>
+        <field name="binding_model_id" ref="purchase.model_purchase_order"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_vpk_po_form"/>
+    </record>
+</odoo>

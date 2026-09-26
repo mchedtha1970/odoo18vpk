@@ -242,63 +242,65 @@ class PurchaseRequisitionEgpDocument(models.Model):
         )
         company = requisition.company_id
         province = self._winner_province(company)
+        agency = self._company_person_name(
+            company, "official_doc_agency", company.name or ""
+        )
         item_text, item_count = self._winner_item_text(requisition)
-        project = requisition.egp_project_name or item_text
+        project = requisition.egp_project_name or item_text or "จัดซื้อ/จัดจ้าง"
         method = self._winner_method_phrase(requisition)
         egp_ref = self.egp_reference or requisition.egp_reference or requisition.name
         thai = self._thai_digits
+        # Subject/body layout follows แบบฟอร์ม_ประกาศชื่อผู้ชนะในการเสนอราคา.docx
         subject = _(
-            "ประกาศผู้ชนะการเสนอราคา %(project)s จำนวน %(count)s รายการ (%(ref)s) %(method)s"
+            "ประกาศผู้ชนะการเสนอราคา%(project)s  %(method)s"
         ) % {
+            "project": project,
+            "method": method,
+        }
+        amount_display = thai("{:,.2f}".format(amount or 0.0))
+        amount_text = self._winner_amount_text(amount)
+        winner_name = partner.display_name if partner else ""
+        body_intro = _(
+            "ตามที่  %(province)s  โดย%(agency)s  ได้มีโครงการ%(project)s "
+            "จำนวน %(count)s รายการ (%(ref)s)  %(method)s  นั้น"
+        ) % {
+            "province": province,
+            "agency": agency,
             "project": project,
             "count": thai(item_count),
             "ref": thai(egp_ref),
             "method": method,
         }
-        amount_display = thai("{:,.2f}".format(amount or 0.0))
-        body = _(
-            "ตามที่ %(province)s ได้มีโครงการ %(project)s จำนวน %(count)s รายการ "
-            "(%(ref)s) %(method)s นั้น %(items)s ผู้ได้รับการคัดเลือก ได้แก่ %(winner)s "
-            "โดยเสนอราคา เป็นเงินทั้งสิ้น %(amount)s บาท (%(amount_text)s) "
-            "รวมภาษีมูลค่าเพิ่มและภาษีอื่น ค่าขนส่ง ค่าจดทะเบียน และค่าใช้จ่ายอื่นๆ ทั้งปวง"
+        purchase_desc = item_text or project
+        body_winner = _(
+            "%(items)s  ผู้ได้รับการคัดเลือก  ได้แก่  %(winner)s  "
+            "โดยเสนอราคาเป็นเงินทั้งสิ้น  %(amount)s  บาท  (%(amount_text)s)  "
+            "รวมภาษีมูลค่าเพิ่มและภาษีอื่น  ค่าขนส่ง  ค่าจดทะเบียน  "
+            "และค่าใช้จ่ายอื่น ๆ  ทั้งปวง"
         ) % {
-            "province": province,
-            "project": project,
-            "count": thai(item_count),
-            "ref": thai(egp_ref),
-            "method": method,
-            "items": item_text,
-            "winner": partner.display_name if partner else "",
+            "items": purchase_desc,
+            "winner": winner_name,
             "amount": amount_display,
-            "amount_text": self._winner_amount_text(amount),
+            "amount_text": amount_text,
         }
         signer_full = self._company_person_name(
             company, "official_doc_signer_name", "นายวีระศักดิ์ หล่อทองคำ"
         )
-        signer_name, signer_full = self._split_thai_person_name(signer_full)
+        _signer_name, signer_full = self._split_thai_person_name(signer_full)
         signer_title = self._company_person_name(
             company,
             "official_doc_signer_position",
             "ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต",
         )
-        cert_full = self.env.user.name or ""
-        cert_name, cert_full = self._split_thai_person_name(cert_full)
         return {
             "province": province,
             "subject": subject,
-            "body": body,
+            "body_intro": body_intro,
+            "body_winner": body_winner,
             "announce_date": self._format_thai_date(announce_date, with_be_prefix=True),
-            "signer_name": signer_name,
             "signer_full": signer_full,
             "signer_title": signer_title,
             "signer_acting": _("ปฏิบัติราชการแทนผู้ว่าราชการ%s") % province,
-            "cert_name": cert_name,
-            "cert_full": cert_full,
-            "cert_title": self._current_user_job_title(),
-            "web_date": self._format_thai_date(
-                fields.Date.context_today(self), with_be_prefix=False
-            ),
-            "web_by": "%s %s" % (cert_full, self._current_user_job_title()),
         }
 
     def _winner_province(self, company):

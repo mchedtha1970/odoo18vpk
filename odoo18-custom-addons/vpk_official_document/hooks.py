@@ -53,3 +53,6 @@ def align_official_document_saraban_numbers(env):
 
 def post_init_hook(env):
     align_official_document_saraban_numbers(env)
+    Document = env["vpk.official.document"].sudo()
+    if hasattr(Document, "_vpk_ensure_winner_tier_definitions"):
+        Document._vpk_ensure_winner_tier_definitions()

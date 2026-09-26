@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_purchase_order_vpk_form">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <style type="text/css" t-out="o._get_po_form_inline_css()"/>
+                <div
+                    class="article vpk-po-form"
+                    t-att-data-oe-model="o and o._name"
+                    t-att-data-oe-id="o and o.id"
+                >
+                    <h1 class="vpk-po-title">ใบสั่งซื้อ/สั่งจ้าง</h1>
+
+                    <table class="vpk-po-header">
+                        <tr>
+                            <td class="vpk-po-header-left">
+                                <div>
+                                    <span class="vpk-po-label">ผู้รับจ้าง</span>
+                                    <span> </span>
+                                    <span t-esc="o.partner_id.display_name"/>
+                                </div>
+                                <t t-foreach="o._po_form_partner_address_lines()" t-as="addr">
+                                    <div t-esc="addr"/>
+                                </t>
+                                <div t-if="o._po_form_partner_phone()">
+                                    <span>โทรศัพท์ </span>
+                                    <span t-esc="o._po_form_partner_phone()"/>
+                                </div>
+                                <div t-if="o._po_form_partner_vat()">
+                                    <span>เลขประจำตัวผู้เสียภาษี </span>
+                                    <span t-esc="o._po_form_partner_vat()"/>
+                                </div>
+                            </td>
+                            <td class="vpk-po-header-right">
+                                <table class="vpk-po-meta-table">
+                                    <tr>
+                                        <td class="vpk-po-meta-label">ใบสั่งซื้อ/สั่งจ้าง เลขที่</td>
+                                        <td t-esc="o._thai_digits(o.name)"/>
+                                    </tr>
+                                    <tr>
+                                        <td class="vpk-po-meta-label">วันที่</td>
+                                        <td t-esc="o._po_form_date_thai()"/>
+                                    </tr>
+                                    <tr>
+                                        <td class="vpk-po-meta-label">ส่วนราชการ</td>
+                                        <td t-esc="o._po_form_agency_name()"/>
+                                    </tr>
+                                    <tr>
+                                        <td class="vpk-po-meta-label" style="vertical-align: top;">ที่อยู่</td>
+                                        <td>
+                                            <t t-foreach="o._po_form_agency_address_lines()" t-as="agency_addr">
+                                                <div t-esc="agency_addr"/>
+                                            </t>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <p class="vpk-po-intro">
+                        ตามที่
+                        <strong t-esc="o.partner_id.display_name"/>
+                        ได้เสนอราคาไว้ต่อ
+                        <t t-esc="o._po_form_agency_name()"/>
+                        ซึ่งได้รับราคาและตกลงซื้อ/จ้างตามรายการต่อไปนี้
+                    </p>
+
+                    <table class="vpk-po-lines" style="width:100%; border-collapse:collapse; table-layout:fixed; border:1px solid #000;">
+                        <thead>
+                            <tr>
+                                <th class="vpk-po-col-no" style="border:1px solid #000; text-align:center; padding:3px 4px;">ลำดับ</th>
+                                <th class="vpk-po-col-name" style="border:1px solid #000; text-align:center; padding:3px 4px;">รายการ</th>
+                                <th class="vpk-po-col-qty" style="border:1px solid #000; text-align:center; padding:3px 4px;">จำนวน</th>
+                                <th class="vpk-po-col-uom" style="border:1px solid #000; text-align:center; padding:3px 4px;">หน่วย</th>
+                                <th class="vpk-po-col-price" style="border:1px solid #000; text-align:center; padding:3px 4px;">ราคาต่อหน่วย<br/>(บาท)</th>
+                                <th class="vpk-po-col-amount" style="border:1px solid #000; text-align:center; padding:3px 4px;">จำนวนเงิน<br/>(บาท)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="o._po_form_line_rows()" t-as="row">
+                                <tr t-att-class="not row['name'] and 'vpk-po-empty' or None">
+                                    <td class="vpk-po-col-no" style="border:1px solid #000; text-align:center; padding:3px 4px;" t-esc="row['no']"/>
+                                    <td class="vpk-po-col-name" style="border:1px solid #000; text-align:left; padding:3px 4px;" t-esc="row['name']"/>
+                                    <td class="vpk-po-col-qty" style="border:1px solid #000; text-align:center; padding:3px 4px;" t-esc="row['qty']"/>
+                                    <td class="vpk-po-col-uom" style="border:1px solid #000; text-align:center; padding:3px 4px;" t-esc="row['uom']"/>
+                                    <td class="vpk-po-col-price" style="border:1px solid #000; text-align:right; padding:3px 4px;" t-esc="row['price_unit']"/>
+                                    <td class="vpk-po-col-amount" style="border:1px solid #000; text-align:right; padding:3px 4px;" t-esc="row['amount']"/>
+                                </tr>
+                            </t>
+                            <tr>
+                                <td colspan="4" rowspan="3" class="vpk-po-baht-text" style="border:1px solid #000; text-align:center; vertical-align:middle; padding:6px;">
+                                    (<span t-esc="o._po_form_baht_text()"/>)
+                                </td>
+                                <td class="vpk-po-total-label" style="border:1px solid #000; text-align:left; padding:3px 6px;">รวมเป็นเงิน</td>
+                                <td class="vpk-po-total-value" style="border:1px solid #000; text-align:right; padding:3px 4px;" t-esc="o._po_form_format_amount(o.amount_untaxed)"/>
+                            </tr>
+                            <tr>
+                                <td class="vpk-po-total-label" style="border:1px solid #000; text-align:left; padding:3px 6px;">ภาษีมูลค่าเพิ่ม</td>
+                                <td class="vpk-po-total-value" style="border:1px solid #000; text-align:right; padding:3px 4px;" t-esc="o._po_form_format_amount(o.amount_tax)"/>
+                            </tr>
+                            <tr>
+                                <td class="vpk-po-total-label" style="border:1px solid #000; text-align:left; padding:3px 6px;">รวมเป็นเงินทั้งสิ้น</td>
+                                <td class="vpk-po-total-value" style="border:1px solid #000; text-align:right; padding:3px 4px;" t-esc="o._po_form_format_amount(o.amount_total)"/>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="vpk-po-conditions">
+                        <p class="vpk-po-conditions-title">การซื้อ/สั่งจ้าง อยู่ภายใต้เงื่อนไขต่อไปนี้</p>
+                        <div>๑. กำหนดส่งมอบภายใน <span t-esc="o._thai_digits(o._po_form_delivery_days())"/> วัน นับถัดจากวันที่ผู้รับจ้างได้รับใบสั่งซื้อ</div>
+                        <div>๒. ครบกำหนดส่งมอบวันที่ <span t-esc="o._po_form_delivery_deadline_display()"/></div>
+                        <div>๓. สถานที่ส่งมอบ <span t-esc="o._po_form_delivery_place()"/></div>
+                        <div>๔. ระยะเวลารับประกัน <span t-esc="o._thai_digits(o._po_form_warranty_months())"/> เดือน</div>
+                        <div>
+                            ๕. สงวนสิทธิ์ค่าปรับกรณีส่งมอบเกินกำหนด โดยคิดค่าปรับเป็นรายวันในอัตราร้อยละ
+                            <span t-esc="o._po_form_penalty_rate_display()"/>
+                            ของราคาสิ่งของที่ยังไม่ได้รับมอบแต่จะต้องไม่ต่ำกว่าวันละ
+                            <span t-esc="o._po_form_penalty_min_display()"/>
+                            บาท
+                        </div>
+                    </div>
+
+                    <table class="vpk-po-sign">
+                        <tr>
+                            <td>
+                                <div>ผู้รับจ้าง</div>
+                                <div class="vpk-po-sign-space"/>
+                                <div>ลงนามผู้รับจ้าง</div>
+                                <div t-if="o.partner_id">
+                                    (<span t-esc="o.partner_id.name"/>)
+                                </div>
+                            </td>
+                            <td>
+                                <div>๖. ส่วนราชการ</div>
+                                <div t-esc="o._po_form_agency_name()"/>
+                                <div class="vpk-po-sign-space"/>
+                                <div class="vpk-po-sign-line">................................................</div>
+                                <div t-if="o._po_form_signer_name()">
+                                    (<span t-esc="o._po_form_signer_name()"/>)
+                                </div>
+                                <div t-if="o._po_form_signer_position()" t-esc="o._po_form_signer_position()"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

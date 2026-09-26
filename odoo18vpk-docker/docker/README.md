@@ -42,12 +42,22 @@ OCA ที่ยังไม่มีใน `odoo18-custom-addons/`:
 ./docker/clone-oca-addons.sh
 ```
 
-## Restore ข้อมูลจากเซิร์ฟเวอร์
+## Backup จาก Docker เครื่องนี้
 
-Dump + filestore **ไม่ได้อยู่ใน git** ต้องโหลดจากเซิร์ฟเวอร์แยก:
+ได้ไฟล์เดียว `VPK_S1/VPK-S1-backup-YYYYMMDD-HHMM.tar.gz` (dump + filestore) **อย่า commit ขึ้น git**
 
 ```bash
-scp odoo18vpk@<server>:/opt/odoo18vpk/odoo18vpk-docker/VPK_S1/VPK-S1-backup-*.tar.gz .
+cd odoo18vpk-docker
+./docker/backup-vpk-s1.sh
+scp VPK_S1/VPK-S1-backup-*.tar.gz user@other-host:
+```
+
+## Restore ข้อมูลจากเซิร์ฟเวอร์ / เครื่องอื่น
+
+Dump + filestore **ไม่ได้อยู่ใน git** ต้อง copy ไฟล์ backup แยก:
+
+```bash
+scp user@other-host:VPK-S1-backup-*.tar.gz .
 cd odoo18vpk-docker
 tar -xzf ../VPK-S1-backup-*.tar.gz -C VPK_S1
 ./docker/restore-vpk-s1.sh

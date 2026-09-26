@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_order_form_vpk_po" model="ir.ui.view">
+        <field name="name">purchase.order.form.vpk.po.form</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_print_vpk_po_form"
+                    type="object"
+                    string="พิมพ์ใบสั่งซื้อ VPK"
+                    class="btn-secondary"
+                    invisible="state in ('cancel')"
+                />
+                <button
+                    name="action_send_vpk_po_to_winner"
+                    type="object"
+                    string="ส่งเข้าแอปผู้ขาย"
+                    class="btn-primary"
+                    icon="fa-paper-plane"
+                    invisible="state == 'cancel' or not partner_id or vpk_vendor_confirm_state != 'not_sent'"
+                />
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="ใบสั่งซื้อ VPK" name="vpk_po_form">
+                    <group>
+                        <group string="เงื่อนไขส่งมอบ">
+                            <field name="vpk_po_delivery_days"/>
+                            <field name="vpk_po_delivery_deadline"/>
+                            <field name="vpk_po_warranty_months"/>
+                        </group>
+                        <group string="สถานที่ส่งมอบ">
+                            <field name="vpk_po_delivery_place" nolabel="1" placeholder="ว่าง = ใช้ค่าจากบริษัท"/>
+                        </group>
+                    </group>
+                    <group string="ไฟล์ใบสั่งซื้อ">
+                        <field name="has_pdf" invisible="1"/>
+                        <field name="pdf_filename" readonly="1" invisible="not has_pdf"/>
+                        <field name="vpk_vendor_confirm_state" widget="badge" readonly="1"
+                               decoration-muted="vpk_vendor_confirm_state == 'not_sent'"
+                               decoration-warning="vpk_vendor_confirm_state == 'waiting'"
+                               decoration-success="vpk_vendor_confirm_state == 'confirmed'"/>
+                        <button name="action_open_pdf_viewer" type="object"
+                                string="เปิดไฟล์ PDF"
+                                icon="fa-file-pdf-o"
+                                class="btn-secondary"
+                                invisible="not has_pdf"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

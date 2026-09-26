@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="paperformat_winner_announcement" model="report.paperformat">
+        <field name="name">ประกาศผู้ชนะการเสนอราคา (A4)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">15</field>
+        <field name="margin_bottom">20</field>
+        <field name="margin_left">30</field>
+        <field name="margin_right">20</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
     <record id="action_report_winner_announcement" model="ir.actions.report">
         <field name="name">ประกาศผู้ชนะการเสนอราคา</field>
         <field name="model">purchase.requisition.winner.announcement</field>
@@ -10,84 +24,42 @@
         <field name="binding_model_id"
                ref="model_purchase_requisition_winner_announcement"/>
         <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_winner_announcement"/>
     </record>
 
+    <!-- Layout mirrors docs/แบบฟอร์ม_ประกาศชื่อผู้ชนะในการเสนอราคา.docx -->
     <template id="report_winner_announcement">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
-                <t t-call="web.basic_layout">
-                    <style>
-                        .vpk-winner-announcement,
-                        .vpk-winner-announcement * {
-                            font-family: "THSarabunNew", sans-serif !important;
-                            font-size: 16pt;
-                            line-height: 1.45;
-                        }
-                        .vpk-winner-announcement h3,
-                        .vpk-winner-announcement strong {
-                            font-family: "THSarabunNew-Bold",
-                                         "THSarabunNew", sans-serif !important;
-                            font-weight: bold;
-                        }
-                        .vpk-winner-announcement h3 {
-                            font-size: 22pt;
-                        }
-                    </style>
-                    <div class="page vpk-winner-announcement">
-                        <div class="text-center">
-                            <h3>ประกาศ<t t-esc="o.company_id.name"/></h3>
-                            <h3>เรื่อง ประกาศผู้ชนะการเสนอราคา</h3>
-                        </div>
-
-                        <p class="mt-4">
-                            ตามประกาศ
-                            <t t-esc="o.company_id.name"/>
-                            เรื่อง
-                            <strong t-esc="o.subject"/>
-                            ตามกระบวนการ eGP
-                            <strong t-esc="o.requisition_id.name"/>
-                            เลขที่โครงการ
-                            <strong t-esc="o.egp_reference or '-'"/>
-                            อ้างอิงใบขอซื้อ
-                            <strong t-esc="o.purchase_request_id.name or '-'"/>
-                            โดยวิธี
-                            <strong t-esc="o.procurement_method_id.name or '-'"/>
-                            นั้น
-                        </p>
-
-                        <p>
-                            ผู้ได้รับการคัดเลือก ได้แก่
-                            <strong t-esc="o.winner_partner_id.name"/>
-                            โดยเสนอราคาเป็นเงินทั้งสิ้น
-                            <strong>
-                                <span t-field="o.winner_amount"
-                                      t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
-                            </strong>
-                            รวมภาษีมูลค่าเพิ่มและภาษีอื่น ค่าขนส่ง ค่าจดทะเบียน
-                            และค่าใช้จ่ายอื่น ๆ ทั้งปวงแล้ว
-                        </p>
-
-                        <div t-if="o.reason" t-field="o.reason"/>
-
-                        <div class="mt-5 text-center">
-                            <div>ประกาศ ณ วันที่
-                                <span t-field="o.date"/>
-                            </div>
-                            <div class="mt-5">
-                                ........................................................
-                            </div>
-                            <div>ผู้มีอำนาจอนุมัติ</div>
-                        </div>
-
-                        <div class="mt-4 text-muted">
-                            เลขที่ประกาศ: <t t-esc="o.name"/>
-                            <t t-if="o.state == 'published'">
-                                | เผยแพร่โดย <t t-esc="o.published_by.name"/>
-                                เมื่อ <span t-field="o.published_date"/>
-                            </t>
-                        </div>
+                <t t-set="asset_base"
+                   t-value="env['ir.config_parameter'].sudo().get_param('report.url')
+                            or env['ir.config_parameter'].sudo().get_param('web.base.url')
+                            or ''"/>
+                <t t-set="v" t-value="o._docx_values()"/>
+                <div class="article vpk-winner-announcement">
+                    <div class="winner-garuda">
+                        <img
+                            t-att-src="asset_base + '/vpk_purchase_agreement_egp/static/src/img/garuda.jpeg'"
+                            alt="ครุฑ"
+                        />
                     </div>
-                </t>
+                    <p class="winner-title">ประกาศ<t t-esc="v.get('province')"/></p>
+                    <p class="winner-center">เรื่อง  <t t-esc="v.get('subject')"/></p>
+                    <p class="winner-sep">---------------------------------------------------------------------</p>
+
+                    <p class="winner-body"><t t-esc="v.get('body_intro')"/></p>
+                    <p class="winner-body"><t t-esc="v.get('body_winner')"/></p>
+
+                    <p class="winner-date">
+                        ประกาศ  ณ  วันที่  <t t-esc="v.get('announce_date')"/>
+                    </p>
+
+                    <div class="winner-signer">
+                        <p class="line line-name">(<t t-esc="v.get('signer_full')"/>)</p>
+                        <p class="line"><t t-esc="v.get('signer_title')"/></p>
+                        <p class="line line-acting"><t t-esc="v.get('signer_acting')"/></p>
+                    </div>
+                </div>
             </t>
         </t>
     </template>

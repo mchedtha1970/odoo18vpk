@@ -6,3 +6,4 @@ from . import purchase_requisition_winner_announcement
 from . import purchase_requisition
 from . import purchase_order
 from . import purchase_request
+from . import ir_actions_report

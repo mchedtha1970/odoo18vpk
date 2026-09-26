@@ -610,14 +610,21 @@ class TestOfficialDocument(TransactionCase):
                     "state": "generated",
                 }
             )
+        director_def = self.env.ref(
+            "vpk_official_document.tier_definition_winner_announcement_director"
+        )
         document.action_send_for_signature()
         self.assertEqual(official.state, "to_approve")
         self.assertEqual(document.signature_state, "waiting")
+        self.assertEqual(director_def.reviewer_field_id.name, "signer_id")
+        self.assertTrue(director_def.active)
+        generator_def = self.env.ref(
+            "vpk_official_document.tier_definition_winner_announcement_generator"
+        )
+        self.assertFalse(generator_def.active)
         reviews = official.review_ids.sorted("sequence")
-        self.assertEqual(len(reviews), 2)
+        self.assertEqual(len(reviews), 1)
         self.assertEqual(reviews[0].status, "pending")
-        self.assertEqual(reviews[1].status, "waiting")
-        self.assertIn(self.env.user, reviews[0].reviewer_ids)
-        self.assertIn(director, reviews[1].reviewer_ids)
-        self.assertTrue(official.with_user(self.env.user).can_review)
-        self.assertFalse(official.with_user(director).can_review)
+        self.assertIn(director, reviews[0].reviewer_ids)
+        self.assertFalse(official.with_user(self.env.user).can_review)
+        self.assertTrue(official.with_user(director).can_review)

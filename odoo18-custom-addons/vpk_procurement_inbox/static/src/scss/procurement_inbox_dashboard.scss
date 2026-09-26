@@ -1,0 +1,104 @@
+.o_vpk_procurement_inbox_dashboard {
+    .o_vpk_dashboard_header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 20px 24px 12px;
+        border-bottom: 1px solid #dee2e6;
+        background: #fff;
+
+        h2 {
+            font-size: 1.15rem;
+            margin: 0;
+        }
+    }
+
+    .o_vpk_dashboard_header_actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .o_vpk_inbox_kpi_row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        padding: 16px 24px 8px;
+        background: #f7f9fb;
+    }
+
+    .o_vpk_inbox_kpi {
+        border: 1px solid #dbe2ea;
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px 16px;
+        text-align: left;
+        transition: border-color 0.15s, box-shadow 0.15s;
+
+        &:hover,
+        &.active {
+            border-color: #0b6848;
+            box-shadow: 0 0 0 1px #0b6848 inset;
+        }
+
+        &.warn.active {
+            border-color: #c47e14;
+            box-shadow: 0 0 0 1px #c47e14 inset;
+        }
+
+        &.danger.active {
+            border-color: #c62828;
+            box-shadow: 0 0 0 1px #c62828 inset;
+        }
+
+        &.ok.active {
+            border-color: #2c7a45;
+            box-shadow: 0 0 0 1px #2c7a45 inset;
+        }
+
+        &.urgent.active {
+            border-color: #b45309;
+            box-shadow: 0 0 0 1px #b45309 inset;
+        }
+    }
+
+    .o_vpk_inbox_kpi_value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #0b6848;
+        line-height: 1.1;
+    }
+
+    .o_vpk_inbox_kpi.warn .o_vpk_inbox_kpi_value {
+        color: #c47e14;
+    }
+
+    .o_vpk_inbox_kpi.danger .o_vpk_inbox_kpi_value {
+        color: #c62828;
+    }
+
+    .o_vpk_inbox_kpi.ok .o_vpk_inbox_kpi_value {
+        color: #2c7a45;
+    }
+
+    .o_vpk_inbox_kpi.urgent .o_vpk_inbox_kpi_value {
+        color: #b45309;
+    }
+
+    .o_vpk_inbox_kpi_label {
+        margin-top: 4px;
+        color: #5b6878;
+        font-size: 0.85rem;
+    }
+
+    .o_vpk_dashboard_body {
+        overflow: auto;
+        padding: 12px 24px 24px;
+    }
+
+    .o_vpk_procurement_inbox_dashboard_view {
+        min-height: 280px;
+    }
+}

@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Kanban inbox สำหรับพัสดุ -->
+    <record id="view_purchase_request_kanban_procurement_inbox" model="ir.ui.view">
+        <field name="name">purchase.request.kanban.procurement.inbox</field>
+        <field name="model">purchase.request</field>
+        <field name="arch" type="xml">
+            <kanban
+                class="o_vpk_procurement_inbox_kanban"
+                default_order="sent_to_procurement_date asc, id asc"
+                records_draggable="0"
+                create="0"
+                sample="1"
+            >
+                <field name="name"/>
+                <field name="state"/>
+                <field name="requested_by"/>
+                <field name="department_id"/>
+                <field name="date_start"/>
+                <field name="estimated_cost"/>
+                <field name="currency_id"/>
+                <field name="sent_to_procurement_date"/>
+                <field name="days_waiting_procurement"/>
+                <field name="is_procurement_overdue"/>
+                <field name="procurement_owner_id"/>
+                <field name="procurement_inbox_lane"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click o_vpk_inbox_card"
+                             t-att-class="record.is_procurement_overdue.raw_value ? 'o_vpk_inbox_overdue' : ''">
+                            <div class="o_vpk_inbox_card_header">
+                                <strong t-esc="record.name.value"/>
+                                <span t-if="record.is_procurement_overdue.raw_value"
+                                      class="badge text-bg-danger">ค้างนาน</span>
+                                <span t-elif="!record.procurement_owner_id.raw_value"
+                                      class="badge text-bg-warning">รอรับ</span>
+                                <span t-else="" class="badge text-bg-success">มีผู้รับแล้ว</span>
+                            </div>
+                            <div class="o_vpk_inbox_card_meta text-muted">
+                                <div t-if="record.department_id.value">
+                                    <i class="fa fa-building-o me-1"/>
+                                    <t t-esc="record.department_id.value"/>
+                                </div>
+                                <div t-if="record.requested_by.value">
+                                    <i class="fa fa-user me-1"/>
+                                    <field name="requested_by" widget="many2one_avatar_user"/>
+                                </div>
+                                <div t-if="record.sent_to_procurement_date.value">
+                                    <i class="fa fa-clock-o me-1"/>
+                                    ส่งมา <t t-esc="record.days_waiting_procurement.value"/> วัน
+                                </div>
+                                <div t-if="record.estimated_cost.value">
+                                    <i class="fa fa-money me-1"/>
+                                    <field name="estimated_cost" widget="monetary"/>
+                                </div>
+                                <div t-if="record.procurement_owner_id.value">
+                                    <i class="fa fa-handshake-o me-1"/>
+                                    ผู้รับ: <t t-esc="record.procurement_owner_id.value"/>
+                                </div>
+                            </div>
+                            <div class="o_vpk_inbox_card_actions mt-2 d-flex gap-1 flex-wrap">
+                                <button
+                                    name="action_open_procurement_work"
+                                    type="object"
+                                    class="btn btn-primary btn-sm"
+                                >
+                                    เปิดทำรายการ
+                                </button>
+                                <button
+                                    name="action_claim_procurement"
+                                    type="object"
+                                    class="btn btn-outline-primary btn-sm"
+                                    invisible="procurement_owner_id"
+                                >
+                                    รับงาน
+                                </button>
+                                <button
+                                    name="action_unclaim_procurement"
+                                    type="object"
+                                    class="btn btn-outline-secondary btn-sm"
+                                    invisible="not procurement_owner_id"
+                                >
+                                    คืนคิว
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- List inbox -->
+    <record id="view_purchase_request_list_procurement_inbox" model="ir.ui.view">
+        <field name="name">purchase.request.list.procurement.inbox</field>
+        <field name="model">purchase.request</field>
+        <field name="arch" type="xml">
+            <list
+                string="รอรับจากหน่วยงาน"
+                create="0"
+                default_order="sent_to_procurement_date asc, id asc"
+                decoration-danger="is_procurement_overdue"
+                decoration-warning="not procurement_owner_id"
+            >
+                <field name="name"/>
+                <field name="department_id" optional="show"/>
+                <field name="requested_by"/>
+                <field name="date_start" optional="hide"/>
+                <field name="sent_to_procurement_date"/>
+                <field name="days_waiting_procurement" string="วันค้าง"/>
+                <field name="estimated_cost" optional="show" sum="รวม"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="procurement_owner_id"/>
+                <field name="is_procurement_overdue" column_invisible="1"/>
+                <field name="state" optional="hide"/>
+                <button
+                    name="action_claim_procurement"
+                    type="object"
+                    string="รับงาน"
+                    class="btn-link"
+                    icon="fa-hand-paper-o"
+                    invisible="procurement_owner_id"
+                />
+                <button
+                    name="action_open_procurement_work"
+                    type="object"
+                    string="เปิดทำรายการ"
+                    class="btn-link"
+                    icon="fa-external-link"
+                />
+                <button
+                    name="action_unclaim_procurement"
+                    type="object"
+                    string="คืนคิว"
+                    class="btn-link"
+                    icon="fa-undo"
+                    invisible="not procurement_owner_id"
+                />
+            </list>
+        </field>
+    </record>
+
+    <!-- Search filters -->
+    <record id="view_purchase_request_search_procurement_inbox" model="ir.ui.view">
+        <field name="name">purchase.request.search.procurement.inbox</field>
+        <field name="model">purchase.request</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาใบขอซื้อที่พัสดุ">
+                <field name="name"/>
+                <field name="requested_by"/>
+                <field name="department_id"/>
+                <field name="procurement_owner_id"/>
+                <filter
+                    name="filter_unassigned"
+                    string="ยังไม่มีผู้รับ"
+                    domain="[('procurement_owner_id', '=', False)]"
+                />
+                <filter
+                    name="filter_mine"
+                    string="ของฉัน"
+                    domain="[('procurement_owner_id', '=', uid)]"
+                />
+                <filter
+                    name="filter_overdue"
+                    string="ค้างเกิน 3 วัน"
+                    domain="[('is_procurement_overdue', '=', True)]"
+                />
+                <separator/>
+                <filter
+                    name="group_department"
+                    string="หน่วยงาน"
+                    context="{'group_by': 'department_id'}"
+                />
+                <filter
+                    name="group_owner"
+                    string="ผู้รับงาน"
+                    context="{'group_by': 'procurement_owner_id'}"
+                />
+                <filter
+                    name="group_days"
+                    string="วันค้าง"
+                    context="{'group_by': 'days_waiting_procurement'}"
+                />
+            </search>
+        </field>
+    </record>
+
+    <!-- Form: แสดงผู้รับงาน + ปุ่มบนสถานะส่งพัสดุ -->
+    <record id="view_purchase_request_form_procurement_inbox" model="ir.ui.view">
+        <field name="name">purchase.request.form.procurement.inbox</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_claim_procurement"
+                    type="object"
+                    string="รับงาน"
+                    class="btn-primary"
+                    invisible="state != 'sent_to_procurement' or procurement_owner_id"
+                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+                />
+                <button
+                    name="action_unclaim_procurement"
+                    type="object"
+                    string="คืนคิว"
+                    class="btn-secondary"
+                    invisible="state != 'sent_to_procurement' or not procurement_owner_id"
+                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+                />
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="after">
+                <div
+                    class="alert alert-info"
+                    role="alert"
+                    invisible="state != 'sent_to_procurement'"
+                >
+                    ใบนี้ส่งมาจากหน่วยงานแล้ว
+                    <span invisible="not sent_to_procurement_date">
+                        เมื่อ <field name="sent_to_procurement_date" readonly="1" class="oe_inline"/>
+                        (ค้าง <field name="days_waiting_procurement" readonly="1" class="oe_inline"/> วัน)
+                    </span>
+                    <span invisible="procurement_owner_id"> — ยังไม่มีผู้รับงาน กด <b>รับงาน</b> เพื่อดึงมาทำ</span>
+                    <span invisible="not procurement_owner_id">
+                        — ผู้รับงาน: <field name="procurement_owner_id" readonly="1" class="oe_inline"/>
+                    </span>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='assigned_to']" position="after">
+                <field
+                    name="procurement_owner_id"
+                    readonly="state != 'sent_to_procurement'"
+                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+                />
+                <field name="sent_to_procurement_date" readonly="1"/>
+                <field name="procurement_claimed_date" readonly="1"/>
+                <field name="days_waiting_procurement" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_procurement_inbox" model="ir.actions.act_window">
+        <field name="name">รอรับจากหน่วยงาน</field>
+        <field name="res_model">purchase.request</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('state', '=', 'sent_to_procurement')]</field>
+        <field name="context">{}</field>
+        <field name="search_view_id" ref="view_purchase_request_search_procurement_inbox"/>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">ยังไม่มีใบขอซื้อที่หน่วยงานส่งให้พัสดุ</p>
+            <p>เมื่อหน่วยงานกด ส่งพัสดุ ใบจะมาที่นี่ กด รับงาน หรือ เปิดทำรายการ เพื่อเริ่มดำเนินการ</p>
+        </field>
+    </record>
+
+    <record id="action_procurement_inbox_kanban_view" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="view_purchase_request_kanban_procurement_inbox"/>
+        <field name="act_window_id" ref="action_procurement_inbox"/>
+    </record>
+    <record id="action_procurement_inbox_list_view" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_purchase_request_list_procurement_inbox"/>
+        <field name="act_window_id" ref="action_procurement_inbox"/>
+    </record>
+
+    <record id="action_procurement_inbox_unassigned" model="ir.actions.act_window">
+        <field name="name">ยังไม่มีผู้รับ</field>
+        <field name="res_model">purchase.request</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('state', '=', 'sent_to_procurement'), ('procurement_owner_id', '=', False)]</field>
+        <field name="search_view_id" ref="view_purchase_request_search_procurement_inbox"/>
+    </record>
+    <record id="action_procurement_inbox_unassigned_kanban" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="view_purchase_request_kanban_procurement_inbox"/>
+        <field name="act_window_id" ref="action_procurement_inbox_unassigned"/>
+    </record>
+    <record id="action_procurement_inbox_unassigned_list" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_purchase_request_list_procurement_inbox"/>
+        <field name="act_window_id" ref="action_procurement_inbox_unassigned"/>
+    </record>
+
+    <record id="action_procurement_inbox_mine" model="ir.actions.act_window">
+        <field name="name">งานของฉัน</field>
+        <field name="res_model">purchase.request</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('state', '=', 'sent_to_procurement'), ('procurement_owner_id', '=', uid)]</field>
+        <field name="search_view_id" ref="view_purchase_request_search_procurement_inbox"/>
+    </record>
+    <record id="action_procurement_inbox_mine_kanban" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="view_purchase_request_kanban_procurement_inbox"/>
+        <field name="act_window_id" ref="action_procurement_inbox_mine"/>
+    </record>
+    <record id="action_procurement_inbox_mine_list" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_purchase_request_list_procurement_inbox"/>
+        <field name="act_window_id" ref="action_procurement_inbox_mine"/>
+    </record>
+
+    <record id="action_procurement_inbox_overdue" model="ir.actions.act_window">
+        <field name="name">ค้างเกิน 3 วัน</field>
+        <field name="res_model">purchase.request</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('state', '=', 'sent_to_procurement'), ('is_procurement_overdue', '=', True)]</field>
+        <field name="search_view_id" ref="view_purchase_request_search_procurement_inbox"/>
+    </record>
+    <record id="action_procurement_inbox_overdue_kanban" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">kanban</field>
+        <field name="view_id" ref="view_purchase_request_kanban_procurement_inbox"/>
+        <field name="act_window_id" ref="action_procurement_inbox_overdue"/>
+    </record>
+    <record id="action_procurement_inbox_overdue_list" model="ir.actions.act_window.view">
+        <field name="sequence">2</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_purchase_request_list_procurement_inbox"/>
+        <field name="act_window_id" ref="action_procurement_inbox_overdue"/>
+    </record>
+
+</odoo>

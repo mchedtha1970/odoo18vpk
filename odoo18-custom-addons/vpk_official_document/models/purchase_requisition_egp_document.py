@@ -55,7 +55,15 @@ class PurchaseRequisitionEgpDocument(models.Model):
             "document_type": "winner_announcement",
             "requisition_id": requisition.id,
             "subject": values.get("subject") or _("ประกาศผู้ชนะการเสนอราคา"),
-            "body": values.get("body") or "",
+            "body": values.get("body")
+            or "\n\n".join(
+                part
+                for part in (
+                    values.get("body_intro") or "",
+                    values.get("body_winner") or "",
+                )
+                if part
+            ),
             "date": self.document_date or fields.Date.context_today(self),
             "company_id": requisition.company_id.id,
             "signer_name": values.get("signer_full") or values.get("signer_name") or "",
