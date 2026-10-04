@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_vendor_api.TradePdfButton">
+        <button t-if="hasFile"
+                type="button"
+                class="btn btn-link text-danger p-0"
+                title="ดูเอกสาร"
+                t-on-click.stop.prevent="open">
+            <i class="fa fa-file-pdf-o fa-lg" role="img" aria-label="ดูเอกสาร"/>
+        </button>
+    </t>
+</templates>

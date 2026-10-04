@@ -1,6 +1,7 @@
 # Copyright 2026 VPK
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 
+import base64
 import re
 from urllib.parse import quote
 
@@ -308,3 +309,77 @@ class VendorApiService(models.AbstractModel):
         order.action_portal_vendor_confirm(name=signer, signature=raw)
         order.invalidate_recordset()
         return {"ok": True, "item": self.serialize_order(order)}
+
+    def _trade_partner(self):
+        user = self._vendor_user()
+        return user.partner_id.commercial_partner_id
+
+    def _trade_payload(self, document):
+        return {
+            "id": document.id,
+            "name": document.name or "",
+            "date": fields.Date.to_string(document.doc_date) or "",
+            "filename": document.filename or "",
+            "note": document.note or "",
+            "has_file": bool(document.datas),
+        }
+
+    def list_trade_documents(self):
+        partner = self._trade_partner()
+        documents = self.env["vpk.vendor.trade.document"].sudo().search(
+            [("partner_id", "=", partner.id)]
+        )
+        return {"items": [self._trade_payload(document) for document in documents]}
+
+    def create_trade_document(self, payload):
+        partner = self._trade_partner()
+        name = (payload.get("name") or "").strip()
+        filename = (payload.get("filename") or "").strip()
+        encoded = (payload.get("file") or "").strip()
+        if encoded.startswith("data:"):
+            encoded = encoded.split(",", 1)[-1]
+        encoded = "".join(encoded.split())
+        if not name:
+            raise UserError(_("กรุณาระบุชื่อเอกสาร"))
+        if not filename.lower().endswith(".pdf"):
+            raise UserError(_("อัปโหลดได้เฉพาะไฟล์ PDF"))
+        try:
+            raw = base64.b64decode(encoded, validate=True)
+        except Exception as err:
+            raise UserError(_("ไฟล์ PDF ไม่ถูกต้อง")) from err
+        if not raw.startswith(b"%PDF") or len(raw) > 15 * 1024 * 1024:
+            if not raw.startswith(b"%PDF"):
+                raise UserError(_("ไฟล์ไม่ใช่ PDF"))
+            raise UserError(_("ไฟล์ต้องมีขนาดไม่เกิน 15 MB"))
+        document = self.env["vpk.vendor.trade.document"].sudo().create(
+            {
+                "partner_id": partner.id,
+                "name": name,
+                "filename": filename,
+                "datas": encoded,
+                "note": (payload.get("note") or "").strip() or False,
+            }
+        )
+        return {"item": self._trade_payload(document)}
+
+    def get_trade_document_pdf(self, document_id):
+        partner = self._trade_partner()
+        document = self.env["vpk.vendor.trade.document"].sudo().browse(int(document_id)).exists()
+        if not document or document.partner_id != partner or not document.datas:
+            raise AccessError(_("ไม่พบเอกสาร"))
+        filename = document.filename or "document.pdf"
+        attachment = document._pdf_attachment()
+        content = attachment.raw if attachment else base64.b64decode(document.datas)
+        return {
+            "filename": filename,
+            "content": content,
+            "content_disposition": "inline; filename*=UTF-8''%s" % quote(filename),
+        }
+
+    def delete_trade_document(self, document_id):
+        partner = self._trade_partner()
+        document = self.env["vpk.vendor.trade.document"].sudo().browse(int(document_id)).exists()
+        if not document or document.partner_id != partner:
+            raise AccessError(_("ไม่พบเอกสาร"))
+        document.unlink()
+        return {"ok": True}

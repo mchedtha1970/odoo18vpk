@@ -3,3 +3,4 @@
 
 from . import purchase_order
 from . import vendor_api_service
+from . import vendor_trade_document

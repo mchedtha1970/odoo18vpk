@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_trade_documents" model="ir.ui.view">
+        <field name="name">res.partner.form.trade.documents</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="ข้อมูลทางการค้า" name="vpk_trade_documents" invisible="supplier_rank &lt; 1">
+                    <field name="supplier_rank" invisible="1"/>
+                    <field name="trade_document_ids">
+                        <list editable="bottom">
+                            <field name="doc_date"/>
+                            <field name="name"/>
+                            <field name="filename" column_invisible="1"/>
+                            <field name="datas" filename="filename" widget="binary"/>
+                            <field name="has_pdf" widget="vpk_trade_pdf_button" string="ดู" readonly="1"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+                    <div class="text-muted">แนบได้เฉพาะไฟล์ PDF ขนาดไม่เกิน 15 MB</div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

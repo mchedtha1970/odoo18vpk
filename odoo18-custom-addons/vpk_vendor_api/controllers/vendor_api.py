@@ -360,3 +360,58 @@ class VendorApiController(http.Controller):
             return self._json(result)
 
         return self._handle(_run)
+
+    @http.route(
+        "/vpk/api/v1/vendor/trade-documents",
+        type="http",
+        auth="none",
+        methods=["GET", "POST"],
+        csrf=False,
+        cors=CORS,
+    )
+    def trade_documents(self, **kwargs):
+        def _run():
+            service = self._service()
+            if request.httprequest.method == "POST":
+                data = service.create_trade_document(self._parse_json_body())
+            else:
+                data = service.list_trade_documents()
+            return self._json({"ok": True, **data})
+
+        return self._handle(_run)
+
+    @http.route(
+        "/vpk/api/v1/vendor/trade-documents/<int:document_id>/pdf",
+        type="http",
+        auth="none",
+        methods=["GET"],
+        csrf=False,
+        cors=CORS,
+    )
+    def trade_document_pdf(self, document_id, **kwargs):
+        def _run():
+            pdf = self._service().get_trade_document_pdf(document_id)
+            return request.make_response(
+                pdf["content"],
+                headers=[
+                    ("Content-Type", "application/pdf"),
+                    ("Content-Disposition", pdf["content_disposition"]),
+                    ("Cache-Control", "private, no-store"),
+                ],
+            )
+
+        return self._handle(_run)
+
+    @http.route(
+        "/vpk/api/v1/vendor/trade-documents/<int:document_id>",
+        type="http",
+        auth="none",
+        methods=["DELETE"],
+        csrf=False,
+        cors=CORS,
+    )
+    def trade_document_delete(self, document_id, **kwargs):
+        def _run():
+            return self._json(self._service().delete_trade_document(document_id))
+
+        return self._handle(_run)
