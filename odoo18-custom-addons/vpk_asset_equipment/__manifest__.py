@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "VPK Asset to Equipment",
-    "version": "18.0.1.5.0",
+    "version": "18.0.1.7.0",
     "category": "Accounting",
     "summary": "สร้าง Equipment ใน Maintenance จากบัตรสินทรัพย์คงที่",
     "author": "VPK",

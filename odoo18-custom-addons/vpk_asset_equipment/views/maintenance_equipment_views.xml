@@ -24,4 +24,35 @@
             </xpath>
         </field>
     </record>
+
+    <record id="hr_equipment_view_kanban_asset_number" model="ir.ui.view">
+        <field name="name">maintenance.equipment.kanban.asset.number</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//t[@t-name='card']/div" position="after">
+                <field name="asset_number" class="fw-bold" invisible="not asset_number"/>
+                <field name="location" invisible="not location"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_equipment_view_search_asset_profile" model="ir.ui.view">
+        <field name="name">maintenance.equipment.search.asset.profile</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_search"/>
+        <field name="arch" type="xml">
+            <search position="inside">
+                <searchpanel view_types="kanban,list">
+                    <field
+                        name="category_id"
+                        string="ประเภทสินทรัพย์"
+                        icon="fa-th-list"
+                        enable_counters="1"
+                        expand="1"
+                    />
+                </searchpanel>
+            </search>
+        </field>
+    </record>
 </odoo>
