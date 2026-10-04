@@ -8,7 +8,7 @@ from odoo.exceptions import ValidationError
 class ResPartner(models.Model):
     _inherit = "res.partner"
 
-    name_company = fields.Char(index=True)
+    name_company = fields.Char(string="ชื่อบริษัท", index=True)
     company_registry = fields.Char(string="Branch", copy=False)
 
     @api.constrains("company_id", "vat", "company_registry")
@@ -59,6 +59,36 @@ class ResPartner(models.Model):
             rec.name = " ".join(p for p in (prefix, rec.name_company, suffix) if p)
             rec._inverse_name()
         return super(ResPartner, partner_inv)._compute_name()
+
+    def _ensure_name_company(self):
+        """Keep Company name filled from the stored name.
+
+        Imported companies often have ``name`` but an empty ``name_company``.
+        The form requires ``name_company``, so saving anything else fails.
+        """
+        if self.env.context.get("skip_name_company_fill"):
+            return
+        missing = self.filtered(
+            lambda partner: partner.is_company
+            and (partner.name or "").strip()
+            and not (partner.name_company or "").strip()
+        )
+        for partner in missing:
+            partner.with_context(skip_name_company_fill=True).write(
+                {"name_company": partner.name.strip()}
+            )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        partners = super().create(vals_list)
+        partners._ensure_name_company()
+        return partners
+
+    def write(self, vals):
+        result = super().write(vals)
+        if "name_company" not in vals:
+            self._ensure_name_company()
+        return result
 
     @api.onchange("company_type")
     def _onchange_company_type(self):

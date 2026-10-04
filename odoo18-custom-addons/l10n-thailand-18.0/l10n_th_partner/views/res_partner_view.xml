@@ -38,7 +38,7 @@
                 <div class="oe_edit_only">
                     <field
                         name="name_company"
-                        placeholder="Company name"
+                        placeholder="ชื่อบริษัท"
                         invisible="not is_company"
                         required="is_company"
                     />
