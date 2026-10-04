@@ -126,33 +126,67 @@ class PurchaseRequisitionEgpInvitation(models.Model):
                 or self.requisition_id.display_name
             )
 
-    def _ensure_lines_from_requisition(self):
-        for invitation in self:
-            if invitation.line_ids or not invitation.requisition_id:
-                continue
-            source_lines = invitation.requisition_id._get_rfq_source_pr_lines()
-            values = []
-            if source_lines:
-                for line in source_lines:
-                    values.append({
-                        "invitation_id": invitation.id,
+    def _invitation_line_commands_from_pr(self):
+        """One2many commands that copy product lines from the linked PR."""
+        self.ensure_one()
+        source_lines = self.requisition_id._get_rfq_source_pr_lines()
+        commands = [(5, 0, 0)]
+        for line in source_lines:
+            commands.append(
+                (
+                    0,
+                    0,
+                    {
                         "product_id": line.product_id.id,
                         "name": line.name or line.product_id.display_name,
                         "product_qty": line.product_qty,
                         "product_uom_id": line.product_uom_id.id,
-                    })
-            else:
+                    },
+                )
+            )
+        return commands if len(commands) > 1 else []
+
+    def action_fill_lines_from_purchase_request(self):
+        """Replace draft invitation lines with products from the referenced PR."""
+        for invitation in self:
+            if invitation.state != "draft":
+                raise UserError(_("ดึงรายการสินค้าได้เฉพาะใบเชิญสถานะร่าง"))
+            if not invitation.purchase_request_id:
+                raise UserError(_("กระบวนการ e-GP นี้ยังไม่มีใบขอซื้ออ้างอิง"))
+            commands = invitation._invitation_line_commands_from_pr()
+            if not commands:
+                raise UserError(
+                    _("ใบขอซื้อ %s ไม่มีรายการสินค้าที่ดึงได้")
+                    % invitation.purchase_request_id.display_name
+                )
+            invitation.write({"line_ids": commands})
+        return True
+
+    def _ensure_lines_from_requisition(self):
+        for invitation in self:
+            if invitation.line_ids or not invitation.requisition_id:
+                continue
+            commands = invitation._invitation_line_commands_from_pr()
+            if not commands:
+                commands = [(5, 0, 0)]
                 for line in invitation.requisition_id.line_ids:
-                    values.append({
-                        "invitation_id": invitation.id,
-                        "product_id": line.product_id.id,
-                        "name": line.product_description_variants
-                        or line.product_id.display_name,
-                        "product_qty": line.product_qty,
-                        "product_uom_id": line.product_uom_id.id,
-                    })
-            if values:
-                self.env["purchase.requisition.egp.invitation.line"].create(values)
+                    commands.append(
+                        (
+                            0,
+                            0,
+                            {
+                                "product_id": line.product_id.id,
+                                "name": line.product_description_variants
+                                or line.product_id.display_name,
+                                "product_qty": line.product_qty,
+                                "product_uom_id": line.product_uom_id.id,
+                            },
+                        )
+                    )
+                if len(commands) == 1:
+                    commands = []
+            if commands:
+                invitation.write({"line_ids": commands})
 
     def action_send(self):
         for invitation in self:
@@ -264,6 +298,17 @@ class PurchaseRequisition(models.Model):
             requisition.egp_has_winner = bool(
                 requisition.egp_bid_ids.filtered("is_winner")
             )
+
+    def action_fill_invitation_lines_from_pr(self):
+        """Fill every draft invitation on this e-GP with products from the PR."""
+        self.ensure_one()
+        drafts = self.egp_invitation_ids.filtered(lambda invitation: invitation.state == "draft")
+        if not drafts:
+            raise UserError(
+                _("ยังไม่มีใบเชิญเสนอราคาสถานะร่าง ให้เพิ่มผู้ประกอบการก่อน แล้วค่อยดึงรายการสินค้า")
+            )
+        drafts.action_fill_lines_from_purchase_request()
+        return True
 
     def action_view_egp_invitations(self):
         self.ensure_one()

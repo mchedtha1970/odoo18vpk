@@ -261,6 +261,8 @@
                         domain="[('document_type', '=', 'specific_method_approval')]"/>
                 <filter name="winner_announcement" string="ประกาศผู้ชนะ"
                         domain="[('document_type', '=', 'winner_announcement')]"/>
+                <filter name="award_approval" string="รายงานผลการพิจารณาจัดซื้อจัดจ้าง"
+                        domain="[('document_type', '=', 'award_approval')]"/>
                 <group>
                     <filter name="group_state" string="สถานะ" context="{'group_by': 'state'}"/>
                     <filter name="group_type" string="ประเภท" context="{'group_by': 'document_type'}"/>

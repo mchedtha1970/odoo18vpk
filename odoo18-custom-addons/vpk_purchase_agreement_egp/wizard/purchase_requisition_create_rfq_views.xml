@@ -4,7 +4,7 @@
         <field name="name">purchase.requisition.create.rfq.form</field>
         <field name="model">purchase.requisition.create.rfq</field>
         <field name="arch" type="xml">
-            <form string="สร้าง RFQ/PO สำหรับผู้ชนะ">
+            <form string="สร้าง PO">
                 <group>
                     <field name="requisition_id"/>
                     <field name="partner_id" readonly="1"/>
@@ -13,7 +13,7 @@
                 <footer>
                     <button
                         name="action_create_rfq"
-                        string="สร้าง RFQ/PO ผู้ชนะ"
+                        string="สร้าง PO"
                         type="object"
                         class="btn-primary"
                         data-hotkey="q"

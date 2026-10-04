@@ -1,6 +1,6 @@
 {
     "name": "VPK Purchase Agreement e-GP",
-    "version": "18.0.1.5.10",
+    "version": "18.0.1.5.19",
     "category": "Purchases",
     "summary": "Purchase Agreement as e-GP procurement hub for Vachira Hospital",
     "author": "VPK",
@@ -20,6 +20,7 @@
         "views/purchase_requisition_egp_invitation_views.xml",
         "views/purchase_requisition_award_report_views.xml",
         "views/purchase_requisition_winner_announcement_views.xml",
+        "views/egp_document_type_views.xml",
         "views/purchase_order_views.xml",
         "views/purchase_request_views.xml",
         "wizard/purchase_requisition_create_rfq_views.xml",

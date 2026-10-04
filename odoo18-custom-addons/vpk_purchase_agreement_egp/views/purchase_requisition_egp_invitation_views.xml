@@ -59,6 +59,11 @@
                     </group>
                     <notebook>
                         <page string="รายการที่เชิญเสนอราคา">
+                            <button name="action_fill_lines_from_purchase_request"
+                                    type="object"
+                                    string="ดึงรายการสินค้าจากใบขอซื้อ"
+                                    class="btn-secondary"
+                                    invisible="state != 'draft'"/>
                             <field name="line_ids" readonly="state != 'draft'">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
@@ -131,6 +136,11 @@
                         เชิญผู้ประกอบการ → รับข้อเสนอ → เปรียบเทียบราคา → เลือกผู้ชนะ
                         หลังเลือกผู้ชนะแล้วจึงสร้าง RFQ/PO
                     </div>
+                    <button name="action_fill_invitation_lines_from_pr"
+                            type="object"
+                            string="ดึงรายการสินค้าจากใบขอซื้อ"
+                            class="btn-secondary mb-2"
+                            invisible="requisition_type != 'egp_procurement'"/>
                     <field name="egp_invitation_ids"
                            context="{'default_requisition_id': id}">
                         <list>
@@ -155,7 +165,7 @@
             </xpath>
             <button name="action_open_create_rfq_wizard"
                     position="attributes">
-                <attribute name="string">สร้าง RFQ/PO ผู้ชนะ</attribute>
+                <attribute name="string">สร้าง PO</attribute>
                 <attribute name="invisible">requisition_type != 'egp_procurement' or state not in ('confirmed', 'done') or not egp_has_winner</attribute>
             </button>
         </field>

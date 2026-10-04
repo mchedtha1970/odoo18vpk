@@ -31,12 +31,91 @@ class PurchaseRequisitionEgpDocument(models.Model):
         self._ensure_winner_official_document()
         return res
 
+    def action_send_for_signature_inbox(self):
+        """ส่งเข้ากล่องอนุมัติแบบเดียวกับหนังสือราชการในใบขอซื้อ."""
+        self.ensure_one()
+        code = self.document_type_id.code
+        if code == "winner_announcement":
+            return self.action_send_for_signature()
+        if code == "award_approval":
+            return self.action_request_award_approval()
+        raise UserError(_("เอกสารนี้ยังไม่มีขั้นตอนส่งเพื่อลงนาม"))
+
+    def action_request_award_approval(self):
+        self.ensure_one()
+        if self.document_type_id.code != "award_approval":
+            raise UserError(_("ปุ่มนี้ใช้ขออนุมัติรายงานผลการพิจารณาเท่านั้น"))
+        if self.signature_state == "signed":
+            raise UserError(_("เอกสารนี้ลงนามแล้ว"))
+        if self.signature_state == "waiting":
+            raise UserError(_("เอกสารถูกส่งขออนุมัติแล้ว"))
+        if not self.document_file:
+            raise UserError(_("ยังไม่มีไฟล์รายงาน กรุณาพิมพ์รายงานก่อนขออนุมัติ"))
+        report = self.award_report_id
+        if report and report.state == "draft":
+            report.action_submit()
+        official = self._ensure_award_official_document()
+        official.action_send_for_signature()
+        return True
+
+    def _ensure_award_official_document(self):
+        self.ensure_one()
+        Official = self.env["vpk.official.document"]
+        if self.document_type_id.code != "award_approval":
+            return Official
+        report = self.award_report_id
+        requisition = self.requisition_id
+        vals = {
+            "document_type": "award_approval",
+            "requisition_id": requisition.id,
+            "subject": (report.subject if report else "")
+            or _("รายงานผลการพิจารณาและขออนุมัติสั่งซื้อ/สั่งจ้าง"),
+            "date": self.document_date or fields.Date.context_today(self),
+            "company_id": requisition.company_id.id,
+        }
+        if report and report.purchase_request_id:
+            vals["request_id"] = report.purchase_request_id.id
+        document = self.official_document_id
+        if not document and requisition:
+            document = Official.search(
+                [
+                    ("document_type", "=", "award_approval"),
+                    ("requisition_id", "=", requisition.id),
+                    ("state", "!=", "cancelled"),
+                ],
+                limit=1,
+            )
+        if document and document.signature_state in ("waiting", "signed"):
+            if not self.official_document_id:
+                self.official_document_id = document.id
+            return document
+        if document:
+            document.with_context(skip_validation_check=True).write(vals)
+        else:
+            document = Official.with_context(skip_validation_check=True).create(vals)
+        if self.official_document_id != document:
+            self.official_document_id = document.id
+        if not self.document_file:
+            return document
+        basename = "รายงานผลการพิจารณา-%s" % (
+            self.egp_reference or requisition.name or self.id
+        )
+        document.with_context(skip_validation_check=True)._store_generated_file(
+            base64.b64decode(self.document_file),
+            self.document_filename or ("%s.pdf" % basename),
+            "application/pdf",
+            "pdf",
+        )
+        return document
+
     def action_send_for_signature(self):
         self.ensure_one()
         if self.document_type_id.code != "winner_announcement":
             raise UserError(_("ปุ่มนี้ใช้ส่งประกาศผู้ชนะลงนามเท่านั้น"))
         if self.signature_state == "signed":
             raise UserError(_("เอกสารนี้ลงนามแล้ว"))
+        if self.signature_state == "waiting":
+            raise UserError(_("เอกสารถูกส่งลงนามแล้ว กำลังรอลงนาม"))
         if not self.document_file:
             self.action_generate_winner_document()
         official = self._ensure_winner_official_document()

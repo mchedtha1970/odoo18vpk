@@ -80,6 +80,7 @@
                 <field
                     name="egp_flow_stage"
                     widget="statusbar"
+                    options="{'clickable': true}"
                     invisible="requisition_type != 'egp_procurement'"
                     statusbar_visible="draft,confirmed,egp_docs,rfq,compare,awarded,done"
                 />

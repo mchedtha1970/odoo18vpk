@@ -19,13 +19,14 @@
             </xpath>
             <xpath expr="//button[@name='action_generate_winner_document']" position="after">
                 <button
-                    name="action_send_for_signature"
+                    name="action_send_for_signature_inbox"
                     type="object"
-                    string="ส่งลงนาม"
+                    string="ส่งเพื่อลงนาม"
+                    icon="fa-paper-plane"
                     class="btn-link"
                     groups="purchase.group_purchase_user"
-                    invisible="document_type_code != 'winner_announcement' or signature_state in ('waiting', 'signed')"
-                    title="ส่งประกาศผู้ชนะให้ผู้อำนวยการลงนาม"
+                    invisible="document_type_code not in ('winner_announcement', 'award_approval') or signature_state in ('waiting', 'signed')"
+                    title="ส่งเข้ากล่องงานรออนุมัติ ตามลำดับลงนามของเอกสารราชการ"
                 />
             </xpath>
         </field>

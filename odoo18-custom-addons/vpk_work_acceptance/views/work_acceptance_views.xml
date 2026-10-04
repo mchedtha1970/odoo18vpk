@@ -24,6 +24,12 @@
                 <attribute name="string">ยกเลิก</attribute>
             </button>
 
+            <field name="purchase_id" position="attributes">
+                <attribute name="readonly">state != 'draft'</attribute>
+                <attribute name="options">{'no_create': True}</attribute>
+                <attribute name="domain">[('state', 'in', ('purchase', 'done')), ('company_id', '=', company_id)]</attribute>
+            </field>
+
             <!-- Contract and acceptance fields -->
             <field name="purchase_id" position="after">
                 <field name="contract_id" readonly="1"/>

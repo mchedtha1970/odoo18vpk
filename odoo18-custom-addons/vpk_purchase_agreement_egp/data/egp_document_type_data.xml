@@ -11,6 +11,11 @@
             <field name="code">invitation</field>
             <field name="sequence">20</field>
         </record>
+        <record id="egp_document_type_award_approval" model="purchase.requisition.egp.document.type">
+            <field name="name">รายงานผลการพิจารณา</field>
+            <field name="code">award_approval</field>
+            <field name="sequence">25</field>
+        </record>
         <record id="egp_document_type_winner_announcement" model="purchase.requisition.egp.document.type">
             <field name="name">ประกาศผู้ชนะ</field>
             <field name="code">winner_announcement</field>

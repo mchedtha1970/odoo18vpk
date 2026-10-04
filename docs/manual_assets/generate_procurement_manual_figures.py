@@ -189,37 +189,43 @@ def fig_proc_roles():
 
 def fig_proc_menus():
     img, d = new_canvas(1600, 640)
-    d.text((48, 24), "แผนที่เมนูที่ใช้บ่อย", font=font(28, "bold"), fill=NAVY)
+    d.text((48, 24), "เมนูและปุ่มที่ใช้งานบ่อย", font=font(28, "bold"), fill=NAVY)
     menus = [
-        ("หน่วยงาน", [
+        ("หน่วยงาน", "ระบบขอซื้อ", [
             "ใบขอซื้อ / สร้างใบขอซื้อ",
-            "เช็คงบประมาณ",
+            "ปุ่มเช็คงบประมาณ",
             "แท็บรายชื่อคณะกรรมการ",
-            "ส่งพัสดุ",
+            "ปุ่มส่งพัสดุ",
         ], TEAL),
-        ("พัสดุ", [
-            "จัดซื้อ / ใบขอซื้อจากหน่วยงาน",
-            "สร้างเอกสารแต่งตั้งกรรมการ",
-            "สร้างเอกสารอนุมัติขอซื้อ",
-            "ส่งอนุมัติ",
+        ("พัสดุ / จัดซื้อ", "ระบบจัดซื้อจัดจ้าง", [
+            "ใบขอซื้อจากหน่วยงาน",
+            "เอกสารแต่งตั้งกรรมการ",
+            "เอกสารอนุมัติขอซื้อ",
+            "ปุ่มส่งรายการเข้าระบบ e-GP",
         ], AMBER),
-        ("ในกระบวนการ e-GP", [
-            "แท็บเอกสาร e-GP",
+        ("ในกระบวนการ e-GP", "ถึงใบสั่งซื้อ", [
             "แท็บเชิญเสนอราคา",
             "แท็บเปรียบเทียบราคา",
             "รายงานผล / ประกาศผู้ชนะ",
+            "ปุ่มส่งให้ผู้ชนะยืนยัน",
         ], NAVY),
     ]
-    for i, (title, items, col) in enumerate(menus):
+    for i, (title, subtitle, items, col) in enumerate(menus):
         x = 48 + i * 516
         round_rect(d, (x, 90, x + 492, 590), 18, WHITE, col, 3)
-        round_rect(d, (x, 90, x + 492, 170), 18, col)
-        d.rectangle((x, 150, x + 492, 170), fill=col)
-        center_text(d, x, 108, 492, title, font(24, "bold"), WHITE)
+        round_rect(d, (x, 90, x + 492, 188), 18, col)
+        d.rectangle((x, 168, x + 492, 188), fill=col)
+        center_text(d, x, 102, 492, title, font(24, "bold"), WHITE)
+        center_text(d, x, 138, 492, subtitle, font(16, "medium"), WHITE)
         for j, t in enumerate(items):
-            y = 210 + j * 84
-            round_rect(d, (x + 28, y, x + 464, y + 68), 12, SOFT if col == TEAL else (NAVY_SOFT if col == NAVY else AMBER_SOFT))
-            d.text((x + 52, y + 18), t, font=font(18, "medium"), fill=SLATE)
+            y = 214 + j * 86
+            round_rect(
+                d,
+                (x + 28, y, x + 464, y + 70),
+                12,
+                SOFT if col == TEAL else (NAVY_SOFT if col == NAVY else AMBER_SOFT),
+            )
+            center_text(d, x + 28, y, 436, t, font(18, "medium"), SLATE, 70)
     save(img, "fig_proc_menus.png")
 
 

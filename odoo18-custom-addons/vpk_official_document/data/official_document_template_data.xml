@@ -44,4 +44,13 @@
         <field name="datas" type="base64" file="vpk_purchase_agreement_egp/static/src/templates/winner_announcement.docx"/>
         <field name="note">ต้นฉบับประกาศผู้ชนะการเสนอราคา ระบบจะแทนที่จังหวัด เรื่อง เนื้อหา ผู้ลงนาม และผู้รับรองสำเนาจากข้อมูลกระบวนการ e-GP</field>
     </record>
+    <record id="template_award_approval" model="vpk.official.document.template">
+        <field name="name">แบบฟอร์มรายงานผลการพิจารณาและขออนุมัติสั่งซื้อสั่งจ้าง</field>
+        <field name="code">award_approval</field>
+        <field name="document_type">award_approval</field>
+        <field name="sequence">60</field>
+        <field name="filename">แบบฟอร์ม_รายงานผลการพิจารณาจัดซื้อจัดจ้าง.docx</field>
+        <field name="datas" type="base64" file="vpk_official_document/static/src/templates/award_approval.docx"/>
+        <field name="note">ต้นฉบับบันทึกข้อความรายงานผลการพิจารณา โมดูลกระบวนการ e-GP เรียกใช้แบบฟอร์มนี้ตอนพิมพ์รายงานผล และแทนที่ส่วนราชการ ที่ วันที่ เรื่อง เรียน ตารางรายการ ราคา และผู้ลงนาม</field>
+    </record>
 </odoo>

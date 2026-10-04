@@ -1,12 +1,21 @@
 # Copyright 2026 VPK
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 
-from odoo import _, api, fields, models
+from dateutil.relativedelta import relativedelta
+
+from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import float_compare
 
 
 class WorkAcceptance(models.Model):
     _inherit = "work.acceptance"
+
+    purchase_id = fields.Many2one(
+        comodel_name="purchase.order",
+        string="Purchase Order",
+        readonly=False,
+    )
 
     # --- Contract link ---
     contract_id = fields.Many2one(
@@ -149,7 +158,7 @@ class WorkAcceptance(models.Model):
     )
     def _compute_requester_notification(self):
         for acceptance in self:
-            requests = acceptance.purchase_id.order_line.mapped(
+            requests = acceptance.sudo().purchase_id.order_line.mapped(
                 "purchase_request_lines.request_id"
             )
             requesters = requests.mapped("requested_by")
@@ -228,18 +237,44 @@ class WorkAcceptance(models.Model):
         })
         return result
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        for record, vals in zip(records, vals_list):
+            if not vals.get("purchase_id"):
+                continue
+            if not vals.get("wa_line_ids") or not vals.get("committee_ids"):
+                record._load_purchase_order_values()
+        return records
+
+    def write(self, vals):
+        result = super().write(vals)
+        if "purchase_id" in vals and "committee_ids" not in vals:
+            self.filtered(
+                lambda record: record.purchase_id and not record.committee_ids
+            )._load_purchase_order_values()
+        return result
+
+    def _load_purchase_order_values(self):
+        for record in self.filtered("purchase_id"):
+            values = record.purchase_id._prepare_work_acceptance_values(record)
+            if record.wa_line_ids:
+                values.pop("wa_line_ids", None)
+            if record.committee_ids:
+                values.pop("committee_ids", None)
+            if values:
+                record.write(values)
+
     @api.onchange("purchase_id")
-    def _onchange_purchase_id_contract(self):
-        if self.purchase_id and self.purchase_id.contract_id:
-            contract = self.purchase_id.contract_id
-            pr_lines = self.purchase_id.order_line.mapped(
-                "purchase_request_lines"
-            )
-            installment = pr_lines.mapped("contract_installment_id")[:1]
-            if installment:
-                self.contract_installment_id = installment
-            if contract.date_end:
-                self.due_date_contract = contract.date_end
+    def _onchange_purchase_id_load(self):
+        if not self.purchase_id:
+            self.wa_line_ids = [Command.clear()]
+            self.committee_ids = [Command.clear()]
+            self.contract_installment_id = False
+            self.due_date_contract = False
+            self.warranty_end_date = False
+            return
+        self.update(self.purchase_id._prepare_work_acceptance_values(self))
 
 
 class WorkAcceptanceCommittee(models.Model):

@@ -28,6 +28,14 @@ class PurchaseRequisitionEgpDocumentType(models.Model):
     sequence = fields.Integer(default=10)
     active = fields.Boolean(default=True)
 
+    _sql_constraints = [
+        (
+            "code_uniq",
+            "unique(code)",
+            "รหัสหัวข้อเอกสารซ้ำ",
+        ),
+    ]
+
 
 class PurchaseRequisitionEgpDocument(models.Model):
     _name = "purchase.requisition.egp.document"
@@ -68,6 +76,13 @@ class PurchaseRequisitionEgpDocument(models.Model):
         related="document_type_id.code",
         string="Document Type Code",
         store=True,
+    )
+    award_report_id = fields.Many2one(
+        comodel_name="purchase.requisition.award.report",
+        string="รายงานผลการพิจารณา",
+        copy=False,
+        ondelete="set null",
+        index=True,
     )
 
     @api.model

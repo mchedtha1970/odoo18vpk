@@ -86,6 +86,14 @@ class PurchaseRequisition(models.Model):
         selection="_selection_egp_flow_stage",
         string="e-GP Flow Stage",
         compute="_compute_egp_flow_stage",
+        store=True,
+        readonly=False,
+        copy=False,
+    )
+    egp_flow_stage_manual = fields.Boolean(
+        string="e-GP Flow Stage Set Manually",
+        copy=False,
+        help="ติดเมื่อผู้ใช้กดแถบขั้นตอนเอง จากนั้นระบบจะไม่ทับค่านั้น",
     )
     egp_flow_html = fields.Html(
         string="e-GP Workflow",
@@ -122,14 +130,34 @@ class PurchaseRequisition(models.Model):
                 _("ออกใบเชิญเสนอราคา รับข้อเสนอ และบันทึกราคาในกระบวนการ eGP"),
             ),
             ("compare", _("7. Compare Prices"), _("เปรียบเทียบราคาและเลือกผู้ชนะ")),
-            ("awarded", _("8. Award Vendor"), _("เลือกผู้ชนะและปิดกระบวนการ")),
-            ("done", _("9. Closed"), _("Purchase agreement is completed.")),
+            ("awarded", _("8. Award Vendor"), _("มีคำสั่งซื้อที่ยืนยันแล้วของผู้ชนะ")),
+            ("done", _("9. Closed"), _("ปิดข้อตกลงจากปุ่มปิดข้อตกลง หรือเมื่อคำสั่งซื้อถูกยืนยัน")),
         ]
 
     @api.depends("requisition_type")
     def _compute_is_egp_procurement(self):
         for record in self:
             record.is_egp_procurement = record.requisition_type == "egp_procurement"
+
+    def _suggested_egp_flow_stage(self):
+        self.ensure_one()
+        if self.requisition_type != "egp_procurement":
+            return False
+        if self.state == "cancel":
+            return "cancel"
+        if self.state == "done":
+            return "done"
+        if self.purchase_ids.filtered(lambda po: po.state == "purchase"):
+            return "awarded"
+        if self.egp_bid_ids or len(self.purchase_ids) >= 2:
+            return "compare"
+        if self.egp_invitation_ids or self.purchase_ids:
+            return "rfq"
+        if self.egp_document_ids:
+            return "egp_docs"
+        if self.state == "confirmed":
+            return "confirmed"
+        return "draft"
 
     @api.depends(
         "state",
@@ -138,42 +166,44 @@ class PurchaseRequisition(models.Model):
         "egp_invitation_ids",
         "egp_invitation_ids.state",
         "egp_bid_ids",
-        "egp_bid_ids.is_winner",
         "purchase_ids",
         "purchase_ids.state",
+        "egp_flow_stage_manual",
     )
     def _compute_egp_flow_stage(self):
-        for record in self:
-            if record.requisition_type != "egp_procurement":
-                record.egp_flow_stage = False
-                continue
-            if record.state == "cancel":
-                record.egp_flow_stage = "cancel"
-                continue
-            if record.state == "done":
-                record.egp_flow_stage = "done"
-                continue
-            if record.egp_bid_ids.filtered("is_winner") or record.purchase_ids.filtered(
-                lambda po: po.state == "purchase"
+        manual = self.filtered("egp_flow_stage_manual")
+        for record in self - manual:
+            origin = record._origin
+            if (
+                origin
+                and origin.egp_flow_stage_manual
+                and not self.env.context.get("egp_flow_auto")
             ):
-                record.egp_flow_stage = "awarded"
+                record.egp_flow_stage = (
+                    origin.egp_flow_stage or record._suggested_egp_flow_stage()
+                )
+            else:
+                record.egp_flow_stage = record._suggested_egp_flow_stage()
+        if not manual:
+            return
+        persisted = manual.filtered(lambda record: isinstance(record.id, int))
+        stored = {}
+        if persisted:
+            self.env.cr.execute(
+                """
+                SELECT id, egp_flow_stage
+                  FROM purchase_requisition
+                 WHERE id IN %s
+                """,
+                [tuple(persisted.ids)],
+            )
+            stored = dict(self.env.cr.fetchall())
+        for record in manual:
+            origin = record._origin
+            if origin and origin.egp_flow_stage and record.id != origin.id:
+                record.egp_flow_stage = origin.egp_flow_stage
                 continue
-            if len(record.egp_bid_ids) >= 2:
-                record.egp_flow_stage = "compare"
-                continue
-            if record.egp_bid_ids:
-                record.egp_flow_stage = "rfq"
-                continue
-            if record.egp_invitation_ids:
-                record.egp_flow_stage = "rfq"
-                continue
-            if record.egp_document_ids:
-                record.egp_flow_stage = "egp_docs"
-                continue
-            if record.state == "confirmed":
-                record.egp_flow_stage = "confirmed"
-                continue
-            record.egp_flow_stage = "draft"
+            record.egp_flow_stage = stored.get(record.id) or record._suggested_egp_flow_stage()
 
     @api.depends("egp_flow_stage", "requisition_type")
     def _compute_egp_flow_html(self):
@@ -253,6 +283,8 @@ class PurchaseRequisition(models.Model):
         return records
 
     def write(self, vals):
+        if "egp_flow_stage" in vals and not self.env.context.get("egp_flow_auto"):
+            vals = dict(vals, egp_flow_stage_manual=True)
         if vals.get("purchase_request_id") and "reference" not in vals:
             pr = self.env["purchase.request"].browse(vals["purchase_request_id"])
             vals = dict(vals, reference=pr.name)
@@ -526,7 +558,7 @@ class PurchaseRequisition(models.Model):
             "default_egp_bid_reference": winner.egp_bid_reference if winner else False,
         }
         return {
-            "name": _("สร้าง RFQ/PO สำหรับผู้ชนะ"),
+            "name": _("สร้าง PO"),
             "type": "ir.actions.act_window",
             "res_model": "purchase.requisition.create.rfq",
             "view_mode": "form",
@@ -543,6 +575,16 @@ class PurchaseRequisition(models.Model):
         if len(rfqs) == 1 and not main_rfq.has_alternatives:
             raise UserError(_("Create at least two RFQs or alternatives before comparing prices."))
         return main_rfq.action_compare_alternative_lines()
+
+    def action_done(self):
+        res = super().action_done()
+        closed = self.filtered(
+            lambda requisition: requisition.requisition_type == "egp_procurement"
+            and requisition.state == "done"
+        )
+        if closed:
+            closed.with_context(egp_flow_auto=True).write({"egp_flow_stage": "done"})
+        return res
 
     def action_close_after_award(self):
         self.ensure_one()

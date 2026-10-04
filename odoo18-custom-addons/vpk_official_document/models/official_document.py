@@ -32,6 +32,7 @@ DOCUMENT_TYPE_SELECTION = [
         "รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง",
     ),
     ("winner_announcement", "ประกาศผู้ชนะการเสนอราคา"),
+    ("award_approval", "รายงานผลการพิจารณาจัดซื้อจัดจ้าง"),
 ]
 
 TEMPLATE_FILES = {
@@ -40,6 +41,7 @@ TEMPLATE_FILES = {
     "spec_price_committee": "vpk_official_document/static/src/templates/spec_price_committee.docx",
     "specific_method_approval": "vpk_official_document/static/src/templates/specific_method_approval.docx",
     "winner_announcement": "vpk_purchase_agreement_egp/static/src/templates/winner_announcement.docx",
+    "award_approval": "vpk_official_document/static/src/templates/award_approval.docx",
 }
 
 ROLE_LABELS = {
@@ -1968,7 +1970,10 @@ class OfficialDocument(models.Model):
             if not rec._get_pdf_attachment():
                 raise UserError(_("ยังไม่มีไฟล์ PDF กรุณากดพิมพ์ PDF ก่อน"))
             rec.with_context(skip_validation_check=True).write({"state": "to_approve"})
-            if rec.document_type == "specific_method_approval":
+            if rec.document_type in (
+                "specific_method_approval",
+                "award_approval",
+            ):
                 rec._vpk_create_sequential_sign_reviews()
             elif rec.document_type == "integrity_over_100k":
                 rec._vpk_create_integrity_sign_reviews()
@@ -2192,6 +2197,8 @@ class OfficialDocument(models.Model):
                         "signed_on": rec.signed_on or fields.Datetime.now(),
                     }
                 )
+            if rec.document_type == "award_approval":
+                rec._approve_linked_award_report()
             if rec.document_type in (
                 "wa_committee_order",
                 "specific_method_approval",
@@ -2232,7 +2239,8 @@ class OfficialDocument(models.Model):
         winners = self.filtered(
             lambda doc: doc.document_type == "winner_announcement"
         )
-        others = self - approval - integrity - winners
+        awards = self.filtered(lambda doc: doc.document_type == "award_approval")
+        others = self - approval - integrity - winners - awards
         created = self.env["tier.review"]
         if others:
             created |= super(OfficialDocument, others).request_validation()
@@ -2242,14 +2250,41 @@ class OfficialDocument(models.Model):
             created |= integrity._vpk_create_integrity_sign_reviews()
         if winners:
             created |= winners._vpk_create_winner_sign_reviews()
+        if awards:
+            created |= awards._vpk_create_sequential_sign_reviews()
         return created
 
-    def _vpk_sequential_sign_definitions(self):
-        xmlids = (
-            "vpk_official_document.tier_definition_specific_method_officer",
-            "vpk_official_document.tier_definition_specific_method_head_officer",
-            "vpk_official_document.tier_definition_specific_method_director",
-        )
+    def _approve_linked_award_report(self):
+        Report = self.env["purchase.requisition.award.report"]
+        Document = self.env["purchase.requisition.egp.document"]
+        for rec in self:
+            egp = Document.search(
+                [("official_document_id", "=", rec.id)],
+                limit=1,
+            )
+            report = egp.award_report_id if egp else Report
+            if not report and rec.requisition_id:
+                report = rec.requisition_id.award_report_ids.filtered(
+                    lambda item: item.state != "cancelled"
+                )[:1]
+            if report and report.state not in ("approved", "cancelled"):
+                report.action_approve()
+
+    def _vpk_sequential_sign_definitions(self, document_type=None):
+        if document_type == "award_approval":
+            xmlids = (
+                "vpk_official_document.tier_definition_award_approval_officer",
+                "vpk_official_document.tier_definition_award_approval_head_officer",
+                "vpk_official_document.tier_definition_award_approval_director",
+            )
+            domain_hint = "award_approval"
+        else:
+            xmlids = (
+                "vpk_official_document.tier_definition_specific_method_officer",
+                "vpk_official_document.tier_definition_specific_method_head_officer",
+                "vpk_official_document.tier_definition_specific_method_director",
+            )
+            domain_hint = "specific_method_approval"
         definitions = self.env["tier.definition"]
         for xmlid in xmlids:
             definition = self.env.ref(xmlid, raise_if_not_found=False)
@@ -2265,7 +2300,7 @@ class OfficialDocument(models.Model):
                 (
                     "definition_domain",
                     "ilike",
-                    "specific_method_approval",
+                    domain_hint,
                 ),
             ],
             order="sequence",
@@ -2314,19 +2349,22 @@ class OfficialDocument(models.Model):
         """Create officer → head officer → director reviews in order."""
         Review = self.env["tier.review"]
         created = Review.browse()
-        definitions = self._vpk_sequential_sign_definitions()
-        if len(definitions) < 3:
-            raise UserError(
-                _("ยังไม่ได้ตั้งลำดับลงนามของรายงานขออนุมัติจัดซื้อจัดจ้าง")
-            )
         for doc in self:
-            if doc.document_type != "specific_method_approval":
+            if doc.document_type not in (
+                "specific_method_approval",
+                "award_approval",
+            ):
                 continue
             if doc.review_ids.filtered(
                 lambda review: review.status in ("waiting", "pending")
             ):
                 continue
             doc._vpk_ensure_sequential_signers()
+            definitions = doc._vpk_sequential_sign_definitions(doc.document_type)
+            if len(definitions) < 3:
+                raise UserError(
+                    _("ยังไม่ได้ตั้งลำดับลงนามของรายงานขออนุมัติจัดซื้อจัดจ้าง")
+                )
             vals_list = []
             sequence = 0
             for definition in definitions.sorted("sequence"):

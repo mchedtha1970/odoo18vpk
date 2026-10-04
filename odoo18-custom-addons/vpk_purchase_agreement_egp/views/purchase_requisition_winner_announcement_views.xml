@@ -117,11 +117,13 @@
                            widget="statinfo" string="ประกาศผู้ชนะ"/>
                 </button>
             </xpath>
-            <xpath expr="//page[@name='egp_rfqs']/group" position="inside">
-                <button name="action_create_winner_announcement"
-                        type="object" string="สร้างประกาศผู้ชนะ"
-                        class="btn-secondary"
-                        invisible="not egp_award_approved"/>
+            <xpath expr="//page[@name='egp_rfqs']/group" position="after">
+                <div>
+                    <button name="action_file_winner_announcement"
+                            type="object" string="ประกาศผู้ชนะ"
+                            class="btn-secondary mb-2"
+                            invisible="not egp_has_winner"/>
+                </div>
             </xpath>
         </field>
     </record>

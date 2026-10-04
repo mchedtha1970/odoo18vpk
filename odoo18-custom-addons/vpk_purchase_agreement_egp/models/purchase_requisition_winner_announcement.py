@@ -354,6 +354,42 @@ class PurchaseRequisition(models.Model):
                 requisition.winner_announcement_ids
             )
 
+    def action_file_winner_announcement(self):
+        """สร้างไฟล์ประกาศผู้ชนะแล้วเก็บในแท็บเอกสาร e-GP."""
+        self.ensure_one()
+        if not self._get_egp_winner_bid() and not self.vendor_id:
+            raise UserError(
+                _("กรุณาเลือกผู้ชนะในแท็บเปรียบเทียบราคาก่อนสร้างประกาศผู้ชนะ")
+            )
+        doc_type = self.env.ref(
+            "vpk_purchase_agreement_egp.egp_document_type_winner_announcement",
+            raise_if_not_found=False,
+        )
+        if not doc_type:
+            raise UserError(_("ไม่พบหัวข้อเอกสารประกาศผู้ชนะ"))
+        existing = self.egp_document_ids.filtered(
+            lambda doc: doc.document_type_id == doc_type
+        )[:1]
+        if (
+            existing
+            and "signature_state" in existing._fields
+            and existing.signature_state in ("waiting", "signed")
+        ):
+            raise UserError(_("เอกสารถูกส่งลงนามแล้ว ไม่สามารถสร้างใหม่ได้"))
+        vals = {
+            "document_type_id": doc_type.id,
+            "requisition_id": self.id,
+            "egp_reference": self.egp_reference,
+            "document_date": fields.Date.context_today(self),
+        }
+        if existing:
+            existing.write(vals)
+            document = existing
+        else:
+            document = self.env["purchase.requisition.egp.document"].create(vals)
+        document.action_generate_winner_document()
+        return True
+
     def action_create_winner_announcement(self):
         self.ensure_one()
         approved_report = self.award_report_ids.filtered(

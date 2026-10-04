@@ -38,6 +38,10 @@ class TierReview(models.Model):
                                 name = "{} · {}".format(
                                     doc.request_id.display_name, name
                                 )
+                            elif doc.requisition_id:
+                                name = "{} · {}".format(
+                                    doc.requisition_id.display_name, name
+                                )
                         else:
                             name = doc.display_name
                 except Exception:

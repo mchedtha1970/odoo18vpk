@@ -44,7 +44,7 @@
                 <button
                     name="action_open_create_rfq_wizard"
                     type="object"
-                    string="สร้าง RFQ/PO ผู้ชนะ"
+                    string="สร้าง PO"
                     invisible="not can_create_egp_rfq"
                 />
             </button>

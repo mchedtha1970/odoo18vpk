@@ -200,6 +200,52 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
         self.assertEqual(self.requisition.egp_flow_stage, "compare")
         self.assertIn("vpk_egp_flow_current", self.requisition.egp_flow_html)
 
+    def test_one_bid_sets_compare_until_statusbar_is_clicked(self):
+        self.requisition.action_confirm()
+        self.env["purchase.requisition.egp.bid"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "partner_id": self.partner.id,
+                "egp_bid_reference": "Q-1",
+            }
+        )
+        self.assertEqual(self.requisition.egp_flow_stage, "compare")
+        self.assertFalse(self.requisition.egp_flow_stage_manual)
+        self.requisition.egp_flow_stage = "rfq"
+        self.assertTrue(self.requisition.egp_flow_stage_manual)
+        self.env["purchase.requisition.egp.bid"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "partner_id": self.partner_b.id,
+                "egp_bid_reference": "Q-2",
+            }
+        )
+        self.assertEqual(self.requisition.egp_flow_stage, "rfq")
+
+    def test_winner_tick_keeps_compare_stage_and_confirmed_state(self):
+        self.requisition.action_confirm()
+        bid = self.env["purchase.requisition.egp.bid"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "partner_id": self.partner.id,
+                "egp_bid_reference": "Q-1",
+            }
+        )
+        self.assertEqual(self.requisition.egp_flow_stage, "compare")
+        self.assertEqual(self.requisition.state, "confirmed")
+        bid.write({"is_winner": True})
+        self.assertTrue(bid.is_winner)
+        self.assertEqual(self.requisition.state, "confirmed")
+        self.assertEqual(self.requisition.egp_flow_stage, "compare")
+        self.requisition.egp_flow_stage = "compare"
+        onchange = self.requisition.onchange(
+            {"egp_bid_ids": [(1, bid.id, {"is_winner": True})]},
+            ["egp_bid_ids"],
+            {"egp_flow_stage": {}, "state": {}, "egp_bid_ids": {"fields": {"is_winner": {}}}},
+        )
+        self.assertNotIn(onchange["value"].get("egp_flow_stage"), ("done", "awarded"))
+        self.assertNotEqual(onchange["value"].get("state"), "done")
+
     def test_pr_create_rfq_from_linked_agreement(self):
         purchase_type = self.env.ref("l10n_th_gov_purchase_request.purchase_type_001")
         procurement_type = self.env.ref("l10n_th_gov_purchase_request.procurement_type_001")
@@ -368,3 +414,113 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
         )
         self.assertEqual(order.state, "approved")
         self.assertEqual(approval.state, "approved")
+
+    def test_invitation_tab_pulls_products_from_referenced_pr(self):
+        request = self._vpk_make_egp_purchase_request()
+        request.line_ids.product_qty = 4.0
+        self.requisition.write({"purchase_request_id": request.id})
+        invitation = self.env["purchase.requisition.egp.invitation"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "partner_id": self.partner.id,
+                "submission_deadline": "2026-09-30 10:00:00",
+            }
+        )
+        self.assertEqual(invitation.line_ids.product_qty, 4.0)
+        request.line_ids.product_qty = 12.0
+        self.requisition.action_fill_invitation_lines_from_pr()
+        self.assertEqual(len(invitation.line_ids), 1)
+        self.assertEqual(invitation.line_ids.product_id, self.product)
+        self.assertEqual(invitation.line_ids.product_qty, 12.0)
+        self.assertEqual(invitation.line_ids.product_uom_id, self.product.uom_id)
+
+    def test_award_approval_docx_template_fills_items(self):
+        import importlib.util
+        from pathlib import Path
+
+        module_path = Path(__file__).resolve().parents[1] / "models" / "award_approval_docx.py"
+        spec = importlib.util.spec_from_file_location("award_approval_docx", module_path)
+        renderer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(renderer)
+        content = renderer.render_award_approval_docx(
+            renderer.load_template_bytes(),
+            {
+                "agency": "กลุ่มงานพัสดุ",
+                "memo_number": "AR-EGP/๒๕๖๙/๐๐๐๑",
+                "memo_date": "๑๘ กันยายน ๒๕๖๙",
+                "subject": "รายงานผลการพิจารณาและขออนุมัติสั่งซื้อสั่งจ้าง",
+                "recipient": "ผู้ว่าราชการจังหวัดภูเก็ต",
+                "intro": "ขอรายงานผลการพิจารณา จำนวน ๑ รายการ โดยวิธีเฉพาะเจาะจง ดังนี้",
+                "items": [{
+                    "item_desc": "๑. โฟมปั๊มเท้า\nจำนวน ๔ แพ็ค",
+                    "vendor_name": "บริษัททดสอบ",
+                    "offer_price": "๑๐๐.๐๐",
+                    "agreed_price": "๑๐๐.๐๐",
+                }],
+                "total_amount": "๑๐๐.๐๐",
+                "criteria": "โดยใช้หลักเกณฑ์ราคา",
+                "hospital_opinion": "เห็นสมควรจัดซื้อ",
+                "request_text": "จึงเรียนมาเพื่อโปรดพิจารณา",
+                "officer_name": "นางทดสอบ",
+                "officer_position": "เจ้าหน้าที่",
+                "head_officer_name": "นางสาวทดสอบ",
+                "head_officer_position": "หัวหน้าเจ้าหน้าที่",
+                "approver_authority": "ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต",
+                "signer_name": "นายทดสอบ",
+                "signer_position": "ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต",
+                "signer_acting": "ปฏิบัติราชการแทนผู้ว่าราชการจังหวัดภูเก็ต",
+            },
+        )
+        from docx import Document
+        import io
+
+        document = Document(io.BytesIO(content))
+        text = "\n".join(paragraph.text for paragraph in document.paragraphs)
+        for table in document.tables:
+            for row in table.rows:
+                text += "\n" + " ".join(cell.text for cell in row.cells)
+        self.assertIn("บันทึกข้อความ", text)
+        self.assertIn("โฟมปั๊มเท้า", text)
+        self.assertIn("๑๐๐.๐๐", text)
+        self.assertNotIn("{{", text)
+
+    def test_file_winner_announcement_from_compare(self):
+        self.env["purchase.requisition.egp.bid"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "partner_id": self.partner.id,
+                "amount_total": 2320.0,
+                "is_winner": True,
+            }
+        )
+        self.requisition.action_file_winner_announcement()
+        documents = self.requisition.egp_document_ids.filtered(
+            lambda document: document.document_type_id.code == "winner_announcement"
+        )
+        self.assertEqual(len(documents), 1)
+        self.assertEqual(documents.document_type_id.name, "ประกาศผู้ชนะ")
+        self.assertTrue(documents.document_file)
+        self.assertTrue(documents.document_filename)
+        self.requisition.action_file_winner_announcement()
+        documents = self.requisition.egp_document_ids.filtered(
+            lambda document: document.document_type_id.code == "winner_announcement"
+        )
+        self.assertEqual(len(documents), 1)
+
+    def test_award_print_files_egp_document(self):
+        report = self.env["purchase.requisition.award.report"].create({
+            "requisition_id": self.requisition.id,
+        })
+        report._file_award_egp_document(b"%PDF-1.4 award")
+        documents = self.requisition.egp_document_ids.filtered(
+            lambda document: document.document_type_id.code == "award_approval"
+        )
+        self.assertEqual(len(documents), 1)
+        self.assertEqual(documents.award_report_id, report)
+        self.assertEqual(documents.document_type_id.name, "รายงานผลการพิจารณา")
+        self.assertTrue(documents.document_file)
+        report._file_award_egp_document(b"%PDF-1.4 award-2")
+        documents = self.requisition.egp_document_ids.filtered(
+            lambda document: document.document_type_id.code == "award_approval"
+        )
+        self.assertEqual(len(documents), 1)

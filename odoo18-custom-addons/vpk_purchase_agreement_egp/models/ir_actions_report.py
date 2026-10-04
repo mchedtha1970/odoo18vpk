@@ -9,7 +9,10 @@ from odoo import models
 
 _logger = logging.getLogger(__name__)
 
-WINNER_ANNOUNCEMENT_REPORT = "vpk_purchase_agreement_egp.report_winner_announcement"
+DOCX_PDF_REPORTS = {
+    "vpk_purchase_agreement_egp.report_winner_announcement",
+    "vpk_purchase_agreement_egp.report_award_approval",
+}
 
 
 class IrActionsReport(models.Model):
@@ -17,7 +20,7 @@ class IrActionsReport(models.Model):
 
     def _render_qweb_pdf_prepare_streams(self, report_ref, data, res_ids=None):
         report_sudo = self._get_report(report_ref)
-        if report_sudo.report_name != WINNER_ANNOUNCEMENT_REPORT:
+        if report_sudo.report_name not in DOCX_PDF_REPORTS:
             return super()._render_qweb_pdf_prepare_streams(
                 report_ref, data, res_ids=res_ids
             )
@@ -40,9 +43,19 @@ class IrActionsReport(models.Model):
         for announcement in announcements:
             try:
                 pdf_bytes = announcement._render_pdf_from_docx()
+                if (
+                    report_sudo.report_name
+                    == "vpk_purchase_agreement_egp.report_award_approval"
+                ):
+                    announcement._file_award_egp_document(pdf_bytes)
             except Exception as error:  # noqa: BLE001 — fall back to QWeb
+                if report_sudo.report_name == (
+                    "vpk_purchase_agreement_egp.report_award_approval"
+                ):
+                    raise
                 _logger.warning(
-                    "Winner announcement Word→PDF failed for %s: %s; using QWeb",
+                    "Word template PDF failed for %s (%s): %s; using QWeb",
+                    report_sudo.report_name,
                     announcement.id,
                     error,
                 )

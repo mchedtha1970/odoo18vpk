@@ -1,5 +1,25 @@
+import base64
+import re
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+
+_THAI_DIGITS = str.maketrans("0123456789", "๐๑๒๓๔๕๖๗๘๙")
+_PRODUCT_CODE_RE = re.compile(r"^\[[^\]]+\]\s*")
+_CRITERIA_TEXT = {
+    "lowest_price": (
+        "โดยเกณฑ์การพิจารณาผลการยื่นข้อเสนอครั้งนี้ "
+        "จะพิจารณาตัดสินโดยใช้หลักเกณฑ์ราคา"
+    ),
+    "price_performance": (
+        "โดยเกณฑ์การพิจารณาผลการยื่นข้อเสนอครั้งนี้ "
+        "จะพิจารณาตัดสินโดยใช้หลักเกณฑ์ราคาประกอบเกณฑ์อื่น"
+    ),
+    "qualification": (
+        "โดยเกณฑ์การพิจารณาผลการยื่นข้อเสนอครั้งนี้ "
+        "จะพิจารณาตัดสินโดยใช้เกณฑ์คุณสมบัติและเงื่อนไข"
+    ),
+}
 
 
 class PurchaseRequisitionAwardReport(models.Model):
@@ -268,6 +288,438 @@ class PurchaseRequisitionAwardReport(models.Model):
         return self.env.ref(
             "vpk_purchase_agreement_egp.action_report_award_approval"
         ).report_action(self)
+
+    def _file_award_egp_document(self, pdf_bytes):
+        """Store the printed report on the e-GP documents tab."""
+        self.ensure_one()
+        if not pdf_bytes or not self.requisition_id:
+            return self.env["purchase.requisition.egp.document"]
+        doc_type = self.env.ref(
+            "vpk_purchase_agreement_egp.egp_document_type_award_approval",
+            raise_if_not_found=False,
+        )
+        if not doc_type:
+            return self.env["purchase.requisition.egp.document"]
+        existing = self.requisition_id.egp_document_ids.filtered(
+            lambda doc: doc.document_type_id == doc_type
+        )[:1]
+        if (
+            existing
+            and "signature_state" in existing._fields
+            and existing.signature_state in ("waiting", "signed")
+        ):
+            return existing
+        filename = "รายงานผลการพิจารณา-%s.pdf" % (
+            self.name or self.requisition_id.name or self.id
+        )
+        vals = {
+            "document_type_id": doc_type.id,
+            "requisition_id": self.requisition_id.id,
+            "egp_reference": self.requisition_id.egp_reference,
+            "document_date": self.date,
+            "document_file": base64.b64encode(pdf_bytes),
+            "document_filename": filename,
+            "award_report_id": self.id,
+        }
+        Document = self.env["purchase.requisition.egp.document"]
+        if existing:
+            existing.write(vals)
+            document = existing
+        else:
+            document = Document.create(vals)
+        ensure = getattr(document, "_ensure_award_official_document", None)
+        if ensure:
+            ensure()
+        return document
+
+    def _thai_digits(self, value):
+        return str(value).translate(_THAI_DIGITS)
+
+    def _money_text(self, amount):
+        return self._thai_digits("{:,.2f}".format(amount or 0.0))
+
+    def _format_memo_date(self):
+        self.ensure_one()
+        if not self.date:
+            return ""
+        formatted = self.env["thai.utils"].format_thai_date(self.date)
+        return self._thai_digits(formatted)
+
+    def _company_text(self, field_name, default=""):
+        company = self.company_id
+        if field_name in company._fields and company[field_name]:
+            return company[field_name]
+        return default
+
+    def _docx_agency(self):
+        self.ensure_one()
+        company = self.company_id
+        agency = self._company_text("vpk_memo_agency", company.name or "")
+        request = self.purchase_request_id
+        department = ""
+        if request and "department_id" in request._fields and request.department_id:
+            department = request.department_id.name or ""
+        if department and department not in agency:
+            agency = ("%s %s" % (department, agency)).strip()
+        phone = self._company_text("vpk_memo_phone")
+        if not phone and company.phone:
+            phone = "โทร. %s" % self._thai_digits(company.phone)
+        if phone and phone not in agency:
+            agency = "%s  %s" % (agency, phone)
+        return agency.strip()
+
+    def _docx_recipient(self):
+        self.ensure_one()
+        request = self.purchase_request_id
+        if request and "memo_to" in request._fields and request.memo_to:
+            return request.memo_to
+        return self._company_text("vpk_memo_default_to", "ผู้ว่าราชการจังหวัดภูเก็ต")
+
+    def _docx_method_phrase(self):
+        self.ensure_one()
+        requisition = self.requisition_id
+        method = ""
+        if requisition.procurement_method_id:
+            method = requisition.procurement_method_id.name or ""
+        method = method or "วิธีเฉพาะเจาะจง"
+        if method.startswith("โดย"):
+            return method
+        return "โดย%s" % method
+
+    def _docx_item_rows(self):
+        self.ensure_one()
+        winner = self.winner_bid_id
+        bids = winner if winner else self.requisition_id.egp_bid_ids
+        rows = []
+        for bid in bids:
+            vendor = bid.partner_id.name or ""
+            agreed_bid = bool(winner and bid == winner) or bool(bid.is_winner)
+            lines = bid.line_ids
+            if not lines:
+                continue
+            amounts = [line.price_subtotal or 0.0 for line in lines]
+            if not any(amounts) and len(lines) == 1 and bid.amount_total:
+                amounts = [bid.amount_total]
+            elif not any(amounts) and bid.amount_total:
+                amounts = [0.0 for _line in lines]
+            for line, amount in zip(lines, amounts):
+                rows.append(self._docx_item_from_line(line, vendor, amount, agreed_bid, len(rows) + 1))
+        if rows:
+            return rows
+        for line in self.line_ids:
+            agreed = line.result == "winner"
+            amount = line.amount_total or 0.0
+            label = line.partner_id.name or line.egp_bid_reference or "-"
+            rows.append({
+                "item_desc": "%s %s" % (self._thai_digits("%s." % (len(rows) + 1)), label),
+                "vendor_name": line.partner_id.name or "",
+                "offer_price": self._money_text(amount) if amount else "",
+                "agreed_price": self._money_text(amount) if agreed and amount else "",
+            })
+        return rows
+
+    def _docx_item_from_line(self, line, vendor, amount, agreed, index):
+        name = (line.name or line.product_id.display_name or "").strip()
+        name = _PRODUCT_CODE_RE.sub("", name)
+        qty = line.product_qty or 0.0
+        uom = line.product_uom_id.name or ""
+        if qty:
+            qty_text = (
+                self._thai_digits(int(qty))
+                if float(qty).is_integer()
+                else self._thai_digits(qty)
+            )
+            detail = "%s\nจำนวน %s %s" % (name, qty_text, uom)
+        else:
+            detail = name
+        price = self._money_text(amount) if amount else ""
+        return {
+            "item_desc": "%s %s" % (self._thai_digits("%s." % index), detail),
+            "vendor_name": vendor,
+            "offer_price": price,
+            "agreed_price": price if agreed else "",
+        }
+
+    def _docx_total_text(self, items):
+        self.ensure_one()
+        if self.winner_amount:
+            return self._money_text(self.winner_amount)
+        total = 0.0
+        for item in items:
+            raw = (item.get("agreed_price") or "").translate(
+                str.maketrans("๐๑๒๓๔๕๖๗๘๙", "0123456789")
+            ).replace(",", "")
+            if raw:
+                total += float(raw)
+        if not total:
+            return ""
+        return self._money_text(total)
+
+    def _docx_values(self):
+        self.ensure_one()
+        items = self._docx_item_rows()
+        company = self.company_id
+        hospital = company.name or "โรงพยาบาลวชิระภูเก็ต"
+        project = self.requisition_id.egp_project_name or ""
+        count = self._thai_digits(len(items) or 0)
+        if project:
+            intro = (
+                "ขอรายงานผลการพิจารณา%s จำนวน %s รายการ %s ดังนี้"
+                % (project, count, self._docx_method_phrase())
+            )
+        else:
+            intro = (
+                "ขอรายงานผลการพิจารณาจัดซื้อจัดจ้าง จำนวน %s รายการ %s ดังนี้"
+                % (count, self._docx_method_phrase())
+            )
+        signer_position = self._company_text(
+            "official_doc_signer_position",
+            self._company_text("vpk_memo_approver_position", "ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต"),
+        )
+        return {
+            "agency": self._docx_agency(),
+            "memo_number": self._thai_digits(self.name or ""),
+            "memo_date": self._format_memo_date(),
+            "subject": self.subject or "รายงานผลการพิจารณาและขออนุมัติสั่งซื้อสั่งจ้าง",
+            "recipient": self._docx_recipient(),
+            "intro": intro,
+            "items": items,
+            "total_amount": self._docx_total_text(items),
+            "criteria": _CRITERIA_TEXT.get(
+                self.evaluation_method, _CRITERIA_TEXT["lowest_price"]
+            ),
+            "hospital_opinion": (
+                "%sพิจารณาแล้ว เห็นสมควรจัดซื้อจากผู้เสนอราคาดังกล่าว" % hospital
+            ),
+            "request_text": (
+                "จึงเรียนมาเพื่อโปรดพิจารณา หากเห็นชอบขอได้โปรดอนุมัติให้สั่งซื้อสั่งจ้าง"
+                "จากผู้เสนอราคาดังกล่าว"
+            ),
+            "officer_name": self._company_text("official_doc_officer_name", "........................"),
+            "officer_position": self._company_text("official_doc_officer_position", "เจ้าหน้าที่"),
+            "head_officer_name": self._company_text(
+                "official_doc_head_officer_name",
+                self._company_text("vpk_memo_proposer_name", "........................"),
+            ),
+            "head_officer_position": self._company_text(
+                "official_doc_head_officer_position",
+                self._company_text("vpk_memo_proposer_position", "หัวหน้าเจ้าหน้าที่"),
+            ),
+            "approver_authority": signer_position,
+            "signer_name": self._company_text(
+                "official_doc_signer_name",
+                self._company_text("vpk_memo_approver_name", "........................"),
+            ),
+            "signer_position": signer_position,
+            "signer_acting": self._company_text(
+                "vpk_memo_approver_acting",
+                "ปฏิบัติราชการแทนผู้ว่าราชการจังหวัดภูเก็ต",
+            ),
+        }
+
+    def _official_award_template(self):
+        """Template record already set on หนังสือราชการ for this form."""
+        self.ensure_one()
+        if "vpk.official.document.template" not in self.env:
+            return self.env["purchase.requisition.award.report"]
+        templates = self.env["vpk.official.document.template"].sudo().search(
+            [("active", "=", True)]
+        )
+        by_type = templates.filtered(
+            lambda item: item.document_type == "award_approval"
+        )[:1]
+        if by_type:
+            return by_type
+        for code in ("award_approval", "PO_APP"):
+            found = templates.filtered(lambda item, wanted=code: item.code == wanted)
+            if found:
+                return found[:1]
+        return templates.filtered(
+            lambda item: "รายงานผลการพิจารณา" in (item.name or "")
+        )[:1]
+
+    def _award_template_bytes(self):
+        """Load the Word file from the official-document template record."""
+        self.ensure_one()
+        import base64
+
+        template = self._official_award_template()
+        if template and template.datas:
+            return base64.b64decode(template.datas), template
+        from .award_approval_docx import load_template_bytes
+
+        return load_template_bytes(), template
+
+    def _committee_member_values(self):
+        self.ensure_one()
+        request = self.purchase_request_id
+        lines = request.work_acceptance_committee_ids if (
+            request and "work_acceptance_committee_ids" in request._fields
+        ) else []
+        role_labels = {
+            "chairman": "ประธานกรรมการ",
+            "committee": "กรรมการ",
+        }
+        members = []
+        for line in lines:
+            position = ""
+            employee = line.employee_id
+            if employee and employee.job_id:
+                position = employee.job_id.name or ""
+            members.append({
+                "name": line.name or "",
+                "position": position,
+                "role": role_labels.get(line.approve_role, "กรรมการ"),
+            })
+        return members
+
+    def _specific_method_values(self):
+        """Values for the Word template already stored as PO_APP."""
+        self.ensure_one()
+        amount = self.winner_amount or 0.0
+        amount_text = self._money_text(amount) if amount else ""
+        baht_text = ""
+        if self.currency_id and amount:
+            try:
+                baht_text = self.currency_id.with_context(lang="th_TH").amount_to_text(
+                    amount
+                )
+            except Exception:
+                baht_text = ""
+        items = self._docx_item_rows()
+        work_lines = []
+        for item in items:
+            label = (item.get("item_desc") or "").replace("\n", " ")
+            price = item.get("agreed_price") or item.get("offer_price") or ""
+            if price:
+                work_lines.append("%s เป็นเงิน %s บาท" % (label, price))
+            elif label:
+                work_lines.append(label)
+        project = self.requisition_id.egp_project_name or "จัดซื้อจัดจ้าง"
+        hospital = self.company_id.name or "โรงพยาบาลวชิระภูเก็ต"
+        method = self._docx_method_phrase()
+        body = (
+            "ด้วย%s  มีความประสงค์ในการ%s  จำนวน  %s  รายการ  "
+            "เป็นจำนวนเงินทั้งสิ้น  %s  บาท%s  %s"
+        ) % (
+            hospital,
+            project,
+            self._thai_digits(len(items) or 0),
+            amount_text or "-",
+            ("  (%s)" % baht_text) if baht_text else "",
+            method,
+        )
+        budget_source = "งบประมาณของหน่วยงาน"
+        request = self.purchase_request_id
+        if request and "budget_source" in request._fields and request.budget_source:
+            budget_source = request.budget_source
+        delivery = "๓๐"
+        if request and "memo_delivery_days" in request._fields and request.memo_delivery_days:
+            delivery = self._thai_digits(request.memo_delivery_days)
+        signer_position = self._company_text(
+            "official_doc_signer_position",
+            self._company_text(
+                "vpk_memo_approver_position", "ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต"
+            ),
+        )
+        return {
+            "agency": self._docx_agency(),
+            "memo_number": self._thai_digits(self.name or ""),
+            "order_date": self._format_memo_date(),
+            "subject": self.subject or "รายงานผลการพิจารณาและขออนุมัติสั่งซื้อสั่งจ้าง",
+            "recipient": self._docx_recipient(),
+            "body": body,
+            "reason": "เพื่อจัดซื้อจัดจ้าง%s" % project,
+            "work_detail": "\n".join(work_lines),
+            "amount_text": amount_text,
+            "baht_text": baht_text,
+            "price_mid_source": "ราคาที่ได้รับการพิจารณา",
+            "budget_source": budget_source,
+            "delivery_days": delivery,
+            "criteria_text": _CRITERIA_TEXT.get(
+                self.evaluation_method, _CRITERIA_TEXT["lowest_price"]
+            ).replace("โดยเกณฑ์การพิจารณาผลการยื่นข้อเสนอครั้งนี้ จะพิจารณาตัดสินโดยใช้", "การพิจารณาคัดเลือกข้อเสนอโดยใช้"),
+            "members": self._committee_member_values(),
+            "officer_name": self._company_text("official_doc_officer_name", ""),
+            "officer_position": self._company_text("official_doc_officer_position", "เจ้าหน้าที่"),
+            "head_officer_name": self._company_text(
+                "official_doc_head_officer_name",
+                self._company_text("vpk_memo_proposer_name", ""),
+            ),
+            "head_officer_position": self._company_text(
+                "official_doc_head_officer_position",
+                self._company_text("vpk_memo_proposer_position", "หัวหน้าเจ้าหน้าที่"),
+            ),
+            "signer_name": self._company_text(
+                "official_doc_signer_name",
+                self._company_text("vpk_memo_approver_name", ""),
+            ),
+            "signer_position": signer_position,
+            "approver_acting": self._company_text(
+                "vpk_memo_approver_acting",
+                "ปฏิบัติราชการแทนผู้ว่าราชการจังหวัดภูเก็ต",
+            ),
+        }
+
+    def _render_docx_bytes(self):
+        self.ensure_one()
+        from .award_approval_docx import (
+            AwardApprovalRenderError,
+            render_award_approval_docx,
+        )
+
+        template_bytes, template = self._award_template_bytes()
+        if not template_bytes:
+            raise UserError(
+                _("ไม่พบไฟล์แบบฟอร์มรายงานผลการพิจารณาในเอกสารราชการ")
+            )
+        render_errors = (AwardApprovalRenderError,)
+        try:
+            from odoo.addons.vpk_official_document.models.docx_renderer import (
+                OfficialDocumentRenderError,
+                render_specific_method_approval_docx,
+            )
+        except ImportError:
+            OfficialDocumentRenderError = AwardApprovalRenderError
+            render_specific_method_approval_docx = None
+        render_errors = (AwardApprovalRenderError, OfficialDocumentRenderError)
+        use_award_form = bool(
+            template and template.document_type == "award_approval"
+        ) or b"item_desc" in template_bytes
+        try:
+            if use_award_form:
+                return render_award_approval_docx(
+                    template_bytes, self._docx_values()
+                )
+            if render_specific_method_approval_docx is None:
+                raise UserError(
+                    _("ไม่พบตัวเติมแบบฟอร์มในโมดูลเอกสารราชการ")
+                )
+            return render_specific_method_approval_docx(
+                template_bytes, self._specific_method_values()
+            )
+        except render_errors as error:
+            label = template.display_name if template else ""
+            raise UserError(
+                _("เติมแบบฟอร์ม %s ไม่สำเร็จ: %s") % (label, error)
+            ) from error
+
+    def _render_pdf_from_docx(self):
+        self.ensure_one()
+        docx_content = self._render_docx_bytes()
+        try:
+            from odoo.addons.vpk_official_document.models.pdf_converter import (
+                PdfConversionError,
+                convert_docx_bytes_to_pdf,
+            )
+        except ImportError as error:
+            raise UserError(
+                _("ไม่พบตัวแปลง PDF กรุณาติดตั้งโมดูลเอกสารราชการก่อนพิมพ์รายงานผล")
+            ) from error
+        try:
+            return convert_docx_bytes_to_pdf(docx_content)
+        except PdfConversionError as error:
+            raise UserError(str(error)) from error
 
     def action_create_winner_announcement(self):
         self.ensure_one()
