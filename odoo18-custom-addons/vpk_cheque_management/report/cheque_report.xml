@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_bank_cheque" model="report.paperformat">
+        <field name="name">แบบกระดาษเช็ค</field>
+        <field name="default" eval="False"/>
+        <field name="format">custom</field>
+        <field name="page_width">203</field>
+        <field name="page_height">93</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">0</field>
+        <field name="margin_bottom">0</field>
+        <field name="margin_left">0</field>
+        <field name="margin_right">0</field>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <template id="cheque_sheet">
+        <div t-attf-style="position:relative; width:#{template.cheque_width_px}px; height:#{template.cheque_height_px}px; overflow:hidden; margin:0; padding:0;">
+            <img t-if="template.cheque_image" t-att-src="image_data_uri(template.cheque_image)" t-attf-style="width:#{template.cheque_width_px}px; height:#{template.cheque_height_px}px;"/>
+            <t t-foreach="template.line_ids" t-as="line">
+                <t t-set="value" t-value="value_of(line)"/>
+                <div t-if="value" t-attf-style="position:absolute; top:#{line.top_displacement}px; left:#{line.left_displacement}px; width:#{line.width}px; height:#{line.height}px; font-size:#{line.font_size or 20}px; letter-spacing:#{line.letter_spacing or 0}px; font-family:#{line.font_family or 'sans-serif'}; overflow:hidden; white-space:nowrap; #{'border-top:1px solid #000; border-bottom:1px solid #000; text-align:center;' if line.attribute_id.attribute == 'ac_pay' else ''}">
+                    <t t-esc="value"/>
+                </div>
+            </t>
+        </div>
+    </template>
+
+    <template id="report_cheque_preview">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="template">
+                <div class="article" style="margin:0; padding:0;">
+                    <t t-call="vpk_cheque_management.cheque_sheet">
+                        <t t-set="value_of" t-value="template.preview_line_value"/>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_cheque_print">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="template" t-value="o.cheque_book_id.template_id"/>
+                <div class="article" style="margin:0; padding:0;">
+                    <t t-call="vpk_cheque_management.cheque_sheet">
+                        <t t-set="value_of" t-value="o.cheque_line_value"/>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_cheque_preview" model="ir.actions.report">
+        <field name="name">ตัวอย่างเช็ค</field>
+        <field name="model">vpk.bank.cheque.template</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_cheque_management.report_cheque_preview</field>
+        <field name="report_file">vpk_cheque_management.report_cheque_preview</field>
+        <field name="print_report_name">'ตัวอย่างเช็ค %s' % object.name</field>
+        <field name="paperformat_id" ref="paperformat_bank_cheque"/>
+    </record>
+
+    <record id="action_report_cheque_print" model="ir.actions.report">
+        <field name="name">พิมพ์เช็ค</field>
+        <field name="model">vpk.bank.cheque.print.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_cheque_management.report_cheque_print</field>
+        <field name="report_file">vpk_cheque_management.report_cheque_print</field>
+        <field name="print_report_name">'เช็ค %s' % (object.cheque_leaf_id.cheque_number or '')</field>
+        <field name="paperformat_id" ref="paperformat_bank_cheque"/>
+    </record>
+</odoo>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_bank_cheque_root" name="จัดการเช็ค" parent="account.menu_finance" sequence="45" groups="account.group_account_invoice"/>
+    <menuitem id="menu_bank_cheque_book" name="สมุดเช็ค" parent="menu_bank_cheque_root" action="action_bank_cheque_book" sequence="10"/>
+    <menuitem id="menu_bank_cheque_leaf" name="ใบเช็ค" parent="menu_bank_cheque_root" action="action_bank_cheque_leaf" sequence="20"/>
+    <menuitem id="menu_bank_cheque_template" name="แบบฟอร์มเช็ค" parent="menu_bank_cheque_root" action="action_bank_cheque_template" sequence="30" groups="account.group_account_manager"/>
+    <menuitem id="menu_bank_cheque_attribute" name="รายการบนเช็ค" parent="menu_bank_cheque_root" action="action_bank_cheque_attribute" sequence="40" groups="account.group_account_manager"/>
+</odoo>

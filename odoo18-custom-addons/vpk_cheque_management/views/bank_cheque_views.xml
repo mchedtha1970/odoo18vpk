@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_bank_cheque_attribute_list" model="ir.ui.view">
+        <field name="name">vpk.bank.cheque.attribute.list</field>
+        <field name="model">vpk.bank.cheque.attribute</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="attribute"/>
+                <field name="date_format"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_bank_cheque_attribute_form" model="ir.ui.view">
+        <field name="name">vpk.bank.cheque.attribute.form</field>
+        <field name="model">vpk.bank.cheque.attribute</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="attribute"/>
+                            <field name="date_format" invisible="attribute != 'cheque_date'" required="attribute == 'cheque_date'"/>
+                        </group>
+                        <group>
+                            <field name="demo_data" invisible="attribute == 'cheque_date'"/>
+                            <field name="demo_data_date" invisible="attribute != 'cheque_date'"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_bank_cheque_template_list" model="ir.ui.view">
+        <field name="name">vpk.bank.cheque.template.list</field>
+        <field name="model">vpk.bank.cheque.template</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="bank_id"/>
+                <field name="measure_unit"/>
+                <field name="cheque_width"/>
+                <field name="cheque_height"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_bank_cheque_template_form" model="ir.ui.view">
+        <field name="name">vpk.bank.cheque.template.form</field>
+        <field name="model">vpk.bank.cheque.template</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_open_layout" type="object" string="จัดตำแหน่งบนเช็ค" class="btn-primary" groups="account.group_account_manager"/>
+                    <button name="action_preview_cheque" type="object" string="ดูตัวอย่าง" groups="account.group_account_manager"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="เก็บถาวร" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="เช่น เช็คกรุงไทย"/></h1>
+                    </div>
+                    <group>
+                        <group string="ธนาคารและขนาด">
+                            <field name="bank_id"/>
+                            <field name="measure_unit"/>
+                            <field name="cheque_width"/>
+                            <field name="cheque_height"/>
+                            <field name="max_char_in_line1"/>
+                        </group>
+                        <group string="ภาพเช็ค">
+                            <field name="cheque_image" widget="image" nolabel="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="attribute_id"/>
+                            <field name="font_size"/>
+                            <field name="letter_spacing"/>
+                            <field name="top_displacement"/>
+                            <field name="left_displacement"/>
+                            <field name="width"/>
+                            <field name="height"/>
+                            <button name="action_reset_position" type="object" string="ล้างตำแหน่ง" icon="fa-undo"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_bank_cheque_book_list" model="ir.ui.view">
+        <field name="name">vpk.bank.cheque.book.list</field>
+        <field name="model">vpk.bank.cheque.book</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="bank_id"/>
+                <field name="template_id"/>
+                <field name="cheque_book_leaves"/>
+                <field name="initial_cheque_number"/>
+                <field name="last_cheque_number"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_bank_cheque_book_form" model="ir.ui.view">
+        <field name="name">vpk.bank.cheque.book.form</field>
+        <field name="model">vpk.bank.cheque.book</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="เก็บถาวร" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <field name="has_printed_leaf" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="เช่น สมุดเช็ค 1/2569"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="template_id"/>
+                            <field name="bank_id"/>
+                            <field name="account_number"/>
+                        </group>
+                        <group>
+                            <field name="cheque_book_leaves" readonly="has_printed_leaf"/>
+                            <field name="initial_cheque_number" readonly="has_printed_leaf"/>
+                            <field name="last_cheque_number"/>
+                            <button name="action_create_leaves" type="object" string="สร้างใบเช็ค" class="btn-secondary" invisible="leaf_ids or not id" groups="account.group_account_manager"/>
+                        </group>
+                    </group>
+                    <field name="leaf_ids">
+                        <list decoration-danger="state == 'cancelled'" decoration-success="state == 'printed'" create="0" delete="0">
+                            <field name="state"/>
+                            <field name="cheque_number"/>
+                            <field name="paid_to"/>
+                            <field name="issue_date"/>
+                            <field name="amount" widget="monetary"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="partner_id" optional="hide"/>
+                            <field name="move_id" optional="hide"/>
+                            <field name="payment_id" optional="hide"/>
+                            <button name="action_print" type="object" string="พิมพ์เช็ค" icon="fa-print" invisible="state == 'cancelled'"/>
+                            <button name="action_cancel" type="object" string="ยกเลิก" icon="fa-times" invisible="state == 'cancelled'"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_bank_cheque_leaf_list" model="ir.ui.view">
+        <field name="name">vpk.bank.cheque.leaf.list</field>
+        <field name="model">vpk.bank.cheque.leaf</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="state == 'cancelled'" decoration-success="state == 'printed'" create="0" delete="0">
+                <field name="book_id"/>
+                <field name="cheque_number"/>
+                <field name="state"/>
+                <field name="paid_to"/>
+                <field name="issue_date"/>
+                <field name="amount" widget="monetary"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="partner_id"/>
+                <button name="action_print" type="object" string="พิมพ์เช็ค" icon="fa-print" invisible="state == 'cancelled'"/>
+                <button name="action_cancel" type="object" string="ยกเลิก" icon="fa-times" invisible="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_bank_cheque_leaf_search" model="ir.ui.view">
+        <field name="name">vpk.bank.cheque.leaf.search</field>
+        <field name="model">vpk.bank.cheque.leaf</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="cheque_number"/>
+                <field name="paid_to"/>
+                <field name="partner_id"/>
+                <field name="book_id"/>
+                <filter name="blank" string="ยังไม่พิมพ์" domain="[('state', '=', 'blank')]"/>
+                <filter name="printed" string="พิมพ์แล้ว" domain="[('state', '=', 'printed')]"/>
+                <filter name="cancelled" string="ยกเลิก" domain="[('state', '=', 'cancelled')]"/>
+                <group expand="0" string="จัดกลุ่ม">
+                    <filter name="group_book" string="สมุดเช็ค" context="{'group_by': 'book_id'}"/>
+                    <filter name="group_state" string="สถานะ" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_bank_cheque_template" model="ir.actions.act_window">
+        <field name="name">แบบฟอร์มเช็ค</field>
+        <field name="res_model">vpk.bank.cheque.template</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_bank_cheque_book" model="ir.actions.act_window">
+        <field name="name">สมุดเช็ค</field>
+        <field name="res_model">vpk.bank.cheque.book</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_bank_cheque_attribute" model="ir.actions.act_window">
+        <field name="name">รายการบนเช็ค</field>
+        <field name="res_model">vpk.bank.cheque.attribute</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_bank_cheque_leaf" model="ir.actions.act_window">
+        <field name="name">ใบเช็ค</field>
+        <field name="res_model">vpk.bank.cheque.leaf</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_printed': 0}</field>
+    </record>
+</odoo>

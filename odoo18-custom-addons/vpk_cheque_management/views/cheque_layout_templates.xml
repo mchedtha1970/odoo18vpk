@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="cheque_layout_page" name="จัดตำแหน่งเช็ค">
+        <html>
+            <head>
+                <meta charset="utf-8"/>
+                <title>จัดตำแหน่งเช็ค</title>
+                <style>
+                    body { font-family: sans-serif; margin: 24px; color: #1f2933; }
+                    h1 { font-size: 22px; margin-bottom: 8px; }
+                    .note { background: #e8f4fd; padding: 10px 12px; border-radius: 6px; margin-bottom: 16px; }
+                    .layout { display: flex; gap: 24px; align-items: flex-start; }
+                    #stage { position: relative; display: inline-block; border: 1px solid #cbd2d9; cursor: crosshair; }
+                    #stage img { display: block; }
+                    #box { position: absolute; border: 2px solid #c0392b; background: rgba(192, 57, 43, 0.15); display: none; pointer-events: none; }
+                    label { display: block; font-weight: 600; margin-top: 8px; }
+                    input, select { width: 220px; padding: 6px; }
+                    button { margin-top: 12px; padding: 8px 14px; }
+                    table { border-collapse: collapse; margin-top: 24px; width: 100%; }
+                    th, td { border-bottom: 1px solid #e4e7eb; text-align: left; padding: 6px; }
+                </style>
+            </head>
+            <body>
+                <h1>จัดตำแหน่งบนเช็ค <t t-esc="template.name"/></h1>
+                <div class="note">เลือกรายการ แล้วลากกรอบบนภาพเช็ค จากนั้นกดบันทึกตำแหน่ง หน่วยเป็นพิกเซลตามขนาดเช็คที่กำหนด</div>
+                <div t-if="updated" class="note">บันทึกตำแหน่งแล้ว</div>
+                <div class="layout">
+                    <div id="stage">
+                        <img id="cheque" t-if="template.cheque_image" t-attf-src="/web/image/vpk.bank.cheque.template/{{template.id}}/cheque_image" t-attf-style="width:{{template.cheque_width_px}}px; height:{{template.cheque_height_px}}px;"/>
+                        <div id="box"/>
+                    </div>
+                    <form action="/vpk/cheque/layout/update" method="post">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="template_id" t-att-value="template.id"/>
+                        <label>รายการบนเช็ค</label>
+                        <select name="line_id" id="line_id" required="required">
+                            <option value="">เลือกรายการ</option>
+                            <t t-foreach="template.line_ids" t-as="line">
+                                <option t-att-value="line.id" t-att-data-x="line.left_displacement" t-att-data-y="line.top_displacement" t-att-data-w="line.width" t-att-data-h="line.height">
+                                    <t t-esc="line.attribute_id.name"/>
+                                </option>
+                            </t>
+                        </select>
+                        <label>จากขอบซ้าย</label>
+                        <input id="x" name="x" required="required"/>
+                        <label>จากขอบบน</label>
+                        <input id="y" name="y" required="required"/>
+                        <label>ความกว้าง</label>
+                        <input id="w" name="w" required="required"/>
+                        <label>ความสูง</label>
+                        <input id="h" name="h" required="required"/>
+                        <div>
+                            <button type="submit">บันทึกตำแหน่ง</button>
+                            <a t-attf-href="/vpk/cheque/preview/#{template.id}" target="_blank">ดูบนหน้าจอ</a>
+                        </div>
+                    </form>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>รายการ</th>
+                            <th>จากขอบบน</th>
+                            <th>จากขอบซ้าย</th>
+                            <th>ความกว้าง</th>
+                            <th>ความสูง</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="template.line_ids" t-as="line">
+                            <td><t t-esc="line.attribute_id.name"/></td>
+                            <td><t t-esc="line.top_displacement"/></td>
+                            <td><t t-esc="line.left_displacement"/></td>
+                            <td><t t-esc="line.width"/></td>
+                            <td><t t-esc="line.height"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <script>
+                    (function () {
+                        var stage = document.getElementById('stage');
+                        var box = document.getElementById('box');
+                        var select = document.getElementById('line_id');
+                        var x = document.getElementById('x');
+                        var y = document.getElementById('y');
+                        var w = document.getElementById('w');
+                        var h = document.getElementById('h');
+                        var start = null;
+                        function show(left, top, width, height) {
+                            x.value = Math.round(left);
+                            y.value = Math.round(top);
+                            w.value = Math.round(width);
+                            h.value = Math.round(height);
+                            box.style.display = 'block';
+                            box.style.left = x.value + 'px';
+                            box.style.top = y.value + 'px';
+                            box.style.width = w.value + 'px';
+                            box.style.height = h.value + 'px';
+                        }
+                        select.addEventListener('change', function () {
+                            var option = select.options[select.selectedIndex];
+                            if (!option || !option.value) { box.style.display = 'none'; return; }
+                            show(option.dataset.x || 0, option.dataset.y || 0, option.dataset.w || 0, option.dataset.h || 0);
+                        });
+                        stage.addEventListener('pointerdown', function (event) {
+                            var rect = stage.getBoundingClientRect();
+                            start = {x: event.clientX - rect.left, y: event.clientY - rect.top};
+                        });
+                        stage.addEventListener('pointermove', function (event) {
+                            if (!start) { return; }
+                            var rect = stage.getBoundingClientRect();
+                            var currentX = event.clientX - rect.left;
+                            var currentY = event.clientY - rect.top;
+                            show(Math.min(start.x, currentX), Math.min(start.y, currentY), Math.abs(currentX - start.x), Math.abs(currentY - start.y));
+                        });
+                        stage.addEventListener('pointerup', function () { start = null; });
+                    })();
+                </script>
+            </body>
+        </html>
+    </template>
+
+    <template id="cheque_preview_page" name="ตัวอย่างเช็คบนหน้าจอ">
+        <html>
+            <head>
+                <meta charset="utf-8"/>
+                <title>ตัวอย่างเช็ค</title>
+                <style>
+                    body { margin: 0; }
+                    #sheet { position: relative; }
+                    #sheet img { display: block; }
+                    .field { position: absolute; overflow: hidden; white-space: nowrap; }
+                </style>
+            </head>
+            <body>
+                <div id="sheet" t-attf-style="width:#{template.cheque_width_px}px; height:#{template.cheque_height_px}px;">
+                    <img t-if="template.cheque_image" t-attf-src="/web/image/vpk.bank.cheque.template/{{template.id}}/cheque_image" t-attf-style="width:#{template.cheque_width_px}px; height:#{template.cheque_height_px}px;"/>
+                    <t t-foreach="template.line_ids" t-as="line">
+                        <div class="field" t-attf-style="top:#{line.top_displacement}px; left:#{line.left_displacement}px; width:#{line.width}px; height:#{line.height}px; font-size:#{line.font_size or 20}px; letter-spacing:#{line.letter_spacing or 0}px;">
+                            <t t-esc="template.preview_line_value(line)"/>
+                        </div>
+                    </t>
+                </div>
+            </body>
+        </html>
+    </template>
+</odoo>

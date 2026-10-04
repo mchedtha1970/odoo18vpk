@@ -1,0 +1,13 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_bank_cheque_attribute_invoice,vpk.bank.cheque.attribute.invoice,model_vpk_bank_cheque_attribute,account.group_account_invoice,1,0,0,0
+access_vpk_bank_cheque_attribute_manager,vpk.bank.cheque.attribute.manager,model_vpk_bank_cheque_attribute,account.group_account_manager,1,1,1,1
+access_vpk_bank_cheque_template_invoice,vpk.bank.cheque.template.invoice,model_vpk_bank_cheque_template,account.group_account_invoice,1,0,0,0
+access_vpk_bank_cheque_template_manager,vpk.bank.cheque.template.manager,model_vpk_bank_cheque_template,account.group_account_manager,1,1,1,1
+access_vpk_bank_cheque_attribute_line_invoice,vpk.bank.cheque.attribute.line.invoice,model_vpk_bank_cheque_attribute_line,account.group_account_invoice,1,0,0,0
+access_vpk_bank_cheque_attribute_line_manager,vpk.bank.cheque.attribute.line.manager,model_vpk_bank_cheque_attribute_line,account.group_account_manager,1,1,1,1
+access_vpk_bank_cheque_book_invoice,vpk.bank.cheque.book.invoice,model_vpk_bank_cheque_book,account.group_account_invoice,1,1,1,0
+access_vpk_bank_cheque_book_manager,vpk.bank.cheque.book.manager,model_vpk_bank_cheque_book,account.group_account_manager,1,1,1,1
+access_vpk_bank_cheque_leaf_invoice,vpk.bank.cheque.leaf.invoice,model_vpk_bank_cheque_leaf,account.group_account_invoice,1,1,1,0
+access_vpk_bank_cheque_leaf_manager,vpk.bank.cheque.leaf.manager,model_vpk_bank_cheque_leaf,account.group_account_manager,1,1,1,1
+access_vpk_bank_cheque_print_wizard_invoice,vpk.bank.cheque.print.wizard.invoice,model_vpk_bank_cheque_print_wizard,account.group_account_invoice,1,1,1,1
+access_vpk_bank_cheque_print_wizard_manager,vpk.bank.cheque.print.wizard.manager,model_vpk_bank_cheque_print_wizard,account.group_account_manager,1,1,1,1
