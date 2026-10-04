@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "VPK Maintenance Sub State",
-    "version": "18.0.1.6.6",
+    "version": "18.0.1.6.7",
     "category": "Manufacturing/Maintenance",
     "summary": "สถานะย่อย เบิกอะไหล่ เปิด PR และแทงจำหน่ายจากคำขอซ่อมบำรุง",
     "author": "VPK",

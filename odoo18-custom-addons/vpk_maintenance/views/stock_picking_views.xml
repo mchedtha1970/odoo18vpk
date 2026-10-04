@@ -67,7 +67,7 @@
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='operations']" position="after">
-                <page string="รายละเอียดการรับ (LOT)" name="detailed_operations">
+                <page string="รายละเอียดการปฏิบัติการ" name="detailed_operations">
                     <field name="move_line_ids_without_package"
                         readonly="state == 'done' and is_locked"
                         context="{'default_picking_id': id, 'default_location_id': location_id, 'default_location_dest_id': location_dest_id, 'default_company_id': company_id, 'vpk_detailed_lot_entry': True}">
