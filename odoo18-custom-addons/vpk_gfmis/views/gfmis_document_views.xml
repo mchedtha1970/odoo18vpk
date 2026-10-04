@@ -58,14 +58,14 @@
         <field name="arch" type="xml">
             <form string="เอกสารกระบวนการ GFMIS">
                 <header>
-                    <button name="action_record_gfmis" type="object" string="บันทึกใน GFMIS" class="btn-primary" invisible="state != 'draft'"/>
-                    <button name="action_submit_approve" type="object" string="ส่งอนุมัติขอเบิก (อม.01)" class="btn-primary" invisible="state != 'recorded'"/>
+                    <button name="action_record_gfmis" type="object" string="บันทึกใน GFMIS" class="btn-primary" invisible="state != 'draft'" groups="vpk_gfmis.group_gfmis_user"/>
+                    <button name="action_submit_approve" type="object" string="ส่งอนุมัติขอเบิก (อม.01)" class="btn-primary" invisible="state != 'recorded'" groups="vpk_gfmis.group_gfmis_user"/>
                     <button name="action_approve_request" type="object" string="อนุมัติขอเบิก (อม.01)" class="btn-primary" invisible="state != 'wait_approve_request'" groups="vpk_gfmis.group_gfmis_manager"/>
                     <button name="action_approve_pay" type="object" string="อนุมัติสั่งจ่าย (อม.02)" class="btn-primary" invisible="state != 'wait_approve_pay'" groups="vpk_gfmis.group_gfmis_manager"/>
-                    <button name="action_mark_paid" type="object" string="บันทึกจ่ายแล้ว" invisible="state not in ('sent_treasury', 'wait_agency_pay')"/>
-                    <button name="action_mark_returned" type="object" string="เบิกเกินส่งคืน" invisible="state not in ('paid', 'agency_paid', 'wait_agency_pay', 'sent_treasury')"/>
-                    <button name="action_cancel" type="object" string="ยกเลิก" invisible="state not in ('draft', 'recorded', 'wait_approve_request', 'wait_approve_pay')"/>
-                    <button name="action_draft" type="object" string="ตั้งเป็นร่าง" invisible="state not in ('cancelled', 'recorded')"/>
+                    <button name="action_mark_paid" type="object" string="บันทึกจ่ายแล้ว" invisible="state not in ('sent_treasury', 'wait_agency_pay')" groups="vpk_gfmis.group_gfmis_user"/>
+                    <button name="action_mark_returned" type="object" string="เบิกเกินส่งคืน" invisible="state not in ('paid', 'agency_paid', 'wait_agency_pay', 'sent_treasury')" groups="vpk_gfmis.group_gfmis_user"/>
+                    <button name="action_cancel" type="object" string="ยกเลิก" invisible="state not in ('draft', 'recorded', 'wait_approve_request', 'wait_approve_pay')" groups="vpk_gfmis.group_gfmis_user"/>
+                    <button name="action_draft" type="object" string="ตั้งเป็นร่าง" invisible="state not in ('cancelled', 'recorded')" groups="vpk_gfmis.group_gfmis_user"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,recorded,wait_approve_request,wait_approve_pay,sent_treasury,paid"/>
                 </header>
                 <sheet>

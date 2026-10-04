@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "กระบวนการ GFMIS",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "category": "Accounting/Localizations",
     "summary": "เก็บและเชื่อมโยงเอกสารเบิกจ่าย New GFMIS Thai กับรายการใน ERP",
     "description": """

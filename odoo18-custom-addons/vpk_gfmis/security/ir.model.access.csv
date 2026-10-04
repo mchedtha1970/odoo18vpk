@@ -1,7 +1,11 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_gfmis_form_type_internal,gfmis.form.type internal read,model_gfmis_form_type,base.group_user,1,0,0,0
 access_gfmis_form_type_user,gfmis.form.type user,model_gfmis_form_type,group_gfmis_user,1,0,0,0
 access_gfmis_form_type_manager,gfmis.form.type manager,model_gfmis_form_type,group_gfmis_manager,1,1,1,1
+access_gfmis_document_internal,gfmis.document internal read,model_gfmis_document,base.group_user,1,0,0,0
 access_gfmis_document_user,gfmis.document user,model_gfmis_document,group_gfmis_user,1,1,1,0
 access_gfmis_document_manager,gfmis.document manager,model_gfmis_document,group_gfmis_manager,1,1,1,1
+access_gfmis_document_line_internal,gfmis.document.line internal read,model_gfmis_document_line,base.group_user,1,0,0,0
 access_gfmis_document_line_user,gfmis.document.line user,model_gfmis_document_line,group_gfmis_user,1,1,1,1
+access_gfmis_document_wht_internal,gfmis.document.wht internal read,model_gfmis_document_wht,base.group_user,1,0,0,0
 access_gfmis_document_wht_user,gfmis.document.wht user,model_gfmis_document_wht,group_gfmis_user,1,1,1,1
