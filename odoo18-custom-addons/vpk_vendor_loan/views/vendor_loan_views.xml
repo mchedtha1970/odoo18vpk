@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_vendor_loan_list" model="ir.ui.view">
+        <field name="name">vpk.vendor.loan.list</field>
+        <field name="model">vpk.vendor.loan</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="partner_id"/>
+                <field name="warehouse_id"/>
+                <field name="purchase_request_id"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state in ('received', 'purchasing')"
+                       decoration-success="state == 'cleared'"
+                       decoration-muted="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_vendor_loan_form" model="ir.ui.view">
+        <field name="name">vpk.vendor.loan.form</field>
+        <field name="model">vpk.vendor.loan</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_receive" type="object" string="รับของยืม"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_open_purchase_request" type="object"
+                            string="เปิดขอซื้อ" class="btn-primary"
+                            invisible="state != 'received'"/>
+                    <button name="action_cancel" type="object" string="ยกเลิก"
+                            invisible="state not in ('draft', 'received')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,received,purchasing,cleared"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_pickings" type="object" class="oe_stat_button"
+                                icon="fa-truck" invisible="picking_count == 0">
+                            <field name="picking_count" widget="statinfo" string="ใบรับของยืม"/>
+                        </button>
+                        <button name="action_view_purchase_request" type="object"
+                                class="oe_stat_button" icon="fa-shopping-cart"
+                                invisible="not purchase_request_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">ใบขอซื้อ</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <div class="alert alert-info" role="alert" invisible="state == 'cancel'">
+                        รับของยืมเข้าคลังยืมผู้ขาย และใส่ต้นทุนที่จะซื้อมาหักล้าง
+                        เป็นราคาของของที่จะซื้อตามหลัง
+                        ถ้าไม่ใส่ แล้วของถูกนำไปใช้ก่อน ต้นทุนจะเป็น 0
+                        เมื่อจัดซื้อตามหลัง ให้รับเข้าคลังยืมเดียวกัน
+                        ระบบหักล้างในคลังนั้น ของคลังปกติจึงไม่ถูกนับเพิ่ม
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="warehouse_id" readonly="state != 'draft'"/>
+                            <field name="location_dest_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="purchase_request_id" readonly="1" options="{'no_open': True}"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="amount_total"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="reason" readonly="state != 'draft'"
+                               placeholder="ระบุว่าทำไมต้องรับของก่อนเปิดขอซื้อ"/>
+                    </group>
+                    <notebook>
+                        <page string="รายการยืม" name="lines">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="product_qty"/>
+                                    <field name="product_uom_id"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="price_unit"/>
+                                    <field name="price_subtotal" sum="มูลค่าที่จะซื้อ"/>
+                                    <field name="qty_received"/>
+                                    <field name="qty_cleared"/>
+                                    <field name="qty_remaining"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="หมายเหตุ" name="note">
+                            <field name="note" placeholder="รายละเอียดเพิ่มเติม"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_vendor_loan_search" model="ir.ui.view">
+        <field name="name">vpk.vendor.loan.search</field>
+        <field name="model">vpk.vendor.loan</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="purchase_request_id"/>
+                <filter string="รับแล้ว ยังไม่หักล้าง" name="open"
+                        domain="[('state', 'in', ('received', 'purchasing'))]"/>
+                <filter string="หักล้างแล้ว" name="cleared" domain="[('state', '=', 'cleared')]"/>
+                <group expand="0" string="จัดกลุ่ม">
+                    <filter string="ผู้ขาย" name="group_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="สถานะ" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_vendor_loan" model="ir.actions.act_window">
+        <field name="name">ยืมของจากผู้ขาย</field>
+        <field name="res_model">vpk.vendor.loan</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">ยังไม่มีใบยืมของจากผู้ขาย</p>
+            <p>ใช้เมื่อต้องรับของด่วนก่อน แล้วค่อยเปิดขอซื้อและ e-GP ตามรายการปกติ</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_vpk_vendor_loan"
+              name="ยืมของจากผู้ขาย"
+              parent="stock.menu_stock_warehouse_mgmt"
+              action="action_vpk_vendor_loan"
+              sequence="25"
+              groups="stock.group_stock_user"/>
+
+    <menuitem id="menu_vpk_vendor_loan_purchase"
+              name="ยืมของจากผู้ขาย"
+              parent="purchase_request.parent_menu_purchase_request"
+              action="action_vpk_vendor_loan"
+              sequence="40"
+              groups="purchase_request.group_purchase_request_user"/>
+
+    <record id="view_picking_form_vendor_loan" model="ir.ui.view">
+        <field name="name">stock.picking.form.vendor.loan</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="vpk_stock_qc.view_picking_form_receipt_qc"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='qc_state']" position="after">
+                <field name="vpk_vendor_loan_id" invisible="1"/>
+            </xpath>
+            <xpath expr="//header//button[@name='action_open_receipt_qc']" position="attributes">
+                <attribute name="invisible">picking_type_code != 'incoming' or state in ('done', 'cancel') or vpk_vendor_loan_id</attribute>
+            </xpath>
+            <xpath expr="//div[hasclass('alert-warning')]" position="attributes">
+                <attribute name="invisible">picking_type_code != 'incoming' or state in ('done', 'cancel') or qc_state == 'passed' or vpk_vendor_loan_id</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_open_receipt_qc'][.//field[@name='qc_count']]" position="attributes">
+                <attribute name="invisible">picking_type_code != 'incoming' or vpk_vendor_loan_id</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

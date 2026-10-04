@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_product_template_cold_chain" model="ir.ui.view">
+        <field name="name">product.template.cold.chain</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="vpk_procurement_auto_pr.view_product_template_hospital_item_type"/>
+        <field name="arch" type="xml">
+            <field name="hospital_item_type" position="after">
+                <field name="show_cold_chain" invisible="1"/>
+                <field name="cold_chain" invisible="not show_cold_chain"/>
+            </field>
+        </field>
+    </record>
+</odoo>

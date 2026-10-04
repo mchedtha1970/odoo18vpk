@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_stock_warehouse.InventoryStatusDashboard">
+        <div class="o_vpk_invstat">
+            <div class="o_vpk_invstat_scroll" t-if="state.ready">
+                <header class="o_vpk_invstat_header">
+                    <div>
+                        <div class="o_vpk_invstat_kicker">Inventory Status</div>
+                        <h1>สถานะสินค้าคงคลัง</h1>
+                        <p>ข้อมูล ณ <t t-esc="state.data.date_label"/> · วิเคราะห์การเคลื่อนไหวย้อนหลัง 90 วัน</p>
+                    </div>
+                    <div class="o_vpk_invstat_filters">
+                        <label>
+                            <span>คลัง</span>
+                            <select t-on-change="onWarehouseChange">
+                                <option value="0" t-att-selected="state.warehouseId === 0">ทุกคลัง</option>
+                                <t t-foreach="state.data.warehouses" t-as="wh" t-key="wh.id">
+                                    <option t-att-value="wh.id" t-att-selected="wh.id === state.warehouseId">
+                                        <t t-esc="wh.label"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </label>
+                        <label>
+                            <span>หมวด</span>
+                            <select t-on-change="onCategoryChange">
+                                <option value="0" t-att-selected="state.categoryId === 0">ทุกหมวดสินค้า</option>
+                                <t t-foreach="state.data.categories" t-as="categ" t-key="categ.id">
+                                    <option t-att-value="categ.id" t-att-selected="categ.id === state.categoryId">
+                                        <t t-esc="categ.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </label>
+                        <button type="button" class="o_vpk_invstat_export" t-on-click="exportReport">ส่งออกรายงาน</button>
+                    </div>
+                </header>
+
+                <div class="o_vpk_invstat_legend">
+                    <strong>เกณฑ์จัดกลุ่ม</strong>
+                    <span><i class="is-fast"/>เร็ว: จ่ายออกตั้งแต่ 12 ครั้ง ใน 90 วัน</span>
+                    <span><i class="is-slow"/>ช้า: จ่ายออก 1–11 ครั้ง หรือมีการโอนภายใน 180 วัน</span>
+                    <span><i class="is-dead"/>ไม่เคลื่อนไหว: ไม่จ่ายออกและของค้างตั้งแต่ 180 วัน</span>
+                </div>
+
+                <section class="o_vpk_invstat_kpis">
+                    <article class="o_vpk_invstat_card o_vpk_invstat_kpi">
+                        <div class="o_vpk_invstat_kpi_top">
+                            <span><i class="is-ink"/>จำนวนคงเหลือ</span>
+                            <b><t t-esc="formatCount(state.data.total_sku)"/> SKU</b>
+                        </div>
+                        <div class="o_vpk_invstat_kpi_value">
+                            <t t-esc="formatQty(state.data.total_qty)"/>
+                            <small>หน่วย</small>
+                        </div>
+                        <div class="o_vpk_invstat_stack is-thin">
+                            <span class="is-fast" t-att-style="barStyle(part('fast').value_pct, '#1e2a44')"/>
+                            <span class="is-slow" t-att-style="barStyle(part('slow').value_pct, '#8eb6ea')"/>
+                            <span class="is-dead" t-att-style="barStyle(part('dead').value_pct, '#e0a15c')"/>
+                        </div>
+                        <p>มูลค่าคงเหลือรวม <t t-esc="formatValue(state.data.total_value)"/></p>
+                        <p class="is-muted">แกน = สัดส่วนมูลค่าแต่ละกลุ่ม</p>
+                    </article>
+                    <article class="o_vpk_invstat_card o_vpk_invstat_kpi">
+                        <div class="o_vpk_invstat_kpi_top">
+                            <span><i class="is-fast"/>เคลื่อนไหวเร็ว</span>
+                            <b><t t-esc="part('fast').sku_pct"/>% ของ SKU</b>
+                        </div>
+                        <div class="o_vpk_invstat_kpi_value">
+                            <t t-esc="formatCount(part('fast').sku)"/>
+                            <small>SKU</small>
+                        </div>
+                        <div class="o_vpk_invstat_meter"><span class="is-fast" t-att-style="barStyle(part('fast').sku_pct, '#1e2a44')"/></div>
+                        <p>มูลค่า <t t-esc="formatValue(part('fast').value)"/></p>
+                        <p t-att-class="state.data.fast_low ? 'is-alert' : 'is-muted'">
+                            <t t-esc="formatCount(state.data.fast_low)"/> SKU ต่ำกว่าจุดสั่งซื้อหรือพอใช้ไม่ถึง 30 วัน
+                        </p>
+                    </article>
+                    <article class="o_vpk_invstat_card o_vpk_invstat_kpi">
+                        <div class="o_vpk_invstat_kpi_top">
+                            <span><i class="is-slow"/>เคลื่อนไหวช้า</span>
+                            <b><t t-esc="part('slow').sku_pct"/>% ของ SKU</b>
+                        </div>
+                        <div class="o_vpk_invstat_kpi_value">
+                            <t t-esc="formatCount(part('slow').sku)"/>
+                            <small>SKU</small>
+                        </div>
+                        <div class="o_vpk_invstat_meter"><span class="is-slow" t-att-style="barStyle(part('slow').sku_pct, '#8eb6ea')"/></div>
+                        <p>มูลค่า <t t-esc="formatValue(part('slow').value)"/></p>
+                        <p class="is-muted">
+                            <t t-if="state.data.slow_cover">พอใช้ได้ถึง <t t-esc="formatCount(state.data.slow_cover)"/> วัน</t>
+                            <t t-else="">ยังไม่มีปริมาณจ่ายออกในช่วง 90 วัน</t>
+                        </p>
+                    </article>
+                    <article class="o_vpk_invstat_card o_vpk_invstat_kpi is-dead">
+                        <div class="o_vpk_invstat_kpi_top">
+                            <span><i class="is-dead"/>ไม่เคลื่อนไหว</span>
+                            <b><t t-esc="part('dead').sku_pct"/>% ของ SKU</b>
+                        </div>
+                        <div class="o_vpk_invstat_kpi_value">
+                            <t t-esc="formatCount(part('dead').sku)"/>
+                            <small>SKU</small>
+                        </div>
+                        <div class="o_vpk_invstat_meter"><span class="is-dead" t-att-style="barStyle(part('dead').sku_pct, '#e0a15c')"/></div>
+                        <p>มูลค่า <t t-esc="formatValue(part('dead').value)"/></p>
+                        <p t-att-class="state.data.dead_year ? 'is-alert' : 'is-muted'">
+                            <t t-esc="formatCount(state.data.dead_year)"/> SKU ค้างเกิน 1 ปี
+                        </p>
+                    </article>
+                </section>
+
+                <section class="o_vpk_invstat_mid">
+                    <article class="o_vpk_invstat_card">
+                        <header><h2>สัดส่วนตามการเคลื่อนไหว</h2></header>
+                        <div class="o_vpk_invstat_mix_label">
+                            <span>ตามจำนวน SKU</span>
+                            <b><t t-esc="formatCount(state.data.total_sku)"/> SKU</b>
+                        </div>
+                        <div class="o_vpk_invstat_stack">
+                            <t t-foreach="state.data.parts" t-as="item" t-key="item.key">
+                                <span t-att-class="'is-' + item.key" t-att-style="barStyle(item.sku_pct, item.key === 'fast' ? '#1e2a44' : item.key === 'slow' ? '#8eb6ea' : '#e0a15c')">
+                                    <t t-if="item.sku_pct >= 12"><t t-esc="item.sku_pct"/>%</t>
+                                </span>
+                            </t>
+                        </div>
+                        <div class="o_vpk_invstat_mix_label">
+                            <span>ตามมูลค่า</span>
+                            <b><t t-esc="formatValue(state.data.total_value)"/></b>
+                        </div>
+                        <div class="o_vpk_invstat_stack">
+                            <t t-foreach="state.data.parts" t-as="item" t-key="item.key">
+                                <span t-att-class="'is-' + item.key" t-att-style="barStyle(item.value_pct, item.key === 'fast' ? '#1e2a44' : item.key === 'slow' ? '#8eb6ea' : '#e0a15c')">
+                                    <t t-if="item.value_pct >= 12"><t t-esc="item.value_pct"/>%</t>
+                                </span>
+                            </t>
+                        </div>
+                        <p class="is-muted">สินค้าไม่เคลื่อนไหวมีมูลค่า <t t-esc="formatValue(part('dead').value)"/> จากมูลค่าคงเหลือทั้งหมด</p>
+                    </article>
+                    <article class="o_vpk_invstat_card">
+                        <header>
+                            <h2>อายุสินค้าไม่เคลื่อนไหว</h2>
+                            <b><t t-esc="formatCount(part('dead').sku)"/> SKU · <t t-esc="formatValue(part('dead').value)"/></b>
+                        </header>
+                        <t t-foreach="state.data.ages" t-as="age" t-key="age.key">
+                            <div class="o_vpk_invstat_age">
+                                <span t-esc="age.label"/>
+                                <div><i t-att-style="'width:' + age.width + '%'"/></div>
+                                <b>
+                                    <t t-esc="formatCompactValue(age.value)"/>
+                                    <small><t t-esc="formatCount(age.sku)"/> SKU</small>
+                                </b>
+                            </div>
+                        </t>
+                        <div class="o_vpk_invstat_actions">
+                            <button type="button" t-on-click="() => this.openProducts(state.data.ids.dead, 'สินค้าไม่เคลื่อนไหว')">เสนอโอนไปคลังที่ใช้งาน</button>
+                            <button type="button" t-on-click="() => this.openProducts(state.data.ids.dead_year, 'สินค้าค้างเกิน 1 ปี')">เสนอตัดจำหน่าย / ขายซาก</button>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="o_vpk_invstat_card o_vpk_invstat_table_card">
+                    <header>
+                        <h2>จำนวนคงเหลือตามหมวดสินค้า</h2>
+                        <button type="button" class="o_vpk_invstat_link" t-on-click="() => this.openProducts(state.data.ids.all, 'สินค้าคงเหลือทั้งหมด')">ดูรายละเอียดทุก SKU</button>
+                    </header>
+                    <div class="o_vpk_invstat_table">
+                        <div class="o_vpk_invstat_row is-head">
+                            <span>หมวดสินค้า</span>
+                            <span>SKU</span>
+                            <span>จำนวนคงเหลือ</span>
+                            <span>มูลค่า (บาท)</span>
+                            <span>สัดส่วน SKU (เร็ว / ช้า / ไม่เคลื่อนไหว)</span>
+                        </div>
+                        <div t-if="!state.data.categories_table.length" class="o_vpk_invstat_empty">ไม่มีสินค้าคงเหลือตามตัวกรองนี้</div>
+                        <t t-foreach="state.data.categories_table" t-as="row" t-key="row.id">
+                            <div class="o_vpk_invstat_row">
+                                <span class="is-name" t-esc="row.name"/>
+                                <span t-esc="formatCount(row.sku)"/>
+                                <span t-esc="row.qty_text"/>
+                                <span t-esc="formatCount(row.value)"/>
+                                <span>
+                                    <div class="o_vpk_invstat_stack is-mini">
+                                        <i class="is-fast" t-att-style="barStyle(row.fast_pct, '#1e2a44')"/>
+                                        <i class="is-slow" t-att-style="barStyle(row.slow_pct, '#8eb6ea')"/>
+                                        <i class="is-dead" t-att-style="barStyle(row.dead_pct, '#e0a15c')"/>
+                                    </div>
+                                </span>
+                            </div>
+                        </t>
+                    </div>
+                </section>
+
+                <section class="o_vpk_invstat_lists">
+                    <article class="o_vpk_invstat_card">
+                        <header>
+                            <h2><i class="is-fast"/>เคลื่อนไหวเร็ว</h2>
+                            <button type="button" class="o_vpk_invstat_link" t-on-click="() => this.openProducts(state.data.ids.fast, 'สินค้าเคลื่อนไหวเร็ว')">ทั้งหมด</button>
+                        </header>
+                        <p class="is-muted">จ่ายออกสูงสุดใน 90 วัน · ระวังของขาด</p>
+                        <div class="o_vpk_invstat_list_head">
+                            <span>สินค้า</span><span>คงเหลือ</span><span>จ่าย 90 วัน</span><span>พอใช้</span>
+                        </div>
+                        <div t-if="!state.data.fast_rows.length" class="o_vpk_invstat_empty">ไม่มีสินค้ากลุ่มนี้</div>
+                        <t t-foreach="state.data.fast_rows" t-as="row" t-key="row.id">
+                            <button type="button" class="o_vpk_invstat_list_row" t-on-click="() => this.openProduct(row.id)">
+                                <span><b t-esc="row.code"/><small t-esc="row.name"/></span>
+                                <span t-esc="row.qty_text"/>
+                                <span t-esc="row.out_text"/>
+                                <em t-att-class="row.low ? 'is-low' : ''" t-esc="coverLabel(row.cover)"/>
+                            </button>
+                        </t>
+                    </article>
+                    <article class="o_vpk_invstat_card">
+                        <header>
+                            <h2><i class="is-slow"/>เคลื่อนไหวช้า</h2>
+                            <button type="button" class="o_vpk_invstat_link" t-on-click="() => this.openProducts(state.data.ids.slow, 'สินค้าเคลื่อนไหวช้า')">ทั้งหมด</button>
+                        </header>
+                        <p class="is-muted">คงเหลือสูงเมื่อเทียบกับการจ่าย · ทบทวนจุดสั่งซื้อ</p>
+                        <div class="o_vpk_invstat_list_head">
+                            <span>สินค้า</span><span>คงเหลือ</span><span>จ่าย 90 วัน</span><span>พอใช้</span>
+                        </div>
+                        <div t-if="!state.data.slow_rows.length" class="o_vpk_invstat_empty">ไม่มีสินค้ากลุ่มนี้</div>
+                        <t t-foreach="state.data.slow_rows" t-as="row" t-key="row.id">
+                            <button type="button" class="o_vpk_invstat_list_row" t-on-click="() => this.openProduct(row.id)">
+                                <span><b t-esc="row.code"/><small t-esc="row.name"/></span>
+                                <span t-esc="row.qty_text"/>
+                                <span t-esc="row.out_text"/>
+                                <em t-esc="coverLabel(row.cover)"/>
+                            </button>
+                        </t>
+                    </article>
+                    <article class="o_vpk_invstat_card">
+                        <header>
+                            <h2><i class="is-dead"/>ไม่เคลื่อนไหว</h2>
+                            <button type="button" class="o_vpk_invstat_link" t-on-click="() => this.openProducts(state.data.ids.dead, 'สินค้าไม่เคลื่อนไหว')">ทั้งหมด</button>
+                        </header>
+                        <p class="is-muted">มูลค่าสูงสุด · พิจารณาโอน ขาย หรือตัดจำหน่าย</p>
+                        <div class="o_vpk_invstat_list_head is-dead">
+                            <span>สินค้า</span><span>คงเหลือ</span><span>มูลค่า (บาท)</span><span>ล่าสุด</span>
+                        </div>
+                        <div t-if="!state.data.dead_rows.length" class="o_vpk_invstat_empty">ไม่มีสินค้ากลุ่มนี้</div>
+                        <t t-foreach="state.data.dead_rows" t-as="row" t-key="row.id">
+                            <button type="button" class="o_vpk_invstat_list_row" t-on-click="() => this.openProduct(row.id)">
+                                <span><b t-esc="row.code"/><small t-esc="row.name"/></span>
+                                <span t-esc="row.qty_text"/>
+                                <span t-esc="formatCount(row.value)"/>
+                                <em class="is-dead" t-esc="row.last_label"/>
+                            </button>
+                        </t>
+                    </article>
+                </section>
+            </div>
+            <div t-else="" class="o_vpk_invstat_loading">กำลังโหลดสถานะสินค้าคงคลัง...</div>
+        </div>
+    </t>
+</templates>

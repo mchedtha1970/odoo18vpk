@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="stock.warehouse" name="_vpk_configure_central_transfer_flow"/>
+</odoo>

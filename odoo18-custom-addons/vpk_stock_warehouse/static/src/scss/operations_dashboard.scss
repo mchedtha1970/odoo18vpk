@@ -1,0 +1,460 @@
+.o_vpk_ops {
+    height: 100%;
+    overflow: auto;
+    background: #f3f1ee;
+    color: #1c2430;
+    font-family: "Prompt", sans-serif !important;
+
+    *:not(.fa):not(.oi) {
+        font-family: "Prompt", sans-serif !important;
+    }
+
+    .fa {
+        font-family: FontAwesome !important;
+    }
+
+    .o_vpk_ops_scroll {
+        padding: 28px 32px 40px;
+        max-width: 1440px;
+        margin: 0 auto;
+    }
+
+    .o_vpk_ops_loading {
+        padding: 48px;
+        color: #6b7280;
+    }
+
+    .o_vpk_ops_header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+        margin-bottom: 22px;
+
+        h1 {
+            margin: 2px 0 4px;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+    }
+
+    .o_vpk_ops_kicker {
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #8b909a;
+        font-weight: 600;
+    }
+
+    .o_vpk_ops_updated {
+        margin: 0;
+        color: #8b909a;
+        font-size: 13px;
+    }
+
+    .o_vpk_ops_filters {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .o_vpk_ops_periods {
+        display: flex;
+        background: #fff;
+        border: 1px solid #e6e2dc;
+        border-radius: 12px;
+        padding: 4px;
+
+        button {
+            border: 0;
+            background: transparent;
+            border-radius: 9px;
+            padding: 7px 14px;
+            color: #4b5563;
+            font-weight: 600;
+
+            &.is-active {
+                background: #1c2430;
+                color: #fff;
+            }
+        }
+    }
+
+    .o_vpk_ops_warehouse {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #fff;
+        border: 1px solid #e6e2dc;
+        border-radius: 12px;
+        padding: 7px 12px;
+        margin: 0;
+        color: #6b7280;
+
+        select {
+            border: 0;
+            background: transparent;
+            font-weight: 650;
+            color: #1c2430;
+            max-width: 220px;
+        }
+    }
+
+    .o_vpk_ops_kpis,
+    .o_vpk_ops_columns {
+        display: grid;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .o_vpk_ops_kpis {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .o_vpk_ops_columns,
+    .o_vpk_ops_bottom {
+        grid-template-columns: 1.15fr 1.15fr 1fr;
+    }
+
+    .o_vpk_ops_bottom {
+        display: grid;
+        gap: 14px;
+        grid-template-columns: 1.35fr 1fr;
+    }
+
+    .o_vpk_ops_kpi,
+    .o_vpk_ops_card {
+        background: #fff;
+        border: 1px solid #ece8e2;
+        border-radius: 18px;
+        box-shadow: 0 1px 2px rgba(28, 36, 48, 0.04);
+    }
+
+    .o_vpk_ops_kpi {
+        padding: 16px 18px 14px;
+
+        .o_vpk_ops_kpi_top,
+        p {
+            display: flex;
+            justify-content: space-between;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        p {
+            margin: 8px 0 0;
+        }
+
+        .o_vpk_ops_kpi_value {
+            font-size: 40px;
+            line-height: 1.1;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            margin: 6px 0 8px;
+        }
+    }
+
+    .o_vpk_ops_progress {
+        height: 5px;
+        border-radius: 99px;
+        background: #eceff3;
+        overflow: hidden;
+
+        span {
+            display: block;
+            height: 100%;
+            border-radius: 99px;
+            background: #3e67c5;
+        }
+    }
+
+    .o_vpk_ops_kpi.is-amber .o_vpk_ops_progress span {
+        background: #d7a15a;
+    }
+
+    .o_vpk_ops_kpi.is-purple .o_vpk_ops_progress span {
+        background: #7c6cf0;
+    }
+
+    .o_vpk_ops_dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 8px;
+        border-radius: 99px;
+        background: #e59a3a;
+        vertical-align: middle;
+    }
+
+    .o_vpk_ops_card {
+        padding: 16px 16px 8px;
+        min-width: 0;
+    }
+
+    .o_vpk_ops_card_head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+
+        h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        p {
+            margin: 2px 0 0;
+            color: #8b909a;
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_ops_link,
+    .o_vpk_ops_alerts button {
+        border: 0;
+        background: transparent;
+        color: #3e67c5;
+        font-weight: 650;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .o_vpk_ops_stages {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .o_vpk_ops_stage {
+        border-radius: 12px;
+        background: #f6f5f3;
+        min-height: 64px;
+        padding: 8px 6px;
+        text-align: center;
+
+        strong {
+            display: block;
+            font-size: 20px;
+            line-height: 1.1;
+        }
+
+        span {
+            display: block;
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        &.is-orange {
+            background: #fff3e8;
+            strong, span { color: #c56a1a; }
+        }
+
+        &.is-blue {
+            background: #eef3ff;
+            strong, span { color: #3159b5; }
+        }
+
+        &.is-green {
+            background: #eef8f1;
+            strong, span { color: #1f8a4c; }
+        }
+
+        &.is-outline {
+            background: #fff;
+            border: 1px solid #d9e4fb;
+            strong, span { color: #3159b5; }
+        }
+    }
+
+    .o_vpk_ops_table {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .o_vpk_ops_row {
+        display: grid;
+        grid-template-columns: 1.05fr 1.45fr 0.95fr 0.7fr;
+        gap: 8px;
+        align-items: center;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        border-top: 1px solid #f1eeea;
+        background: transparent;
+        padding: 9px 2px;
+        color: inherit;
+        font-size: 13px;
+
+        &.is-head {
+            color: #9aa0a8;
+            font-size: 12px;
+            border-top: 0;
+            padding-top: 0;
+        }
+    }
+
+    button.o_vpk_ops_row:hover {
+        background: #faf9f7;
+    }
+
+    .o_vpk_ops_name {
+        font-weight: 700;
+    }
+
+    .o_vpk_ops_meta,
+    .o_vpk_ops_time {
+        color: #4b5563;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_vpk_ops_badge {
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border-radius: 99px;
+        padding: 3px 8px;
+        font-style: normal;
+        font-size: 12px;
+        font-weight: 650;
+        background: #f3f4f6;
+        color: #4b5563;
+
+        &.is-orange { background: #fff1e4; color: #c56a1a; }
+        &.is-blue { background: #e8efff; color: #3159b5; }
+        &.is-green { background: #e7f6ec; color: #1f8a4c; }
+        &.is-red { background: #fdecec; color: #c24141; }
+        &.is-gray { background: #f3f4f6; color: #4b5563; }
+    }
+
+    .o_vpk_ops_empty {
+        padding: 22px 4px 16px;
+        color: #9aa0a8;
+        font-size: 13px;
+    }
+
+    .o_vpk_ops_legend {
+        display: flex;
+        gap: 12px;
+        color: #6b7280;
+        font-size: 12px;
+
+        span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        i {
+            width: 8px;
+            height: 8px;
+            border-radius: 99px;
+            display: inline-block;
+        }
+    }
+
+    .o_vpk_ops_chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        height: 210px;
+        padding: 8px 4px 0;
+        overflow-x: auto;
+    }
+
+    .o_vpk_ops_chart_group {
+        flex: 1 0 36px;
+        min-width: 36px;
+        text-align: center;
+
+        small {
+            display: block;
+            margin-top: 6px;
+            color: #9aa0a8;
+            font-size: 11px;
+        }
+    }
+
+    .o_vpk_ops_chart_bars {
+        height: 168px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 3px;
+
+        span {
+            width: 8px;
+            border-radius: 4px 4px 2px 2px;
+            min-height: 0;
+        }
+    }
+
+    .o_vpk_ops_alert_count {
+        background: #fff4e8;
+        color: #c56a1a;
+        border-radius: 99px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .o_vpk_ops_alerts {
+        list-style: none;
+        margin: 0;
+        padding: 0 0 8px;
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            padding: 10px 0;
+            border-top: 1px solid #f1eeea;
+        }
+
+        strong {
+            display: block;
+            font-size: 13px;
+            font-weight: 650;
+        }
+
+        .fa {
+            color: #e59a3a;
+            margin-right: 6px;
+        }
+
+        p {
+            margin: 2px 0 0 18px;
+            color: #8b909a;
+            font-size: 12px;
+        }
+
+        button {
+            border: 1px solid #e6e2dc;
+            background: #fff;
+            border-radius: 10px;
+            padding: 4px 12px;
+            color: #1c2430;
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .o_vpk_ops_kpis,
+        .o_vpk_ops_columns,
+        .o_vpk_ops_bottom,
+        .o_vpk_ops_header {
+            grid-template-columns: 1fr;
+            display: grid;
+        }
+
+        .o_vpk_ops_header {
+            align-items: start;
+        }
+    }
+}

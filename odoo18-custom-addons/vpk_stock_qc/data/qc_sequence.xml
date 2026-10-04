@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_vpk_stock_qc" model="ir.sequence">
+        <field name="name">ตรวจคุณภาพสินค้ารับเข้า</field>
+        <field name="code">vpk.stock.qc</field>
+        <field name="prefix">QC/%(year)s/</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="seq_vpk_stock_qc_point" model="ir.sequence">
+        <field name="name">จุดควบคุมคุณภาพ</field>
+        <field name="code">vpk.stock.qc.point</field>
+        <field name="prefix">QCP</field>
+        <field name="padding">5</field>
+    </record>
+</odoo>

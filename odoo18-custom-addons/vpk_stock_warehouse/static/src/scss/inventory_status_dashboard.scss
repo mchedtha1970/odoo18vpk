@@ -1,0 +1,410 @@
+.o_vpk_invstat {
+    height: 100%;
+    overflow: auto;
+    background: #f3f1ee;
+    color: #1c2430;
+    font-family: "Prompt", sans-serif !important;
+
+    *:not(.fa):not(.oi) {
+        font-family: "Prompt", sans-serif !important;
+    }
+
+    .o_vpk_invstat_scroll {
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 28px 32px 48px;
+    }
+
+    .o_vpk_invstat_loading {
+        padding: 48px;
+        color: #6b7280;
+    }
+
+    .o_vpk_invstat_header {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        align-items: flex-end;
+        margin-bottom: 16px;
+
+        h1 {
+            margin: 2px 0 4px;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+        }
+
+        p {
+            margin: 0;
+            color: #8b909a;
+            font-size: 13px;
+        }
+    }
+
+    .o_vpk_invstat_kicker {
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #8b909a;
+        font-weight: 600;
+    }
+
+    .o_vpk_invstat_filters {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+            background: #fff;
+            border: 1px solid #e6e2dc;
+            border-radius: 12px;
+            padding: 8px 12px;
+            color: #6b7280;
+        }
+
+        select {
+            border: 0;
+            background: transparent;
+            font-weight: 650;
+            color: #1c2430;
+            max-width: 240px;
+        }
+    }
+
+    .o_vpk_invstat_export {
+        border: 0;
+        background: #1c2430;
+        color: #fff;
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-weight: 650;
+    }
+
+    .o_vpk_invstat_legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px 18px;
+        align-items: center;
+        background: #fff;
+        border: 1px solid #ece8e2;
+        border-radius: 14px;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        color: #4b5563;
+        font-size: 13px;
+
+        strong {
+            color: #1c2430;
+        }
+
+        span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        i {
+            width: 8px;
+            height: 8px;
+            border-radius: 99px;
+            display: inline-block;
+        }
+    }
+
+    i.is-fast { background: #1e2a44; }
+    i.is-slow { background: #8eb6ea; }
+    i.is-dead { background: #e0a15c; }
+    i.is-ink { background: #1c2430; }
+
+    .o_vpk_invstat_kpis,
+    .o_vpk_invstat_mid,
+    .o_vpk_invstat_lists {
+        display: grid;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .o_vpk_invstat_kpis { grid-template-columns: 1.15fr 1fr 1fr 1fr; }
+    .o_vpk_invstat_mid { grid-template-columns: 1.15fr 1fr; }
+    .o_vpk_invstat_lists { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .o_vpk_invstat_card {
+        background: #fff;
+        border: 1px solid #ece8e2;
+        border-radius: 18px;
+        padding: 16px 18px;
+        min-width: 0;
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 10px;
+
+            h2 {
+                margin: 0;
+                font-size: 16px;
+                font-weight: 700;
+            }
+
+            b {
+                color: #6b7280;
+                font-size: 12px;
+                font-weight: 600;
+            }
+        }
+
+        h2 i {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 99px;
+            margin-right: 8px;
+        }
+    }
+
+    .o_vpk_invstat_kpi {
+        .o_vpk_invstat_kpi_top {
+            display: flex;
+            justify-content: space-between;
+            color: #6b7280;
+            font-size: 13px;
+
+            span {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                color: #1c2430;
+                font-weight: 650;
+            }
+
+            i {
+                width: 8px;
+                height: 8px;
+                border-radius: 99px;
+            }
+        }
+
+        .o_vpk_invstat_kpi_value {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1.15;
+            margin: 8px 0;
+
+            small {
+                font-size: 14px;
+                font-weight: 600;
+                color: #6b7280;
+                margin-left: 4px;
+            }
+        }
+
+        p {
+            margin: 6px 0 0;
+            font-size: 13px;
+        }
+
+        &.is-dead {
+            border-color: #f0d3b0;
+        }
+    }
+
+    .is-muted { color: #8b909a; }
+    .is-alert { color: #c56a1a; font-weight: 650; }
+
+    .o_vpk_invstat_meter,
+    .o_vpk_invstat_stack {
+        display: flex;
+        height: 22px;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #f3f1ee;
+    }
+
+    .o_vpk_invstat_meter {
+        height: 6px;
+        border-radius: 99px;
+
+        span { height: 100%; display: block; }
+    }
+
+    .o_vpk_invstat_stack {
+        margin: 8px 0 12px;
+
+        span, i {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 650;
+            height: 100%;
+        }
+
+        &.is-thin { height: 6px; margin: 4px 0 10px; }
+        &.is-mini { height: 10px; margin: 0; border-radius: 99px; }
+    }
+
+    .o_vpk_invstat_mix_label {
+        display: flex;
+        justify-content: space-between;
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    .o_vpk_invstat_age {
+        display: grid;
+        grid-template-columns: 110px 1fr 90px;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 13px;
+
+        div {
+            height: 16px;
+            background: #f6f3ef;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        i {
+            display: block;
+            height: 100%;
+            background: #e0a15c;
+            border-radius: 99px;
+        }
+
+        b {
+            text-align: right;
+            font-size: 13px;
+
+            small {
+                display: block;
+                color: #8b909a;
+                font-weight: 500;
+            }
+        }
+    }
+
+    .o_vpk_invstat_actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+
+        button {
+            border: 1px solid #e6e2dc;
+            background: #fff;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+    }
+
+    .o_vpk_invstat_link {
+        border: 0;
+        background: transparent;
+        color: #3e67c5;
+        font-weight: 650;
+        font-size: 13px;
+    }
+
+    .o_vpk_invstat_table_card { margin-bottom: 14px; }
+
+    .o_vpk_invstat_row,
+    .o_vpk_invstat_list_head,
+    .o_vpk_invstat_list_row {
+        display: grid;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .o_vpk_invstat_row {
+        grid-template-columns: 1.6fr 0.5fr 0.9fr 0.9fr 1.4fr;
+        padding: 9px 0;
+        border-top: 1px solid #f1eeea;
+        font-size: 13px;
+
+        &.is-head {
+            border-top: 0;
+            color: #9aa0a8;
+            font-size: 12px;
+            padding-top: 0;
+        }
+
+        .is-name {
+            font-weight: 650;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .o_vpk_invstat_list_head,
+    .o_vpk_invstat_list_row {
+        grid-template-columns: 1.5fr 0.9fr 0.9fr 0.7fr;
+        width: 100%;
+        text-align: left;
+        font-size: 13px;
+    }
+
+    .o_vpk_invstat_list_head {
+        color: #9aa0a8;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .o_vpk_invstat_list_row {
+        border: 0;
+        border-top: 1px solid #f1eeea;
+        background: transparent;
+        padding: 8px 0;
+        color: inherit;
+
+        b, small {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        small { color: #8b909a; font-weight: 500; }
+
+        em {
+            font-style: normal;
+            justify-self: start;
+            background: #f3f4f6;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 12px;
+            font-weight: 650;
+
+            &.is-low { background: #fff1e4; color: #c56a1a; }
+            &.is-dead { background: transparent; color: #c56a1a; padding: 0; }
+        }
+    }
+
+    button.o_vpk_invstat_list_row:hover { background: #faf9f7; }
+
+    .o_vpk_invstat_empty {
+        padding: 16px 0;
+        color: #9aa0a8;
+        font-size: 13px;
+    }
+
+    @media (max-width: 1100px) {
+        .o_vpk_invstat_header,
+        .o_vpk_invstat_kpis,
+        .o_vpk_invstat_mid,
+        .o_vpk_invstat_lists {
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+    }
+}

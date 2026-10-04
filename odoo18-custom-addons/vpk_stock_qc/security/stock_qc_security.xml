@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_qc_user" model="res.groups">
+        <field name="name">ผู้ตรวจคุณภาพสินค้า</field>
+        <field name="category_id" ref="base.module_category_inventory"/>
+        <field name="implied_ids" eval="[(4, ref('stock.group_stock_user'))]"/>
+        <field name="comment">ตรวจคุณภาพสินค้าขาเข้าก่อนบันทึกรับเข้าคลัง</field>
+    </record>
+
+    <record id="stock.group_stock_manager" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_qc_user'))]"/>
+    </record>
+</odoo>

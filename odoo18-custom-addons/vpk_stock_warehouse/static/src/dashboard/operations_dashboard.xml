@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_stock_warehouse.OperationsDashboard">
+        <div class="o_vpk_ops">
+            <div class="o_vpk_ops_scroll" t-if="state.ready">
+                <header class="o_vpk_ops_header">
+                    <div>
+                        <div class="o_vpk_ops_kicker">Warehouse Operations</div>
+                        <h1>สถานะงานคลังสินค้า</h1>
+                        <p class="o_vpk_ops_updated">
+                            <t t-esc="state.data.date_label"/>
+                            <span> · อัปเดตล่าสุด </span>
+                            <t t-esc="state.data.updated_at"/> น.
+                        </p>
+                    </div>
+                    <div class="o_vpk_ops_filters">
+                        <div class="o_vpk_ops_periods">
+                            <t t-foreach="periods" t-as="period" t-key="period.id">
+                                <button type="button"
+                                        t-att-class="{'is-active': state.period === period.id}"
+                                        t-on-click="() => this.setPeriod(period.id)">
+                                    <t t-esc="period.label"/>
+                                </button>
+                            </t>
+                        </div>
+                        <label class="o_vpk_ops_warehouse">
+                            <span>คลัง</span>
+                            <select t-on-change="onWarehouseChange">
+                                <t t-foreach="state.data.warehouses" t-as="wh" t-key="wh.id">
+                                    <option t-att-value="wh.id"
+                                            t-att-selected="wh.id === state.data.warehouse_id">
+                                        <t t-esc="wh.label"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </label>
+                    </div>
+                </header>
+
+                <section class="o_vpk_ops_kpis">
+                    <t t-foreach="state.data.kpis" t-as="kpi" t-key="kpi.key">
+                        <article t-att-class="'o_vpk_ops_kpi is-' + kpi.tone">
+                            <div class="o_vpk_ops_kpi_top">
+                                <span t-esc="kpi.label"/>
+                                <span class="o_vpk_ops_kpi_hint" t-esc="kpi.hint"/>
+                            </div>
+                            <div class="o_vpk_ops_kpi_value">
+                                <t t-if="kpi.tone === 'alert'">
+                                    <i class="o_vpk_ops_dot"/>
+                                </t>
+                                <t t-esc="kpi.value"/>
+                            </div>
+                            <div t-if="kpi.tone !== 'alert'" class="o_vpk_ops_progress">
+                                <span t-att-style="'width:' + (kpi.progress || 0) + '%'"/>
+                            </div>
+                            <p t-esc="kpi.foot"/>
+                        </article>
+                    </t>
+                </section>
+
+                <section class="o_vpk_ops_columns">
+                    <t t-foreach="state.data.columns" t-as="column" t-key="column.key">
+                        <article class="o_vpk_ops_card">
+                            <header class="o_vpk_ops_card_head">
+                                <div>
+                                    <h2 t-esc="column.title"/>
+                                    <p t-esc="column.subtitle"/>
+                                </div>
+                                <button type="button" class="o_vpk_ops_link" t-on-click="() => this.openAll(column)">
+                                    ดูทั้งหมด
+                                </button>
+                            </header>
+                            <div class="o_vpk_ops_stages">
+                                <t t-foreach="column.stages" t-as="stage" t-key="stage.key">
+                                    <div t-att-class="'o_vpk_ops_stage is-' + stage.tone">
+                                        <strong t-esc="stage.count"/>
+                                        <span t-esc="stage.label"/>
+                                    </div>
+                                </t>
+                            </div>
+                            <div class="o_vpk_ops_table">
+                                <div class="o_vpk_ops_row is-head">
+                                    <span>เลขที่</span>
+                                    <span t-esc="column.meta_header"/>
+                                    <span>สถานะ</span>
+                                    <span t-esc="column.time_header"/>
+                                </div>
+                                <t t-if="!column.rows.length">
+                                    <div class="o_vpk_ops_empty">ไม่มีรายการในช่วงนี้</div>
+                                </t>
+                                <t t-foreach="column.rows" t-as="row" t-key="row.id">
+                                    <button type="button" class="o_vpk_ops_row" t-on-click="() => this.openRecord(row)">
+                                        <span class="o_vpk_ops_name" t-esc="row.name"/>
+                                        <span class="o_vpk_ops_meta" t-esc="row.meta"/>
+                                        <span>
+                                            <em t-att-class="'o_vpk_ops_badge is-' + row.tone" t-esc="row.status"/>
+                                        </span>
+                                        <span class="o_vpk_ops_time" t-esc="row.time"/>
+                                    </button>
+                                </t>
+                            </div>
+                        </article>
+                    </t>
+                </section>
+
+                <section class="o_vpk_ops_bottom">
+                    <article class="o_vpk_ops_card">
+                        <header class="o_vpk_ops_card_head">
+                            <h2 t-esc="state.data.chart.title"/>
+                            <div class="o_vpk_ops_legend">
+                                <t t-foreach="state.data.chart.series" t-as="series" t-key="series.key">
+                                    <span>
+                                        <i t-att-style="'background:' + series.color"/>
+                                        <t t-esc="series.label"/>
+                                    </span>
+                                </t>
+                            </div>
+                        </header>
+                        <div class="o_vpk_ops_chart" t-if="state.data.chart.groups.length">
+                            <t t-foreach="state.data.chart.groups" t-as="group" t-key="group.label">
+                                <div class="o_vpk_ops_chart_group">
+                                    <div class="o_vpk_ops_chart_bars">
+                                        <t t-foreach="group.bars" t-as="bar" t-key="bar.key">
+                                            <span t-att-style="barStyle(bar)" t-att-title="bar.value"/>
+                                        </t>
+                                    </div>
+                                    <small t-esc="group.label"/>
+                                </div>
+                            </t>
+                        </div>
+                    </article>
+                    <article class="o_vpk_ops_card">
+                        <header class="o_vpk_ops_card_head">
+                            <h2>ต้องดำเนินการ</h2>
+                            <span t-if="state.data.alert_count" class="o_vpk_ops_alert_count">
+                                <t t-esc="state.data.alert_count"/> รายการเกิน SLA
+                            </span>
+                        </header>
+                        <div t-if="!state.data.alerts.length" class="o_vpk_ops_empty">ไม่มีงานค้างเกินกำหนด</div>
+                        <ul class="o_vpk_ops_alerts">
+                            <t t-foreach="state.data.alerts" t-as="alert" t-key="alert.stream + '-' + alert.id">
+                                <li>
+                                    <div>
+                                        <strong>
+                                            <i class="fa fa-exclamation-triangle"/>
+                                            <t t-esc="alert.name"/>
+                                            <span t-esc="alert.message"/>
+                                        </strong>
+                                        <p t-esc="alert.detail"/>
+                                    </div>
+                                    <button type="button" t-on-click="() => this.openRecord(alert)">
+                                        <t t-esc="alert.action_label"/>
+                                    </button>
+                                </li>
+                            </t>
+                        </ul>
+                    </article>
+                </section>
+            </div>
+            <div t-else="" class="o_vpk_ops_loading">กำลังโหลดสถานะงานคลัง...</div>
+        </div>
+    </t>
+</templates>

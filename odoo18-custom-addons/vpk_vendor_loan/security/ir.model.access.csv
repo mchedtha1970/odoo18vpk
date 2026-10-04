@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_vendor_loan_stock_user,vpk.vendor.loan stock user,model_vpk_vendor_loan,stock.group_stock_user,1,1,1,0
+access_vpk_vendor_loan_stock_manager,vpk.vendor.loan stock manager,model_vpk_vendor_loan,stock.group_stock_manager,1,1,1,1
+access_vpk_vendor_loan_purchase_user,vpk.vendor.loan purchase user,model_vpk_vendor_loan,purchase_request.group_purchase_request_user,1,1,1,0
+access_vpk_vendor_loan_line_stock_user,vpk.vendor.loan.line stock user,model_vpk_vendor_loan_line,stock.group_stock_user,1,1,1,0
+access_vpk_vendor_loan_line_stock_manager,vpk.vendor.loan.line stock manager,model_vpk_vendor_loan_line,stock.group_stock_manager,1,1,1,1
+access_vpk_vendor_loan_line_purchase_user,vpk.vendor.loan.line purchase user,model_vpk_vendor_loan_line,purchase_request.group_purchase_request_user,1,1,1,0

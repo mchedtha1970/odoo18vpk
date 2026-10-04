@@ -6,6 +6,31 @@ class StockWarehouse(models.Model):
     _inherit = "stock.warehouse"
 
     @api.model
+    def _vpk_central_warehouse(self):
+        """คลังกลางของบริษัทปัจจุบัน ใช้เป็นต้นทางใบขอโอน"""
+        domain_company = [("company_id", "=", self.env.company.id)]
+        central = self.search(domain_company + [("code", "=", "WH")], limit=1)
+        if not central:
+            central = self.search(domain_company + [("name", "=", "คลังกลาง")], limit=1)
+        return central
+
+    @api.model
+    def _vpk_configure_central_transfer_flow(self):
+        """คลังกลาง: หยิบของ แพ็คลงกล่อง แล้วจึงอัปเดตคลังปลายทาง และดึงล็อตตามวันหมดอายุ"""
+        central = self._vpk_central_warehouse()
+        if not central:
+            return False
+        if central.delivery_steps != "pick_pack_ship":
+            central.write({"delivery_steps": "pick_pack_ship"})
+        removal = self.env["product.removal"].sudo().search(
+            [("method", "=", "fefo")], limit=1
+        )
+        stock = central.lot_stock_id
+        if removal and stock and stock.removal_strategy_id != removal:
+            stock.sudo().write({"removal_strategy_id": removal.id})
+        return True
+
+    @api.model
     def get_overview_panel_data(self):
         """Return warehouses for the overview left panel."""
         warehouses = self.with_context(active_test=False).search(

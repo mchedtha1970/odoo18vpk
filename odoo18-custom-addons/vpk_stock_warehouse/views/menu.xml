@@ -1,5 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="action_vpk_operations_dashboard" model="ir.actions.client">
+        <field name="name">สถานะงานคลัง</field>
+        <field name="tag">vpk_warehouse_operations_dashboard</field>
+    </record>
+
+    <menuitem
+        id="menu_vpk_dashboard_root"
+        name="Dashboard"
+        parent="stock.menu_stock_root"
+        sequence="0"
+        groups="stock.group_stock_user"/>
+
+    <menuitem
+        id="menu_vpk_operations_dashboard"
+        name="สถานะงานคลัง"
+        parent="menu_vpk_dashboard_root"
+        action="action_vpk_operations_dashboard"
+        sequence="1"
+        groups="stock.group_stock_user"/>
+
+    <record id="action_vpk_inventory_status_dashboard" model="ir.actions.client">
+        <field name="name">สถานะสินค้าคงคลัง</field>
+        <field name="tag">vpk_inventory_status_dashboard</field>
+    </record>
+
+    <menuitem
+        id="menu_vpk_inventory_status_dashboard"
+        name="สถานะสินค้าคงคลัง"
+        parent="menu_vpk_dashboard_root"
+        action="action_vpk_inventory_status_dashboard"
+        sequence="2"
+        groups="stock.group_stock_user"/>
+
     <record id="action_vpk_warehouse_overview" model="ir.actions.client">
         <field name="name">คลังและตำแหน่ง</field>
         <field name="tag">vpk_warehouse_overview</field>
@@ -12,4 +45,24 @@
         action="action_vpk_warehouse_overview"
         sequence="1"
         groups="stock.group_stock_user"/>
+
+    <record id="action_vpk_transfer_request" model="ir.actions.server">
+        <field name="name">ขอโอนสินค้า</field>
+        <field name="model_id" ref="stock.model_stock_picking"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_vpk_transfer_request()</field>
+    </record>
+
+    <menuitem
+        id="menu_vpk_transfer_request"
+        name="ขอโอนสินค้า"
+        parent="stock.menu_stock_transfers"
+        action="action_vpk_transfer_request"
+        sequence="23"
+        groups="stock.group_stock_user"/>
+
+    <record id="stock.in_picking" model="ir.ui.menu">
+        <field name="parent_id" ref="stock.menu_stock_warehouse_mgmt"/>
+        <field name="sequence">2</field>
+    </record>
 </odoo>

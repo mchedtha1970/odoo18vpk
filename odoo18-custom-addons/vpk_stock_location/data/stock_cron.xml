@@ -8,8 +8,7 @@
         <field name="interval_number">1</field>
         <field name="interval_type">days</field>
         <!-- 16:30 UTC = 23:30 ICT (UTC+7) -->
-        <field name="nextcall">2026-07-15 16:30:00</field>
+        <field name="nextcall">2026-10-02 16:30:00</field>
         <field name="active" eval="True"/>
-        <field name="numbercall">-1</field>
     </record>
 </odoo>

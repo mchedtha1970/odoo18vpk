@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_vpk_vendor_loan" model="ir.sequence">
+        <field name="name">ยืมของจากผู้ขาย</field>
+        <field name="code">vpk.vendor.loan</field>
+        <field name="prefix">VL/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="location_vendor_loan_stock" model="stock.location">
+        <field name="name">คลังยืมผู้ขาย</field>
+        <field name="usage">internal</field>
+        <field name="location_id" ref="stock.stock_location_locations"/>
+    </record>
+
+    <record id="location_vendor_loan_clearing" model="stock.location">
+        <field name="name">หักล้างการยืมผู้ขาย</field>
+        <field name="usage">inventory</field>
+        <field name="location_id" ref="stock.stock_location_locations_virtual"/>
+    </record>
+
+    <function model="vpk.vendor.loan" name="_vpk_configure_vendor_loan_type"/>
+</odoo>

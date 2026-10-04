@@ -1,5 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="view_location_form_barcode" model="ir.ui.view">
+        <field name="name">stock.location.form.barcode</field>
+        <field name="model">stock.location</field>
+        <field name="inherit_id" ref="stock.view_location_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='replenish_location']" position="after">
+                <field name="barcode"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_location_list_barcode" model="ir.ui.view">
+        <field name="name">stock.location.list.barcode</field>
+        <field name="model">stock.location</field>
+        <field name="inherit_id" ref="stock.view_location_tree2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='usage']" position="after">
+                <field name="barcode" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_location_search_barcode" model="ir.ui.view">
+        <field name="name">stock.location.search.barcode</field>
+        <field name="model">stock.location</field>
+        <field name="inherit_id" ref="stock.view_location_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='complete_name']" position="after">
+                <field name="barcode"/>
+            </xpath>
+        </field>
+    </record>
+
     <record id="stock_location_overview_list" model="ir.ui.view">
         <field name="name">stock.location.overview.list</field>
         <field name="model">stock.location</field>

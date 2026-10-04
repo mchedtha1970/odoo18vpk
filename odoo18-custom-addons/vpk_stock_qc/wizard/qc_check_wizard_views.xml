@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_qc_check_wizard" model="ir.ui.view">
+        <field name="name">vpk.stock.qc.check.wizard.form</field>
+        <field name="model">vpk.stock.qc.check.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ตรวจตามจุดควบคุม">
+                <field name="current_check_id" invisible="1"/>
+                <field name="test_type" invisible="1"/>
+                <field name="quality_state" invisible="1"/>
+                <field name="uses_tolerance" invisible="1"/>
+                <field name="is_last_check" invisible="1"/>
+                <div class="d-flex justify-content-between">
+                    <h4><field name="title" readonly="1"/></h4>
+                    <h5>
+                        <field name="position_current_check" readonly="1"/> /
+                        <field name="nb_checks" readonly="1"/>
+                    </h5>
+                </div>
+                <group>
+                    <field name="product_id" readonly="1"/>
+                    <field name="note" readonly="1" invisible="not note"/>
+                    <label for="measure" invisible="test_type != 'measure'"/>
+                    <div invisible="test_type != 'measure'" class="o_row">
+                        <field name="measure" readonly="quality_state != 'none'"/>
+                        <field name="uom" readonly="1"/>
+                    </div>
+                    <field name="tolerance_min" readonly="1" invisible="not uses_tolerance"/>
+                    <field name="tolerance_max" readonly="1" invisible="not uses_tolerance"/>
+                </group>
+                <footer>
+                    <button name="do_measure" type="object" string="ยืนยันค่า" class="btn-primary"
+                            invisible="quality_state != 'none' or not uses_tolerance"/>
+                    <button name="do_pass" type="object" string="ผ่าน" class="btn-success"
+                            invisible="quality_state != 'none' or uses_tolerance"/>
+                    <button name="do_fail" type="object" string="ไม่ผ่าน" class="btn-danger"
+                            invisible="quality_state != 'none' or uses_tolerance"/>
+                    <button name="action_previous" type="object" string="ก่อนหน้า" class="btn-secondary"
+                            invisible="position_current_check == 1"/>
+                    <button string="ปิด" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_qc_check_wizard_failure" model="ir.ui.view">
+        <field name="name">vpk.stock.qc.check.wizard.failure</field>
+        <field name="model">vpk.stock.qc.check.wizard</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <form string="ค่าที่วัดไม่ผ่าน">
+                <div class="alert alert-warning" role="alert">
+                    <field name="failure_message" readonly="1"/>
+                </div>
+                <footer>
+                    <button name="confirm_fail" type="object" string="ยืนยันไม่ผ่าน" class="btn-danger"/>
+                    <button name="correct_measure" type="object" string="แก้ค่า" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

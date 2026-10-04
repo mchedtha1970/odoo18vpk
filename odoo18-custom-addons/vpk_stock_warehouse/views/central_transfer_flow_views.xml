@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_picking_form_central_transfer" model="ir.ui.view">
+        <field name="name">stock.picking.central.transfer.flow</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_confirm']" position="after">
+                <button name="action_vpk_print_pick_slip" type="object"
+                        string="พิมพ์ใบหยิบของ" class="btn-primary"
+                        invisible="vpk_central_chain_role != 'pick' or state in ('draft', 'done', 'cancel')"
+                        groups="stock.group_stock_user"/>
+            </xpath>
+            <xpath expr="//header" position="after">
+                <field name="vpk_central_chain" invisible="1"/>
+                <field name="vpk_central_chain_role" invisible="1"/>
+                <div class="alert alert-info" role="alert"
+                     invisible="vpk_central_chain_role != 'pick' or state in ('cancel', 'done')">
+                    รับรายการแล้ว ระบบดึงรายการให้แล้ว กดพิมพ์ใบหยิบของแล้วไปหยิบ
+                    จากนั้นกดตรวจสอบเพื่อส่งของเข้าจุดแพ็ค
+                </div>
+                <div class="alert alert-info" role="alert"
+                     invisible="vpk_central_chain_role != 'pack' or state in ('cancel', 'done')">
+                    แพ็คลงกล่องด้วยปุ่มใส่ในแพ็ค แล้วกดตรวจสอบเพื่อส่งต่อไปใบอัปเดตปลายทาง
+                </div>
+                <div class="alert alert-info" role="alert"
+                     invisible="vpk_central_chain_role != 'deliver' or state in ('cancel', 'done')">
+                    กดตรวจสอบเพื่ออัปเดตยอดเข้าคลังปลายทาง หรือให้หน่วยงานปลายทางเป็นผู้กดตรวจสอบ
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

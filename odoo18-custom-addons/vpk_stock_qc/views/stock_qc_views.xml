@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <delete model="ir.ui.view" id="view_stock_qc_line_measure_form"/>
+    <delete model="ir.ui.view" id="view_stock_qc_measure_type_list"/>
+    <delete model="ir.actions.act_window" id="action_stock_qc_measure_type"/>
+    <delete model="ir.ui.menu" id="menu_stock_qc_measure_type"/>
+    <record id="view_stock_qc_list" model="ir.ui.view">
+        <field name="name">vpk.stock.qc.list</field>
+        <field name="model">vpk.stock.qc</field>
+        <field name="arch" type="xml">
+            <list string="ตรวจคุณภาพสินค้า" decoration-success="state == 'passed'" decoration-danger="state == 'failed'">
+                <field name="name"/>
+                <field name="picking_id"/>
+                <field name="partner_id"/>
+                <field name="origin"/>
+                <field name="warehouse_id"/>
+                <field name="line_count" string="รายการ"/>
+                <field name="fail_count" string="ไม่ผ่าน"/>
+                <field name="user_id"/>
+                <field name="date_done"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'passed'"
+                       decoration-danger="state == 'failed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_stock_qc_form" model="ir.ui.view">
+        <field name="name">vpk.stock.qc.form</field>
+        <field name="model">vpk.stock.qc</field>
+        <field name="arch" type="xml">
+            <form string="ตรวจคุณภาพสินค้า">
+                <header>
+                    <button name="action_open_check_wizard" type="object" string="ตรวจจุดควบคุม" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_confirm" type="object" string="บันทึกผลตรวจ" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_reset" type="object" string="ตรวจใหม่" invisible="state == 'draft' or picking_state in ('done', 'cancel')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,passed,failed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="ใบรับ">
+                            <field name="picking_id" readonly="state != 'draft'"/>
+                            <field name="partner_id"/>
+                            <field name="origin"/>
+                            <field name="warehouse_id"/>
+                            <field name="picking_state"/>
+                        </group>
+                        <group string="ผู้ตรวจ">
+                            <field name="user_id" readonly="1"/>
+                            <field name="date_done" readonly="1"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="line_ids">
+                        <list editable="bottom" create="false" delete="false">
+                            <field name="product_id" readonly="1"/>
+                            <field name="product_uom_qty" readonly="1"/>
+                            <field name="product_uom" readonly="1"/>
+                            <field name="result" string="ผล" readonly="1" widget="badge"
+                                   decoration-success="result == 'pass'"
+                                   decoration-danger="result == 'fail'"/>
+                            <field name="note" readonly="parent.state != 'draft'"/>
+                            <field name="move_id" column_invisible="1"/>
+                            <field name="qc_state" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <field name="check_ids" readonly="1" invisible="not check_ids">
+                            <list create="false" delete="false">
+                                <field name="product_id"/>
+                                <field name="title"/>
+                                <field name="test_type"/>
+                                <field name="measure"/>
+                                <field name="uom"/>
+                                <field name="quality_state" widget="badge"
+                                       decoration-info="quality_state == 'none'"
+                                       decoration-success="quality_state == 'pass'"
+                                       decoration-danger="quality_state == 'fail'"/>
+                            </list>
+                    </field>
+                    <group>
+                        <field name="note" readonly="state != 'draft'" placeholder="บันทึกสภาพของที่ตรวจได้"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_stock_qc_search" model="ir.ui.view">
+        <field name="name">vpk.stock.qc.search</field>
+        <field name="model">vpk.stock.qc</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="picking_id"/>
+                <field name="partner_id"/>
+                <field name="origin"/>
+                <filter name="draft" string="รอตรวจ" domain="[('state', '=', 'draft')]"/>
+                <filter name="failed" string="ไม่ผ่าน" domain="[('state', '=', 'failed')]"/>
+                <filter name="passed" string="ผ่าน" domain="[('state', '=', 'passed')]"/>
+                <group expand="0" string="จัดกลุ่ม">
+                    <filter name="group_state" string="ผลตรวจ" context="{'group_by': 'state'}"/>
+                    <filter name="group_vendor" string="ผู้ขาย" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_warehouse" string="คลังรับ" context="{'group_by': 'warehouse_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_stock_qc" model="ir.actions.act_window">
+        <field name="name">ตรวจคุณภาพสินค้า</field>
+        <field name="res_model">vpk.stock.qc</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_draft': 1}</field>
+    </record>
+
+    <menuitem
+        id="menu_stock_qc"
+        name="ตรวจคุณภาพสินค้า"
+        parent="stock.menu_stock_root"
+        action="action_stock_qc"
+        sequence="3"
+        groups="stock.group_stock_user"/>
+
+    <record id="view_stock_qc_point_list" model="ir.ui.view">
+        <field name="name">vpk.stock.qc.point.list</field>
+        <field name="model">vpk.stock.qc.point</field>
+        <field name="arch" type="xml">
+            <list string="จุดควบคุมคุณภาพ">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="title"/>
+                <field name="test_type"/>
+                <field name="uom"/>
+                <field name="tolerance_min"/>
+                <field name="tolerance_max"/>
+                <field name="picking_type_ids" widget="many2many_tags"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_stock_qc_point_form" model="ir.ui.view">
+        <field name="name">vpk.stock.qc.point.form</field>
+        <field name="model">vpk.stock.qc.point</field>
+        <field name="arch" type="xml">
+            <form string="จุดควบคุมคุณภาพ">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <div class="alert alert-info" role="alert">
+                        ถ้าไม่เลือกสินค้าหรือหมวด จุดนี้ใช้กับทุกรายการในใบรับของประเภทปฏิบัติการที่เลือก
+                        ถ้าวัดค่าโดยไม่ใส่ช่วง ผู้ตรวจเลือกผ่านหรือไม่ผ่านเอง
+                        ถ้าใส่ค่าต่ำสุดกับค่าสูงสุด ระบบเทียบค่าที่วัดให้
+                    </div>
+                    <group>
+                        <group>
+                            <field name="title"/>
+                            <field name="test_type"/>
+                            <field name="uom" invisible="test_type != 'measure'" required="test_type == 'measure'"/>
+                            <field name="tolerance_min" invisible="test_type != 'measure'"/>
+                            <field name="tolerance_max" invisible="test_type != 'measure'"/>
+                            <field name="cold_chain"/>
+                            <field name="active" widget="boolean_toggle"/>
+                        </group>
+                        <group>
+                            <field name="picking_type_ids" widget="many2many_tags"/>
+                            <field name="product_ids" widget="many2many_tags"/>
+                            <field name="product_category_ids" widget="many2many_tags"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="note" placeholder="คำแนะนำการตรวจ"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_stock_qc_point" model="ir.actions.act_window">
+        <field name="name">จุดควบคุมคุณภาพ</field>
+        <field name="res_model">vpk.stock.qc.point</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem
+        id="menu_stock_qc_point"
+        name="จุดควบคุมคุณภาพ"
+        parent="stock.menu_stock_config_settings"
+        action="action_stock_qc_point"
+        sequence="51"
+        groups="vpk_stock_qc.group_qc_user"/>
+</odoo>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vendor_receipt_schedule_list" model="ir.ui.view">
+        <field name="name">stock.move.vendor.receipt.schedule.list</field>
+        <field name="model">stock.move</field>
+        <field name="arch" type="xml">
+            <list string="ตารางการส่งจากผู้ขาย"
+                  create="false"
+                  edit="false"
+                  delete="false"
+                  expand="1"
+                  default_order="date, vendor_id, product_id"
+                  decoration-danger="date &lt; current_date and state not in ('done', 'cancel')"
+                  decoration-success="state == 'assigned'">
+                <field name="date" string="วันที่คาดว่าจะส่งมอบ"/>
+                <field name="vendor_id" string="ผู้ขาย"/>
+                <field name="product_id" string="สินค้า"/>
+                <field name="product_uom_qty" string="จำนวนที่สั่ง"/>
+                <field name="quantity" string="จำนวนที่จะรับ"/>
+                <field name="product_uom" string="หน่วย" groups="uom.group_uom"/>
+                <field name="receipt_warehouse_id"/>
+                <field name="location_dest_id" string="ตำแหน่งรับ"/>
+                <field name="origin" string="เอกสารอ้างอิง"/>
+                <field name="picking_id" string="ใบรับสินค้า"/>
+                <field name="state" string="สถานะ" widget="badge"
+                       decoration-info="state == 'assigned'"
+                       decoration-warning="state in ('confirmed', 'waiting', 'partially_available')"/>
+                <button name="action_open_receipt" type="object" string="เปิดใบรับ" icon="fa-external-link"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vendor_receipt_schedule_form" model="ir.ui.view">
+        <field name="name">stock.move.vendor.receipt.schedule.form</field>
+        <field name="model">stock.move</field>
+        <field name="arch" type="xml">
+            <form string="รายการที่จะส่ง" create="false" delete="false" edit="false">
+                <header>
+                    <button name="action_open_receipt" type="object" string="เปิดใบรับสินค้า" class="btn-primary" icon="fa-truck"/>
+                    <field name="state" widget="statusbar" statusbar_visible="confirmed,assigned,done"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="กำหนดส่ง">
+                            <field name="date" string="วันที่คาดว่าจะส่งมอบ"/>
+                            <field name="vendor_id" string="ผู้ขาย"/>
+                            <field name="origin" string="เอกสารอ้างอิง"/>
+                            <field name="picking_id" string="ใบรับสินค้า"/>
+                        </group>
+                        <group string="ของที่จะเข้าคลัง">
+                            <field name="receipt_warehouse_id"/>
+                            <field name="location_dest_id" string="ตำแหน่งรับ"/>
+                            <field name="product_id" string="สินค้า"/>
+                            <field name="product_uom_qty" string="จำนวนที่สั่ง"/>
+                            <field name="quantity" string="จำนวนที่จะรับ"/>
+                            <field name="product_uom" string="หน่วย"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vendor_receipt_schedule_calendar" model="ir.ui.view">
+        <field name="name">stock.move.vendor.receipt.schedule.calendar</field>
+        <field name="model">stock.move</field>
+        <field name="arch" type="xml">
+            <calendar string="ตารางการส่งจากผู้ขาย" date_start="date" color="vendor_id" mode="week" create="false" delete="false">
+                <field name="vendor_id"/>
+                <field name="product_id"/>
+                <field name="product_uom_qty"/>
+                <field name="receipt_warehouse_id"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_vendor_receipt_schedule_pivot" model="ir.ui.view">
+        <field name="name">stock.move.vendor.receipt.schedule.pivot</field>
+        <field name="model">stock.move</field>
+        <field name="arch" type="xml">
+            <pivot string="ตารางการส่งจากผู้ขาย">
+                <field name="date" type="row" interval="day"/>
+                <field name="vendor_id" type="row"/>
+                <field name="product_id" type="row"/>
+                <field name="product_uom_qty" type="measure" string="จำนวนที่สั่ง"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_vendor_receipt_schedule_graph" model="ir.ui.view">
+        <field name="name">stock.move.vendor.receipt.schedule.graph</field>
+        <field name="model">stock.move</field>
+        <field name="arch" type="xml">
+            <graph string="ตารางการส่งจากผู้ขาย" type="bar">
+                <field name="date" interval="day"/>
+                <field name="product_uom_qty" type="measure" string="จำนวนที่สั่ง"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_vendor_receipt_schedule_search" model="ir.ui.view">
+        <field name="name">stock.move.vendor.receipt.schedule.search</field>
+        <field name="model">stock.move</field>
+        <field name="arch" type="xml">
+            <search string="ตารางการส่งจากผู้ขาย">
+                <field name="vendor_id" string="ผู้ขาย"/>
+                <field name="product_id" string="สินค้า"/>
+                <field name="origin" string="เอกสารอ้างอิง"/>
+                <field name="picking_id" string="ใบรับสินค้า"/>
+                <field name="receipt_warehouse_id"/>
+                <filter name="today" string="วันนี้"
+                        domain="[('date', '&gt;=', (context_today()).strftime('%Y-%m-%d')), ('date', '&lt;', (context_today() + relativedelta(days=1)).strftime('%Y-%m-%d'))]"/>
+                <filter name="next_7" string="7 วันข้างหน้า"
+                        domain="[('date', '&gt;=', (context_today()).strftime('%Y-%m-%d')), ('date', '&lt;', (context_today() + relativedelta(days=7)).strftime('%Y-%m-%d'))]"/>
+                <filter name="overdue" string="เลยกำหนดส่ง"
+                        domain="[('date', '&lt;', (context_today()).strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <filter name="group_day" string="วันที่คาดว่าจะส่ง" context="{'group_by': 'date:day'}"/>
+                <filter name="group_vendor" string="ผู้ขาย" context="{'group_by': 'vendor_id'}"/>
+                <filter name="group_warehouse" string="คลังรับ" context="{'group_by': 'receipt_warehouse_id'}"/>
+                <filter name="group_product" string="สินค้า" context="{'group_by': 'product_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vendor_receipt_schedule" model="ir.actions.act_window">
+        <field name="name">ตารางการส่งจากผู้ขาย</field>
+        <field name="res_model">stock.move</field>
+        <field name="view_mode">list,calendar,pivot,graph,form</field>
+        <field name="domain">[('picking_code', '=', 'incoming'), ('state', 'not in', ('done', 'cancel')), ('picking_id', '!=', False)]</field>
+        <field name="context">{'search_default_group_day': 1}</field>
+        <field name="search_view_id" ref="view_vendor_receipt_schedule_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">ยังไม่มีของที่รอรับจากผู้ขาย</p>
+            <p>เมื่อฝ่ายจัดซื้อยืนยันใบสั่งซื้อ วันที่คาดว่าจะส่งมอบจะมาปรากฏในตารางนี้โดยอัตโนมัติ</p>
+        </field>
+    </record>
+
+    <record id="action_vendor_receipt_schedule_view_list" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_vendor_receipt_schedule_list"/>
+        <field name="act_window_id" ref="action_vendor_receipt_schedule"/>
+    </record>
+    <record id="action_vendor_receipt_schedule_view_calendar" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">calendar</field>
+        <field name="view_id" ref="view_vendor_receipt_schedule_calendar"/>
+        <field name="act_window_id" ref="action_vendor_receipt_schedule"/>
+    </record>
+    <record id="action_vendor_receipt_schedule_view_pivot" model="ir.actions.act_window.view">
+        <field name="sequence" eval="3"/>
+        <field name="view_mode">pivot</field>
+        <field name="view_id" ref="view_vendor_receipt_schedule_pivot"/>
+        <field name="act_window_id" ref="action_vendor_receipt_schedule"/>
+    </record>
+    <record id="action_vendor_receipt_schedule_view_graph" model="ir.actions.act_window.view">
+        <field name="sequence" eval="4"/>
+        <field name="view_mode">graph</field>
+        <field name="view_id" ref="view_vendor_receipt_schedule_graph"/>
+        <field name="act_window_id" ref="action_vendor_receipt_schedule"/>
+    </record>
+    <record id="action_vendor_receipt_schedule_view_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="5"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_vendor_receipt_schedule_form"/>
+        <field name="act_window_id" ref="action_vendor_receipt_schedule"/>
+    </record>
+
+    <menuitem
+        id="menu_vendor_receipt_schedule"
+        name="ตารางการส่งจากผู้ขาย"
+        parent="stock.menu_stock_root"
+        action="action_vendor_receipt_schedule"
+        sequence="2"
+        groups="stock.group_stock_user"/>
+</odoo>

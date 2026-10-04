@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_stock_quant_tree_inventory_count_sheet" model="ir.ui.view">
+        <field name="name">stock.quant.inventory.count.sheet</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.view_stock_quant_tree_inventory_editable"/>
+        <field name="arch" type="xml">
+            <button name="action_apply_all" position="before">
+                <button name="action_export_count_sheet" type="object" string="ใบนับ Excel" display="always"/>
+                <button name="action_open_count_sheet_import" type="object" string="นำเข้าใบนับ" display="always"/>
+            </button>
+        </field>
+    </record>
+</odoo>

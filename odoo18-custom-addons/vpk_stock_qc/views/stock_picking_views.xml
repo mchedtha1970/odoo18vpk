@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_picking_form_receipt_qc" model="ir.ui.view">
+        <field name="name">stock.picking.form.receipt.qc</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='button_validate']" position="before">
+                <button name="action_open_receipt_qc"
+                        type="object"
+                        string="ตรวจคุณภาพ"
+                        class="btn-primary"
+                        invisible="picking_type_code != 'incoming' or state in ('done', 'cancel')"
+                        groups="vpk_stock_qc.group_qc_user"/>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <field name="qc_state" invisible="1"/>
+                <div class="alert alert-warning text-center mb-0"
+                     role="alert"
+                     invisible="picking_type_code != 'incoming' or state in ('done', 'cancel') or qc_state == 'passed'">
+                    ต้องตรวจคุณภาพสินค้าให้ผ่านก่อนรับเข้าคลัง
+                </div>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_receipt_qc"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-check-square-o"
+                        invisible="picking_type_code != 'incoming'">
+                    <field name="qc_count" widget="statinfo" string="ตรวจคุณภาพ"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

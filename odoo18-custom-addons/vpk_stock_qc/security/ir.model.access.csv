@@ -1,0 +1,15 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_stock_qc_user,vpk.stock.qc user,model_vpk_stock_qc,stock.group_stock_user,1,0,0,0
+access_vpk_stock_qc_qc,vpk.stock.qc inspector,model_vpk_stock_qc,group_qc_user,1,1,1,0
+access_vpk_stock_qc_manager,vpk.stock.qc manager,model_vpk_stock_qc,stock.group_stock_manager,1,1,1,1
+access_vpk_stock_qc_line_user,vpk.stock.qc.line user,model_vpk_stock_qc_line,stock.group_stock_user,1,0,0,0
+access_vpk_stock_qc_line_qc,vpk.stock.qc.line inspector,model_vpk_stock_qc_line,group_qc_user,1,1,1,0
+access_vpk_stock_qc_line_manager,vpk.stock.qc.line manager,model_vpk_stock_qc_line,stock.group_stock_manager,1,1,1,1
+access_vpk_stock_qc_point_user,vpk.stock.qc.point user,model_vpk_stock_qc_point,stock.group_stock_user,1,0,0,0
+access_vpk_stock_qc_point_qc,vpk.stock.qc.point inspector,model_vpk_stock_qc_point,group_qc_user,1,1,1,1
+access_vpk_stock_qc_point_manager,vpk.stock.qc.point manager,model_vpk_stock_qc_point,stock.group_stock_manager,1,1,1,1
+access_vpk_stock_qc_check_user,vpk.stock.qc.check user,model_vpk_stock_qc_check,stock.group_stock_user,1,0,0,0
+access_vpk_stock_qc_check_qc,vpk.stock.qc.check inspector,model_vpk_stock_qc_check,group_qc_user,1,1,1,0
+access_vpk_stock_qc_check_manager,vpk.stock.qc.check manager,model_vpk_stock_qc_check,stock.group_stock_manager,1,1,1,1
+access_vpk_stock_qc_check_wizard_qc,vpk.stock.qc.check.wizard inspector,model_vpk_stock_qc_check_wizard,group_qc_user,1,1,1,1
+access_vpk_stock_qc_check_wizard_manager,vpk.stock.qc.check.wizard manager,model_vpk_stock_qc_check_wizard,stock.group_stock_manager,1,1,1,1
