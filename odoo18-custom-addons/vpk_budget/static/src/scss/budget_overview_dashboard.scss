@@ -1,234 +1,225 @@
-.o_vpk_budget_overview {
+.o_vpk_budget_monitor {
+    --bm-bg: #f4f1ea;
+    --bm-card: #ffffff;
+    --bm-ink: #2b2924;
+    --bm-muted: #7d776c;
+    --bm-line: #ece7dc;
+    --bm-teal: #1b6f60;
+    --bm-teal-soft: #dceee8;
+    --bm-orange: #d9783c;
+    --bm-orange-soft: #f8e5d6;
+    --bm-dark: #243037;
+    --bm-remain: #c9c3b6;
     min-height: 100%;
-    padding: 22px 24px 32px;
-    background: #f5f7fb;
-    color: #0f172a;
-    font-family: var(--vpk-font-family, var(--bs-body-font-family, inherit));
-    font-size: var(--vpk-font-size-md, inherit);
+    padding: 8px 10px 28px;
+    background: var(--bm-bg);
+    color: var(--bm-ink);
+    font-family: "Prompt", "Sarabun", var(--vpk-font-family, sans-serif);
 
     h1,
     h2,
     h3,
-    h4,
-    h5,
-    h6,
     p,
     span,
     strong,
     small,
     b,
     em,
-    i,
     label,
     table,
     th,
     td,
     button,
-    .btn,
-    select,
-    .form-select,
-    .progress,
-    .text-muted,
-    .text-success,
-    .text-danger {
+    select {
         font-family: inherit !important;
     }
 
-    .o_vpk_budget_overview_header {
+    .o_vpk_bm_top {
         display: flex;
         justify-content: space-between;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 18px;
-
-        h2 {
-            margin: 0;
-            font-size: 22px;
-            font-weight: 700;
-        }
-
-        p {
-            margin: 4px 0 0;
-            color: #64748b;
-            font-size: 13px;
-        }
-    }
-
-    .o_vpk_budget_overview_actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        .form-select {
-            min-width: 180px;
-            background: #fff;
-        }
-
-        .btn-success {
-            background: #16a34a;
-            border-color: #16a34a;
-        }
-    }
-
-    .o_vpk_budget_overview_metrics {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 14px;
+        align-items: flex-start;
+        gap: 18px;
         margin-bottom: 16px;
     }
 
-    .o_vpk_budget_overview_metric,
-    .o_vpk_budget_overview_panel {
-        background: #fff;
-        border: 1px solid #e8eef5;
-        border-radius: 16px;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+    .o_vpk_bm_kicker {
+        color: var(--bm-muted);
+        font-size: 12px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
     }
 
-    .o_vpk_budget_overview_metric {
+    h1 {
+        margin: 2px 0 4px;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: #1f3d38;
+    }
+
+    .o_vpk_bm_org {
+        color: #5b564c;
+        font-size: 13px;
+    }
+
+    .o_vpk_bm_meta {
+        margin: 6px 0 0;
+        color: var(--bm-muted);
+        font-size: 12px;
+    }
+
+    .o_vpk_bm_actions {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        min-height: 110px;
-        padding: 18px;
-        cursor: pointer;
+        align-items: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
 
-        strong {
-            display: block;
-            margin: 8px 0 4px;
-            font-size: 24px;
-            letter-spacing: -0.02em;
+        label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin: 0;
+            color: var(--bm-muted);
+            font-size: 11px;
+            font-weight: 600;
         }
 
-        small {
-            display: block;
-            font-size: 12px;
+        .form-select {
+            min-width: 168px;
+            background: #fff;
+            border-color: #ddd6c8;
+            border-radius: 10px;
         }
     }
 
-    .o_vpk_budget_overview_metric_label {
-        color: #64748b;
+    .o_vpk_bm_export {
+        background: #1f3d38;
+        color: #fff;
+        border: 0;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+
+        &:hover {
+            background: #16302c;
+            color: #fff;
+        }
+    }
+
+    .o_vpk_bm_kpis {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .o_vpk_bm_kpi,
+    .o_vpk_bm_panel {
+        background: var(--bm-card);
+        border: 1px solid #ebe6db;
+        border-radius: 18px;
+        box-shadow: 0 10px 24px rgba(60, 48, 28, 0.04);
+    }
+
+    .o_vpk_bm_kpi {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 16px 16px 14px;
+        border-left: 5px solid var(--bm-dark);
+        min-height: 138px;
+    }
+
+    .o_vpk_bm_kpi_teal {
+        border-left-color: var(--bm-teal);
+    }
+
+    .o_vpk_bm_kpi_orange {
+        border-left-color: var(--bm-orange);
+    }
+
+    .o_vpk_bm_kpi_mute {
+        border-left-color: #b7b09f;
+    }
+
+    .o_vpk_bm_kpi_label {
+        display: block;
+        color: var(--bm-muted);
         font-size: 12px;
         font-weight: 600;
     }
 
-    .o_vpk_budget_overview_metric_icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-    }
+    .o_vpk_bm_kpi_row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin: 8px 0 6px;
 
-    .o_vpk_budget_overview_form_section {
-        background: #fff;
-        border: 1px solid #e8eef5;
-        border-radius: 16px;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
-        padding: 18px;
-        margin-bottom: 16px;
-    }
-
-    .o_vpk_budget_overview_form_header {
-        margin-bottom: 14px;
-
-        h3 {
-            margin: 0;
-            font-size: 16px;
+        strong {
+            font-size: 30px;
             font-weight: 700;
-        }
-
-        span {
-            color: #64748b;
-            font-size: 12px;
-        }
-    }
-
-    .o_vpk_budget_overview_form_kpis {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 12px;
-        margin-bottom: 14px;
-    }
-
-    .o_vpk_budget_overview_form_kpi {
-        border: 1px solid #e8eef5;
-        border-radius: 14px;
-        padding: 14px;
-        cursor: pointer;
-        background: #f8fafc;
-        transition: box-shadow 0.15s ease, transform 0.15s ease;
-
-        &:hover {
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
-            transform: translateY(-1px);
-        }
-
-        b {
-            display: block;
-            margin: 6px 0 2px;
-            font-size: 18px;
+            letter-spacing: -0.04em;
+            line-height: 1;
         }
 
         small {
-            display: block;
-            font-size: 11px;
+            color: var(--bm-muted);
+            font-size: 12px;
+        }
+
+        em {
+            margin-left: auto;
+            font-style: normal;
+            font-size: 12px;
+            font-weight: 700;
+            color: #5b564c;
+            background: #f3eee4;
+            border-radius: 999px;
+            padding: 2px 8px;
         }
     }
 
-    .o_vpk_budget_overview_form_kpi_top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
+    .o_vpk_bm_kpi_teal .o_vpk_bm_kpi_row em {
+        color: var(--bm-teal);
+        background: var(--bm-teal-soft);
     }
 
-    .o_vpk_budget_overview_form_pct {
-        font-size: 18px;
-        color: #0f172a;
+    .o_vpk_bm_kpi_orange .o_vpk_bm_kpi_row em {
+        color: #b85c24;
+        background: var(--bm-orange-soft);
     }
 
-    .o_vpk_budget_overview_form_bar {
-        margin-top: 10px;
-        height: 6px;
-        border-radius: 999px;
-        background: #e2e8f0;
-        overflow: hidden;
+    .o_vpk_bm_kpi_sub,
+    .o_vpk_bm_kpi_foot {
+        display: block;
+        color: #6f6a60;
+        font-size: 12px;
+        line-height: 1.4;
     }
 
-    .o_vpk_budget_overview_form_bar_fill {
-        height: 100%;
-        border-radius: 999px;
+    .o_vpk_bm_kpi_foot {
+        margin-top: 4px;
+        color: var(--bm-muted);
+        font-size: 11px;
     }
 
-    .o_vpk_budget_overview_form_donut {
-        border-top: 1px solid #eef2f7;
-        padding-top: 14px;
+    .o_vpk_bm_panel {
+        padding: 16px 18px 18px;
+        margin-bottom: 14px;
     }
 
-    .o_vpk_budget_overview_grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr);
-        gap: 16px;
-        margin-bottom: 16px;
+    .o_vpk_bm_status {
+        margin-bottom: 14px;
     }
 
-    .o_vpk_budget_overview_grid_bottom {
-        grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.95fr);
-    }
-
-    .o_vpk_budget_overview_panel {
-        padding: 18px;
-    }
-
-    .o_vpk_budget_overview_panel_header {
+    .o_vpk_bm_status_head,
+    .o_vpk_bm_panel_head {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         gap: 12px;
-        margin-bottom: 14px;
+        margin-bottom: 12px;
 
         h3 {
             margin: 0;
@@ -236,197 +227,352 @@
             font-weight: 700;
         }
 
-        span {
-            color: #64748b;
+        span,
+        .o_vpk_bm_status_total {
+            color: var(--bm-muted);
             font-size: 12px;
         }
     }
 
-    .o_vpk_budget_overview_chart {
-        position: relative;
-        height: 280px;
+    .o_vpk_bm_stack {
+        display: flex;
+        height: 22px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #efeae0;
+    }
+
+    .o_vpk_bm_stack_actual,
+    .o_vpk_bm_stack_committed,
+    .o_vpk_bm_stack_remain {
+        height: 100%;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .o_vpk_bm_stack_actual {
+        background: var(--bm-teal);
+    }
+
+    .o_vpk_bm_stack_committed {
+        background: var(--bm-orange);
+    }
+
+    .o_vpk_bm_stack_remain {
+        background: var(--bm-remain);
+        color: #5b564c;
+    }
+
+    .o_vpk_bm_stack_legend,
+    .o_vpk_bm_chart_legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 10px;
+        color: #6f6a60;
+        font-size: 12px;
+    }
+
+    .o_vpk_bm_plan {
+        margin-left: auto;
+        color: #8a5a32;
+        font-weight: 600;
+    }
+
+    .o_vpk_bm_dot,
+    .o_vpk_bm_line {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 6px;
+        vertical-align: middle;
+    }
+
+    .o_vpk_bm_dot_actual,
+    .o_vpk_bm_line_actual {
+        background: var(--bm-teal);
+    }
+
+    .o_vpk_bm_dot_committed,
+    .o_vpk_bm_line_committed {
+        background: var(--bm-orange);
+    }
+
+    .o_vpk_bm_dot_remain {
+        background: var(--bm-remain);
+    }
+
+    .o_vpk_bm_line_plan {
+        background: #b9b3a6;
+        border-radius: 2px;
+        height: 3px;
+        width: 16px;
+    }
+
+    .o_vpk_bm_grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.9fr);
+        gap: 14px;
+        margin-bottom: 14px;
+
+        .o_vpk_bm_panel {
+            margin-bottom: 0;
+        }
+    }
+
+    .o_vpk_bm_grid_bottom {
+        grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.95fr);
+    }
+
+    .o_vpk_bm_chart {
+        height: 286px;
 
         svg {
             width: 100%;
-            height: 220px;
+            height: 248px;
             overflow: visible;
         }
     }
 
-    .o_vpk_budget_overview_area {
-        fill: rgba(16, 185, 129, 0.15);
+    .o_vpk_bm_gridline {
+        stroke: #eee8dc;
+        stroke-width: 1;
+    }
+
+    .o_vpk_bm_axis {
+        fill: #9a9488;
+        font-size: 10px;
+        text-anchor: end;
+    }
+
+    .o_vpk_bm_q3 {
+        stroke: #d7c4a8;
+        stroke-width: 1.2;
+        stroke-dasharray: 4 4;
+    }
+
+    .o_vpk_bm_area {
+        fill: rgba(27, 111, 96, 0.12);
         stroke: none;
     }
 
-    .o_vpk_budget_overview_line_actual {
+    .o_vpk_bm_poly_actual {
         fill: none;
-        stroke: #10b981;
-        stroke-width: 2.2;
+        stroke: var(--bm-teal);
+        stroke-width: 2.4;
         stroke-linecap: round;
         stroke-linejoin: round;
     }
 
-    .o_vpk_budget_overview_line_plan {
+    .o_vpk_bm_poly_committed {
         fill: none;
-        stroke: #ef4444;
+        stroke: var(--bm-orange);
         stroke-width: 2;
-        stroke-dasharray: 4 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .o_vpk_bm_poly_plan {
+        fill: none;
+        stroke: #b9b3a6;
+        stroke-width: 1.8;
+        stroke-dasharray: 5 4;
         stroke-linecap: round;
     }
 
-    .o_vpk_budget_overview_legend_inline {
-        display: flex;
-        gap: 16px;
-        margin-top: 8px;
-        color: #64748b;
-        font-size: 12px;
-
-        .o_dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 6px;
-        }
-
-        .o_dot_actual {
-            background: #10b981;
-        }
-
-        .o_dot_plan {
-            background: #ef4444;
-        }
+    .o_vpk_bm_now {
+        fill: var(--bm-teal);
+        stroke: #fff;
+        stroke-width: 2;
     }
 
-    .o_vpk_budget_overview_axis {
+    .o_vpk_bm_now_label {
+        fill: var(--bm-teal);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .o_vpk_bm_axis_x {
         display: grid;
         grid-template-columns: repeat(12, minmax(0, 1fr));
-        gap: 2px;
-        margin-top: 8px;
-        color: #94a3b8;
+        margin-top: 4px;
+        color: #9a9488;
         font-size: 11px;
         text-align: center;
     }
 
-    .o_vpk_budget_overview_donut_wrap {
-        display: grid;
-        grid-template-columns: 160px minmax(0, 1fr);
-        gap: 16px;
-        align-items: center;
-        min-height: 240px;
-    }
-
-    .o_vpk_budget_overview_donut {
-        width: 150px;
-        height: 150px;
-        border-radius: 50%;
-        margin: 0 auto;
-        mask: radial-gradient(circle at center, transparent 48%, #000 49%);
-        -webkit-mask: radial-gradient(circle at center, transparent 48%, #000 49%);
-    }
-
-    .o_vpk_budget_overview_donut_legend {
+    .o_vpk_bm_depts {
         display: flex;
         flex-direction: column;
         gap: 10px;
     }
 
-    .o_vpk_budget_overview_legend_item {
+    .o_vpk_bm_dept_meta,
+    .o_vpk_bm_project_main {
         display: flex;
+        justify-content: space-between;
         gap: 10px;
-        align-items: flex-start;
-
-        > span {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-top: 5px;
-            flex: 0 0 auto;
-        }
+        align-items: baseline;
 
         strong {
-            display: block;
             font-size: 13px;
+            font-weight: 600;
         }
 
         small {
-            color: #64748b;
+            color: var(--bm-muted);
             font-size: 12px;
         }
     }
 
-    .o_vpk_budget_overview_table {
+    .o_vpk_bm_dept_track,
+    .o_vpk_bm_usage_track {
+        height: 9px;
+        border-radius: 999px;
+        background: #efeae0;
+        overflow: hidden;
+        margin-top: 5px;
+    }
+
+    .o_vpk_bm_dept_fill,
+    .o_vpk_bm_usage_fill {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--bm-teal);
+    }
+
+    .o_tone_warn {
+        color: var(--bm-orange);
+    }
+
+    .o_vpk_bm_dept_fill.o_tone_warn,
+    .o_vpk_bm_usage_fill.o_tone_warn {
+        background: var(--bm-orange);
+        color: transparent;
+    }
+
+    .o_vpk_bm_dept_fill.o_tone_ok,
+    .o_vpk_bm_usage_fill.o_tone_ok {
+        background: var(--bm-teal);
+    }
+
+    .o_vpk_bm_dept_fill.o_tone_danger,
+    .o_vpk_bm_usage_fill.o_tone_danger {
+        background: #b4533a;
+    }
+
+    .o_vpk_bm_dept small {
+        display: block;
+        margin-top: 3px;
+        color: var(--bm-muted);
+        font-size: 11px;
+    }
+
+    .o_vpk_bm_dept_note {
+        margin-top: 12px;
+        color: var(--bm-muted);
+        font-size: 11px;
+    }
+
+    .o_vpk_bm_table {
         margin: 0;
 
         th {
-            color: #64748b;
+            color: var(--bm-muted);
             font-size: 12px;
             font-weight: 600;
-            border-bottom-width: 1px;
+            border-bottom: 1px solid var(--bm-line);
+            white-space: nowrap;
         }
 
         td {
             vertical-align: middle;
-            border-color: #f1f5f9;
+            border-color: #f3eee6;
             font-size: 13px;
         }
+
+        tfoot th {
+            color: var(--bm-ink);
+            border-top: 1px solid var(--bm-line);
+            font-weight: 700;
+        }
     }
 
-    .o_vpk_budget_overview_dept {
+    .o_vpk_bm_usage {
+        display: grid;
+        grid-template-columns: minmax(70px, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+        min-width: 120px;
+    }
+
+    .o_vpk_bm_pill {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-
-        i {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-        }
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        background: var(--bm-teal-soft);
+        color: var(--bm-teal);
     }
 
-    .o_vpk_budget_overview_usage {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 8px;
-        align-items: center;
-        min-width: 140px;
-
-        .progress {
-            height: 8px;
-            background: #eef2f7;
-            border-radius: 999px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            border-radius: 999px;
-        }
-
-        small {
-            color: #475569;
-            font-weight: 600;
-            white-space: nowrap;
-        }
+    .o_vpk_bm_pill.o_tone_warn {
+        background: var(--bm-orange-soft);
+        color: #b85c24;
     }
 
-    .o_vpk_budget_overview_recent {
+    .o_vpk_bm_pill.o_tone_danger {
+        background: #f8e0d8;
+        color: #9a3d28;
+    }
+
+    .o_vpk_bm_unit,
+    .o_vpk_bm_count {
+        color: var(--bm-muted);
+        font-size: 12px;
+    }
+
+    .o_vpk_bm_projects,
+    .o_vpk_bm_alerts {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
     }
 
-    .o_vpk_budget_overview_recent_item {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        width: 100%;
-        border: 1px solid #eef2f7;
+    .o_vpk_bm_project {
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f3eee6;
+
+        &:last-child {
+            border-bottom: 0;
+            padding-bottom: 0;
+        }
+    }
+
+    .o_vpk_bm_project_bar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        margin-top: 6px;
+    }
+
+    .o_vpk_bm_alert {
+        display: grid;
+        grid-template-columns: 10px minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: start;
+        padding: 10px 10px 10px 8px;
         border-radius: 12px;
-        background: #f8fafc;
-        padding: 12px;
-        text-align: left;
+        background: #fbf8f2;
 
         strong {
             display: block;
@@ -434,72 +580,64 @@
         }
 
         small {
-            color: #64748b;
+            display: block;
+            color: var(--bm-muted);
             font-size: 12px;
-        }
-    }
-
-    .o_vpk_budget_overview_recent_meta {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 4px;
-
-        b {
-            font-size: 13px;
+            margin-top: 2px;
         }
 
-        .o_state {
+        em {
             font-style: normal;
             font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 999px;
-            background: #e2e8f0;
-            color: #334155;
-        }
-
-        .o_state_draft {
-            background: #dbeafe;
-            color: #1d4ed8;
-        }
-
-        .o_state_submitted,
-        .o_state_review {
-            background: #ffedd5;
-            color: #c2410c;
-        }
-
-        .o_state_received {
-            background: #ede9fe;
-            color: #6d28d9;
-        }
-
-        .o_state_approved {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .o_state_rejected {
-            background: #fee2e2;
-            color: #b91c1c;
+            font-weight: 600;
+            color: #8a5a32;
         }
     }
 
-    .o_vpk_budget_overview_loading {
-        padding: 48px;
+    .o_vpk_bm_alert_mark {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-top: 6px;
+        background: var(--bm-orange);
+    }
+
+    .o_vpk_bm_alert.o_tone_ok .o_vpk_bm_alert_mark {
+        background: var(--bm-teal);
+    }
+
+    .o_vpk_bm_alert.o_tone_danger .o_vpk_bm_alert_mark {
+        background: #b4533a;
+    }
+
+    .o_vpk_bm_empty,
+    .o_vpk_bm_loading {
+        padding: 28px 8px;
         text-align: center;
-        color: #64748b;
+        color: var(--bm-muted);
     }
 
     @media (max-width: 1200px) {
-        .o_vpk_budget_overview_metrics,
-        .o_vpk_budget_overview_grid,
-        .o_vpk_budget_overview_grid_bottom {
-            grid-template-columns: 1fr;
-        }
-
-        .o_vpk_budget_overview_donut_wrap {
+        .o_vpk_bm_kpis,
+        .o_vpk_bm_grid,
+        .o_vpk_bm_grid_bottom,
+        .o_vpk_bm_top {
+            display: grid;
             grid-template-columns: 1fr;
         }
     }
+
+    @media print {
+        background: #fff;
+        padding: 0;
+
+        .o_vpk_bm_actions {
+            display: none;
+        }
+    }
+}
+
+.o_action:has(.o_vpk_budget_monitor),
+.o_action:has(.o_vpk_budget_monitor) .o_content {
+    background: #f4f1ea;
 }

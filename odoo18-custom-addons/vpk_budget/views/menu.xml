@@ -42,13 +42,13 @@
     />
 
     <record id="action_vpk_budget_overview_dashboard" model="ir.actions.client">
-        <field name="name">ภาพรวมงบประมาณรายจ่ายประจำปี</field>
+        <field name="name">ติดตามงบประมาณประจำปี</field>
         <field name="tag">vpk_budget_overview_dashboard</field>
     </record>
 
     <menuitem
         id="menu_vpk_budget_dashboard_overview"
-        name="ภาพรวมงบประมาณรายจ่ายประจำปี"
+        name="ติดตามงบประมาณประจำปี"
         parent="menu_vpk_budget_dashboard"
         action="action_vpk_budget_overview_dashboard"
         sequence="5"
