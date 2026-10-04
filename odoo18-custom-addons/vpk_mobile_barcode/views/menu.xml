@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_vpk_barcode_app" model="ir.actions.act_url">
+        <field name="name">สแกนบาร์โค้ด</field>
+        <field name="url">/vpk/barcode</field>
+        <field name="target">new</field>
+    </record>
+    <menuitem
+        id="menu_vpk_barcode_app"
+        name="สแกนบาร์โค้ด"
+        parent="stock.menu_stock_warehouse_mgmt"
+        action="action_vpk_barcode_app"
+        sequence="1"
+        groups="stock.group_stock_user"/>
+</odoo>

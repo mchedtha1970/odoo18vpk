@@ -1,0 +1,10 @@
+{
+  "name": "VPK สแกนบาร์โค้ด",
+  "short_name": "สแกนบาร์โค้ด",
+  "start_url": "/vpk/barcode",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#714B67",
+  "theme_color": "#714B67",
+  "lang": "th"
+}
