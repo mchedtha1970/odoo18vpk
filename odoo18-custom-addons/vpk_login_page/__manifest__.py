@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "VPK Login Page",
-    "version": "18.0.1.2.0",
+    "version": "18.0.1.2.1",
     "category": "Tools",
     "summary": "Full screen hospital branded login / signup / reset password page",
     "description": """
@@ -20,7 +20,7 @@ Texts can be changed without touching the code through System Parameters:
 * ``vpk_login_page.footnote``
     """,
     "author": "VPK",
-    "depends": ["web"],
+    "depends": ["web", "website"],
     "data": [
         "views/login_templates.xml",
     ],
