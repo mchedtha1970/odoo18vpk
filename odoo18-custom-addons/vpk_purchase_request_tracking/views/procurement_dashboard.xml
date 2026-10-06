@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_vpk_procurement_dashboard" model="ir.actions.client">
+        <field name="name">ติดตามการจัดซื้อจัดจ้าง</field>
+        <field name="tag">vpk_procurement_dashboard</field>
+    </record>
+
+    <menuitem id="menu_vpk_procurement_dashboard"
+              name="ติดตามการจัดซื้อจัดจ้าง"
+              parent="purchase.menu_purchase_root"
+              action="action_vpk_procurement_dashboard"
+              sequence="1"
+              groups="purchase.group_purchase_user"/>
+</odoo>

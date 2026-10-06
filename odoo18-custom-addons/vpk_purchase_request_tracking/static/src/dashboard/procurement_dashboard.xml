@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="vpk_purchase_request_tracking.ProcurementDashboard">
+        <div t-att-class="props.className" class="o_vpk_proc_action">
+            <Layout display="display">
+                <div class="o_vpk_proc">
+                    <header class="o_vpk_proc_top">
+                        <div class="o_vpk_proc_brand">
+                            <span class="o_vpk_proc_logo">PR</span>
+                            <div>
+                                <strong>ระบบติดตามการจัดซื้อจัดจ้าง</strong>
+                                <small>ซื้อหน่วยงาน · ปีงบประมาณ พ.ศ. <t t-esc="state.data.fiscal_year"/></small>
+                            </div>
+                        </div>
+                        <nav>
+                            <button t-att-class="state.tab === 'overview' ? 'active' : ''" t-on-click="() => this.setTab('overview')">ภาพรวม</button>
+                            <button t-att-class="state.tab === 'projects' ? 'active' : ''" t-on-click="() => this.setTab('projects')">โครงการ</button>
+                            <button t-att-class="state.tab === 'contracts' ? 'active' : ''" t-on-click="() => this.setTab('contracts')">สัญญา</button>
+                            <button t-att-class="state.tab === 'reports' ? 'active' : ''" t-on-click="() => this.setTab('reports')">รายงาน</button>
+                        </nav>
+                    </header>
+
+                    <t t-if="!state.ready">
+                        <div class="o_vpk_proc_loading">กำลังโหลดข้อมูล...</div>
+                    </t>
+                    <t t-else="">
+                        <div class="o_vpk_proc_page_head">
+                            <div>
+                                <h1>ภาพรวมสถานะการจัดซื้อจัดจ้าง</h1>
+                                <p><t t-esc="state.data.as_of_label"/> · ข้อมูลจากใบขอซื้อในระบบ</p>
+                            </div>
+                            <div class="o_vpk_proc_actions">
+                                <label>
+                                    ปีงบประมาณ
+                                    <select class="form-select form-select-sm" t-on-change="onYearChange">
+                                        <t t-foreach="state.data.year_options" t-as="year" t-key="year">
+                                            <option t-att-value="year" t-att-selected="year === state.data.fiscal_year"><t t-esc="year"/></option>
+                                        </t>
+                                    </select>
+                                </label>
+                                <button class="btn o_vpk_proc_btn_ghost" t-on-click="exportReport">ส่งออกรายงาน</button>
+                                <button class="btn o_vpk_proc_btn_primary" t-on-click="createRequest">+ สร้างคำขอซื้อ/จ้าง</button>
+                            </div>
+                        </div>
+
+                        <div class="o_vpk_proc_kpis">
+                            <article>
+                                <span>โครงการทั้งหมด</span>
+                                <strong><t t-esc="formatCount(state.data.kpis.total)"/></strong>
+                                <small t-att-class="state.data.kpis.year_delta >= 0 ? 'up' : 'down'">
+                                    <t t-esc="formatSigned(state.data.kpis.year_delta)"/> โครงการจากปีก่อน
+                                </small>
+                            </article>
+                            <article>
+                                <span>วงเงินรวม</span>
+                                <strong>฿<t t-esc="formatMillion(state.data.kpis.amount)"/></strong>
+                                <small class="up">ประหยัดงบได้ ฿<t t-esc="formatMillion(state.data.kpis.savings)"/> (<t t-esc="state.data.kpis.savings_pct.toFixed(1)"/>%)</small>
+                            </article>
+                            <article>
+                                <span>อยู่ระหว่างดำเนินการ</span>
+                                <strong><t t-esc="formatCount(state.data.kpis.in_progress)"/></strong>
+                                <small>เฉลี่ย <t t-esc="state.data.kpis.avg_days"/> วันต่อโครงการ</small>
+                            </article>
+                            <article>
+                                <span>ล่าช้ากว่ากำหนด</span>
+                                <strong class="warn"><t t-esc="formatCount(state.data.kpis.late)"/></strong>
+                                <small><t t-esc="state.data.kpis.late_note"/></small>
+                            </article>
+                            <article class="o_vpk_proc_paid">
+                                <span>เบิกจ่ายแล้ว</span>
+                                <div class="o_vpk_proc_ring" t-att-style="paidStyle()">
+                                    <b><t t-esc="Math.round(state.data.kpis.paid_pct)"/>%</b>
+                                </div>
+                            </article>
+                        </div>
+
+                        <t t-if="state.tab === 'overview' || state.tab === 'reports'">
+                            <div class="o_vpk_proc_grid">
+                                <section>
+                                    <header>
+                                        <h2>โครงการตามขั้นตอน</h2>
+                                        <small>เฉพาะโครงการที่ยังไม่แล้วเสร็จ (<t t-esc="state.data.open_stage_count"/> โครงการ)</small>
+                                    </header>
+                                    <t t-foreach="state.data.stages" t-as="stage" t-key="stage.key">
+                                        <div class="o_vpk_proc_stage">
+                                            <span><t t-esc="stage_index + 1"/> <t t-esc="stage.label"/></span>
+                                            <div><i t-att-style="'width:' + stageWidth(stage)"/></div>
+                                            <b><t t-esc="stage.count"/></b>
+                                        </div>
+                                    </t>
+                                </section>
+                                <section>
+                                    <header>
+                                        <h2>แผน vs ผลการเบิกจ่าย</h2>
+                                        <small>หน่วย: ล้านบาท รายไตรมาส</small>
+                                    </header>
+                                    <div class="o_vpk_proc_legend">
+                                        <span><i class="plan"/>แผน</span>
+                                        <span><i class="actual"/>เบิกจ่ายจริง</span>
+                                    </div>
+                                    <div class="o_vpk_proc_quarters">
+                                        <t t-foreach="state.data.quarters" t-as="quarter" t-key="quarter.label">
+                                            <div>
+                                                <div class="o_vpk_proc_qbars">
+                                                    <em t-att-style="'height:' + barHeight(quarter.plan)"><t t-esc="(quarter.plan / 1000000).toFixed(1)"/></em>
+                                                    <em class="actual" t-att-style="'height:' + barHeight(quarter.actual)"><t t-esc="(quarter.actual / 1000000).toFixed(1)"/></em>
+                                                </div>
+                                                <small><t t-esc="quarter.label"/></small>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </section>
+                                <section>
+                                    <header>
+                                        <h2>วิธีการจัดหา</h2>
+                                        <small>สัดส่วนตามวงเงิน</small>
+                                    </header>
+                                    <t t-foreach="state.data.methods" t-as="method" t-key="method.key">
+                                        <div class="o_vpk_proc_method">
+                                            <div>
+                                                <span><t t-esc="method.label"/> · <t t-esc="method.count"/> โครงการ</span>
+                                                <b>฿<t t-esc="formatMillion(method.amount)"/></b>
+                                            </div>
+                                            <div class="track"><i t-att-style="'width:' + methodWidth(method)"/></div>
+                                        </div>
+                                    </t>
+                                    <div class="o_vpk_proc_alerts">
+                                        <h3>ต้องดำเนินการ</h3>
+                                        <t t-foreach="state.data.alerts" t-as="alert" t-key="alert.text">
+                                            <p t-att-class="alert.tone"><t t-esc="alert.text"/></p>
+                                        </t>
+                                    </div>
+                                </section>
+                            </div>
+                        </t>
+
+                        <t t-if="state.tab === 'contracts'">
+                            <section class="o_vpk_proc_panel">
+                                <header><h2>สัญญา / ใบสั่งซื้อที่ยืนยันแล้ว</h2></header>
+                                <table>
+                                    <thead>
+                                        <tr><th>เลขที่</th><th>ผู้ขาย</th><th>อ้างอิงคำขอ</th><th class="num">วงเงิน</th><th>สถานะ</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="state.data.contracts" t-as="contract" t-key="contract.id + '-' + contract.request">
+                                            <tr>
+                                                <td><t t-esc="contract.name"/></td>
+                                                <td><t t-esc="contract.partner"/></td>
+                                                <td><t t-esc="contract.request"/></td>
+                                                <td class="num"><t t-esc="formatBaht(contract.amount)"/></td>
+                                                <td><t t-esc="contract.state"/></td>
+                                            </tr>
+                                        </t>
+                                        <tr t-if="!state.data.contracts.length"><td colspan="5">ยังไม่มีสัญญาในปีงบประมาณนี้</td></tr>
+                                    </tbody>
+                                </table>
+                            </section>
+                        </t>
+
+                        <t t-if="state.tab !== 'contracts'">
+                            <section class="o_vpk_proc_panel">
+                                <header class="o_vpk_proc_table_head">
+                                    <div>
+                                        <h2>รายการโครงการล่าสุด</h2>
+                                        <div class="o_vpk_proc_filters">
+                                            <t t-foreach="filters" t-as="item" t-key="item.key">
+                                                <button t-att-class="state.filter === item.key ? 'active' : ''" t-on-click="() => this.setFilter(item.key)">
+                                                    <t t-esc="item.label"/> (<t t-esc="filterCount(item.key)"/>)
+                                                </button>
+                                            </t>
+                                        </div>
+                                    </div>
+                                    <input class="form-control form-control-sm" placeholder="ค้นหาเลขที่หรือชื่อโครงการ" t-on-input="onSearch"/>
+                                </header>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>เลขที่ / โครงการ</th>
+                                            <th>หน่วยงาน</th>
+                                            <th>วิธีจัดหา</th>
+                                            <th class="num">วงเงิน (บาท)</th>
+                                            <th>ความคืบหน้า</th>
+                                            <th>กำหนดเสร็จ</th>
+                                            <th>สถานะ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="visibleProjects" t-as="project" t-key="project.id">
+                                            <tr t-on-click="() => this.openProject(project.id)">
+                                                <td>
+                                                    <strong><t t-esc="project.name"/></strong>
+                                                    <small><t t-esc="project.description"/></small>
+                                                </td>
+                                                <td><t t-esc="project.department"/></td>
+                                                <td><t t-esc="project.method"/></td>
+                                                <td class="num"><t t-esc="formatBaht(project.amount)"/></td>
+                                                <td>
+                                                    <div class="o_vpk_proc_dots">
+                                                        <t t-foreach="dots(project)" t-as="dot" t-key="project.id + '-' + dot_index">
+                                                            <i t-att-class="dot"/>
+                                                        </t>
+                                                    </div>
+                                                    <small><t t-esc="project.stage_label"/></small>
+                                                </td>
+                                                <td><t t-esc="project.due"/></td>
+                                                <td><span t-att-class="'pill ' + project.status_key"><t t-esc="project.status_label"/></span></td>
+                                            </tr>
+                                        </t>
+                                        <tr t-if="!visibleProjects.length">
+                                            <td colspan="7">ไม่พบโครงการตามเงื่อนไขนี้</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <footer>แสดง <t t-esc="visibleProjects.length"/> รายการจาก <t t-esc="state.data.project_total"/> โครงการ</footer>
+                            </section>
+                        </t>
+                    </t>
+                </div>
+            </Layout>
+        </div>
+    </t>
+
+</templates>
