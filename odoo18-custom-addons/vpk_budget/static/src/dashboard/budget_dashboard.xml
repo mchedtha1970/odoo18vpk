@@ -2,22 +2,27 @@
 <templates xml:space="preserve">
 
     <t t-name="vpk_budget.BudgetDashboard">
+        <div t-att-class="props.className" class="o_vpk_budget_status_action">
         <Layout display="display">
             <div class="o_vpk_budget_dashboard">
                 <div class="o_vpk_budget_dashboard_header">
                     <div>
-                        <h2>ภาพรวมงบประมาณรายจ่ายประจำปี</h2>
+                        <div class="o_vpk_budget_kicker">งบประมาณประจำปี โรงพยาบาล</div>
+                        <h1>ติดตามสถานะคำของบประมาณ</h1>
                         <p>ประจำปีงบประมาณ พ.ศ. <t t-esc="state.data.fiscal_year"/></p>
                     </div>
                     <div class="o_vpk_budget_dashboard_actions">
-                        <select class="form-select form-select-sm" t-on-change="onYearChange">
-                            <t t-foreach="state.data.year_options" t-as="year" t-key="year">
-                                <option t-att-value="year" t-att-selected="year === state.data.fiscal_year">
-                                    <t t-esc="year"/>
-                                </option>
-                            </t>
-                        </select>
-                        <button class="btn btn-primary btn-sm" t-on-click="() => this.openRequests()">
+                        <label>
+                            ปีงบประมาณ
+                            <select class="form-select form-select-sm" t-on-change="onYearChange">
+                                <t t-foreach="state.data.year_options" t-as="year" t-key="year">
+                                    <option t-att-value="year" t-att-selected="year === state.data.fiscal_year">
+                                        ปีงบประมาณ <t t-esc="year"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </label>
+                        <button class="btn o_vpk_budget_open_all" t-on-click="() => this.openRequests()">
                             เปิดคำของบทั้งหมด
                         </button>
                     </div>
@@ -26,7 +31,7 @@
                 <t t-if="state.ready">
                     <div class="o_vpk_budget_metric_grid">
                         <t t-foreach="state.data.cards" t-as="card" t-key="card.label">
-                            <div class="o_vpk_budget_metric_card" t-on-click="() => this.openRequests()">
+                            <div class="o_vpk_budget_metric_card" t-att-style="'border-left-color:' + card.color" t-on-click="() => this.openRequests()">
                                 <div>
                                     <span class="o_vpk_budget_metric_label"><t t-esc="card.label"/></span>
                                     <strong>฿<t t-esc="formatAmount(card.amount)"/></strong>
@@ -43,14 +48,24 @@
                             <div class="o_vpk_budget_panel_header">
                                 <div>
                                     <h3>แนวโน้มคำของบสะสม</h3>
-                                    <span>ยอดคำของบสะสมรายเดือน</span>
+                                    <span>ปีงบประมาณราชการ 1 ต.ค. – 30 ก.ย. · <t t-esc="trendUnit"/></span>
                                 </div>
                             </div>
                             <div class="o_vpk_budget_trend_chart">
-                                <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-                                    <path t-att-d="trendAreaPath" class="o_vpk_budget_trend_area"/>
-                                    <polyline t-att-points="trendPolyline" class="o_vpk_budget_trend_line"/>
-                                </svg>
+                                <div class="o_vpk_budget_trend_body">
+                                    <div class="o_vpk_budget_trend_y">
+                                        <t t-foreach="yTicks" t-as="tick" t-key="tick_index">
+                                            <span t-att-style="'top:' + tick.top"><t t-esc="tick.label"/></span>
+                                        </t>
+                                    </div>
+                                    <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                                        <t t-foreach="yTicks" t-as="tick" t-key="'grid-' + tick_index">
+                                            <line x1="0" x2="100" t-att-y1="tick.y" t-att-y2="tick.y" class="o_vpk_budget_trend_grid"/>
+                                        </t>
+                                        <path t-att-d="trendAreaPath" class="o_vpk_budget_trend_area"/>
+                                        <polyline t-att-points="trendPolyline" class="o_vpk_budget_trend_line"/>
+                                    </svg>
+                                </div>
                                 <div class="o_vpk_budget_trend_axis">
                                     <t t-foreach="state.data.trend.points" t-as="point" t-key="point.label">
                                         <span><t t-esc="point.label"/></span>
@@ -116,7 +131,7 @@
                         <section class="o_vpk_budget_panel">
                             <div class="o_vpk_budget_panel_header">
                                 <div>
-                                    <h3>สถานะคำของบ</h3>
+                                    <h3>ติดตามสถานะคำของบประมาณ</h3>
                                     <span>แยกตามขั้นตอนการดำเนินการ</span>
                                 </div>
                             </div>
@@ -152,6 +167,7 @@
                 </t>
             </div>
         </Layout>
+        </div>
     </t>
 
 </templates>

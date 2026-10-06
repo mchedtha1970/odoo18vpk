@@ -2,6 +2,7 @@
 <templates xml:space="preserve">
 
     <t t-name="vpk_budget.BudgetOverviewDashboard">
+        <div t-att-class="props.className" class="o_vpk_budget_overview_action">
         <Layout display="display">
             <div class="o_vpk_budget_monitor">
                 <div class="o_vpk_bm_top">
@@ -121,7 +122,7 @@
                             <div class="o_vpk_bm_panel_head">
                                 <div>
                                     <h3>ผลเบิกจ่ายสะสม เทียบแผน</h3>
-                                    <span>หน่วย: ล้านบาท</span>
+                                    <span>ปีงบประมาณราชการ 1 ต.ค. – 30 ก.ย. · หน่วย: ล้านบาท</span>
                                 </div>
                                 <div class="o_vpk_bm_chart_legend">
                                     <span><i class="o_vpk_bm_line o_vpk_bm_line_actual"/>เบิกจ่าย</span>
@@ -305,6 +306,7 @@
                 </t>
             </div>
         </Layout>
+        </div>
     </t>
 
 </templates>

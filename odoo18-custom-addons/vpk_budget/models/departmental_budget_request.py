@@ -1,6 +1,8 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
+from .budget_budget import TH_MONTHS
+
 
 class DepartmentalBudgetRequest(models.Model):
     _name = "departmental.budget.request"
@@ -266,12 +268,12 @@ class DepartmentalBudgetRequest(models.Model):
             "rejected": "ไม่อนุมัติ",
         }
         state_colors = {
-            "draft": "#3b82f6",
-            "submitted": "#f59e0b",
-            "received": "#8b5cf6",
-            "review": "#06b6d4",
-            "approved": "#10b981",
-            "rejected": "#ef4444",
+            "draft": "#7d776c",
+            "submitted": "#d9783c",
+            "received": "#5f8f86",
+            "review": "#c4a15a",
+            "approved": "#1b6f60",
+            "rejected": "#b4533a",
         }
         state_totals = {state: 0.0 for state, _label in self._fields["state"].selection}
         state_counts = {state: 0 for state, _label in self._fields["state"].selection}
@@ -289,11 +291,11 @@ class DepartmentalBudgetRequest(models.Model):
         draft_total = state_totals.get("draft", 0.0)
 
         category_totals = {
-            "material": {"label": "วัสดุ", "amount": 0.0, "color": "#22c55e"},
-            "asset_above": {"label": "ครุภัณฑ์ 100,000 บาทขึ้นไป", "amount": 0.0, "color": "#3b82f6"},
-            "asset_below": {"label": "ครุภัณฑ์ต่ำกว่า 100,000 บาท", "amount": 0.0, "color": "#8b5cf6"},
-            "construction": {"label": "สิ่งก่อสร้าง", "amount": 0.0, "color": "#f59e0b"},
-            "project": {"label": "โครงการ", "amount": 0.0, "color": "#14b8a6"},
+            "material": {"label": "วัสดุ", "amount": 0.0, "color": "#1b6f60"},
+            "asset_above": {"label": "ครุภัณฑ์ 100,000 บาทขึ้นไป", "amount": 0.0, "color": "#243037"},
+            "asset_below": {"label": "ครุภัณฑ์ต่ำกว่า 100,000 บาท", "amount": 0.0, "color": "#5f8f86"},
+            "construction": {"label": "สิ่งก่อสร้าง", "amount": 0.0, "color": "#d9783c"},
+            "project": {"label": "โครงการ", "amount": 0.0, "color": "#8a6a45"},
         }
         department_totals = {}
         for line in lines:
@@ -344,11 +346,18 @@ class DepartmentalBudgetRequest(models.Model):
             reverse=True,
         )[:8]
 
-        month_labels = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]
+        period_start, _period_end = self.env["budget.budget"]._overview_period(
+            fiscal_year, self.env["budget.budget"]
+        )
+        month_labels = [
+            TH_MONTHS[(period_start.month - 1 + index) % 12] for index in range(12)
+        ]
         monthly_amounts = [0.0] * 12
+        month_index = self.env["budget.budget"]._month_index
         for request in active_requests:
-            if request.request_date:
-                monthly_amounts[request.request_date.month - 1] += request.total_amount or 0.0
+            index = month_index(request.request_date, period_start)
+            if index is not None:
+                monthly_amounts[index] += request.total_amount or 0.0
         cumulative = []
         running = 0.0
         max_value = 0.0
@@ -397,10 +406,10 @@ class DepartmentalBudgetRequest(models.Model):
             "fiscal_year": fiscal_year,
             "year_options": years or [fiscal_year],
             "cards": [
-                {"label": "คำของบทั้งหมด", "amount": total_requested, "icon": "fa-folder-open", "color": "#3b82f6"},
-                {"label": "อนุมัติแล้ว", "amount": approved_total, "icon": "fa-check-circle", "color": "#10b981"},
-                {"label": "อยู่ระหว่างดำเนินการ", "amount": in_progress_total, "icon": "fa-clock-o", "color": "#f59e0b"},
-                {"label": "แบบร่าง", "amount": draft_total, "icon": "fa-pencil-square-o", "color": "#8b5cf6"},
+                {"label": "คำของบทั้งหมด", "amount": total_requested, "icon": "fa-folder-open", "color": "#243037"},
+                {"label": "อนุมัติแล้ว", "amount": approved_total, "icon": "fa-check-circle", "color": "#1b6f60"},
+                {"label": "อยู่ระหว่างดำเนินการ", "amount": in_progress_total, "icon": "fa-clock-o", "color": "#d9783c"},
+                {"label": "แบบร่าง", "amount": draft_total, "icon": "fa-pencil-square-o", "color": "#7d776c"},
             ],
             "state_breakdown": state_breakdown,
             "category_breakdown": category_breakdown,
@@ -689,11 +698,11 @@ class DepartmentalBudgetRequest(models.Model):
         if self.load_material_sub_type_id:
             self.load_budget_group_id = self.load_material_sub_type_id.budget_group_id
 
-    def action_load_material_category_products(self):
-        """Create material detail lines for all products in the selected category."""
+    def _require_material_load_subtype(self):
+        """Budget post and material subtype required before loading product lines."""
         self.ensure_one()
         if self.state != "draft":
-            raise ValidationError(_("โหลดรายการสินค้าได้เฉพาะคำของบสถานะ Draft"))
+            raise ValidationError(_("ทำรายการนี้ได้เฉพาะคำของบสถานะแบบร่าง"))
         if not self.show_material_lines:
             raise ValidationError(_("ใช้ได้เฉพาะแบบฟอร์มคำของบวัสดุ"))
         if not self.load_budget_post_id:
@@ -705,6 +714,24 @@ class DepartmentalBudgetRequest(models.Model):
             )
         if not subtype:
             raise ValidationError(_("กรุณาเลือกประเภทวัสดุให้ตรงกับหมวดงบประมาณ"))
+        return subtype
+
+    def action_open_material_detail_import(self):
+        self.ensure_one()
+        self._require_material_load_subtype()
+        return {
+            "name": _("โหลดรายการจาก Excel"),
+            "type": "ir.actions.act_window",
+            "res_model": "vpk.budget.material.detail.import.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {"default_request_id": self.id},
+        }
+
+    def action_load_material_category_products(self):
+        """Create material detail lines for all products in the selected category."""
+        self.ensure_one()
+        subtype = self._require_material_load_subtype()
 
         categs = self._product_categories_for_material_load(subtype)
         if not categs:
@@ -887,13 +914,40 @@ class DepartmentalBudgetRequest(models.Model):
             },
         }
 
+    def action_clear_material_detail_lines(self):
+        """Remove loaded material product lines so the list can be loaded again."""
+        self.ensure_one()
+        if self.state != "draft":
+            raise ValidationError(_("ล้างรายการได้เฉพาะคำของบสถานะแบบร่าง"))
+        if not self.show_material_lines:
+            raise ValidationError(_("ใช้ได้เฉพาะแบบฟอร์มคำของบวัสดุ"))
+        details = self.material_detail_ids
+        subtype = self.load_material_sub_type_id
+        if subtype:
+            details = details.filtered(
+                lambda detail: detail.material_sub_type_id == subtype
+            )
+        if not details:
+            raise ValidationError(_("ไม่มีรายการสินค้าให้ล้าง"))
+        count = len(details)
+        label = subtype.display_name if subtype else _("ทั้งหมด")
+        details.with_context(skip_budget_request_lock=True).unlink()
+        self._sync_material_allocation_from_details()
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("ล้างรายการสินค้า"),
+                "message": _("ล้างรายการสินค้าแล้ว %s รายการ (%s)") % (count, label),
+                "type": "success",
+                "next": {"type": "ir.actions.client", "tag": "reload"},
+            },
+        }
+
     def _sync_material_allocation_from_details(self):
         """Persist overview allocated amounts from material detail allocated totals."""
         Line = self.env["departmental.budget.request.line"]
         for rec in self:
-            if not rec.material_detail_ids:
-                rec._sync_header_totals()
-                continue
             amounts = {}
             for detail in rec.material_detail_ids:
                 subtype_id = detail.material_sub_type_id.id
@@ -904,9 +958,9 @@ class DepartmentalBudgetRequest(models.Model):
                 )
             for line in rec.material_line_ids:
                 subtype_id = line.material_sub_type_id.id
-                if not subtype_id or subtype_id not in amounts:
+                if not subtype_id:
                     continue
-                amount = amounts[subtype_id]
+                amount = amounts.get(subtype_id, 0.0)
                 if line.allocated_budget_amount != amount:
                     Line.browse(line.id).with_context(
                         skip_material_detail_sync=True,
@@ -981,15 +1035,12 @@ class DepartmentalBudgetRequest(models.Model):
         """Persist material requested amounts from product detail lines."""
         Line = self.env["departmental.budget.request.line"]
         for rec in self:
-            if not rec.material_detail_ids:
-                rec._sync_header_totals()
-                continue
             amounts = rec._material_detail_amounts_by_subtype()
             for line in rec.material_line_ids:
                 subtype_id = line.material_sub_type_id.id
-                if not subtype_id or subtype_id not in amounts:
+                if not subtype_id:
                     continue
-                amount = amounts[subtype_id]
+                amount = amounts.get(subtype_id, 0.0)
                 if line.requested_plan_amount != amount:
                     Line.browse(line.id).with_context(
                         skip_material_detail_sync=True,
@@ -1765,10 +1816,18 @@ class DepartmentalBudgetRequestLine(models.Model):
         comodel_name="product.template",
         compute="_compute_allowed_asset_product_ids",
     )
+    filter_asset_product_categ_id = fields.Many2one(
+        comodel_name="product.category",
+        compute="_compute_filter_asset_product_categ_id",
+        help="หมวดสินค้าที่ใช้กรองรายการครุภัณฑ์ในแบบคำของบ",
+    )
     asset_product_id = fields.Many2one(
         comodel_name="product.template",
         string="รายการ",
-        domain="[('id', 'in', allowed_asset_product_ids)]",
+        domain=(
+            "[('purchase_ok', '=', True),"
+            " ('categ_id', 'child_of', filter_asset_product_categ_id)]"
+        ),
         help="สินค้าในหมวดครุภัณฑ์เท่านั้น ไม่รวมวัสดุ",
     )
     asset_type_ids = fields.Many2many(
@@ -1893,6 +1952,70 @@ class DepartmentalBudgetRequestLine(models.Model):
                     ("categ_id", "child_of", linked.id),
                 ]
             )
+
+    def _asset_categories_for_budget_post(self):
+        """Match กลุ่มครุภัณฑ์ from a budget post name such as 'หมวดครุภัณฑ์ - ครุภัณฑ์สำนักงาน'."""
+        self.ensure_one()
+        Category = self.env["vpk.budget.asset.category"]
+        post = self.budget_post_id
+        if not post or not self._is_asset_line():
+            return Category.browse()
+        name = (post.name or "").strip()
+        tail = name.split(" - ")[-1].strip()
+        tokens = set()
+        for piece in tail.replace("และ", "\n").splitlines():
+            piece = piece.strip(" /")
+            if len(piece) >= 4 and piece != "ครุภัณฑ์":
+                tokens.add(piece)
+        active = Category.search([("active", "=", True)])
+        matched = active.filtered(
+            lambda categ: categ.name
+            and (
+                categ.name in name
+                or any(token in categ.name or categ.name in token for token in tokens)
+            )
+        )
+        if len(matched) > 1:
+            names = set(matched.mapped("name"))
+            matched = matched.filtered(
+                lambda categ: not any(
+                    other != categ.name and categ.name in other for other in names
+                )
+            )
+        return matched
+
+    @api.depends(
+        "asset_categ_id",
+        "asset_categ_id.product_categ_id",
+        "budget_post_id",
+        "budget_post_id.name",
+        "section_key",
+        "line_type",
+        "budget_type_id",
+    )
+    def _compute_filter_asset_product_categ_id(self):
+        root = self.env["vpk.budget.asset.category"]._equipment_product_root()
+        for line in self:
+            categ = line.asset_categ_id.product_categ_id
+            if not categ and line._is_asset_line():
+                linked = line._asset_categories_for_budget_post().mapped(
+                    "product_categ_id"
+                )
+                if len(linked) == 1:
+                    categ = linked
+            if not categ and line._is_asset_line():
+                categ = root
+            line.filter_asset_product_categ_id = categ
+
+    @api.onchange("budget_post_id")
+    def _onchange_budget_post_id_asset_category(self):
+        if not self._is_asset_line():
+            return
+        matched = self._asset_categories_for_budget_post()
+        if len(matched) == 1:
+            self.asset_categ_id = matched
+        elif matched and self.asset_categ_id and self.asset_categ_id not in matched:
+            self.asset_categ_id = False
 
     @api.onchange("asset_categ_id")
     def _onchange_asset_categ_id(self):
@@ -2064,6 +2187,17 @@ class DepartmentalBudgetRequestLine(models.Model):
                         "form_type": request.form_type_id.name,
                     }
                 )
+
+    @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+        if not res.get("budget_type_id"):
+            budget_type = self.env["departmental.budget.request"]._budget_type_from_code(
+                self.env.context.get("default_line_type")
+            )
+            if budget_type:
+                res["budget_type_id"] = budget_type.id
+        return res
 
     @api.model_create_multi
     def create(self, vals_list):

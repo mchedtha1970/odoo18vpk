@@ -69,11 +69,37 @@ export class VpkBudgetDashboard extends Component {
         return this.formatAmount(value);
     }
 
+    formatAxisAmount(amount) {
+        const value = amount || 0;
+        if (Math.abs(value) >= 1000000) {
+            const millions = value / 1000000;
+            return new Intl.NumberFormat("th-TH", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: millions >= 10 ? 1 : 2,
+            }).format(millions);
+        }
+        return this.formatAmount(value);
+    }
+
+    get trendUnit() {
+        const max = this.state.data.trend.max || 0;
+        return max >= 1000000 ? "หน่วย: ล้านบาท" : "หน่วย: บาท";
+    }
+
+    get yTicks() {
+        const max = this.state.data.trend.max || 1;
+        return [1, 0.75, 0.5, 0.25, 0].map((ratio) => ({
+            label: this.formatAxisAmount(max * ratio),
+            top: `${(1 - ratio) * 100}%`,
+            y: (1 - ratio) * 100,
+        }));
+    }
+
     categoryStyle() {
         const categories = this.state.data.category_breakdown || [];
         const total = categories.reduce((sum, item) => sum + (item.amount || 0), 0);
         if (!total) {
-            return "background: #e5e7eb;";
+            return "background: #ece7dc;";
         }
         let start = 0;
         const stops = categories.map((item) => {

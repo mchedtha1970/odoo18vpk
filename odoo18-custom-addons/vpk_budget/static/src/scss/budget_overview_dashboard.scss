@@ -637,7 +637,15 @@
     }
 }
 
-.o_action:has(.o_vpk_budget_monitor),
-.o_action:has(.o_vpk_budget_monitor) .o_content {
-    background: #f4f1ea;
+.o_web_client > .o_action_manager > .o_action.o_vpk_budget_overview_action {
+    min-height: 0;
+
+    > .o_content {
+        flex: 1 1 0 !important;
+        min-height: 0 !important;
+        height: auto !important;
+        background: #f4f1ea;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+    }
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_vpk_budget_material_detail_import_wizard" model="ir.model.access">
+        <field name="name">vpk.budget.material.detail.import.wizard user</field>
+        <field name="model_id" search="[('model', '=', 'vpk.budget.material.detail.import.wizard')]"/>
+        <field name="group_id" ref="group_budget_request_department_user"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+</odoo>

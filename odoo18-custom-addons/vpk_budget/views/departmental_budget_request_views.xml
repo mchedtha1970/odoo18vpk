@@ -132,6 +132,21 @@
                                     confirm="ระบบจะสร้างรายการสินค้าทั้งหมดในหมวด/กลุ่มที่เลือก (ข้ามรายการที่มีอยู่แล้ว) ต้องการดำเนินการต่อหรือไม่?"
                                 />
                                 <button
+                                    name="action_open_material_detail_import"
+                                    type="object"
+                                    string="โหลดจาก Excel"
+                                    class="btn-secondary"
+                                    invisible="not can_edit_request_content"
+                                />
+                                <button
+                                    name="action_clear_material_detail_lines"
+                                    type="object"
+                                    string="ล้างรายการ"
+                                    class="btn-secondary"
+                                    invisible="not can_edit_request_content or not has_material_details"
+                                    confirm="ระบบจะลบรายการสินค้าที่โหลดไว้ และยอดคำขอที่คำนวณจากรายการเหล่านี้จะกลับเป็นศูนย์ ต้องการดำเนินการต่อหรือไม่?"
+                                />
+                                <button
                                     name="action_fill_demo_material_detail_qty_price"
                                     type="object"
                                     string="สร้างตัวอย่างปริมาณ/ราคา"
@@ -190,18 +205,21 @@
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle" readonly="not parent.can_edit_request_content"/>
                                     <field name="company_id" column_invisible="1"/>
+                                    <field name="section_key" column_invisible="1"/>
+                                    <field name="budget_type_id" column_invisible="1"/>
                                     <field name="budget_post_id" options="{'no_create': True}" readonly="not parent.can_edit_request_content"/>
-                                    <field name="allowed_asset_categ_ids" column_invisible="1"/>
-                                    <field name="allowed_asset_product_ids" column_invisible="1"/>
+                                    <field name="filter_asset_product_categ_id" column_invisible="1"/>
                                     <field
                                         name="asset_categ_id"
                                         string="กลุ่มครุภัณฑ์"
+                                        domain="[('active', '=', True)]"
                                         options="{'no_create': True, 'no_open': True}"
                                         readonly="not parent.can_edit_request_content"
                                     />
                                     <field
                                         name="asset_product_id"
                                         string="รายการ"
+                                        domain="[('purchase_ok', '=', True), ('categ_id', 'child_of', filter_asset_product_categ_id)]"
                                         options="{'no_create': True, 'no_open': True}"
                                         readonly="not parent.can_edit_request_content"
                                     />
@@ -241,7 +259,7 @@
                             <field name="plan_year_be" invisible="1"/>
                             <field
                                 name="material_detail_ids"
-                                context="{'vpk_usage_fiscal_year': fiscal_year}"
+                                context="{'vpk_usage_fiscal_year': fiscal_year, 'default_material_sub_type_id': load_material_sub_type_id, 'default_budget_post_id': load_budget_post_id}"
                                 class="o_vpk_material_detail_lines"
                                 readonly="not can_edit_request_content and not can_edit_allocation"
                                 options="{'limit': 40}"
@@ -251,6 +269,7 @@
                                     <field name="company_id" column_invisible="1"/>
                                     <field name="form_section_key" column_invisible="1"/>
                                     <field name="product_categ_id" column_invisible="1"/>
+                                    <field name="filter_product_categ_id" column_invisible="1"/>
                                     <field
                                         name="material_sub_type_id"
                                         options="{'no_create': True, 'no_open': True}"
@@ -269,7 +288,7 @@
                                         name="product_id"
                                         string="รายการ"
                                         options="{'no_create': True, 'no_open': True}"
-                                        domain="[('purchase_ok', '=', True), ('categ_id', 'child_of', product_categ_id)]"
+                                        domain="[('purchase_ok', '=', True), ('categ_id', 'child_of', filter_product_categ_id)]"
                                         readonly="not parent.can_edit_request_content"
                                     />
                                     <field name="name" optional="hide" readonly="not parent.can_edit_request_content"/>
@@ -321,6 +340,8 @@
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle" readonly="not parent.can_edit_request_content"/>
                                     <field name="company_id" column_invisible="1"/>
+                                    <field name="section_key" column_invisible="1"/>
+                                    <field name="budget_type_id" column_invisible="1"/>
                                     <field name="budget_post_id" options="{'no_create': True}" readonly="not parent.can_edit_request_content"/>
                                     <field name="budget_group_id" string="กลุ่มวัสดุ" readonly="not parent.can_edit_request_content"/>
                                     <field name="allowed_material_sub_type_ids" column_invisible="1"/>
@@ -392,6 +413,8 @@
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle" readonly="not parent.can_edit_request_content"/>
                                     <field name="company_id" column_invisible="1"/>
+                                    <field name="section_key" column_invisible="1"/>
+                                    <field name="budget_type_id" column_invisible="1"/>
                                     <field name="budget_post_id" options="{'no_create': True}" readonly="not parent.can_edit_request_content"/>
                                     <field name="item_name" readonly="not parent.can_edit_request_content"/>
                                     <field name="usage_area" readonly="not parent.can_edit_request_content"/>
@@ -426,6 +449,8 @@
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle" readonly="not parent.can_edit_request_content"/>
                                     <field name="company_id" column_invisible="1"/>
+                                    <field name="section_key" column_invisible="1"/>
+                                    <field name="budget_type_id" column_invisible="1"/>
                                     <field name="budget_post_id" options="{'no_create': True}" readonly="not parent.can_edit_request_content"/>
                                     <field name="item_name" readonly="not parent.can_edit_request_content"/>
                                     <field name="item_description" readonly="not parent.can_edit_request_content"/>

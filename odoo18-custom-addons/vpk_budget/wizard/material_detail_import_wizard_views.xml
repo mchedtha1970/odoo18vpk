@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_budget_material_detail_import_wizard" model="ir.ui.view">
+        <field name="name">vpk.budget.material.detail.import.wizard.form</field>
+        <field name="model">vpk.budget.material.detail.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="โหลดรายการจาก Excel">
+                <group invisible="state == 'done'">
+                    <field name="request_id"/>
+                    <field name="data_file" filename="filename"/>
+                    <field name="filename" invisible="1"/>
+                </group>
+                <div class="alert alert-info" role="alert" invisible="state == 'done'">
+                    ดาวน์โหลดแบบฟอร์ม แล้วกรอกปริมาณที่ขอเฉพาะรายการที่ต้องการ
+                    แถวที่ไม่ได้ใส่ปริมาณจะไม่ถูกนำเข้า
+                    ถ้ารหัสสินค้าซ้ำกับรายการที่มีอยู่ ระบบจะอัปเดตปริมาณและราคา
+                </div>
+                <group invisible="state != 'done'">
+                    <group>
+                        <field name="created_count" string="เพิ่ม"/>
+                        <field name="updated_count" string="อัปเดต"/>
+                    </group>
+                    <group>
+                        <field name="skipped_count" string="ข้าม"/>
+                        <field name="error_count" string="พบปัญหา"/>
+                    </group>
+                </group>
+                <field name="log_text" invisible="state != 'done'" readonly="1"/>
+                <field name="state" invisible="1"/>
+                <footer>
+                    <button name="action_download_template"
+                            string="ดาวน์โหลดแบบฟอร์ม"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state == 'done'"/>
+                    <button name="action_import"
+                            string="นำเข้า"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state == 'done'"/>
+                    <button string="ปิด" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

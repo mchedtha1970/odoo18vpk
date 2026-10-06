@@ -1,11 +1,17 @@
 .o_vpk_budget_dashboard {
+    --bs-bg: #f4f1ea;
+    --bs-ink: #2b2924;
+    --bs-muted: #7d776c;
+    --bs-line: #ece7dc;
+    --bs-teal: #1b6f60;
     min-height: 100%;
-    padding: 22px 24px 32px;
-    background: #f8fafc;
-    color: #0f172a;
-    font-family: var(--vpk-font-family, var(--bs-body-font-family, inherit));
+    padding: 8px 10px 28px;
+    background: var(--bs-bg);
+    color: var(--bs-ink);
+    font-family: "Prompt", "Sarabun", var(--vpk-font-family, sans-serif);
     font-size: var(--vpk-font-size-md, inherit);
 
+    h1,
     h2,
     h3,
     h4,
@@ -14,6 +20,7 @@
     strong,
     small,
     b,
+    label,
     table,
     th,
     td,
@@ -21,7 +28,7 @@
     .btn,
     select,
     .form-select {
-        font-family: inherit;
+        font-family: inherit !important;
     }
 
     .o_vpk_budget_dashboard_header {
@@ -31,27 +38,62 @@
         gap: 16px;
         margin-bottom: 18px;
 
-        h2 {
-            margin: 0;
-            font-size: 20px;
+        h1 {
+            margin: 2px 0 4px;
+            font-size: 28px;
             font-weight: 700;
+            letter-spacing: -0.03em;
+            color: #1f3d38;
         }
 
         p {
             margin: 4px 0 0;
-            color: #64748b;
+            color: var(--bs-muted);
             font-size: 12px;
         }
     }
 
+    .o_vpk_budget_kicker {
+        color: var(--bs-muted);
+        font-size: 12px;
+        font-weight: 500;
+    }
+
     .o_vpk_budget_dashboard_actions {
         display: flex;
-        align-items: center;
+        align-items: flex-end;
         gap: 10px;
 
+        label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin: 0;
+            color: var(--bs-muted);
+            font-size: 11px;
+            font-weight: 600;
+        }
+
         .form-select {
-            width: 150px;
-            background-color: #fff;
+            min-width: 168px;
+            background: #fff;
+            border-color: #ddd6c8;
+            border-radius: 10px;
+        }
+    }
+
+    .o_vpk_budget_open_all {
+        background: #1f3d38;
+        color: #fff;
+        border: 0;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+
+        &:hover {
+            background: #16302c;
+            color: #fff;
         }
     }
 
@@ -65,22 +107,23 @@
     .o_vpk_budget_metric_card,
     .o_vpk_budget_panel {
         background: #fff;
-        border: 1px solid #edf2f7;
-        border-radius: 14px;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+        border: 1px solid #ebe6db;
+        border-radius: 18px;
+        box-shadow: 0 10px 24px rgba(60, 48, 28, 0.04);
     }
 
     .o_vpk_budget_metric_card {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        min-height: 96px;
-        padding: 18px;
+        min-height: 112px;
+        padding: 16px 16px 14px;
+        border-left: 5px solid #243037;
         cursor: pointer;
 
         &:hover {
-            border-color: #cbd5e1;
-            transform: translateY(-1px);
+            border-color: #ddd6c8;
+            border-left-color: inherit;
         }
 
         strong {
@@ -92,7 +135,7 @@
     }
 
     .o_vpk_budget_metric_label {
-        color: #64748b;
+        color: var(--bs-muted);
         font-size: 12px;
         font-weight: 600;
     }
@@ -104,7 +147,7 @@
         width: 42px;
         height: 42px;
         border-radius: 12px;
-        background: #f8fafc;
+        background: #f3eee4;
         font-size: 18px;
     }
 
@@ -137,28 +180,65 @@
         }
 
         span {
-            color: #64748b;
+            color: var(--bs-muted);
             font-size: 12px;
         }
     }
 
     .o_vpk_budget_trend_chart {
-        height: 270px;
+        height: auto;
+    }
 
-        svg {
-            width: 100%;
-            height: 230px;
-            overflow: visible;
+    .o_vpk_budget_trend_body {
+        display: grid;
+        grid-template-columns: 76px minmax(0, 1fr);
+        align-items: stretch;
+        height: 230px;
+    }
+
+    .o_vpk_budget_trend_y {
+        position: relative;
+
+        span {
+            position: absolute;
+            right: 8px;
+            left: 0;
+            transform: translateY(-50%);
+            color: var(--bs-muted);
+            font-size: 11px;
+            line-height: 1;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        span:first-child {
+            transform: none;
+        }
+
+        span:last-child {
+            transform: translateY(-100%);
         }
     }
 
+    .o_vpk_budget_trend_chart svg {
+        width: 100%;
+        height: 230px;
+        overflow: visible;
+    }
+
+    .o_vpk_budget_trend_grid {
+        stroke: var(--bs-line);
+        stroke-width: 1;
+        vector-effect: non-scaling-stroke;
+    }
+
     .o_vpk_budget_trend_area {
-        fill: rgba(16, 185, 129, 0.15);
+        fill: rgba(27, 111, 96, 0.16);
     }
 
     .o_vpk_budget_trend_line {
         fill: none;
-        stroke: #10b981;
+        stroke: #1b6f60;
         stroke-width: 2.2;
         vector-effect: non-scaling-stroke;
     }
@@ -166,7 +246,8 @@
     .o_vpk_budget_trend_axis {
         display: grid;
         grid-template-columns: repeat(12, 1fr);
-        color: #94a3b8;
+        margin-left: 76px;
+        color: var(--bs-muted);
         font-size: 10px;
         text-align: center;
     }
@@ -214,7 +295,7 @@
 
         small {
             display: block;
-            color: #64748b;
+            color: var(--bs-muted);
             font-size: 11px;
         }
     }
@@ -229,7 +310,7 @@
 
     .o_vpk_budget_state_item {
         padding: 10px 0;
-        border-bottom: 1px solid #f1f5f9;
+        border-bottom: 1px solid var(--bs-line);
 
         > div {
             flex: 1;
@@ -245,7 +326,7 @@
         margin-bottom: 0;
 
         th {
-            color: #64748b;
+            color: var(--bs-muted);
             font-size: 12px;
             font-weight: 700;
         }
@@ -274,7 +355,7 @@
         gap: 10px;
         padding: 10px 0;
         border: 0;
-        border-bottom: 1px solid #f1f5f9;
+        border-bottom: 1px solid var(--bs-line);
         background: transparent;
         text-align: left;
 
@@ -284,12 +365,12 @@
         }
 
         small {
-            color: #64748b;
+            color: var(--bs-muted);
             font-size: 11px;
         }
 
         b {
-            color: #059669;
+            color: var(--bs-teal);
             font-size: 12px;
         }
     }
@@ -297,7 +378,20 @@
     .o_vpk_budget_dashboard_loading {
         padding: 60px;
         text-align: center;
-        color: #64748b;
+        color: var(--bs-muted);
+    }
+}
+
+.o_web_client > .o_action_manager > .o_action.o_vpk_budget_status_action {
+    min-height: 0;
+
+    > .o_content {
+        flex: 1 1 0 !important;
+        min-height: 0 !important;
+        height: auto !important;
+        background: #f4f1ea;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
     }
 }
 

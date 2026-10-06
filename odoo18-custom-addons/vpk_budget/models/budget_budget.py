@@ -284,17 +284,19 @@ class Budget(models.Model):
 
     @api.model
     def _overview_period(self, fiscal_year, selected_budgets):
-        date_from = min(selected_budgets.mapped("date_from")) if selected_budgets else False
-        date_to = max(selected_budgets.mapped("date_to")) if selected_budgets else False
-        if date_from and date_to:
-            return date_from, date_to
+        """Government fiscal year: 1 October through 30 September.
+
+        The cumulative disbursement chart always uses this window, even when
+        the budget document itself is dated on a calendar year.
+        """
         try:
             be = int(fiscal_year)
             ce = be - 543
             return date(ce - 1, 10, 1), date(ce, 9, 30)
         except (TypeError, ValueError):
             today = fields.Date.context_today(self)
-            return date(today.year, 1, 1), date(today.year, 12, 31)
+            end_year = today.year + 1 if today.month >= 10 else today.year
+            return date(end_year - 1, 10, 1), date(end_year, 9, 30)
 
     @api.model
     def _months_elapsed(self, period_start, as_of):

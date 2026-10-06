@@ -26,12 +26,17 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
         store=True,
         readonly=True,
     )
+    filter_product_categ_id = fields.Many2one(
+        comodel_name="product.category",
+        string="หมวดสินค้าที่ใช้กรอง",
+        compute="_compute_filter_product_categ_id",
+    )
     product_id = fields.Many2one(
         comodel_name="product.product",
         string="รายการ",
         domain=(
             "[('purchase_ok', '=', True),"
-            " ('categ_id', 'child_of', product_categ_id)]"
+            " ('categ_id', 'child_of', filter_product_categ_id)]"
         ),
     )
     name = fields.Char(string="รายการสินค้า")
@@ -300,9 +305,19 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
         request_id = res.get("request_id")
         if request_id:
             request = self.env["departmental.budget.request"].browse(request_id)
+        if request and request.load_material_sub_type_id and not res.get(
+            "material_sub_type_id"
+        ):
+            if "material_sub_type_id" in fields_list or not fields_list:
+                res["material_sub_type_id"] = request.load_material_sub_type_id.id
+        if request and request.load_budget_post_id and not res.get("budget_post_id"):
+            if "budget_post_id" in fields_list or not fields_list:
+                res["budget_post_id"] = request.load_budget_post_id.id
         if request and len(request.material_sub_type_ids) == 1:
             if "material_sub_type_id" in fields_list or not fields_list:
-                res["material_sub_type_id"] = request.material_sub_type_ids.id
+                res.setdefault(
+                    "material_sub_type_id", request.material_sub_type_ids.id
+                )
             if "budget_post_id" in fields_list or not fields_list:
                 match = request.material_line_ids.filtered(
                     lambda line: line.material_sub_type_id
@@ -310,8 +325,53 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
                     and line.budget_post_id
                 )[:1]
                 if match:
-                    res["budget_post_id"] = match.budget_post_id.id
+                    res.setdefault("budget_post_id", match.budget_post_id.id)
         return res
+
+    def _category_from_subtype(self, subtype):
+        if subtype and subtype.budget_group_id:
+            return subtype.budget_group_id.product_categ_id
+        return self.env["product.category"]
+
+    @api.depends(
+        "product_categ_id",
+        "material_sub_type_id",
+        "material_sub_type_id.budget_group_id.product_categ_id",
+        "budget_post_id",
+        "request_id.load_material_sub_type_id",
+        "request_id.load_material_sub_type_id.budget_group_id.product_categ_id",
+        "request_id.load_budget_group_id",
+        "request_id.load_budget_group_id.product_categ_id",
+    )
+    def _compute_filter_product_categ_id(self):
+        for detail in self:
+            categ = detail.product_categ_id or detail._category_from_subtype(
+                detail.material_sub_type_id
+            )
+            request = detail.request_id
+            if not categ and request:
+                categ = detail._category_from_subtype(request.load_material_sub_type_id)
+            if not categ and request and request.load_budget_group_id:
+                categ = request.load_budget_group_id.product_categ_id
+            if not categ and request and detail.budget_post_id:
+                resolved = request._resolve_material_sub_type_from_budget_post(
+                    detail.budget_post_id
+                )
+                categ = detail._category_from_subtype(resolved)
+            detail.filter_product_categ_id = categ
+
+    def _apply_subtype_from_budget_post(self):
+        if not self.budget_post_id or not self.request_id or self.material_sub_type_id:
+            return
+        subtype = self.request_id._resolve_material_sub_type_from_budget_post(
+            self.budget_post_id
+        )
+        if subtype:
+            self.material_sub_type_id = subtype
+
+    @api.onchange("budget_post_id")
+    def _onchange_budget_post_id_subtype(self):
+        self._apply_subtype_from_budget_post()
 
     def _matching_material_line_budget_post(self):
         self.ensure_one()
@@ -408,12 +468,18 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
 
     @api.onchange("request_id")
     def _onchange_request_id_default_subtype(self):
-        if (
-            self.request_id
-            and not self.material_sub_type_id
+        if not self.request_id:
+            return
+        if not self.material_sub_type_id and self.request_id.load_material_sub_type_id:
+            self.material_sub_type_id = self.request_id.load_material_sub_type_id
+        elif (
+            not self.material_sub_type_id
             and len(self.request_id.material_sub_type_ids) == 1
         ):
             self.material_sub_type_id = self.request_id.material_sub_type_ids
+        if not self.budget_post_id and self.request_id.load_budget_post_id:
+            self.budget_post_id = self.request_id.load_budget_post_id
+        self._apply_subtype_from_budget_post()
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -425,14 +491,28 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
             creating=True,
         )
         Product = self.env["product.product"]
+        Post = self.env["account.budget.post"]
         for vals in vals_list:
+            request = Request.browse(vals.get("request_id"))
+            if request and not vals.get("material_sub_type_id"):
+                if vals.get("budget_post_id"):
+                    subtype = request._resolve_material_sub_type_from_budget_post(
+                        Post.browse(vals["budget_post_id"])
+                    )
+                    if subtype:
+                        vals["material_sub_type_id"] = subtype.id
+                if not vals.get("material_sub_type_id") and request.load_material_sub_type_id:
+                    vals["material_sub_type_id"] = request.load_material_sub_type_id.id
+            if request and not vals.get("budget_post_id") and request.load_budget_post_id:
+                vals["budget_post_id"] = request.load_budget_post_id.id
             if not vals.get("name"):
                 if vals.get("product_id"):
                     vals["name"] = Product.browse(vals["product_id"]).display_name
                 else:
                     vals["name"] = vals.get("note") or "รายการสินค้า"
         details = super().create(vals_list)
-        details.mapped("request_id")._sync_material_amounts_from_details()
+        if not self.env.context.get("skip_material_amount_sync"):
+            details.mapped("request_id")._sync_material_amounts_from_details()
         return details
 
     def write(self, vals):
@@ -447,7 +527,10 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
             "material_sub_type_id",
             "request_id",
         }
-        if amount_fields.intersection(vals):
+        if (
+            amount_fields.intersection(vals)
+            and not self.env.context.get("skip_material_amount_sync")
+        ):
             self.mapped("request_id")._sync_material_amounts_from_details()
         return res
 
@@ -457,5 +540,6 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
             requests, unlinking=True
         )
         res = super().unlink()
-        requests._sync_material_amounts_from_details()
+        if not self.env.context.get("skip_material_amount_sync"):
+            requests._sync_material_amounts_from_details()
         return res
