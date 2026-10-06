@@ -331,7 +331,7 @@ class CommitteeAppointment(models.Model):
 class CommitteeAppointmentLine(models.Model):
     _name = "procurement.committee.appointment.line"
     _description = "รายชื่อคณะกรรมการในเอกสารแต่งตั้ง"
-    _order = "committee_type, sequence, id"
+    _order = "type_sequence, sequence, id"
 
     appointment_id = fields.Many2one(
         comodel_name="procurement.committee.appointment",
@@ -340,6 +340,10 @@ class CommitteeAppointmentLine(models.Model):
         index=True,
     )
     sequence = fields.Integer(default=10)
+    type_sequence = fields.Integer(
+        compute="_compute_type_sequence",
+        store=True,
+    )
     committee_type = fields.Selection(
         selection=COMMITTEE_TYPE_SELECTION,
         string="ประเภทคณะกรรมการ",
@@ -376,6 +380,12 @@ class CommitteeAppointmentLine(models.Model):
     )
     note = fields.Char(string="หมายเหตุ")
     company_id = fields.Many2one(related="appointment_id.company_id", store=True)
+
+    @api.depends("committee_type")
+    def _compute_type_sequence(self):
+        order = {"price_mid": 1, "procurement": 2, "work_acceptance": 3}
+        for line in self:
+            line.type_sequence = order.get(line.committee_type, 9)
 
     @api.depends("employee_id")
     def _compute_from_employee(self):

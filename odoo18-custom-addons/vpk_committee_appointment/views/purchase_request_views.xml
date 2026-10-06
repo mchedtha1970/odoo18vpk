@@ -22,7 +22,7 @@
         <field name="model">purchase.request</field>
         <field name="inherit_id" ref="l10n_th_gov_purchase_request.view_purchase_request_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//page[@name='committee']" position="inside">
+            <xpath expr="//group[@name='wa_committee']" position="before">
                 <group name="price_mid_committee" string="คณะกรรมการกำหนดราคากลาง">
                     <field
                         name="price_mid_committee_ids"
@@ -45,6 +45,15 @@
                         </list>
                     </field>
                 </group>
+            </xpath>
+            <xpath expr="//group[@name='wa_committee']" position="before">
+                <xpath expr="//group[@name='procure_committee']" position="move"/>
+            </xpath>
+            <xpath expr="//group[@name='procure_committee']" position="attributes">
+                <attribute name="string">คณะกรรมการจัดซื้อจัดจ้าง</attribute>
+            </xpath>
+            <xpath expr="//group[@name='wa_committee']" position="attributes">
+                <attribute name="string">คณะกรรมการตรวจรับ</attribute>
             </xpath>
         </field>
     </record>
