@@ -139,6 +139,14 @@
                                     invisible="not can_edit_request_content"
                                 />
                                 <button
+                                    name="action_export_material_detail_excel"
+                                    type="object"
+                                    string="ส่งออก Excel"
+                                    icon="fa-file-excel-o"
+                                    class="btn-secondary"
+                                    invisible="not has_material_details"
+                                />
+                                <button
                                     name="action_clear_material_detail_lines"
                                     type="object"
                                     string="ล้างรายการ"
@@ -155,12 +163,12 @@
                                     confirm="ระบบจะใส่ปริมาณที่ขอและราคาต่อหน่วยแบบตัวอย่างให้รายการสินค้าทั้งหมดในคำของบนี้ ต้องการดำเนินการต่อหรือไม่?"
                                 />
                                 <button
-                                    name="action_copy_material_request_to_allocation"
+                                    name="action_open_material_allocation_wizard"
                                     type="object"
-                                    string="จัดสรรเท่ากับที่ขอ"
+                                    string="จัดสรรงบประมาณ"
                                     class="btn-secondary"
+                                    context="{'allocation_target': 'material'}"
                                     invisible="not has_material_details or (not can_edit_request_content and not can_edit_allocation)"
-                                    confirm="ระบบจะกำหนดปริมาณ/มูลค่าที่จัดสรรให้เท่ากับที่ขอทุกรายการ ต้องการดำเนินการต่อหรือไม่?"
                                 />
                             </div>
                             <field
@@ -197,6 +205,16 @@
                             </div>
                         </page>
                         <page string="แบบตั้งงบครุภัณฑ์" invisible="not show_asset_lines">
+                            <div class="mb-2">
+                                <button
+                                    name="action_open_material_allocation_wizard"
+                                    type="object"
+                                    string="จัดสรรงบประมาณ"
+                                    class="btn-secondary"
+                                    context="{'allocation_target': 'asset'}"
+                                    invisible="not asset_line_ids or (not can_edit_request_content and not can_edit_allocation)"
+                                />
+                            </div>
                             <field
                                 name="asset_line_ids"
                                 context="{'default_line_type': 'asset_budget'}"
@@ -218,9 +236,14 @@
                                     />
                                     <field
                                         name="asset_product_id"
-                                        string="รายการ"
+                                        string="รหัสรายการ"
                                         domain="[('purchase_ok', '=', True), ('categ_id', 'child_of', filter_asset_product_categ_id)]"
                                         options="{'no_create': True, 'no_open': True}"
+                                        readonly="not parent.can_edit_request_content"
+                                    />
+                                    <field
+                                        name="item_description"
+                                        string="รายละเอียด"
                                         readonly="not parent.can_edit_request_content"
                                     />
                                     <field name="item_name" column_invisible="1"/>
@@ -476,7 +499,7 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="ประวัติการใช้งบประมาณ" invisible="not form_type_id">
+                        <page string="ประวัติการใช้งบประมาณ" invisible="1">
                             <group>
                                 <div class="text-muted" colspan="2">
                                     แสดงประวัติการใช้งบประมาณของรายการที่บันทึกขอ
@@ -719,12 +742,19 @@
     </record>
 
     <record id="action_departmental_budget_request_my" model="ir.actions.act_window">
-        <field name="name">ทั้งหมด</field>
+        <field name="name">คำขอของฉัน</field>
         <field name="res_model">departmental.budget.request</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_departmental_budget_request_search"/>
         <field name="domain">[('requester_id', '=', uid)]</field>
         <field name="context">{'search_default_my_request': 1}</field>
+    </record>
+
+    <record id="action_departmental_budget_request_open" model="ir.actions.server">
+        <field name="name">ทั้งหมด</field>
+        <field name="model_id" ref="model_departmental_budget_request"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_budget_requests()</field>
     </record>
 
     <menuitem
@@ -739,7 +769,7 @@
         id="menu_departmental_budget_my"
         name="ทั้งหมด"
         parent="menu_departmental_budget_request_root"
-        action="action_departmental_budget_request_my"
+        action="action_departmental_budget_request_open"
         sequence="1"
         groups="vpk_budget.group_vpk_budget_user"
     />

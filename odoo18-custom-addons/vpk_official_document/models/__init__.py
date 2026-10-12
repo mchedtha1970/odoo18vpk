@@ -1,6 +1,7 @@
 from . import docx_renderer
 from . import pdf_converter
 from . import pdf_stamp
+from . import official_document_type
 from . import official_document_template
 from . import official_document
 from . import purchase_requisition_egp_document

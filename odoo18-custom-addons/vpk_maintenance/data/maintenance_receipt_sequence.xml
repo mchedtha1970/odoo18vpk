@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_maintenance_receipt" model="ir.sequence">
+            <field name="name">เลขที่รับซ่อม</field>
+            <field name="code">vpk.maintenance.receipt</field>
+            <field name="padding">5</field>
+            <field name="implementation">standard</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+    <function model="maintenance.request" name="_backfill_receipt_numbers"/>
+</odoo>

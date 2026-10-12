@@ -49,7 +49,85 @@
         <field name="arch" type="xml">
             <field name="name" position="after">
                 <field name="egp_purchase_name" optional="show"/>
+                <field name="generic_name" optional="hide"/>
+                <field name="trade_name" optional="hide"/>
+                <field name="storage_method" optional="hide"/>
+                <field name="drug_code_24" optional="hide"/>
+                <field name="tmt_tpu" optional="hide"/>
             </field>
+        </field>
+    </record>
+
+    <record id="product_template_form_view_item_master" model="ir.ui.view">
+        <field name="name">product.template.form.item.master</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="ข้อมูลยา/เวชภัณฑ์" name="vpk_item_identity">
+                    <group string="ชื่อ บรรจุ และการเก็บรักษา">
+                        <group>
+                            <field name="generic_name"/>
+                            <field name="trade_name"/>
+                            <field name="manufacturer_name"/>
+                            <field name="distributor_name"/>
+                        </group>
+                        <group>
+                            <field name="packaging_type"/>
+                            <field name="pack_size"/>
+                            <field name="storage_method"/>
+                        </group>
+                    </group>
+                    <group string="Drug Category และกลุ่มยา">
+                        <group>
+                            <field name="drug_category"/>
+                            <field name="ned_group"/>
+                        </group>
+                        <group>
+                            <field name="pharmaco_group"/>
+                            <field name="generic_code"/>
+                        </group>
+                    </group>
+                    <group string="รหัสมาตรฐาน">
+                        <group>
+                            <field name="tmt_tpu"/>
+                            <field name="tmt_fsn"/>
+                            <field name="tmt_gpu"/>
+                            <field name="gmu_name"/>
+                            <field name="barcode"/>
+                        </group>
+                        <group>
+                            <field name="manufacturer_market_code"/>
+                            <field name="vendor_product_code"/>
+                            <field name="drug_code_24" placeholder="ตัวเลข 24 หลัก"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="product_template_search_view_item_master" model="ir.ui.view">
+        <field name="name">product.template.search.item.master</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="generic_name"/>
+                <field name="trade_name"/>
+                <field name="generic_code"/>
+                <field name="tmt_tpu"/>
+                <field name="tmt_gpu"/>
+                <field name="drug_code_24"/>
+                <field name="vendor_product_code"/>
+            </field>
+            <search position="inside">
+                <separator/>
+                <filter string="อุณหภูมิห้อง" name="storage_room"
+                        domain="[('storage_method', '=', 'room')]"/>
+                <filter string="ห้องเย็น" name="storage_cold"
+                        domain="[('storage_method', '=', 'cold')]"/>
+            </search>
         </field>
     </record>
 

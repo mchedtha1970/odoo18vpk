@@ -38,7 +38,7 @@ class PurchaseRequisition(models.Model):
     egp_document_ids = fields.One2many(
         comodel_name="purchase.requisition.egp.document",
         inverse_name="requisition_id",
-        string="e-GP Documents",
+        string="เอกสารที่เปิดในระบบ e-GP",
         copy=False,
     )
     egp_bid_ids = fields.One2many(
@@ -49,13 +49,13 @@ class PurchaseRequisition(models.Model):
     )
     procurement_type_id = fields.Many2one(
         comodel_name="procurement.type",
-        string="Procurement Type",
+        string="ประเภทการสั่งซื้อ",
         ondelete="restrict",
         copy=False,
     )
     purchase_type_id = fields.Many2one(
         comodel_name="purchase.type",
-        string="Purchase Type",
+        string="ระเบียบ",
         ondelete="restrict",
         copy=False,
     )

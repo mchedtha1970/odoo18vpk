@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_maintenance_request_form" model="report.paperformat">
+        <field name="name">แบบส่งซ่อมบำรุง A4</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">8</field>
+        <field name="margin_bottom">8</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="action_report_maintenance_request_form" model="ir.actions.report">
+        <field name="name">แบบส่งซ่อมบำรุง</field>
+        <field name="model">maintenance.request</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_maintenance.report_maintenance_request_form</field>
+        <field name="report_file">vpk_maintenance.report_maintenance_request_form</field>
+        <field name="print_report_name">'แบบส่งซ่อม-%s' % (object.receipt_number or object.name)</field>
+        <field name="binding_model_id" ref="maintenance.model_maintenance_request"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_maintenance_request_form"/>
+    </record>
+
+    <template id="report_maintenance_request_form">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.basic_layout">
+                    <style type="text/css">
+                        <t t-out="o._report_font_css()"/>
+                        .vpk-mr, .vpk-mr * {
+                            font-family: "THSarabunNew", sans-serif !important;
+                            font-size: 16pt;
+                            line-height: 1.15;
+                            color: #000;
+                        }
+                        .vpk-mr strong, .vpk-mr .title, .vpk-mr .sec, .vpk-mr th {
+                            font-family: "THSarabunNew-Bold", "THSarabunNew", sans-serif !important;
+                            font-weight: normal !important;
+                        }
+                        .vpk-mr table { width: 100%; border-collapse: collapse; }
+                        .vpk-mr td, .vpk-mr th { vertical-align: top; }
+                        .title { text-align: center; font-size: 22pt !important; margin: 0; letter-spacing: 0.5px; }
+                        .sub { text-align: center; font-size: 18pt !important; margin: 0 0 2px; }
+                        .sheet { border: 1px solid #000; margin-top: 4px; }
+                        .sheet > tbody > tr > td, .sheet > tr > td { border: 1px solid #000; padding: 4px 8px; }
+                        .sec {
+                            width: 28mm;
+                            text-align: center;
+                            vertical-align: middle !important;
+                            background: #f7f7f7;
+                            font-size: 16pt !important;
+                            line-height: 1.05;
+                            padding: 4px 2px !important;
+                        }
+                        .grid td, .grid th { border: 1px solid #000; padding: 2px 6px; height: 24px; }
+                        .plain td { border: 0 !important; padding: 0 4px 0 0; }
+                        .box {
+                            display: inline-block;
+                            width: 13px;
+                            height: 13px;
+                            border: 1px solid #000;
+                            text-align: center;
+                            line-height: 12px;
+                            font-size: 12px;
+                            font-family: "DejaVu Sans", sans-serif !important;
+                            margin: 0 2px 0 6px;
+                            vertical-align: -1px;
+                        }
+                        .sign { height: 32px; max-width: 140px; vertical-align: middle; }
+                        .muted { font-size: 14pt !important; }
+                        .right { text-align: right; }
+                        .center { text-align: center; }
+                        .receipt { width: 34%; }
+                        .receipt td { border: 1px solid #000; padding: 1px 8px; }
+                        .mats td { border: 0 !important; padding: 0; }
+                        .mats .no { width: 18px; }
+                        .mats .qty { width: 28%; white-space: nowrap; }
+                        .mats .amt { width: 32%; white-space: nowrap; }
+                        .blank { border-bottom: 1px dotted #000; }
+                    </style>
+                    <div class="vpk-mr">
+                        <p class="title">แบบส่งซ่อมบำรุง</p>
+                        <p class="sub"><t t-esc="o.company_id.name or 'โรงพยาบาลวชิระภูเก็ต'"/></p>
+                        <table>
+                            <tr>
+                                <td>
+                                    <div>เรียน หัวหน้างานช่างซ่อมบำรุง</div>
+                                    <div style="margin-top: 4px;"><t t-esc="o._report_date_line(o.request_date)"/></div>
+                                </td>
+                                <td class="receipt">
+                                    <table class="receipt">
+                                        <tr><td>เลขที่รับซ่อม <t t-esc="o.receipt_number or ''"/></td></tr>
+                                        <tr><td>วันที่ <t t-esc="o._report_short_date(o.receipt_date)"/></td></tr>
+                                        <tr><td>เวลา <t t-esc="o._report_clock(o.receipt_time)"/> น.</td></tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table class="sheet">
+                            <tr>
+                                <td class="sec">การส่งซ่อม</td>
+                                <td>
+                                    <div>
+                                        ด้วย ฝ่าย / งาน / ตึก
+                                        <strong><t t-esc="o.department_id.name or '................................'"/></strong>
+                                        โทร <strong><t t-esc="o.requester_phone or '....................'"/></strong>
+                                    </div>
+                                    <div>มีความประสงค์ให้ช่างซ่อมวัสดุ ครุภัณฑ์ ดังนี้</div>
+                                    <div>
+                                        1. <strong><t t-esc="o._report_item_name()"/></strong>
+                                        จำนวน <strong><t t-esc="o.request_qty or ''"/></strong>
+                                    </div>
+                                    <div>รายละเอียด / อาการชำรุด</div>
+                                    <div t-field="o.description"/>
+                                    <div>
+                                        หมายเลขครุภัณฑ์ <strong><t t-esc="o._report_asset_number() or '................................'"/></strong>
+                                        หมายเลขเครื่อง <strong><t t-esc="o.machine_number or '................................'"/></strong>
+                                    </div>
+                                    <div>
+                                        (ลงชื่อ)
+                                        <img t-if="o.signature" t-att-src="image_data_uri(o.signature)" class="sign"/>
+                                        <t t-else="">................................</t>
+                                        หัวหน้าฝ่าย / งาน / ตึก หรือผู้แทน
+                                        <t t-if="o.employee_id"> (<t t-esc="o.employee_id.name"/>)</t>
+                                    </div>
+                                    <div class="muted">หมายเหตุ : 1 ใบงาน ต่อ 1 รายการเท่านั้น</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sec">หัวหน้าช่าง</td>
+                                <td>
+                                    <table>
+                                        <tr>
+                                            <td style="width: 50%; border: 0; padding: 0 8px 0 0;">
+                                                <div>มอบหัวหน้า</div>
+                                                <div><span class="box"><t t-if="o._report_team_on('civil')">✓</t></span>หน่วยวิศวกรรมโยธา</div>
+                                                <div><span class="box"><t t-if="o._report_team_on('general')">✓</t></span>หน่วยซ่อมบำรุงทั่วไป</div>
+                                                <div><span class="box"><t t-if="o._report_team_on('medical')">✓</t></span>หน่วยเครื่องมือแพทย์</div>
+                                                <div>
+                                                    (ลงชื่อ)
+                                                    <img t-if="o.chief_signature" t-att-src="image_data_uri(o.chief_signature)" class="sign"/>
+                                                    <t t-else="">................................</t>
+                                                    หัวหน้าช่างผู้ได้รับมอบหมาย
+                                                </div>
+                                                <div><t t-esc="o._report_date_line(o.chief_signed_on)"/></div>
+                                            </td>
+                                            <td style="width: 50%; border: 0; padding: 0;">
+                                                <div>รับทราบ มอบให้ <strong><t t-esc="o.user_id.name or '................................'"/></strong></div>
+                                                <div style="margin-top: 28px;">
+                                                    (ลงชื่อ)
+                                                    <img t-if="o.assignee_signature" t-att-src="image_data_uri(o.assignee_signature)" class="sign"/>
+                                                    <t t-else="">................................</t>
+                                                    หัวหน้าหน่วยผู้ได้รับมอบหมาย
+                                                </div>
+                                                <div><t t-esc="o._report_date_line(o.assignee_signed_on)"/></div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sec">การตรวจสอบเบื้องต้น</td>
+                                <td>
+                                    <div>ช่างได้ตรวจสอบแล้ว เห็นควร</div>
+                                    <div>
+                                        <span class="box"><t t-if="o.prelim_outsource">✓</t></span>
+                                        ว่าจ้างช่างภายนอกดำเนินการซ่อม เนื่องจาก <t t-esc="o.prelim_outsource_reason or '................................'"/>
+                                    </div>
+                                    <div>
+                                        <span class="box"><t t-if="o.prelim_purchase_parts">✓</t></span>
+                                        จัดซื้อวัสดุ อุปกรณ์ซ่อม ตามรายการขออนุมัติเบิกวัสดุงานช่าง
+                                        เล่มที่ <t t-esc="o.prelim_material_volume or '............'"/>
+                                        เลขที่ <t t-esc="o.prelim_material_number or '............'"/>
+                                        ประมาณการแล้วเสร็จภายใน <t t-esc="o.prelim_finish_days or '............'"/> วัน
+                                    </div>
+                                    <div>
+                                        <span class="box"><t t-if="o.prelim_dispose">✓</t></span>แทงจำหน่าย
+                                        <span class="box"><t t-if="o.prelim_initial_check">✓</t></span>ตรวจเช็คเบื้องต้น
+                                        เนื่องจาก <t t-esc="o.prelim_check_reason or '................................'"/>
+                                    </div>
+                                    <div>
+                                        (ลงชื่อ)
+                                        <img t-if="o.technician_signature" t-att-src="image_data_uri(o.technician_signature)" class="sign"/>
+                                        <t t-else="">................................</t>
+                                        ช่างผู้ปฏิบัติงาน
+                                        <t t-esc="o._report_date_line(o.technician_signed_on)"/>
+                                    </div>
+                                    <div>ความคิดเห็นของหัวหน้าช่าง <t t-esc="o.chief_comment or ''"/></div>
+                                    <div>
+                                        (ลงชื่อ)
+                                        <img t-if="o.chief_comment_signature" t-att-src="image_data_uri(o.chief_comment_signature)" class="sign"/>
+                                        <t t-else="">................................</t>
+                                        หัวหน้าช่าง
+                                        <t t-esc="o._report_date_line(o.chief_comment_signed_on)"/>
+                                    </div>
+                                    <div>
+                                        ความคิดเห็นของรองผู้อำนวยการฝ่ายบริหาร
+                                        <span class="box"><t t-if="o.deputy_approved">✓</t></span>อนุมัติ
+                                        <span class="box"><t t-if="o.deputy_acknowledged">✓</t></span>ทราบ
+                                    </div>
+                                    <div t-if="o.deputy_comment"><t t-esc="o.deputy_comment"/></div>
+                                    <div>
+                                        (ลงชื่อ)
+                                        <img t-if="o.deputy_signature" t-att-src="image_data_uri(o.deputy_signature)" class="sign"/>
+                                        <t t-else="">................................</t>
+                                        รองผู้อำนวยการฝ่ายบริหารผู้ที่ได้รับมอบหมาย
+                                        <t t-esc="o._report_date_line(o.deputy_signed_on)"/>
+                                    </div>
+                                    <div>ความคิดเห็นของผู้อำนวยการ <t t-esc="o.director_comment or ''"/></div>
+                                    <div>
+                                        (ลงชื่อ)
+                                        <img t-if="o.director_signature" t-att-src="image_data_uri(o.director_signature)" class="sign"/>
+                                        <t t-else="">................................</t>
+                                        ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต
+                                        <t t-esc="o._report_date_line(o.director_signed_on)"/>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sec">ผลการ<br/>ดำเนินงาน</td>
+                                <td>
+                                    <div>
+                                        ช่างผู้ปฏิบัติงานได้เบิกวัสดุช่าง ตามใบเบิกเล่มที่
+                                        <t t-esc="o.result_issue_volume or '............'"/>
+                                        เลขที่ <t t-esc="o.result_issue_number or '............'"/>
+                                    </div>
+                                    <div>
+                                        (ลงชื่อ)
+                                        <img t-if="o.issuer_signature" t-att-src="image_data_uri(o.issuer_signature)" class="sign"/>
+                                        <t t-else="">................................</t>
+                                        ผู้จ่ายวัสดุช่าง
+                                        <t t-esc="o._report_date_line(o.issuer_signed_on)"/>
+                                    </div>
+                                    <div>และได้ดำเนินการซ่อม / จัดทำ พัสดุดังกล่าวเสร็จเรียบร้อยแล้ว</div>
+                                    <div t-if="o.repair_detail">รายละเอียดการซ่อม / ข้อเสนอแนะ <t t-esc="o.repair_detail"/></div>
+                                    <div>
+                                        (ลงชื่อ)
+                                        <img t-if="o.repair_done_signature" t-att-src="image_data_uri(o.repair_done_signature)" class="sign"/>
+                                        <t t-else="">................................</t>
+                                        ช่างผู้ปฏิบัติงาน
+                                        <t t-esc="o._report_date_line(o.repair_done_signed_on)"/>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sec">หน่วยงาน<br/>รับงาน</td>
+                                <td>
+                                    <div>หน่วยงานได้รับพัสดุที่แจ้งซ่อม ถูกต้อง ครบถ้วนแล้ว โดยมีวัสดุที่ใช้ในการดำเนินการดังนี้</div>
+                                    <t t-set="materials" t-value="o._report_rows(o.used_material_line_ids, 4)"/>
+                                    <table class="mats">
+                                        <t t-foreach="materials" t-as="line">
+                                            <tr>
+                                                <td class="no"><t t-esc="line_index + 1"/>.</td>
+                                                <td><t t-esc="line.name or '..............................................'"/></td>
+                                                <td class="qty">จำนวน <t t-esc="line.quantity or '............'"/></td>
+                                                <td class="amt">เป็นเงิน <t t-esc="o._report_money(line.amount) or '............'"/> บาท</td>
+                                            </tr>
+                                        </t>
+                                    </table>
+                                    <div>
+                                        มีความพึงพอใจ
+                                        <span class="box"><t t-if="o.satisfaction == 'high'">✓</t></span>มาก
+                                        <span class="box"><t t-if="o.satisfaction == 'medium'">✓</t></span>ปานกลาง
+                                        <span class="box"><t t-if="o.satisfaction == 'low'">✓</t></span>น้อย
+                                        <span style="display: inline-block; width: 16px;"/>
+                                        การปฏิบัติงานรวดเร็ว
+                                        <span class="box"><t t-if="o.service_speed == 'high'">✓</t></span>มาก
+                                        <span class="box"><t t-if="o.service_speed == 'medium'">✓</t></span>ปานกลาง
+                                        <span class="box"><t t-if="o.service_speed == 'low'">✓</t></span>น้อย
+                                        <span class="box"><t t-if="o.service_speed == 'very_slow'">✓</t></span>ช้ามาก
+                                    </div>
+                                    <div t-if="o.other_feedback">ข้อเสนอแนะ / ข้อร้องเรียนอื่นๆ <t t-esc="o.other_feedback"/></div>
+                                    <div>
+                                        (ลงชื่อ)
+                                        <img t-if="o.dept_head_signature" t-att-src="image_data_uri(o.dept_head_signature)" class="sign"/>
+                                        <t t-else="">................................</t>
+                                        หัวหน้าหน่วยงาน / ผู้ที่ได้รับมอบหมาย
+                                        <t t-esc="o._report_date_line(o.dept_head_signed_on)"/>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sec">ค่าใช้จ่าย</td>
+                                <td style="padding: 0;">
+                                    <table class="grid">
+                                        <tr>
+                                            <th>ชื่อ - สกุล (ช่างผู้ปฏิบัติงาน)</th>
+                                            <th class="right">ค่าวัสดุ (บาท)</th>
+                                            <th class="right">ค่าแรง (บาท)</th>
+                                            <th class="right">เวลาที่ใช้ (นาที)</th>
+                                            <th class="right">รวมเงินทั้งสิ้น (บาท)</th>
+                                        </tr>
+                                        <t t-set="costs" t-value="o._report_rows(o.cost_line_ids, 4)"/>
+                                        <t t-foreach="costs" t-as="line">
+                                            <tr>
+                                                <td><t t-esc="line.technician_id.name or ''"/></td>
+                                                <td class="right"><t t-esc="o._report_money(line.material_cost)"/></td>
+                                                <td class="right"><t t-esc="o._report_money(line.labor_cost)"/></td>
+                                                <td class="right"><t t-esc="line.duration_minutes or ''"/></td>
+                                                <td class="right"><t t-esc="o._report_money(line.total_amount)"/></td>
+                                            </tr>
+                                        </t>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

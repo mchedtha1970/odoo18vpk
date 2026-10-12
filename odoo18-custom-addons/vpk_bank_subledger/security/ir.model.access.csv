@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_bank_subledger_account_readonly,vpk.bank.subledger.account.readonly,model_vpk_bank_subledger_account,account.group_account_readonly,1,0,0,0
+access_vpk_bank_subledger_account_user,vpk.bank.subledger.account.user,model_vpk_bank_subledger_account,account.group_account_user,1,1,1,1
+access_vpk_bank_subledger_move_readonly,vpk.bank.subledger.move.readonly,model_vpk_bank_subledger_move,account.group_account_readonly,1,0,0,0
+access_vpk_bank_subledger_move_user,vpk.bank.subledger.move.user,model_vpk_bank_subledger_move,account.group_account_user,1,1,1,1
+access_vpk_bank_subledger_report_readonly,vpk.bank.subledger.report.readonly,model_vpk_bank_subledger_report,account.group_account_readonly,1,1,1,1
+access_vpk_bank_subledger_report_user,vpk.bank.subledger.report.user,model_vpk_bank_subledger_report,account.group_account_user,1,1,1,1
+access_vpk_bank_subledger_report_line_readonly,vpk.bank.subledger.report.line.readonly,model_vpk_bank_subledger_report_line,account.group_account_readonly,1,1,1,1
+access_vpk_bank_subledger_report_line_user,vpk.bank.subledger.report.line.user,model_vpk_bank_subledger_report_line,account.group_account_user,1,1,1,1

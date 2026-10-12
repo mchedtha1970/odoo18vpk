@@ -26,7 +26,7 @@ export class VpkBudgetDashboard extends Component {
                 category_breakdown: [],
                 department_rows: [],
                 recent_requests: [],
-                trend: { points: [], max: 1 },
+                allocation_gap: { rows: [], requested: 0, allocated: 0, gap: 0, percent: 0, max: 1 },
             },
         });
 
@@ -69,30 +69,14 @@ export class VpkBudgetDashboard extends Component {
         return this.formatAmount(value);
     }
 
-    formatAxisAmount(amount) {
-        const value = amount || 0;
-        if (Math.abs(value) >= 1000000) {
-            const millions = value / 1000000;
-            return new Intl.NumberFormat("th-TH", {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: millions >= 10 ? 1 : 2,
-            }).format(millions);
-        }
-        return this.formatAmount(value);
+    get gap() {
+        return this.state.data.allocation_gap || { rows: [], max: 1 };
     }
 
-    get trendUnit() {
-        const max = this.state.data.trend.max || 0;
-        return max >= 1000000 ? "หน่วย: ล้านบาท" : "หน่วย: บาท";
-    }
-
-    get yTicks() {
-        const max = this.state.data.trend.max || 1;
-        return [1, 0.75, 0.5, 0.25, 0].map((ratio) => ({
-            label: this.formatAxisAmount(max * ratio),
-            top: `${(1 - ratio) * 100}%`,
-            y: (1 - ratio) * 100,
-        }));
+    gapWidth(amount) {
+        const max = this.gap.max || 1;
+        const width = Math.max(0, Math.min(100, ((amount || 0) / max) * 100));
+        return `width:${width}%;`;
     }
 
     categoryStyle() {
@@ -109,27 +93,6 @@ export class VpkBudgetDashboard extends Component {
             return stop;
         });
         return `background: conic-gradient(${stops.join(", ")});`;
-    }
-
-    trendPoint(index, amount) {
-        const points = this.state.data.trend.points || [];
-        const max = this.state.data.trend.max || 1;
-        const x = points.length <= 1 ? 0 : (index / (points.length - 1)) * 100;
-        const y = 100 - ((amount || 0) / max) * 100;
-        return `${x},${y}`;
-    }
-
-    get trendPolyline() {
-        const points = this.state.data.trend.points || [];
-        return points.map((point, index) => this.trendPoint(index, point.amount)).join(" ");
-    }
-
-    get trendAreaPath() {
-        const points = this.state.data.trend.points || [];
-        if (!points.length) {
-            return "";
-        }
-        return `M0,100 L${this.trendPolyline} L100,100 Z`;
     }
 
     openRequests(domain = []) {

@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import base64
+import io
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
@@ -155,6 +158,8 @@ class GfmisDocument(models.Model):
         check_company=True,
     )
     description = fields.Char(string="คำอธิบายเอกสาร", size=99)
+    dika_number = fields.Char(string="ฎีกาที่", tracking=True, index=True)
+    transfer_date = fields.Date(string="วันที่โอน", tracking=True, index=True)
 
     # ERP links
     purchase_id = fields.Many2one(
@@ -282,23 +287,43 @@ class GfmisDocument(models.Model):
         if invoice.invoice_date:
             self.document_date = invoice.invoice_date
         if not self.line_ids:
-            lines = []
-            for line in invoice.invoice_line_ids.filtered(lambda l: l.display_type == "product"):
-                lines.append(
-                    (
-                        0,
-                        0,
-                        {
-                            "name": line.name,
-                            "quantity": line.quantity,
-                            "price_unit": line.price_unit,
-                            "amount": line.price_subtotal,
-                            "invoice_line_id": line.id,
-                            "purchase_line_id": line.purchase_line_id.id,
-                        },
-                    )
+            self.line_ids = self._prepare_lines_from_invoice(invoice)
+
+    @api.model
+    def _receipt_doc_number_from_invoice(self, invoice):
+        """เลขที่ใบตรวจรับที่ผูกกับใบแจ้งหนี้ผู้ขาย."""
+        wa = invoice.wa_id if "wa_id" in invoice._fields else invoice.env["work.acceptance"]
+        if not wa and "wa_ids" in invoice.invoice_line_ids.purchase_line_id.order_id._fields:
+            wa = invoice.invoice_line_ids.purchase_line_id.order_id.wa_ids.filtered(
+                lambda rec: rec.state == "accept"
+            )[:1]
+        name = (wa.name or "").strip() if wa else ""
+        if not name or name in ("New", "/"):
+            return False
+        return name
+
+    @api.model
+    def _prepare_lines_from_invoice(self, invoice):
+        receipt_doc_number = self._receipt_doc_number_from_invoice(invoice)
+        lines = []
+        for line in invoice.invoice_line_ids.filtered(lambda item: item.display_type == "product"):
+            lines.append(
+                (
+                    0,
+                    0,
+                    {
+                        "name": line.name,
+                        "quantity": line.quantity,
+                        "price_unit": line.price_unit,
+                        "amount": line.price_subtotal,
+                        "receipt_doc_number": receipt_doc_number,
+                        "bill_number": invoice.ref or invoice.name or False,
+                        "invoice_line_id": line.id,
+                        "purchase_line_id": line.purchase_line_id.id,
+                    },
                 )
-            self.line_ids = lines
+            )
+        return lines
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -405,22 +430,7 @@ class GfmisDocument(models.Model):
         form = self.env["gfmis.form.type"].search([("code", "=", form_code)], limit=1)
         if not form:
             form = self.env["gfmis.form.type"].search([("doc_class", "=", "request")], limit=1)
-        lines = []
-        for line in invoice.invoice_line_ids.filtered(lambda l: l.display_type == "product"):
-            lines.append(
-                (
-                    0,
-                    0,
-                    {
-                        "name": line.name,
-                        "quantity": line.quantity,
-                        "price_unit": line.price_unit,
-                        "amount": line.price_subtotal,
-                        "invoice_line_id": line.id,
-                        "purchase_line_id": line.purchase_line_id.id,
-                    },
-                )
-            )
+        lines = self._prepare_lines_from_invoice(invoice)
         return self.create(
             {
                 "doc_class": "request" if invoice.move_type == "in_invoice" else "request",
@@ -438,10 +448,16 @@ class GfmisDocument(models.Model):
         )
 
 
+    def action_export_gf_excel(self):
+        if not self.line_ids:
+            raise UserError(_("ยังไม่มีรายการสำหรับออกรายงาน GF"))
+        return self.line_ids.action_export_gf_excel()
+
+
 class GfmisDocumentLine(models.Model):
     _name = "gfmis.document.line"
     _description = "บรรทัดรายการขอเบิก GFMIS"
-    _order = "id"
+    _order = "transfer_date, dika_number, id"
 
     document_id = fields.Many2one(
         "gfmis.document",
@@ -452,6 +468,24 @@ class GfmisDocumentLine(models.Model):
     company_id = fields.Many2one(related="document_id.company_id", store=True)
     currency_id = fields.Many2one(related="document_id.currency_id")
     name = fields.Char(string="รายการ", required=True)
+    delivery_date = fields.Date(string="วันที่ส่งมอบ")
+    receipt_doc_number = fields.Char(string="เลขที่เอกสารตรวจรับ")
+    gpsc_code = fields.Char(string="รหัส GPSC")
+    bill_number = fields.Char(string="เลขที่บิล")
+    tax_amount = fields.Monetary(string="ภาษี", currency_field="currency_id")
+    note = fields.Char(string="หมายเหตุ")
+    transfer_date = fields.Date(
+        related="document_id.transfer_date",
+        store=True,
+        index=True,
+    )
+    partner_id = fields.Many2one(
+        related="document_id.partner_id",
+        store=True,
+        index=True,
+    )
+    form_code = fields.Char(related="document_id.form_code", store=True)
+    dika_number = fields.Char(related="document_id.dika_number", store=True, index=True)
     quantity = fields.Float(string="จำนวน", default=1.0)
     price_unit = fields.Monetary(string="ราคาต่อหน่วย", currency_field="currency_id")
     amount = fields.Monetary(string="จำนวนเงิน", currency_field="currency_id")
@@ -461,9 +495,200 @@ class GfmisDocumentLine(models.Model):
     purchase_line_id = fields.Many2one("purchase.order.line", string="บรรทัด PO")
     invoice_line_id = fields.Many2one("account.move.line", string="บรรทัดใบแจ้งหนี้")
 
+    group_amount = fields.Monetary(
+        string="เป็นเงิน",
+        compute="_compute_group_amount",
+        currency_field="currency_id",
+    )
+    penalty_amount = fields.Monetary(
+        related="document_id.amount_penalty",
+        string="ค่าปรับ",
+    )
+
+    @api.depends("document_id.line_ids.amount")
+    def _compute_group_amount(self):
+        for line in self:
+            line.group_amount = sum(line.document_id.line_ids.mapped("amount"))
+
     @api.onchange("quantity", "price_unit")
     def _onchange_amount(self):
         self.amount = (self.quantity or 0.0) * (self.price_unit or 0.0)
+
+    def action_export_gf_excel(self):
+        if self:
+            lines = self.search([("document_id", "in", self.document_id.ids)])
+        else:
+            lines = self.search([])
+        if not lines:
+            raise UserError(_("ยังไม่มีรายการสำหรับออกรายงาน GF"))
+        content = lines._gf_register_xlsx()
+        attachment = self.env["ir.attachment"].create({
+            "name": "รายงาน-GF.xlsx",
+            "datas": base64.b64encode(content),
+            "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "res_model": "gfmis.document.line",
+        })
+        return {
+            "type": "ir.actions.act_url",
+            "url": "/web/content/%s?download=true" % attachment.id,
+            "target": "self",
+        }
+
+    def _gf_register_xlsx(self):
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from openpyxl.utils import get_column_letter
+
+        months = [
+            "", "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+            "ก.ค.", "ส.ค.", "กย.", "ต.ค.", "พ.ย.", "ธ.ค.",
+        ]
+
+        def thai_short(value):
+            if not value:
+                return ""
+            return "%s %s%s" % (value.day, months[value.month], str(value.year + 543)[-2:])
+
+        lines = self.sorted(
+            key=lambda line: (
+                line.transfer_date or fields.Date.from_string("1900-01-01"),
+                line.dika_number or "",
+                line.document_id.id,
+                line.id,
+            )
+        )
+        groups = []
+        bucket = []
+        current = None
+        for line in lines:
+            if current != line.document_id:
+                if bucket:
+                    groups.append(bucket)
+                bucket = [line]
+                current = line.document_id
+            else:
+                bucket.append(line)
+        if bucket:
+            groups.append(bucket)
+
+        headers = [
+            "ลำดับที่", "วันที่ โอน", "ชื่อบริษัท", "ขบ.", "ฎีกาที่",
+            "เลขที่บิล", "จำนวนเงิน", "ภาษี", "เป็นเงิน", "ค่าปรับ", "หมายเหตุ",
+        ]
+        book = Workbook()
+        sheet = book.active
+        sheet.title = "รายงาน GF"
+        thin = Border(
+            left=Side(style="thin", color="BFBFBF"),
+            right=Side(style="thin", color="BFBFBF"),
+            top=Side(style="thin", color="BFBFBF"),
+            bottom=Side(style="thin", color="BFBFBF"),
+        )
+        header_fill = PatternFill("solid", fgColor="D6E3F0")
+        header_font = Font(name="Arial", bold=True, size=11, color="1F4E79")
+        title_font = Font(name="Arial", bold=True, size=16, color="1F4E79")
+        body_font = Font(name="Arial", size=11)
+        money = '#,##0.00'
+        center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        left = Alignment(horizontal="left", vertical="center")
+        right = Alignment(horizontal="right", vertical="center")
+
+        sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+        title = sheet.cell(1, 1, "รายงาน GF")
+        title.font = title_font
+        title.alignment = Alignment(horizontal="center", vertical="center")
+        sheet.row_dimensions[1].height = 28
+        for col, label in enumerate(headers, start=1):
+            cell = sheet.cell(2, col, label)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center
+            cell.border = thin
+        sheet.row_dimensions[2].height = 32
+        sheet.auto_filter.ref = "A2:K2"
+        sheet.freeze_panes = "A3"
+        sheet.page_setup.orientation = "landscape"
+        sheet.page_setup.fitToPage = True
+        sheet.page_setup.fitToWidth = 1
+        sheet.page_setup.fitToHeight = 0
+        sheet.page_setup.paperSize = 9
+        sheet.sheet_properties.pageSetUpPr.fitToPage = True
+        sheet.page_setup.horizontalCentered = True
+        sheet.oddHeader.center.text = "รายงาน GF"
+        sheet.print_title_rows = "1:2"
+        sheet.page_setup.horizontalDpi = 300
+        sheet.page_setup.verticalDpi = 300
+        sheet.sheet_view.showGridLines = False
+        sheet.sheet_view.zoomScale = 110
+        sheet.sheet_view.view = "normal"
+        sheet.oddFooter.left.text = "กระบวนการ GFMIS"
+        sheet.oddFooter.right.text = "หน้า &P / &N"
+
+        row = 3
+        for index, group in enumerate(groups, start=1):
+            start = row
+            document = group[0].document_id
+            line_tax = sum(line.tax_amount or 0.0 for line in group)
+            tax_value = line_tax or document.amount_wht or 0.0
+            penalty_value = document.amount_penalty or 0.0
+            for offset, line in enumerate(group):
+                first = offset == 0
+                last = offset == len(group) - 1
+                remark = line.note or ""
+                values = [
+                    index if first else "..",
+                    thai_short(line.transfer_date) if first else "..",
+                    (line.partner_id.name or "") if first else "..",
+                    (line.form_code or "") if first else "..",
+                    (line.dika_number or "") if first else "..",
+                    line.bill_number or "",
+                    line.amount or 0.0,
+                    tax_value if last and tax_value else None,
+                    None,
+                    penalty_value if last and penalty_value else None,
+                    remark,
+                ]
+                for col, value in enumerate(values, start=1):
+                    cell = sheet.cell(row, col, value)
+                    cell.font = body_font
+                    cell.border = thin
+                    cell.alignment = center if col in (1, 2, 4, 5) else left
+                    if col in (7, 8, 9, 10) and isinstance(value, (int, float)):
+                        cell.number_format = money
+                        cell.alignment = right
+                end = row
+                row += 1
+            total_cell = sheet.cell(end, 9, "=SUM(G%s:G%s)" % (start, end))
+            total_cell.font = Font(name="Arial", size=11, bold=True)
+            total_cell.number_format = money
+            total_cell.alignment = right
+            total_cell.border = thin
+
+        if groups:
+            total_row = row
+            label = sheet.cell(total_row, 6, "รวม")
+            label.font = Font(name="Arial", size=11, bold=True)
+            label.alignment = right
+            for col, letter in ((7, "G"), (8, "H"), (9, "I"), (10, "J")):
+                cell = sheet.cell(total_row, col, "=SUM(%s3:%s%s)" % (letter, letter, total_row - 1))
+                cell.font = Font(name="Arial", size=11, bold=True)
+                cell.number_format = money
+                cell.alignment = right
+                cell.border = Border(top=Side(style="thin", color="1F4E79"), bottom=Side(style="double", color="1F4E79"))
+            label.border = Border(top=Side(style="thin", color="1F4E79"), bottom=Side(style="double", color="1F4E79"))
+            sheet.auto_filter.ref = "A2:K%s" % (total_row - 1)
+
+        widths = [12, 14, 28, 12, 16, 28, 16, 14, 16, 14, 24]
+        for col, width in enumerate(widths, start=1):
+            sheet.column_dimensions[get_column_letter(col)].width = width
+        sheet.row_dimensions[2].height = 32
+        sheet.page_margins.left = 0.5
+        sheet.page_margins.right = 0.5
+        sheet.page_margins.top = 0.6
+        sheet.page_margins.bottom = 0.6
+        buffer = io.BytesIO()
+        book.save(buffer)
+        return buffer.getvalue()
 
 
 class GfmisDocumentWht(models.Model):

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="component_salary" model="vpk.hr.payroll.component.map">
+        <field name="sequence">10</field>
+        <field name="code">SALARY</field>
+        <field name="name">เงินเดือน</field>
+        <field name="side">debit</field>
+    </record>
+    <record id="component_position" model="vpk.hr.payroll.component.map">
+        <field name="sequence">20</field>
+        <field name="code">POSITION</field>
+        <field name="name">เงินประจำตำแหน่ง</field>
+        <field name="side">debit</field>
+    </record>
+    <record id="component_ot" model="vpk.hr.payroll.component.map">
+        <field name="sequence">30</field>
+        <field name="code">OT</field>
+        <field name="name">ค่าล่วงเวลา</field>
+        <field name="side">debit</field>
+    </record>
+    <record id="component_allowance" model="vpk.hr.payroll.component.map">
+        <field name="sequence">40</field>
+        <field name="code">ALLOWANCE</field>
+        <field name="name">เงินเพิ่มอื่น</field>
+        <field name="side">debit</field>
+    </record>
+    <record id="component_sso_er" model="vpk.hr.payroll.component.map">
+        <field name="sequence">50</field>
+        <field name="code">SSO_ER</field>
+        <field name="name">ประกันสังคมส่วนนายจ้าง</field>
+        <field name="side">debit</field>
+    </record>
+    <record id="component_tax" model="vpk.hr.payroll.component.map">
+        <field name="sequence">110</field>
+        <field name="code">TAX</field>
+        <field name="name">ภาษีหัก ณ ที่จ่าย</field>
+        <field name="side">credit</field>
+    </record>
+    <record id="component_sso" model="vpk.hr.payroll.component.map">
+        <field name="sequence">120</field>
+        <field name="code">SSO</field>
+        <field name="name">ประกันสังคมส่วนลูกจ้าง</field>
+        <field name="side">credit</field>
+    </record>
+    <record id="component_sso_er_pay" model="vpk.hr.payroll.component.map">
+        <field name="sequence">130</field>
+        <field name="code">SSO_ER_PAY</field>
+        <field name="name">ประกันสังคมส่วนนายจ้างค้างจ่าย</field>
+        <field name="side">credit</field>
+    </record>
+    <record id="component_pvd" model="vpk.hr.payroll.component.map">
+        <field name="sequence">140</field>
+        <field name="code">PVD</field>
+        <field name="name">กองทุนสำรองเลี้ยงชีพหรือกบข</field>
+        <field name="side">credit</field>
+    </record>
+    <record id="component_loan" model="vpk.hr.payroll.component.map">
+        <field name="sequence">150</field>
+        <field name="code">LOAN</field>
+        <field name="name">เงินกู้หัก</field>
+        <field name="side">credit</field>
+    </record>
+    <record id="component_other_ded" model="vpk.hr.payroll.component.map">
+        <field name="sequence">160</field>
+        <field name="code">OTHER_DED</field>
+        <field name="name">หักอื่น</field>
+        <field name="side">credit</field>
+    </record>
+    <record id="component_net" model="vpk.hr.payroll.component.map">
+        <field name="sequence">200</field>
+        <field name="code">NET</field>
+        <field name="name">เงินเดือนจ่ายสุทธิ</field>
+        <field name="side">credit</field>
+    </record>
+</odoo>

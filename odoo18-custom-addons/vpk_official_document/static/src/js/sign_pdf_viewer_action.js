@@ -18,6 +18,7 @@ function openSignPdfViewerAction(env, action) {
                 resModel: params.res_model,
                 resId: Number(params.res_id),
                 canSign: params.can_sign !== false,
+                secretaryScreen: Boolean(params.secretary_screen),
             },
             {
                 onClose: () =>

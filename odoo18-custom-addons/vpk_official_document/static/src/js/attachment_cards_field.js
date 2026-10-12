@@ -75,7 +75,8 @@ export class VpkAttachmentCardsField extends Component {
                 attachmentId: current.id,
                 resModel: record.resModel,
                 resId: record.resId,
-                canSign: true,
+                canSign: !record.data.vpk_secretary_can_screen,
+                secretaryScreen: Boolean(record.data.vpk_secretary_can_screen),
                 onSigned: async () => {
                     await record.load();
                 },

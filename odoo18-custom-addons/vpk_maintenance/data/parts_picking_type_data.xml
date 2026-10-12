@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="maintenance.request" name="_ensure_parts_issue_picking_type"/>
+</odoo>

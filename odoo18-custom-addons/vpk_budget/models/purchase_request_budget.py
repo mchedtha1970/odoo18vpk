@@ -2,7 +2,8 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
 
-# งบจะถูกจองเมื่อ PR ส่งขออนุมัติ (budget_reservation_active=True) จนกว่าจะยกเลิก/เสร็จสิ้น
+# งบจะถูกจองเมื่อเช็คงบผ่าน หรือเมื่อส่งขออนุมัติ (budget_reservation_active=True)
+# จนกว่าจะยกเลิก/เสร็จสิ้น
 
 
 class PurchaseRequest(models.Model):
@@ -10,7 +11,7 @@ class PurchaseRequest(models.Model):
 
     budget_analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
-        string="หน่วยงานงบประมาณ",
+        string="หน่วยงานที่ขอซื้อ",
         tracking=True,
         domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]",
     )
@@ -68,6 +69,15 @@ class PurchaseRequest(models.Model):
         readonly=True,
         copy=False,
     )
+    budget_check_line_ids = fields.One2many(
+        comodel_name="purchase.request.budget.check.line",
+        inverse_name="request_id",
+        string="ตารางผลการเช็คงบ",
+        copy=False,
+    )
+    budget_check_by_product = fields.Boolean(
+        compute="_compute_budget_check_by_product",
+    )
     budget_requested_amount = fields.Monetary(
         string="งบประมาณที่จอง",
         compute="_compute_budget_requested_amount",
@@ -87,6 +97,13 @@ class PurchaseRequest(models.Model):
         tracking=True,
         help="เปิดใช้เมื่อส่งขออนุมัติ PR เพื่อกันวงเงินจาก PR อื่นที่อยู่ระหว่างอนุมัติ",
     )
+
+    @api.depends("budget_check_line_ids.check_mode")
+    def _compute_budget_check_by_product(self):
+        for request in self:
+            request.budget_check_by_product = any(
+                line.check_mode == "product" for line in request.budget_check_line_ids
+            )
 
     @api.depends("line_ids.budget_reserved_amount", "line_ids.estimated_cost", "line_ids.cancelled")
     def _compute_budget_requested_amount(self):
@@ -177,6 +194,8 @@ class PurchaseRequest(models.Model):
             "line_ids",
         }
         res = super().write(vals)
+        if "budget_check_message" in vals:
+            self.budget_check_line_ids.unlink()
         if (
             vals.get("budget_post_id")
             and not self.env.context.get("skip_budget_line_sync")
@@ -340,19 +359,323 @@ class PurchaseRequest(models.Model):
                 request.message_post(
                     body=_("ปรับรายการงบที่จองของ PR หลังเปลี่ยนแปลงใบสั่งซื้อ")
                 )
+    def _uses_product_allocation_check(self):
+        """วัสดุ/ครุภัณฑ์ เช็คงบจากยอดจัดสรรของสินค้า ไม่ใช้ก้อนหมวดทั้งก้อน."""
+        self.ensure_one()
+        return self.budget_section_key in ("material", "asset")
+
+    def _allocation_check_date(self):
+        self.ensure_one()
+        return self.date_start or fields.Date.context_today(self)
+
+    def _get_product_allocated_amount(self, product):
+        """ยอดที่จัดสรรให้สินค้านี้ในคำของบที่อนุมัติแล้ว ของหน่วยงาน/แหล่งเงิน/ปีเดียวกัน."""
+        self.ensure_one()
+        if (
+            not product
+            or not self.budget_analytic_account_id
+            or not self.budget_fund_source_id
+        ):
+            return 0.0
+        check_date = self._allocation_check_date()
+        request_domain = [
+            ("request_id.state", "=", "approved"),
+            ("request_id.analytic_account_id", "=", self.budget_analytic_account_id.id),
+            ("request_id.fund_source_id", "=", self.budget_fund_source_id.id),
+            ("request_id.annual_budget_id.date_from", "<=", check_date),
+            ("request_id.annual_budget_id.date_to", ">=", check_date),
+        ]
+        if self.budget_section_key == "asset":
+            lines = self.env["departmental.budget.request.line"].sudo().search(
+                request_domain
+                + [("asset_product_id", "=", product.product_tmpl_id.id)]
+            )
+            return sum(lines.mapped("allocated_budget_amount"))
+        domain = request_domain + [("product_id", "=", product.id)]
+        if self._requires_budget_group() and self.budget_group_id:
+            domain.append(("budget_group_id", "=", self.budget_group_id.id))
+        details = (
+            self.env["departmental.budget.request.material.detail"].sudo().search(domain)
+        )
+        return sum(details.mapped("allocated_amount"))
+
+    def _get_other_pr_reserved_amount_for_product(self, product):
+        """จอง PR อื่นของสินค้านี้ (ไม่รวมบรรทัดของ PR ปัจจุบัน)."""
+        self.ensure_one()
+        if not product or not self.budget_analytic_account_id or not self.budget_fund_source_id:
+            return 0.0
+        domain = [
+            ("id", "not in", self.line_ids.ids or [0]),
+            ("product_id", "=", product.id),
+            ("request_id.budget_reservation_active", "=", True),
+            ("cancelled", "=", False),
+            ("budget_analytic_account_id", "=", self.budget_analytic_account_id.id),
+            ("budget_fund_source_id", "=", self.budget_fund_source_id.id),
+        ]
+        if self._requires_budget_group():
+            domain.append(("budget_group_id", "=", self.budget_group_id.id))
+        amount = 0.0
+        for line in self.env["purchase.request.line"].sudo().search(domain):
+            amount += line._get_budget_effective_reserved_amount_company()
+        return amount
+
+    def _po_line_matches_request_budget(self, po_line):
+        self.ensure_one()
+        budget_line = po_line.budget_line_id
+        if budget_line:
+            return (
+                budget_line.analytic_account_id == self.budget_analytic_account_id
+                and budget_line.fund_source_id == self.budget_fund_source_id
+                and self._budget_keys_match_group(budget_line.budget_group_id)
+            )
+        pr_lines = po_line.purchase_request_lines
+        return any(
+            prl.budget_analytic_account_id == self.budget_analytic_account_id
+            and prl.budget_fund_source_id == self.budget_fund_source_id
+            and self._budget_keys_match_group(prl.budget_group_id)
+            for prl in pr_lines
+        )
+
+    def _get_po_committed_amount_for_product(self, product, exclude_order=None):
+        self.ensure_one()
+        if not product:
+            return 0.0
+        domain = [
+            ("product_id", "=", product.id),
+            ("order_id.state", "in", ("purchase", "done")),
+            ("state", "in", ("purchase", "done")),
+        ]
+        if exclude_order:
+            domain.append(("order_id", "!=", exclude_order.id))
+        amount = 0.0
+        for po_line in self.env["purchase.order.line"].sudo().search(domain):
+            if self._po_line_matches_request_budget(po_line):
+                amount += po_line._get_budget_open_committed_amount_company()
+        return amount
+
+    def _get_budget_item_unit_price(self, product):
+        """ราคาต่อหน่วยจากรายการคำของบที่อนุมัติ ของสินค้านี้ ถ้ามี."""
+        self.ensure_one()
+        if not product:
+            return 0.0
+        check_date = self.date_start or fields.Date.context_today(self)
+        if self.budget_section_key != "asset":
+            domain = [
+                ("product_id", "=", product.id),
+                ("request_id.state", "=", "approved"),
+                ("unit_price", ">", 0),
+            ]
+            if self.budget_analytic_account_id:
+                domain.append(
+                    (
+                        "request_id.analytic_account_id",
+                        "=",
+                        self.budget_analytic_account_id.id,
+                    )
+                )
+            if self.budget_fund_source_id:
+                domain.append(
+                    ("request_id.fund_source_id", "=", self.budget_fund_source_id.id)
+                )
+            if self._requires_budget_group() and self.budget_group_id:
+                domain.append(("budget_group_id", "=", self.budget_group_id.id))
+            if self.budget_analytic_account_id and self.budget_fund_source_id:
+                domain += [
+                    ("request_id.annual_budget_id.date_from", "<=", check_date),
+                    ("request_id.annual_budget_id.date_to", ">=", check_date),
+                ]
+            detail = (
+                self.env["departmental.budget.request.material.detail"]
+                .sudo()
+                .search(domain, order="request_id desc, id desc", limit=1)
+            )
+            if detail:
+                return detail.unit_price or 0.0
+        if self.budget_section_key != "material":
+            domain = [
+                ("asset_product_id", "=", product.product_tmpl_id.id),
+                ("request_id.state", "=", "approved"),
+                ("unit_price", ">", 0),
+            ]
+            if self.budget_analytic_account_id:
+                domain.append(
+                    (
+                        "request_id.analytic_account_id",
+                        "=",
+                        self.budget_analytic_account_id.id,
+                    )
+                )
+            if self.budget_fund_source_id:
+                domain.append(
+                    ("request_id.fund_source_id", "=", self.budget_fund_source_id.id)
+                )
+            if self.budget_analytic_account_id and self.budget_fund_source_id:
+                domain += [
+                    ("request_id.annual_budget_id.date_from", "<=", check_date),
+                    ("request_id.annual_budget_id.date_to", ">=", check_date),
+                ]
+            asset_line = (
+                self.env["departmental.budget.request.line"]
+                .sudo()
+                .search(domain, order="request_id desc, id desc", limit=1)
+            )
+            if asset_line:
+                return asset_line.unit_price or 0.0
+        return 0.0
+
+    def _get_last_purchase_unit_price(self, product):
+        """ราคาต่อหน่วยจากใบสั่งซื้อที่ยืนยันล่าสุดของสินค้านี้."""
+        self.ensure_one()
+        if not product:
+            return 0.0
+        domain = [
+            ("product_id", "=", product.id),
+            ("order_id.state", "in", ("purchase", "done")),
+            ("price_unit", ">", 0),
+        ]
+        if self.company_id:
+            domain.append(("company_id", "=", self.company_id.id))
+        po_line = self.env["purchase.order.line"].sudo().search(
+            domain, order="date_order desc, id desc", limit=1
+        )
+        if not po_line:
+            return 0.0
+        price = po_line.price_unit or 0.0
+        target_uom = product.uom_id
+        source_uom = po_line.product_uom
+        if source_uom and target_uom and source_uom != target_uom:
+            price = source_uom._compute_price(price, target_uom)
+        return price
+
+    def _suggest_line_unit_price(self, product):
+        """ราคาจากคำของบก่อน ถ้าไม่มีใช้ราคาซื้อครั้งล่าสุด."""
+        self.ensure_one()
+        price = self._get_budget_item_unit_price(product)
+        if price:
+            return price
+        return self._get_last_purchase_unit_price(product)
+
+    def _get_product_budget_remaining(self, product):
+        """คงเหลือของสินค้าหลังหักจอง PR (รวม PR นี้ถ้ายังกันงบอยู่) และผูกพัน PO."""
+        self.ensure_one()
+        allocated = self._get_product_allocated_amount(product)
+        other_reserved = self._get_other_pr_reserved_amount_for_product(product)
+        own_reserved = 0.0
+        if self.budget_reservation_active:
+            own_reserved = sum(
+                line._get_budget_effective_reserved_amount_company()
+                for line in self.line_ids.filtered(
+                    lambda line: not line.cancelled and line.product_id == product
+                )
+            )
+        committed = self._get_po_committed_amount_for_product(product)
+        return allocated - other_reserved - own_reserved - committed
+
+    def _map_lines_to_budget_line(self, lines):
+        self.ensure_one()
+        mapping = {}
+        for budget_post in lines.mapped("budget_post_id"):
+            post_lines = lines.filtered(lambda line: line.budget_post_id == budget_post)
+            budget_lines = self._get_matching_budget_lines(budget_post)
+            if not budget_lines:
+                continue
+            selected = budget_lines.sorted(
+                key=lambda budget_line: budget_line.pr_available_amount,
+                reverse=True,
+            )[:1]
+            for line in post_lines:
+                mapping[line.id] = selected.id
+        return mapping
+
+    def _prepare_product_allocation_check(self, lines):
+        """เช็คงบทีละสินค้าจากยอดจัดสรร แล้วคืน (enough, messages, total_remaining, line_budget_map, rows)."""
+        self.ensure_one()
+        messages = []
+        rows = []
+        enough = True
+        total_remaining = 0.0
+        missing_product = lines.filtered(lambda line: not line.product_id)
+        if missing_product:
+            return (
+                False,
+                _("กรุณาระบุสินค้าในรายการให้ครบทุกบรรทัด เพื่อเช็คงบตามรายการที่จัดสรร"),
+                0.0,
+                {},
+                [],
+            )
+        missing_post_lines = lines.filtered(lambda line: not line.budget_post_id)
+        if missing_post_lines:
+            return (
+                False,
+                _("กรุณาระบุหมวดงบประมาณในรายการ PR ให้ครบทุกบรรทัด"),
+                0.0,
+                {},
+                [],
+            )
+        for product in lines.mapped("product_id"):
+            product_lines = lines.filtered(lambda line: line.product_id == product)
+            required = sum(
+                line._get_budget_reserved_amount_company() for line in product_lines
+            )
+            allocated = self._get_product_allocated_amount(product)
+            other_reserved = self._get_other_pr_reserved_amount_for_product(product)
+            other_committed = self._get_po_committed_amount_for_product(product)
+            available = allocated - other_reserved - other_committed
+            remaining = available - required
+            total_remaining += remaining
+            if allocated <= 1e-6 or remaining < -1e-6:
+                enough = False
+            messages.append(
+                _(
+                    "%(product)s: จัดสรร %(allocated)s | จอง PR อื่น %(reserved)s | "
+                    "ผูกพัน PO %(committed)s | คงเหลือก่อน PR นี้ %(available)s | "
+                    "ขอจอง %(required)s | คงเหลือหลังจอง %(remaining)s"
+                )
+                % {
+                    "product": product.display_name,
+                    "allocated": self._format_budget_amount(allocated),
+                    "reserved": self._format_budget_amount(other_reserved),
+                    "committed": self._format_budget_amount(other_committed),
+                    "available": self._format_budget_amount(available),
+                    "required": self._format_budget_amount(required),
+                    "remaining": self._format_budget_amount(remaining),
+                }
+            )
+            rows.append(
+                {
+                    "name": product.display_name,
+                    "check_mode": "product",
+                    "allocated_amount": allocated,
+                    "other_reserved_amount": other_reserved,
+                    "committed_amount": other_committed,
+                    "available_amount": available,
+                    "required_amount": required,
+                    "remaining_amount": remaining,
+                    "is_short": allocated <= 1e-6 or remaining < -1e-6,
+                }
+            )
+        return (
+            enough,
+            messages,
+            total_remaining,
+            self._map_lines_to_budget_line(lines),
+            rows,
+        )
+
     def _prepare_budget_check(self):
         self.ensure_one()
         lines = self._get_active_budget_request_lines()
         messages = []
+        rows = []
         enough = True
         total_remaining = 0.0
         line_budget_map = {}
 
         if not lines:
-            return False, _("กรุณาเพิ่มรายการสินค้า/บริการใน PR ก่อนเช็คงบประมาณ"), 0.0, {}
+            return False, _("กรุณาเพิ่มรายการสินค้า/บริการใน PR ก่อนเช็คงบประมาณ"), 0.0, {}, []
         missing_header = []
         if not self.budget_analytic_account_id:
-            missing_header.append(_("หน่วยงานงบประมาณ"))
+            missing_header.append(_("หน่วยงานที่ขอซื้อ"))
         if self._requires_budget_group() and not self.budget_group_id:
             missing_header.append(_("กลุ่มงบประมาณ"))
         if not self.budget_fund_source_id:
@@ -364,7 +687,16 @@ class PurchaseRequest(models.Model):
                 % ", ".join(missing_header),
                 0.0,
                 {},
+                [],
             )
+
+        if self._uses_product_allocation_check():
+            enough, messages, total_remaining, line_budget_map, rows = (
+                self._prepare_product_allocation_check(lines)
+            )
+            if isinstance(messages, (list, tuple)):
+                messages = "\n".join(messages)
+            return enough, messages, total_remaining, line_budget_map, rows
 
         missing_post_lines = lines.filtered(lambda line: not line.budget_post_id)
         if missing_post_lines:
@@ -373,6 +705,7 @@ class PurchaseRequest(models.Model):
                 _("กรุณาระบุหมวดงบประมาณในรายการ PR ให้ครบทุกบรรทัด"),
                 0.0,
                 {},
+                [],
             )
 
         for budget_post in lines.mapped("budget_post_id"):
@@ -434,11 +767,109 @@ class PurchaseRequest(models.Model):
                     "remaining": self._format_budget_amount(remaining),
                 }
             )
+            rows.append(
+                {
+                    "name": budget_post.display_name,
+                    "check_mode": "post",
+                    "approved_amount": approved,
+                    "actual_amount": actual,
+                    "other_reserved_amount": other_reserved,
+                    "committed_amount": other_committed,
+                    "available_amount": available,
+                    "required_amount": required,
+                    "remaining_amount": remaining,
+                    "is_short": remaining < -1e-6,
+                }
+            )
 
-        return enough, "\n".join(messages), total_remaining, line_budget_map
+        return enough, "\n".join(messages), total_remaining, line_budget_map, rows
+
+    def _replace_budget_check_lines(self, rows):
+        self.ensure_one()
+        if not rows:
+            return
+        self.env["purchase.request.budget.check.line"].create(
+            [
+                {
+                    **row,
+                    "request_id": self.id,
+                    "sequence": (index + 1) * 10,
+                }
+                for index, row in enumerate(rows)
+            ]
+        )
+
+    def _rows_from_budget_check_message(self, message):
+        """แปลงข้อความผลการเช็คงบที่บันทึกไว้แล้ว ให้เป็นแถวตาราง."""
+        self.ensure_one()
+        rows = []
+        labeled_fields = (
+            ("จอง PR อื่น", "other_reserved_amount"),
+            ("ผูกพัน PO", "committed_amount"),
+            ("คงเหลือก่อน PR นี้", "available_amount"),
+            ("ขอจอง", "required_amount"),
+            ("คงเหลือหลังจอง", "remaining_amount"),
+            ("ใช้จริง", "actual_amount"),
+        )
+        for raw_line in (message or "").splitlines():
+            line = raw_line.strip()
+            if ": จัดสรร " in line:
+                name, rest = line.split(": จัดสรร ", 1)
+                mode = "product"
+                leading_field = "allocated_amount"
+            elif ": อนุมัติ " in line:
+                name, rest = line.split(": อนุมัติ ", 1)
+                mode = "post"
+                leading_field = "approved_amount"
+            else:
+                continue
+            parts = [part.strip() for part in rest.split("|")]
+            if len(parts) < 6:
+                continue
+            row = {
+                "name": name.strip(),
+                "check_mode": mode,
+                leading_field: self._parse_budget_amount_text(parts[0]),
+            }
+            matched = True
+            for part in parts[1:]:
+                field_name = False
+                amount_text = part
+                for label, candidate in labeled_fields:
+                    prefix = label + " "
+                    if part.startswith(prefix):
+                        field_name = candidate
+                        amount_text = part[len(prefix):]
+                        break
+                if not field_name:
+                    matched = False
+                    break
+                row[field_name] = self._parse_budget_amount_text(amount_text)
+            if not matched:
+                continue
+            remaining = row.get("remaining_amount") or 0.0
+            allocated = row.get("allocated_amount") or 0.0
+            row["is_short"] = remaining < -1e-6 or (
+                mode == "product" and allocated <= 1e-6
+            )
+            rows.append(row)
+        return rows
+
+    @api.model
+    def _parse_budget_amount_text(self, text):
+        cleaned = []
+        for char in text or "":
+            if char.isdigit() or char in ".-":
+                cleaned.append(char)
+        if not cleaned or cleaned == ["-"] or cleaned == ["."]:
+            return 0.0
+        try:
+            return float("".join(cleaned))
+        except ValueError:
+            return 0.0
 
     def _apply_budget_check_result(
-        self, enough, message, remaining_total, line_budget_map, activate_reservation=False
+        self, enough, message, remaining_total, line_budget_map, activate_reservation=False, rows=None
     ):
         self.ensure_one()
         header_vals = {
@@ -450,6 +881,7 @@ class PurchaseRequest(models.Model):
         if enough and activate_reservation:
             header_vals["budget_reservation_active"] = True
         self.with_context(skip_budget_check_reset=True).write(header_vals)
+        self._replace_budget_check_lines(rows or [])
 
         # Always sync line budget fields on check (not only when activating reservation)
         for line in self._get_active_budget_request_lines():
@@ -469,7 +901,7 @@ class PurchaseRequest(models.Model):
 
     def _activate_budget_reservation(self):
         for request in self:
-            enough, message, available, line_budget_map = request._prepare_budget_check()
+            enough, message, available, line_budget_map, rows = request._prepare_budget_check()
             if not enough:
                 raise ValidationError(
                     _(
@@ -478,7 +910,12 @@ class PurchaseRequest(models.Model):
                     % message
                 )
             request._apply_budget_check_result(
-                enough, message, available, line_budget_map, activate_reservation=True
+                enough,
+                message,
+                available,
+                line_budget_map,
+                activate_reservation=True,
+                rows=rows,
             )
 
     def _release_budget_reservation(self, clear_budget_lines=True):
@@ -584,14 +1021,24 @@ class PurchaseRequest(models.Model):
 
     def action_check_budget_status(self):
         self.ensure_one()
-        enough, message, available, line_budget_map = self._prepare_budget_check()
-        self._apply_budget_check_result(enough, message, available, line_budget_map)
+        enough, message, available, line_budget_map, rows = self._prepare_budget_check()
+        if not enough and self.budget_reservation_active:
+            self._release_budget_reservation(clear_budget_lines=False)
+        self._apply_budget_check_result(
+            enough,
+            message,
+            available,
+            line_budget_map,
+            activate_reservation=enough,
+            rows=rows,
+        )
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
             "params": {
-                "title": _("สถานะงบประมาณ: %s")
-                % (_("เพียงพอ") if enough else _("ไม่เพียงพอ")),
+                "title": _("จองงบประมาณแล้ว")
+                if enough
+                else _("สถานะงบประมาณ: ไม่เพียงพอ"),
                 "message": message,
                 "type": "success" if enough else "warning",
                 "sticky": True,
@@ -654,6 +1101,66 @@ class PurchaseRequest(models.Model):
         return res
 
 
+class PurchaseRequestBudgetCheckLine(models.Model):
+    _name = "purchase.request.budget.check.line"
+    _description = "รายละเอียดผลการเช็คงบประมาณ"
+    _order = "sequence, id"
+
+    request_id = fields.Many2one(
+        comodel_name="purchase.request",
+        string="ใบขอซื้อ",
+        required=True,
+        ondelete="cascade",
+        index=True,
+    )
+    sequence = fields.Integer(default=10)
+    name = fields.Char(string="รายการ", required=True)
+    check_mode = fields.Selection(
+        selection=[
+            ("product", "สินค้า"),
+            ("post", "หมวดงบประมาณ"),
+        ],
+        string="แบบเช็ค",
+        required=True,
+    )
+    allocated_amount = fields.Monetary(
+        string="จัดสรร",
+        currency_field="currency_id",
+    )
+    approved_amount = fields.Monetary(
+        string="อนุมัติ",
+        currency_field="currency_id",
+    )
+    actual_amount = fields.Monetary(
+        string="ใช้จริง",
+        currency_field="currency_id",
+    )
+    other_reserved_amount = fields.Monetary(
+        string="จอง PR อื่น",
+        currency_field="currency_id",
+    )
+    committed_amount = fields.Monetary(
+        string="ผูกพัน PO",
+        currency_field="currency_id",
+    )
+    available_amount = fields.Monetary(
+        string="คงเหลือก่อน PR นี้",
+        currency_field="currency_id",
+    )
+    required_amount = fields.Monetary(
+        string="ขอจอง",
+        currency_field="currency_id",
+    )
+    remaining_amount = fields.Monetary(
+        string="คงเหลือหลังจอง",
+        currency_field="currency_id",
+    )
+    is_short = fields.Boolean(string="งบไม่พอ")
+    currency_id = fields.Many2one(
+        related="request_id.currency_id",
+    )
+
+
 class PurchaseRequestLine(models.Model):
     _inherit = "purchase.request.line"
 
@@ -692,6 +1199,12 @@ class PurchaseRequestLine(models.Model):
         copy=False,
         tracking=True,
     )
+    budget_unit_price = fields.Monetary(
+        string="ราคาต่อหน่วย",
+        currency_field="currency_id",
+        copy=True,
+        tracking=True,
+    )
     budget_reserved_amount = fields.Monetary(
         string="งบประมาณที่จอง",
         currency_field="currency_id",
@@ -699,10 +1212,41 @@ class PurchaseRequestLine(models.Model):
         tracking=True,
     )
     budget_line_available_amount = fields.Float(
-        string="งบคงเหลือในรายการงบ",
-        related="budget_line_id.pr_available_amount",
-        readonly=True,
+        string="งบคงเหลือของสินค้า",
+        compute="_compute_budget_line_available_amount",
+        digits=0,
     )
+
+    @api.depends(
+        "product_id",
+        "cancelled",
+        "budget_line_id",
+        "budget_line_id.pr_available_amount",
+        "request_id.budget_section_key",
+        "request_id.budget_analytic_account_id",
+        "request_id.budget_fund_source_id",
+        "request_id.budget_group_id",
+        "request_id.date_start",
+        "request_id.budget_reservation_active",
+        "request_id.line_ids.product_id",
+        "request_id.line_ids.budget_reserved_amount",
+        "request_id.line_ids.cancelled",
+    )
+    def _compute_budget_line_available_amount(self):
+        for line in self:
+            request = line.request_id
+            if (
+                line.product_id
+                and request
+                and request._uses_product_allocation_check()
+            ):
+                line.budget_line_available_amount = request._get_product_budget_remaining(
+                    line.product_id
+                )
+            else:
+                line.budget_line_available_amount = (
+                    line.budget_line_id.pr_available_amount or 0.0
+                )
 
     @api.depends(
         "request_id.budget_analytic_account_id",
@@ -720,6 +1264,28 @@ class PurchaseRequestLine(models.Model):
             else:
                 line.allowed_budget_line_ids = self.env["budget.lines"]
 
+    def _apply_unit_price_to_estimated_cost(self):
+        self.ensure_one()
+        self.estimated_cost = (self.product_qty or 0.0) * (self.budget_unit_price or 0.0)
+        self.budget_reserved_amount = self.estimated_cost or 0.0
+
+    @api.onchange("product_id")
+    def _onchange_product_id_set_budget_unit_price(self):
+        """ดึงราคาต่อหน่วยจากคำของบ ถ้าไม่มีใช้ราคาซื้อครั้งล่าสุด."""
+        for line in self:
+            if not line.product_id or not line.request_id:
+                continue
+            line.budget_unit_price = line.request_id._suggest_line_unit_price(
+                line.product_id
+            )
+            line._apply_unit_price_to_estimated_cost()
+
+    @api.onchange("budget_unit_price")
+    def _onchange_budget_unit_price_set_estimated_cost(self):
+        for line in self:
+            if line.budget_unit_price:
+                line._apply_unit_price_to_estimated_cost()
+
     @api.onchange("estimated_cost")
     def _onchange_estimated_cost_set_budget_reserved_amount(self):
         """ราคา/งบประมาณเปลี่ยน → sync ยอดจองทันที."""
@@ -728,8 +1294,11 @@ class PurchaseRequestLine(models.Model):
 
     @api.onchange("product_qty")
     def _onchange_product_qty_scale_estimated_cost(self):
-        """จำนวนเปลี่ยน → ปรับงบประมาณตามสัดส่วน (ราคาต่อหน่วยเดิม)."""
+        """จำนวนเปลี่ยน → งบประมาณ = จำนวน x ราคาต่อหน่วย."""
         for line in self:
+            if line.budget_unit_price:
+                line._apply_unit_price_to_estimated_cost()
+                continue
             origin = line._origin
             if not origin or not origin.product_qty or not origin.estimated_cost:
                 continue
@@ -776,6 +1345,7 @@ class PurchaseRequestLine(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            self._fill_unit_price_vals(vals)
             if "budget_reserved_amount" not in vals:
                 vals["budget_reserved_amount"] = vals.get("estimated_cost", 0.0)
             if not self.env.context.get("skip_budget_line_sync"):
@@ -806,6 +1376,26 @@ class PurchaseRequestLine(models.Model):
             reserved_parents._refresh_budget_reservation_after_edit()
         return lines
 
+    def _fill_unit_price_vals(self, vals):
+        """เติมราคาต่อหน่วยและงบประมาณตอนสร้างบรรทัด ถ้ายังไม่ได้ระบุ."""
+        if vals.get("budget_unit_price") or not vals.get("product_id"):
+            return vals
+        request_id = vals.get("request_id") or self.env.context.get("default_request_id")
+        request = (
+            self.env["purchase.request"].browse(request_id) if request_id else self.env["purchase.request"]
+        )
+        if not request:
+            return vals
+        product = self.env["product.product"].browse(vals["product_id"])
+        price = request._suggest_line_unit_price(product)
+        if not price:
+            return vals
+        vals["budget_unit_price"] = price
+        if "estimated_cost" not in vals:
+            qty = vals.get("product_qty") or 0.0
+            vals["estimated_cost"] = qty * price
+        return vals
+
     def write(self, vals):
         vals = dict(vals)
         # Scale estimated_cost when qty changes without explicit cost
@@ -815,7 +1405,12 @@ class PurchaseRequestLine(models.Model):
             and not self.env.context.get("skip_budget_refresh")
         ):
             new_qty = vals["product_qty"]
-            if len(self) == 1 and self.product_qty and abs(self.product_qty) > 1e-9:
+            unit_price = vals.get("budget_unit_price")
+            if unit_price is None and len(self) == 1:
+                unit_price = self.budget_unit_price
+            if len(self) == 1 and unit_price:
+                vals["estimated_cost"] = float(unit_price) * float(new_qty)
+            elif len(self) == 1 and self.product_qty and abs(self.product_qty) > 1e-9:
                 vals["estimated_cost"] = (self.estimated_cost or 0.0) * (
                     float(new_qty) / self.product_qty
                 )
@@ -828,7 +1423,11 @@ class PurchaseRequestLine(models.Model):
                 }
                 for line in self:
                     line_vals = dict(vals)
-                    if line.product_qty and abs(line.product_qty) > 1e-9:
+                    if line.budget_unit_price:
+                        line_vals["estimated_cost"] = float(line.budget_unit_price) * float(
+                            new_qty
+                        )
+                    elif line.product_qty and abs(line.product_qty) > 1e-9:
                         line_vals["estimated_cost"] = (line.estimated_cost or 0.0) * (
                             float(new_qty) / line.product_qty
                         )
@@ -843,6 +1442,16 @@ class PurchaseRequestLine(models.Model):
                     lambda r: not r.budget_reservation_active
                 ).mapped("line_ids")._reset_parent_budget_check()
                 return True
+
+        if (
+            "budget_unit_price" in vals
+            and "estimated_cost" not in vals
+            and "product_qty" not in vals
+            and len(self) == 1
+        ):
+            vals["estimated_cost"] = (self.product_qty or 0.0) * float(
+                vals.get("budget_unit_price") or 0.0
+            )
 
         if "estimated_cost" in vals and "budget_reserved_amount" not in vals:
             vals["budget_reserved_amount"] = vals.get("estimated_cost") or 0.0

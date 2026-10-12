@@ -44,6 +44,34 @@
         group.appendChild(holder);
     }
 
+    function bindTestUsers(form) {
+        const select = form.querySelector(".vpk-login-test-select");
+        const login = form.querySelector("input#login");
+        const password = form.querySelector("input#password");
+        if (!select || !login) {
+            return;
+        }
+        if (login.value) {
+            select.value = login.value;
+        }
+        select.addEventListener("change", function () {
+            if (!select.value) {
+                return;
+            }
+            login.value = select.value;
+            if (password) {
+                const option = select.options[select.selectedIndex];
+                password.value = (option && option.dataset.password) || "";
+                const submit = form.querySelector("button[type='submit']");
+                if (password.value && submit) {
+                    submit.focus();
+                } else {
+                    password.focus();
+                }
+            }
+        });
+    }
+
     function enhance() {
         const panel = document.querySelector(".vpk-login-panel");
         if (!panel) {
@@ -51,6 +79,7 @@
         }
         panel.querySelectorAll("form").forEach(function (form) {
             moveResetLink(form);
+            bindTestUsers(form);
             form.querySelectorAll("input[type='password']").forEach(buildToggle);
         });
     }

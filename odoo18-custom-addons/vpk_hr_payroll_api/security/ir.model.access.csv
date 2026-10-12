@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_payroll_batch_user,vpk.hr.payroll.batch user,model_vpk_hr_payroll_batch,group_hr_payroll_user,1,0,0,0
+access_hr_payroll_batch_accountant,vpk.hr.payroll.batch accountant,model_vpk_hr_payroll_batch,group_hr_payroll_accountant,1,1,1,0
+access_hr_payroll_batch_manager,vpk.hr.payroll.batch manager,model_vpk_hr_payroll_batch,group_hr_payroll_manager,1,1,1,1
+access_hr_payroll_line_user,vpk.hr.payroll.line user,model_vpk_hr_payroll_line,group_hr_payroll_user,1,0,0,0
+access_hr_payroll_line_accountant,vpk.hr.payroll.line accountant,model_vpk_hr_payroll_line,group_hr_payroll_accountant,1,1,1,0
+access_hr_payroll_line_manager,vpk.hr.payroll.line manager,model_vpk_hr_payroll_line,group_hr_payroll_manager,1,1,1,1
+access_hr_payroll_map_user,vpk.hr.payroll.component.map user,model_vpk_hr_payroll_component_map,group_hr_payroll_user,1,0,0,0
+access_hr_payroll_map_manager,vpk.hr.payroll.component.map manager,model_vpk_hr_payroll_component_map,group_hr_payroll_manager,1,1,1,1
+access_hr_payroll_log_user,vpk.hr.payroll.api.log user,model_vpk_hr_payroll_api_log,group_hr_payroll_user,1,0,0,0
+access_hr_payroll_log_manager,vpk.hr.payroll.api.log manager,model_vpk_hr_payroll_api_log,group_hr_payroll_manager,1,1,1,0

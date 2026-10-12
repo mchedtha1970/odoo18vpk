@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_maintenance.MaintenanceDashboard">
+        <div t-att-class="props.className" class="o_vpk_maint">
+            <div class="o_vpk_maint_scroll" t-if="state.ready">
+                <header class="o_vpk_maint_header">
+                    <div>
+                        <div class="o_vpk_maint_kicker">Maintenance tracking</div>
+                        <h1>ติดตามงานซ่อม</h1>
+                        <p class="o_vpk_maint_updated">
+                            <t t-esc="state.data.date_label"/>
+                            <span> · อัปเดต </span>
+                            <t t-esc="state.data.updated_at"/> น.
+                            <span> · งานค้างเป็นสถานะปัจจุบัน ความเคลื่อนไหวและงานที่ปิดนับตาม</span>
+                            <t t-esc="state.data.period_label"/>
+                        </p>
+                    </div>
+                    <div class="o_vpk_maint_tools">
+                        <button type="button" class="o_vpk_maint_refresh" t-on-click="() => this.refresh()">รีเฟรช</button>
+                        <div class="o_vpk_maint_periods">
+                            <t t-foreach="periods" t-as="period" t-key="period.id">
+                                <button type="button"
+                                        t-att-class="{'is-active': state.period === period.id}"
+                                        t-on-click="() => this.setPeriod(period.id)">
+                                    <t t-esc="period.label"/>
+                                </button>
+                            </t>
+                        </div>
+                    </div>
+                </header>
+
+                <section class="o_vpk_maint_kpis">
+                    <t t-foreach="state.data.kpis" t-as="kpi" t-key="kpi.key">
+                        <button type="button"
+                                t-att-class="'o_vpk_maint_kpi is-' + kpi.tone"
+                                t-on-click="() => this.openAction(kpi)">
+                            <div class="o_vpk_maint_kpi_top">
+                                <span t-esc="kpi.label"/>
+                                <span t-esc="kpi.hint"/>
+                            </div>
+                            <div t-att-class="'o_vpk_maint_kpi_value' + (kpi.money ? ' is-money' : '')" t-esc="kpi.value"/>
+                            <p t-esc="kpi.foot"/>
+                        </button>
+                    </t>
+                </section>
+
+                <section class="o_vpk_maint_columns">
+                    <article class="o_vpk_maint_card">
+                        <header class="o_vpk_maint_card_head">
+                            <div>
+                                <h2>งานค้างตามทีม</h2>
+                                <p>สัดส่วนสถานะของงานที่ยังไม่ปิด</p>
+                            </div>
+                        </header>
+                        <div t-if="!state.data.teams.length" class="o_vpk_maint_empty">ยังไม่มีทีมซ่อมบำรุง</div>
+                        <t t-foreach="state.data.teams" t-as="team" t-key="team.id">
+                            <button type="button" class="o_vpk_maint_team" t-on-click="() => this.openAction(team)">
+                                <div class="o_vpk_maint_team_top">
+                                    <strong t-esc="team.name"/>
+                                    <span><t t-esc="team.open"/> เรื่อง</span>
+                                </div>
+                                <div class="o_vpk_maint_bar">
+                                    <t t-foreach="team.segments" t-as="segment" t-key="segment.key">
+                                        <i t-if="segment.width"
+                                           t-att-class="'is-' + segment.tone"
+                                           t-att-style="'width:' + segment.width + '%'"/>
+                                    </t>
+                                </div>
+                                <div class="o_vpk_maint_legend">
+                                    <t t-foreach="team.segments" t-as="segment" t-key="'leg-' + segment.key">
+                                        <span t-if="segment.count">
+                                            <i t-att-class="'is-' + segment.tone"/>
+                                            <t t-esc="segment.label"/>
+                                            <t t-esc="segment.count"/>
+                                        </span>
+                                    </t>
+                                    <span t-if="!team.open" class="is-muted">ไม่มีงานค้าง</span>
+                                </div>
+                            </button>
+                        </t>
+                        <div t-if="state.data.departments.length" class="o_vpk_maint_depts">
+                            <h3>หน่วยงานที่แจ้ง</h3>
+                            <t t-foreach="state.data.departments" t-as="department" t-key="department.id">
+                                <button type="button" t-on-click="() => this.openAction(department)">
+                                    <span t-esc="department.name"/>
+                                    <strong t-esc="department.count"/>
+                                </button>
+                            </t>
+                        </div>
+                    </article>
+
+                    <article class="o_vpk_maint_card">
+                        <header class="o_vpk_maint_card_head">
+                            <div>
+                                <h2>ความเคลื่อนไหวของสถานะ</h2>
+                                <p>
+                                    เปิดคำขอและเปลี่ยนสถานะใน
+                                    <t t-esc="state.data.period_label"/>
+                                    · <t t-esc="state.data.movement_count"/> รายการ
+                                </p>
+                            </div>
+                        </header>
+                        <div t-if="!state.data.movement.length" class="o_vpk_maint_empty">ยังไม่มีความเคลื่อนไหวในช่วงนี้</div>
+                        <div t-else="" class="o_vpk_maint_timeline">
+                            <t t-foreach="state.data.movement" t-as="row" t-key="row.key">
+                                <button type="button" class="o_vpk_maint_event" t-on-click="() => this.openRecord(row)">
+                                    <div class="o_vpk_maint_event_when" t-esc="row.when"/>
+                                    <div class="o_vpk_maint_event_body">
+                                        <strong t-esc="row.name"/>
+                                        <span t-esc="row.team"/>
+                                    </div>
+                                    <div class="o_vpk_maint_shift">
+                                        <em t-if="row.before" t-esc="row.before"/>
+                                        <i t-if="row.before" class="fa fa-long-arrow-right"/>
+                                        <span t-att-class="'o_vpk_maint_badge is-' + row.tone" t-esc="row.after"/>
+                                    </div>
+                                </button>
+                            </t>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="o_vpk_maint_bottom">
+                    <article class="o_vpk_maint_card">
+                        <header class="o_vpk_maint_card_head">
+                            <div>
+                                <h2>งานที่ยังไม่ปิด</h2>
+                                <p>เรียงตามการอัปเดตล่าสุด</p>
+                            </div>
+                        </header>
+                        <div class="o_vpk_maint_table">
+                            <div class="o_vpk_maint_row is-head">
+                                <span>เรื่อง</span>
+                                <span>ทีม</span>
+                                <span>ผู้รับผิดชอบ</span>
+                                <span>สถานะ</span>
+                            </div>
+                            <div t-if="!state.data.jobs.length" class="o_vpk_maint_empty">ไม่มีงานค้าง</div>
+                            <t t-foreach="state.data.jobs" t-as="job" t-key="job.id">
+                                <button type="button" class="o_vpk_maint_row" t-on-click="() => this.openRecord(job)">
+                                    <span class="o_vpk_maint_name">
+                                        <t t-esc="job.name"/>
+                                        <small t-esc="job.when"/>
+                                    </span>
+                                    <span class="o_vpk_maint_meta" t-esc="job.team"/>
+                                    <span class="o_vpk_maint_meta" t-esc="job.assignee"/>
+                                    <span>
+                                        <em t-att-class="'o_vpk_maint_badge is-' + job.tone" t-esc="job.status"/>
+                                    </span>
+                                </button>
+                            </t>
+                        </div>
+                    </article>
+                    <article class="o_vpk_maint_card">
+                        <header class="o_vpk_maint_card_head">
+                            <h2>ต้องติดตาม</h2>
+                            <span t-if="state.data.alerts.length" class="o_vpk_maint_alert_count">
+                                <t t-esc="state.data.alerts.length"/> รายการ
+                            </span>
+                        </header>
+                        <div t-if="!state.data.alerts.length" class="o_vpk_maint_empty">ไม่มีงานที่ต้องเร่ง</div>
+                        <ul class="o_vpk_maint_alerts">
+                            <t t-foreach="state.data.alerts" t-as="alert" t-key="alert.id + '-' + alert.message">
+                                <li>
+                                    <div>
+                                        <strong>
+                                            <i class="fa fa-exclamation-triangle"/>
+                                            <t t-esc="alert.name"/>
+                                            <span t-esc="alert.message"/>
+                                        </strong>
+                                        <p t-esc="alert.detail"/>
+                                    </div>
+                                    <button type="button" t-on-click="() => this.openRecord(alert)">
+                                        <t t-esc="alert.action_label"/>
+                                    </button>
+                                </li>
+                            </t>
+                        </ul>
+                    </article>
+                </section>
+            </div>
+            <div t-else="" class="o_vpk_maint_loading">กำลังโหลดงานซ่อม...</div>
+        </div>
+    </t>
+</templates>

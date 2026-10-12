@@ -11,6 +11,9 @@
             <field name="user_id" position="before">
                 <field name="requisition_type" position="move"/>
             </field>
+            <field name="user_id" position="attributes">
+                <attribute name="string">ผู้ทำรายการ</attribute>
+            </field>
             <field name="user_id" position="after">
                 <field name="is_egp_procurement" invisible="1"/>
                 <field
@@ -23,11 +26,13 @@
                 />
                 <field
                     name="procurement_type_id"
+                    string="ประเภทการสั่งซื้อ"
                     invisible="requisition_type != 'egp_procurement'"
                     readonly="state != 'draft'"
                 />
                 <field
                     name="purchase_type_id"
+                    string="ระเบียบ"
                     invisible="requisition_type != 'egp_procurement'"
                     readonly="state != 'draft'"
                 />
@@ -114,7 +119,7 @@
 
             <page name="products" position="after">
                 <page
-                    string="เอกสาร e-GP"
+                    string="เอกสารที่เปิดในระบบ e-GP"
                     name="egp_documents"
                     invisible="requisition_type != 'egp_procurement'"
                 >

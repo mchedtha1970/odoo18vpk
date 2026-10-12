@@ -1,0 +1,650 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo auto_sequence="1">
+    <record id="cash_flow" model="account.report">
+        <field name="name">รายงานกระแสเงินสด</field>
+        <field name="root_report_id" ref="account_reports.cash_flow_report"/>
+        <field name="availability_condition">always</field>
+        <field name="custom_handler_model_id" ref="model_vpk_hospital_cash_flow_report_handler"/>
+        <field name="filter_unfold_all" eval="True"/>
+        <field name="filter_date_range" eval="True"/>
+        <field name="filter_journals" eval="True"/>
+        <field name="filter_period_comparison" eval="False"/>
+        <field name="filter_multi_company">selector</field>
+        <field name="default_opening_date_filter">this_month</field>
+        <field name="column_ids">
+            <record id="cash_flow_balance" model="account.report.column">
+                <field name="name">จำนวนเงิน</field>
+                <field name="expression_label">balance</field>
+            </record>
+        </field>
+        <field name="line_ids">
+            
+                        <record id="cf_op" model="account.report.line">
+                            <field name="name">กระแสเงินสดจากกิจกรรมดำเนินงาน</field>
+                            <field name="hierarchy_level">0</field>
+                            <field name="children_ids">
+                        <record id="cf_op_in" model="account.report.line">
+                            <field name="name">เงินสดรับ</field>
+                            <field name="hierarchy_level">1</field>
+                            <field name="children_ids">
+                            <record id="cf_budget" model="account.report.line">
+                                <field name="name">1. รายได้จากเงินงบประมาณ</field>
+                                <field name="code">CF_BUDGET</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_budget_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4307010103.201%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4307010104.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4307010105.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4307010106.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4307010107.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4307010108.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4307010110.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4307010112.101%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_medical" model="account.report.line">
+                                <field name="name">2. รายได้ค่ารักษาพยาบาล</field>
+                                <field name="code">CF_MEDICAL</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_medical_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301010102.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301010102.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301010102.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020102.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020102.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020102.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020102.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020102.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.110%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.111%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.401%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.402%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.405%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.406%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.602%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.603%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.801%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.802%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.803%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.804%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.805%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.806%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.807%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020104.808%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020108.101%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_fee" model="account.report.line">
+                                <field name="name">3. รายได้จากค่าธรรมเนียม 30 บาท</field>
+                                <field name="code">CF_FEE</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_fee_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4202010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.113%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_donation" model="account.report.line">
+                                <field name="name">4. รายได้จากการรับบริจาค</field>
+                                <field name="code">CF_DONATION</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_donation_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4302030101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4302030101.102%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_donation_def" model="account.report.line">
+                                <field name="name">5. รายได้จากการรับบริจาค รอการรับรู้</field>
+                                <field name="code">CF_DONATION_DEF</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_donation_def_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2213010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2213010101.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2213010199.102%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_treasury_hold" model="account.report.line">
+                                <field name="name">6. รายได้แผ่นดินรอนำส่งคลัง</field>
+                                <field name="code">CF_TREASURY_HOLD</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_treasury_hold_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2104010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2116010104.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2116010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2116010199.102%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_gov_income" model="account.report.line">
+                                <field name="name">7. รายได้แผ่นดิน</field>
+                                <field name="code">CF_GOV_INCOME</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_gov_income_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4201020106.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4201020199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4202030105.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4207010102.102%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_other_in" model="account.report.line">
+                                <field name="name">8. รายได้อื่น</field>
+                                <field name="code">CF_OTHER_IN</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_other_in_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4202020102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4206010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4206010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301030102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301030104.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4302010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4302010106.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4302010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4302020107.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4302020199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4302040101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4308010105.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4308010106.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4308010111.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4308010118.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4308010121.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010103.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.110%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.114%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.115%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.116%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.117%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.118%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.119%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.120%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.121%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.122%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.123%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_sso_income" model="account.report.line">
+                                <field name="name">9. รายได้-เงินประกันสังคม / รายได้-เงินบริหารจัดการฯ-ปกส.</field>
+                                <field name="code">CF_SSO_INCOME</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_sso_income_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.303%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.305%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.306%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.307%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.308%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.309%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.310%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.311%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.312%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.313%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.314%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.315%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.317%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.319%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.320%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.321%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.322%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_deposit" model="account.report.line">
+                                <field name="name">10. จากเงินรับฝากและเงินประกัน</field>
+                                <field name="code">CF_DEPOSIT</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_deposit_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2103010103.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.110%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.202%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.204%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.205%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.206%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.207%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.304%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2112010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2112010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2112010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2112010199.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2112010199.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2112010199.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2203010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2208010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2208010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2208010103.101%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_sso_fund" model="account.report.line">
+                                <field name="name">11. เงินกองทุนประกันสังคม</field>
+                                <field name="code">CF_SSO_FUND</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_sso_fund_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[(&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.301%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_sso_ar" model="account.report.line">
+                                <field name="name">12. เงินกองทุนประกันสังคม ค้างรับ</field>
+                                <field name="code">CF_SSO_AR</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_sso_ar_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.301%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.302%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.303%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.304%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.307%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.308%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.309%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.310%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.301%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.302%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_uc" model="account.report.line">
+                                <field name="name">13. เงินกองทุนประกันสุขภาพถ้วนหน้า UC</field>
+                                <field name="code">CF_UC</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_uc_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2109010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2109010199.201%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2109010199.701%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.201%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.201%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.202%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.203%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.205%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.207%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.211%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.214%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.217%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.222%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.223%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.228%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.229%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.231%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.232%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.239%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.240%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.241%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.242%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.243%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.244%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.245%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.251%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.252%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.255%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.256%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.257%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.258%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.260%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.263%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.264%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.265%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.266%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020105.271%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4313010199.202%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_uc_ar" model="account.report.line">
+                                <field name="name">14. เงินกองทุน UC ค้างรับ / กรมบัญชีกลางค้างรับ / ค้างรับอื่น</field>
+                                <field name="code">CF_UC_AR</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_uc_ar_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.201%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.202%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.203%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.204%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.216%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.217%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.401%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.402%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.110%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.111%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.201%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.801%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.802%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.803%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.804%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050106.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050107.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050107.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050107.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050107.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050107.201%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050107.202%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050124.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050194.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050194.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1201050198.101%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_alien" model="account.report.line">
+                                <field name="name">15. เงินกองทุนแรงงานต่างด้าว</field>
+                                <field name="code">CF_ALIEN</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_alien_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2103010103.502%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.501%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.502%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2111020199.503%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.502%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.503%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.504%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.505%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.507%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.509%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.510%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.511%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.512%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.513%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.514%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.515%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.516%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.517%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.518%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.519%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.701%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.703%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.704%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.705%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.706%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.709%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.710%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.711%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4301020106.712%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_interest" model="account.report.line">
+                                <field name="name">16. รายได้จากดอกเบี้ย</field>
+                                <field name="code">CF_INTEREST</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_interest_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4203010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4303010101.101%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_ar" model="account.report.line">
+                                <field name="name">17. รับจากการชำระหนี้ค่ารักษาพยาบาล</field>
+                                <field name="code">CF_AR</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_ar_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.209%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.222%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.223%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.224%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.501%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.502%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.503%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.504%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.505%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.506%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.701%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.702%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.703%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050101.704%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.602%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102050102.603%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_loan_in" model="account.report.line">
+                                <field name="name">18. รับชำระหนี้จากลูกหนี้เงินยืม</field>
+                                <field name="code">CF_LOAN_IN</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_loan_in_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[(&apos;account_id.code&apos;, &apos;=&apos;, &apos;0&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_in_total" model="account.report.line">
+                                <field name="name">รวมเงินสดรับ</field>
+                                <field name="code">CF_IN</field>
+                                <field name="hierarchy_level">1</field>
+                                <field name="aggregation_formula">CF_BUDGET.balance + CF_MEDICAL.balance + CF_FEE.balance + CF_DONATION.balance + CF_DONATION_DEF.balance + CF_TREASURY_HOLD.balance + CF_GOV_INCOME.balance + CF_OTHER_IN.balance + CF_SSO_INCOME.balance + CF_DEPOSIT.balance + CF_SSO_FUND.balance + CF_SSO_AR.balance + CF_UC.balance + CF_UC_AR.balance + CF_ALIEN.balance + CF_INTEREST.balance + CF_AR.balance + CF_LOAN_IN.balance</field>
+                            </record>
+                            </field>
+                        </record>
+                        <record id="cf_op_out" model="account.report.line">
+                            <field name="name">เงินสดใช้ไป</field>
+                            <field name="hierarchy_level">1</field>
+                            <field name="children_ids">
+                            <record id="cf_pay_ap" model="account.report.line">
+                                <field name="name">1. เงินสดจ่ายชำระหนี้</field>
+                                <field name="code">CF_PAY_AP</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_pay_ap_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010101.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.116%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.129%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.130%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.131%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.132%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.133%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.134%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.135%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.136%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.137%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.138%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.139%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010102.140%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010103.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010103.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010103.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101010107.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020106.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.111%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.112%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.113%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.114%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.115%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.116%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.117%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.118%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.119%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.120%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.121%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020198.122%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.134%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.135%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.136%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.137%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.138%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.141%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.142%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.143%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.144%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.145%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.146%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.147%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.148%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.149%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.150%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.151%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.201%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.202%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.203%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.204%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.301%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.501%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.502%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.503%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.504%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.701%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040103.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040104.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040106.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.110%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.111%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.112%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.113%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.114%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040110.115%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040198.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2102040199.105%&apos;)]"/>
+                                        <field name="subformula">sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_pay_staff" model="account.report.line">
+                                <field name="name">2. เงินสดจ่ายด้านบุคลากร</field>
+                                <field name="code">CF_PAY_STAFF</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_pay_staff_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010101.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010103.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010103.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010103.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010108.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010109.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010109.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010109.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010109.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010113.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010113.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010113.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010113.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010113.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010113.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010113.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010113.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010115.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010115.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010116.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010116.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010116.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010116.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010116.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010116.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010199.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101010199.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020101.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020103.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020104.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020105.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020106.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020106.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020108.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020112.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020114.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020114.114%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020114.126%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020114.127%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020115.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020116.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020116.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020199.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101020199.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101030101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101030205.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101030206.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101030207.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101030208.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101030211.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101040107.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101040111.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101040118.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101040202.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101040204.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101040205.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101040206.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5101040207.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.110%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.111%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.112%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.113%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.114%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.115%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.116%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.117%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.118%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.119%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104040102.120%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5112010103.101%&apos;)]"/>
+                                        <field name="subformula">sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_pay_ops" model="account.report.line">
+                                <field name="name">3. เงินสดจ่ายเพื่อการดำเนินงาน</field>
+                                <field name="code">CF_PAY_OPS</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_pay_ops_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1103020111.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010103.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010103.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010103.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010103.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010103.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010103.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010103.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010103.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010103.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010105.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010105.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010105.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010105.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010105.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010105.110%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010105.111%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010105.114%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1105010105.115%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1106010103.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1106010103.201%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1106010112.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1106010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5102010106.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5102010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5102010199.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5102030199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5102030199.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5103010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5103010102.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5103010103.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5103010103.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5103010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5103010199.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010104.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010104.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010104.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010104.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010104.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010104.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010104.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010104.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010104.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.110%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.111%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.112%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010107.113%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010110.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010112.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010112.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010112.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010112.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010112.110%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010112.111%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010112.112%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010112.113%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010112.114%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010112.115%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010114.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104010115.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104020101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104020103.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104020105.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104020106.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104020107.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030202.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030203.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030205.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030205.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030205.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030205.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030205.112%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030205.113%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030205.117%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030205.118%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030206.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030207.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030208.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030210.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030212.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030217.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030218.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030219.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030220.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030299.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030299.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030299.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030299.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030299.202%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030299.203%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030299.204%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030299.501%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030299.502%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030299.701%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5104030299.702%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5107010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5107010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5107020199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5107030101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.110%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.111%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.112%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.113%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5212010199.114%&apos;)]"/>
+                                        <field name="subformula">sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_pay_deposit" model="account.report.line">
+                                <field name="name">4. จ่ายคืนเงินรับฝากและเงินประกัน</field>
+                                <field name="code">CF_PAY_DEPOSIT</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_pay_deposit_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[(&apos;account_id.code&apos;, &apos;=&apos;, &apos;0&apos;)]"/>
+                                        <field name="subformula">sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_pay_other" model="account.report.line">
+                                <field name="name">5. เงินสดจ่ายรายจ่ายอื่น</field>
+                                <field name="code">CF_PAY_OTHER</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_pay_other_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010105.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010106.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010107.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010109.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010110.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010111.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010112.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010113.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010114.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010115.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010117.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010119.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010120.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010122.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010126.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010141.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010142.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010145.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5203010146.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5205010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5209010112.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5211010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5211010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5401010101.101%&apos;)]"/>
+                                        <field name="subformula">sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_pay_loan" model="account.report.line">
+                                <field name="name">6. เงินสดจ่ายเงินยืม</field>
+                                <field name="code">CF_PAY_LOAN</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_pay_loan_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1102010108.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1201020101.101%&apos;)]"/>
+                                        <field name="subformula">sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_remit" model="account.report.line">
+                                <field name="name">7. รายได้แผ่นดินนำส่งคลัง</field>
+                                <field name="code">CF_REMIT</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_remit_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5210010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5210010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5210010103.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5210010112.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5210010118.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;5210010121.101%&apos;)]"/>
+                                        <field name="subformula">sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_out_total" model="account.report.line">
+                                <field name="name">รวมเงินสดใช้ไป</field>
+                                <field name="code">CF_OUT</field>
+                                <field name="hierarchy_level">1</field>
+                                <field name="aggregation_formula">CF_PAY_AP.balance + CF_PAY_STAFF.balance + CF_PAY_OPS.balance + CF_PAY_DEPOSIT.balance + CF_PAY_OTHER.balance + CF_PAY_LOAN.balance + CF_REMIT.balance</field>
+                            </record>
+                            </field>
+                        </record>
+                            <record id="cf_op_net" model="account.report.line">
+                                <field name="name">เงินสดคงเหลือสุทธิจากการดำเนินงาน</field>
+                                <field name="code">CF_OP</field>
+                                <field name="hierarchy_level">1</field>
+                                <field name="aggregation_formula">CF_IN.balance - CF_OUT.balance</field>
+                            </record>
+                            </field>
+                        </record>
+            
+                        <record id="cf_inv" model="account.report.line">
+                            <field name="name">กระแสเงินสดจากกิจกรรมลงทุน</field>
+                            <field name="hierarchy_level">0</field>
+                            <field name="children_ids">
+                        <record id="cf_inv_in_h" model="account.report.line">
+                            <field name="name">เงินสดรับ</field>
+                            <field name="hierarchy_level">1</field>
+                            <field name="children_ids">
+                            <record id="cf_asset_sale" model="account.report.line">
+                                <field name="name">รายได้จากการขายสินทรัพย์</field>
+                                <field name="code">CF_ASSET_SALE</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_asset_sale_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4205010104.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4205010110.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4306010104.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4306010110.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4306010110.102%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_inv_in" model="account.report.line">
+                                <field name="name">รวมเงินสดรับ</field>
+                                <field name="code">CF_INV_IN</field>
+                                <field name="hierarchy_level">1</field>
+                                <field name="aggregation_formula">CF_ASSET_SALE.balance</field>
+                            </record>
+                            </field>
+                        </record>
+                        <record id="cf_inv_out_h" model="account.report.line">
+                            <field name="name">เงินสดใช้ไป</field>
+                            <field name="hierarchy_level">1</field>
+                            <field name="children_ids">
+                            <record id="cf_asset_buy" model="account.report.line">
+                                <field name="name">รายจ่ายจากการซื้อทรัพย์สินถาวร</field>
+                                <field name="code">CF_ASSET_BUY</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_asset_buy_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1204010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205020101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205020102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205030101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205030102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205030106.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205030107.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040101.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040101.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040101.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040101.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040101.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040102.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040102.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040102.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040102.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205040102.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205050101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205050101.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205050101.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205050101.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205050101.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205050101.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205050101.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205050101.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205050101.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1205060101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206020101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206020102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206030101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206030102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206040101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206040102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206050101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206050102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206060101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206060102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206070101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206070102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206090101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206090102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206100101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206100102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206110101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206110102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206120101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206120102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206130101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206130102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206140101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206140102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206150101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206150102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206160101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206160102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206170101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206170101.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206170101.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206170101.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206170101.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206170101.106%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206170101.107%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206170101.108%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206170101.109%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206170101.110%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1206180101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1209010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1209010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1209030101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1209030101.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1211010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1211010102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1211010103.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1213010105.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1213010199.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.139%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2101020199.140%&apos;)]"/>
+                                        <field name="subformula">sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_inv_out" model="account.report.line">
+                                <field name="name">รวมเงินสดใช้ไป</field>
+                                <field name="code">CF_INV_OUT</field>
+                                <field name="hierarchy_level">1</field>
+                                <field name="aggregation_formula">CF_ASSET_BUY.balance</field>
+                            </record>
+                            </field>
+                        </record>
+                            <record id="cf_inv_net" model="account.report.line">
+                                <field name="name">เงินสดคงเหลือสุทธิจากการลงทุน</field>
+                                <field name="code">CF_INV</field>
+                                <field name="hierarchy_level">1</field>
+                                <field name="aggregation_formula">CF_INV_IN.balance - CF_INV_OUT.balance</field>
+                            </record>
+                            </field>
+                        </record>
+            
+                        <record id="cf_fin" model="account.report.line">
+                            <field name="name">กระแสเงินสดจากกิจกรรมจัดหาเงิน</field>
+                            <field name="hierarchy_level">0</field>
+                            <field name="children_ids">
+                        <record id="cf_fin_in_h" model="account.report.line">
+                            <field name="name">เงินสดรับ</field>
+                            <field name="hierarchy_level">1</field>
+                            <field name="children_ids">
+                            <record id="cf_imprest" model="account.report.line">
+                                <field name="name">เงินทดรองราชการ</field>
+                                <field name="code">CF_IMPREST</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_imprest_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[&apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;2202010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;4308010117.101%&apos;)]"/>
+                                        <field name="subformula">-sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_fin_in" model="account.report.line">
+                                <field name="name">รวมเงินสดรับ</field>
+                                <field name="code">CF_FIN_IN</field>
+                                <field name="hierarchy_level">1</field>
+                                <field name="aggregation_formula">CF_IMPREST.balance</field>
+                            </record>
+                            </field>
+                        </record>
+                        <record id="cf_fin_out_h" model="account.report.line">
+                            <field name="name">เงินสดจ่าย</field>
+                            <field name="hierarchy_level">1</field>
+                            <field name="children_ids">
+                            <record id="cf_imprest_out" model="account.report.line">
+                                <field name="name">เงินทดรองราชการจ่ายคืนคลัง</field>
+                                <field name="code">CF_IMPREST_OUT</field>
+                                <field name="hierarchy_level">3</field>
+                                <field name="groupby">account_id</field>
+                                <field name="foldable" eval="True"/>
+                                <field name="expression_ids">
+                                    <record id="cf_imprest_out_balance" model="account.report.expression">
+                                        <field name="label">balance</field>
+                                        <field name="engine">domain</field>
+                                        <field name="formula" eval="[(&apos;account_id.code&apos;, &apos;=&apos;, &apos;0&apos;)]"/>
+                                        <field name="subformula">sum</field>
+                                        <field name="date_scope">strict_range</field>
+                                    </record>
+                                </field>
+                            </record>
+                            <record id="cf_fin_out" model="account.report.line">
+                                <field name="name">รวมเงินสดจ่าย</field>
+                                <field name="code">CF_FIN_OUT</field>
+                                <field name="hierarchy_level">1</field>
+                                <field name="aggregation_formula">CF_IMPREST_OUT.balance</field>
+                            </record>
+                            </field>
+                        </record>
+                            <record id="cf_fin_net" model="account.report.line">
+                                <field name="name">กระแสเงินสดสุทธิจากกิจกรรมจัดหาเงิน</field>
+                                <field name="code">CF_FIN</field>
+                                <field name="hierarchy_level">1</field>
+                                <field name="aggregation_formula">CF_FIN_IN.balance - CF_FIN_OUT.balance</field>
+                            </record>
+                            </field>
+                        </record>
+            <record id="cf_net" model="account.report.line">
+                <field name="name">เงินสดและรายการเทียบเท่าเงินสดเพิ่มขึ้น (ลดลง) สุทธิ</field>
+                <field name="code">CF_NET</field>
+                <field name="hierarchy_level">0</field>
+                <field name="aggregation_formula">CF_CLOSE.balance - CF_OPEN.balance</field>
+            </record>
+            
+            <record id="cf_open" model="account.report.line">
+                <field name="name">เงินสดและรายการเทียบเท่าเงินสด ณ ต้นงวด</field>
+                <field name="code">CF_OPEN</field>
+                <field name="hierarchy_level">0</field>
+                <field name="groupby">account_id</field>
+                <field name="foldable" eval="True"/>
+                <field name="expression_ids">
+                    <record id="cf_open_balance" model="account.report.expression">
+                        <field name="label">balance</field>
+                        <field name="engine">domain</field>
+                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101010104.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101010112.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101010113.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020501.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020501.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020501.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020501.201%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020504.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020601.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020603.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020604.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020605.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020606.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030101.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030101.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030101.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030102.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030102.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030102.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030102.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1104010101.101%&apos;)]"/>
+                        <field name="subformula">sum</field>
+                        <field name="date_scope">to_beginning_of_period</field>
+                    </record>
+                </field>
+            </record>
+            
+            <record id="cf_close" model="account.report.line">
+                <field name="name">เงินสดและรายการเทียบเท่าเงินสด ณ วันปลายงวด</field>
+                <field name="code">CF_CLOSE</field>
+                <field name="hierarchy_level">0</field>
+                <field name="groupby">account_id</field>
+                <field name="foldable" eval="True"/>
+                <field name="expression_ids">
+                    <record id="cf_close_balance" model="account.report.expression">
+                        <field name="label">balance</field>
+                        <field name="engine">domain</field>
+                        <field name="formula" eval="[&apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, &apos;|&apos;, (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101010101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101010104.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101010112.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101010113.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020501.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020501.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020501.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020501.201%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020504.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020601.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020603.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020604.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020605.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101020606.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030101.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030101.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030101.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030101.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030102.101%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030102.102%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030102.103%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030102.104%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1101030102.105%&apos;), (&apos;account_id.code&apos;, &apos;=like&apos;, &apos;1104010101.101%&apos;)]"/>
+                        <field name="subformula">sum</field>
+                        <field name="date_scope">from_beginning</field>
+                    </record>
+                </field>
+            </record>
+        </field>
+    </record>
+    <record id="action_cash_flow" model="ir.actions.client">
+        <field name="name">รายงานกระแสเงินสด</field>
+        <field name="tag">account_report</field>
+        <field name="path">vpk-cash-flow</field>
+        <field name="context" eval="{'report_id': ref('vpk_hospital_balance_sheet.cash_flow')}"/>
+    </record>
+    <menuitem id="menu_cash_flow"
+              name="รายงานกระแสเงินสด"
+              action="action_cash_flow"
+              parent="account.account_reports_legal_statements_menu"
+              sequence="6"
+              groups="account.group_account_readonly"/>
+</odoo>

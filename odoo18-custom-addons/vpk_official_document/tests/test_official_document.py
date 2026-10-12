@@ -311,14 +311,17 @@ class TestOfficialDocument(TransactionCase):
             }
         )
         document._vpk_create_sequential_sign_reviews()
+        secretary = self.env.ref("vpk_official_document.user_director_secretary")
         reviews = document.review_ids.sorted("sequence")
-        self.assertEqual(len(reviews), 3)
+        self.assertEqual(len(reviews), 4)
         self.assertEqual(reviews[0].status, "pending")
         self.assertEqual(reviews[1].status, "waiting")
         self.assertEqual(reviews[2].status, "waiting")
+        self.assertEqual(reviews[3].status, "waiting")
         self.assertIn(officer, reviews[0].reviewer_ids)
         self.assertIn(head, reviews[1].reviewer_ids)
-        self.assertIn(director, reviews[2].reviewer_ids)
+        self.assertIn(secretary, reviews[2].reviewer_ids)
+        self.assertIn(director, reviews[3].reviewer_ids)
         self.assertTrue(document.with_user(officer).can_review)
         self.assertFalse(document.with_user(head).can_review)
         self.assertFalse(document.with_user(director).can_review)
@@ -342,6 +345,71 @@ class TestOfficialDocument(TransactionCase):
             document._signature_name_for_user(director),
             document.signer_name,
         )
+
+    def test_secretary_can_forward_or_return_before_director(self):
+        from odoo.fields import Command
+
+        group_user = self.env.ref("base.group_user").id
+        officer = self.env["res.users"].create(
+            {
+                "name": "เจ้าหน้าที่กลั่นกรอง",
+                "login": "screen.officer",
+                "groups_id": [Command.set([group_user])],
+            }
+        )
+        head = self.env["res.users"].create(
+            {
+                "name": "หัวหน้ากลั่นกรอง",
+                "login": "screen.head",
+                "groups_id": [Command.set([group_user])],
+            }
+        )
+        director = self.env["res.users"].create(
+            {
+                "name": "ผู้อำนวยการกลั่นกรอง",
+                "login": "screen.director",
+                "groups_id": [Command.set([group_user])],
+            }
+        )
+        secretary = self.env.ref("vpk_official_document.user_director_secretary")
+        document = self.env["vpk.official.document"].create(
+            {
+                "document_type": "specific_method_approval",
+                "officer_id": officer.id,
+                "head_officer_id": head.id,
+                "signer_id": director.id,
+                "state": "to_approve",
+            }
+        )
+        document._vpk_create_sequential_sign_reviews()
+        document.with_user(officer).validate_tier()
+        document.with_user(head).validate_tier()
+        document.invalidate_recordset()
+        self.assertTrue(document.with_user(secretary).can_review)
+        self.assertFalse(document.with_user(director).can_review)
+        document.with_user(secretary).validate_tier()
+        document.invalidate_recordset()
+        self.assertTrue(document.with_user(director).can_review)
+        self.assertEqual(document.state, "to_approve")
+
+        returned = self.env["vpk.official.document"].create(
+            {
+                "document_type": "specific_method_approval",
+                "officer_id": officer.id,
+                "head_officer_id": head.id,
+                "signer_id": director.id,
+                "state": "to_approve",
+            }
+        )
+        returned._vpk_create_sequential_sign_reviews()
+        returned.with_user(officer).validate_tier()
+        returned.with_user(head).validate_tier()
+        returned.with_user(secretary).reject_tier()
+        returned.invalidate_recordset()
+        self.assertEqual(returned.state, "generated")
+        self.assertEqual(returned.signature_state, "not_sent")
+        self.assertFalse(returned.review_ids)
+        self.assertFalse(returned.with_user(director).can_review)
 
     def test_integrity_over_100k_signs_in_sequence(self):
         from odoo.fields import Command
@@ -527,8 +595,11 @@ class TestOfficialDocument(TransactionCase):
         self.assertEqual(document.state, "to_approve")
         self.assertEqual(document.signature_state, "waiting")
         reviews = document.review_ids.sorted("sequence")
-        self.assertEqual(len(reviews), 3)
+        self.assertEqual(len(reviews), 4)
         self.assertIn(officer, reviews[0].reviewer_ids)
+        secretary = self.env.ref("vpk_official_document.user_director_secretary")
+        self.assertIn(secretary, reviews[2].reviewer_ids)
+        self.assertIn(director, reviews[3].reviewer_ids)
 
     def test_send_winner_announcement_from_egp_document(self):
         from odoo.exceptions import UserError
@@ -622,9 +693,13 @@ class TestOfficialDocument(TransactionCase):
             "vpk_official_document.tier_definition_winner_announcement_generator"
         )
         self.assertFalse(generator_def.active)
+        secretary = self.env.ref("vpk_official_document.user_director_secretary")
         reviews = official.review_ids.sorted("sequence")
-        self.assertEqual(len(reviews), 1)
+        self.assertEqual(len(reviews), 2)
         self.assertEqual(reviews[0].status, "pending")
-        self.assertIn(director, reviews[0].reviewer_ids)
+        self.assertIn(secretary, reviews[0].reviewer_ids)
+        self.assertEqual(reviews[1].status, "waiting")
+        self.assertIn(director, reviews[1].reviewer_ids)
         self.assertFalse(official.with_user(self.env.user).can_review)
-        self.assertTrue(official.with_user(director).can_review)
+        self.assertTrue(official.with_user(secretary).can_review)
+        self.assertFalse(official.with_user(director).can_review)

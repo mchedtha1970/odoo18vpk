@@ -68,13 +68,16 @@ class Budget(models.Model):
         ] if period_start else list(TH_MONTHS)
 
         committed_map, committed_monthly, po_count = self._committed_maps(lines, period_start)
+        reserved_map, pr_rows = self._pr_reserved_overview(lines)
         allocated = sum(lines.mapped("planned_amount"))
         actual = sum(self._line_spent_amount(line) for line in lines)
         committed = sum(committed_map.values())
-        remaining = allocated - actual - committed
+        reserved = sum(reserved_map.values())
+        remaining = allocated - actual - committed - reserved
         plan_pct = (months_elapsed / 12.0 * 100.0) if months_elapsed else 0.0
         actual_pct = self._pct(actual, allocated)
         committed_pct = self._pct(committed, allocated)
+        reserved_pct = self._pct(reserved, allocated)
         remaining_pct = self._pct(remaining, allocated)
         vs_plan = actual_pct - plan_pct
 
@@ -89,6 +92,7 @@ class Budget(models.Model):
                 "allocated": 0.0,
                 "actual": 0.0,
                 "committed": 0.0,
+                "reserved": 0.0,
             }
             for key, label in EXPENSE_TYPES
         }
@@ -97,11 +101,13 @@ class Budget(models.Model):
             planned = line.planned_amount or 0.0
             spent = self._line_spent_amount(line)
             line_committed = committed_map.get(line.id, 0.0)
+            line_reserved = reserved_map.get(line.id, 0.0)
             type_key, _type_label = self._expense_type_meta(line)
             type_vals = type_map[type_key]
             type_vals["allocated"] += planned
             type_vals["actual"] += spent
             type_vals["committed"] += line_committed
+            type_vals["reserved"] += line_reserved
 
             department = line.analytic_account_id
             dept_key = department.id if department else 0
@@ -113,11 +119,13 @@ class Budget(models.Model):
                     "allocated": 0.0,
                     "actual": 0.0,
                     "committed": 0.0,
+                    "reserved": 0.0,
                 },
             )
             dept_vals["allocated"] += planned
             dept_vals["actual"] += spent
             dept_vals["committed"] += line_committed
+            dept_vals["reserved"] += line_reserved
 
         operating_amt = type_map["personnel"]["allocated"] + type_map["operating"]["allocated"]
         investment_amt = (
@@ -139,7 +147,12 @@ class Budget(models.Model):
                     "allocated": vals["allocated"],
                     "actual": vals["actual"],
                     "committed": vals["committed"],
-                    "remaining": vals["allocated"] - vals["actual"] - vals["committed"],
+                    "remaining": (
+                        vals["allocated"]
+                        - vals["actual"]
+                        - vals["committed"]
+                        - vals["reserved"]
+                    ),
                     "usage_pct": usage_pct,
                     "tone": tone,
                 }
@@ -148,7 +161,9 @@ class Budget(models.Model):
         expense_types = []
         for key, label in EXPENSE_TYPES:
             vals = type_map[key]
-            row_remaining = vals["allocated"] - vals["actual"] - vals["committed"]
+            row_remaining = (
+                vals["allocated"] - vals["actual"] - vals["committed"] - vals["reserved"]
+            )
             usage_pct = self._pct(vals["actual"], vals["allocated"])
             status_label, status_tone = self._usage_status(usage_pct, plan_pct)
             expense_types.append(
@@ -156,6 +171,7 @@ class Budget(models.Model):
                     "key": key,
                     "name": label,
                     "allocated": vals["allocated"],
+                    "reserved": vals["reserved"],
                     "committed": vals["committed"],
                     "actual": vals["actual"],
                     "remaining": row_remaining,
@@ -207,12 +223,27 @@ class Budget(models.Model):
             expense_types=expense_types,
             fiscal_year=fiscal_year,
         )
+        if reserved:
+            alerts.insert(
+                0,
+                {
+                    "tone": "warn",
+                    "title": "ใบขอซื้อจองงบประมาณไว้แล้ว",
+                    "detail": (
+                        f"จองอยู่ {sum(1 for row in pr_rows if row['status'] == 'reserved')} รายการ"
+                        " ยังไม่เป็นใบสั่งซื้อ"
+                    ),
+                    "badge": "จองงบ PR",
+                    "amount": reserved,
+                },
+            )
         expiring_count = sum(
             1
             for line in lines
             if (line.planned_amount or 0.0)
             - self._line_spent_amount(line)
             - committed_map.get(line.id, 0.0)
+            - reserved_map.get(line.id, 0.0)
             > 0
             and self._pct(self._line_spent_amount(line), line.planned_amount or 0.0) < 50.0
         )
@@ -250,6 +281,10 @@ class Budget(models.Model):
             "allocated": allocated,
             "actual": actual,
             "committed": committed,
+            "pr_reserved": reserved,
+            "pr_reserved_pct": reserved_pct,
+            "pr_reserved_count": sum(1 for row in pr_rows if row["status"] == "reserved"),
+            "pr_rows": pr_rows,
             "remaining": remaining,
             "actual_pct": actual_pct,
             "committed_pct": committed_pct,
@@ -390,6 +425,67 @@ class Budget(models.Model):
                 if index is not None:
                     monthly[index] += amount
         return amounts, monthly, len(seen_po)
+
+    @api.model
+    def _pr_reserved_overview(self, lines):
+        """PR reservation still holding budget, plus one status row per request."""
+        amounts = {line_id: 0.0 for line_id in lines.ids}
+        if not lines or "purchase.request.line" not in self.env:
+            return amounts, []
+        pr_lines = self.env["purchase.request.line"].sudo().search(
+            [
+                ("budget_line_id", "in", lines.ids),
+                ("cancelled", "=", False),
+            ]
+        )
+        grouped = {}
+        for pr_line in pr_lines:
+            request = pr_line.request_id
+            if not request or request.state in ("rejected", "cancel", "cancelled"):
+                continue
+            effective = pr_line._get_budget_effective_reserved_amount_company()
+            transferred = pr_line._get_budget_transferred_to_po_amount_company()
+            line_id = pr_line.budget_line_id.id
+            amounts[line_id] = amounts.get(line_id, 0.0) + effective
+            bucket = grouped.setdefault(
+                request.id,
+                {
+                    "id": request.id,
+                    "name": request.name or "",
+                    "department": request.department_id.display_name
+                    if request.department_id
+                    else "",
+                    "reserved": 0.0,
+                    "transferred": 0.0,
+                    "active": bool(request.budget_reservation_active),
+                },
+            )
+            bucket["reserved"] += effective
+            bucket["transferred"] += transferred
+        rows = []
+        for bucket in grouped.values():
+            if bucket["active"] and bucket["reserved"] > 0.005:
+                status, status_label, tone = "reserved", "จองงบแล้ว", "warn"
+            elif bucket["transferred"] > 0.005:
+                status, status_label, tone = "transferred", "ส่งต่อใบสั่งซื้อแล้ว", "ok"
+            elif bucket["active"]:
+                status, status_label, tone = "reserved", "จองงบแล้ว", "warn"
+            else:
+                status, status_label, tone = "open", "ยังไม่จอง", "mute"
+            rows.append(
+                {
+                    "id": bucket["id"],
+                    "name": bucket["name"],
+                    "department": bucket["department"],
+                    "amount": bucket["reserved"],
+                    "status": status,
+                    "status_label": status_label,
+                    "tone": tone,
+                }
+            )
+        order = {"reserved": 0, "open": 1, "transferred": 2}
+        rows.sort(key=lambda row: (order.get(row["status"], 9), -row["amount"], row["name"]))
+        return amounts, rows[:12]
 
     @api.model
     def _monthly_actual(self, lines, period_start, period_end):

@@ -36,6 +36,15 @@
     />
 
     <menuitem
+        id="menu_gfmis_register"
+        name="รายงาน GF"
+        parent="menu_gfmis_root"
+        action="action_gfmis_register"
+        sequence="35"
+        groups="group_gfmis_user"
+    />
+
+    <menuitem
         id="menu_gfmis_all"
         name="เอกสารทั้งหมด"
         parent="menu_gfmis_root"

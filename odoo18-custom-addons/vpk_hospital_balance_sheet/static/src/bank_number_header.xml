@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates>
+    <t t-name="vpk_hospital_balance_sheet.BankNumberColumnLabel"
+       t-inherit="account_reports.AccountReportHeaderCustomizable"
+       t-inherit-mode="extension">
+        <xpath expr="//tr[t[@t-foreach='subheaders']]/th[1]" position="inside">
+            <t t-if="controller.options.vpk_name_column_label">
+                <span t-out="controller.options.vpk_name_column_label"/>
+            </t>
+        </xpath>
+    </t>
+</templates>

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "VPK Asset Disposal",
-    "version": "18.0.1.1.1",
+    "version": "18.0.1.1.2",
     "category": "Accounting",
     "summary": "ใบขออนุมัติจำหน่ายทรัพย์สิน (ดึงรายการ Sub-Status รอจำหน่าย)",
     "author": "VPK",

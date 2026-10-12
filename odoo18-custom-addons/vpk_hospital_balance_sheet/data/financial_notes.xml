@@ -1,0 +1,2500 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo auto_sequence="1">
+    <record id="financial_notes" model="account.report">
+        <field name="name">หมายเหตุประกอบงบการเงิน</field>
+        <field name="filter_unfold_all" eval="True"/>
+        <field name="filter_date_range" eval="True"/>
+        <field name="filter_journals" eval="True"/>
+        <field name="filter_multi_company">selector</field>
+        <field name="default_opening_date_filter">this_year</field>
+        <field name="column_ids">
+            <record id="financial_notes_balance" model="account.report.column">
+                <field name="name">จำนวนเงิน</field>
+                <field name="expression_label">balance</field>
+            </record>
+        </field>
+        <field name="line_ids">
+            
+<record id="note_h1" model="account.report.line">
+    <field name="name">1 สรุปนโยบายบัญชี</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+    </field>
+</record>
+<record id="note_h2" model="account.report.line">
+    <field name="name">2 เงินฝากธนาคารประกอบด้วย</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_line_n2_cash" model="account.report.line">
+    <field name="name">เงินสด</field>
+    <field name="code">N2_CASH</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n2_cash" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', ('account_id.code', '=like', '1101010101.101%'), ('account_id.code', '=like', '1101010104.101%'), ('account_id.code', '=like', '1101010112.101%'), ('account_id.code', '=like', '1101010113.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n2_budget" model="account.report.line">
+    <field name="name">เงินฝากธนาคาร - ในงบประมาณ</field>
+    <field name="code">N2_BUDGET</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n2_budget" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', ('account_id.code', '=like', '1101020601.101%'), ('account_id.code', '=like', '1101020603.101%'), ('account_id.code', '=like', '1101020605.101%'), ('account_id.code', '=like', '1101020606.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n2_current" model="account.report.line">
+    <field name="name">เงินฝากธนาคาร - นอกงบประมาณ กระแสรายวัน</field>
+    <field name="code">N2_CURRENT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n2_current" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', ('account_id.code', '=like', '1101020604.101%'), ('account_id.code', '=like', '1101030101.101%'), ('account_id.code', '=like', '1101030101.103%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n2_saving" model="account.report.line">
+    <field name="name">เงินฝากธนาคาร - นอกงบประมาณ ออมทรัพย์</field>
+    <field name="code">N2_SAVING</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n2_saving" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1101030102.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n2_pending" model="account.report.line">
+    <field name="name">เงินฝากธนาคาร - นอกงบประมาณ รอการจัดสรร</field>
+    <field name="code">N2_PENDING</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n2_pending" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '1101030101.102%'), ('account_id.code', '=like', '1101030102.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n2_purpose" model="account.report.line">
+    <field name="name">เงินฝากธนาคาร - นอกงบประมาณที่มีวัตถุประสงค์เฉพาะออมทรัพย์ (UC-รอรับรู้ / ศูนย์แพทย์)</field>
+    <field name="code">N2_PURPOSE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n2_purpose" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1101030102.103%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n2_donate_bank" model="account.report.line">
+    <field name="name">เงินฝากธนาคาร - นอกงบประมาณที่มีวัตถุประสงค์เฉพาะออมทรัพย์ (เงินบริจาค)-รอรับรู้</field>
+    <field name="code">N2_DONATE_BANK</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n2_donate_bank" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1101030102.105%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n2_uc_capex" model="account.report.line">
+    <field name="name">เงินฝากธนาคาร - นอกงบประมาณที่มีวัตถุประสงค์เฉพาะ (งบลงทุน UC)</field>
+    <field name="code">N2_UC_CAPEX</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n2_uc_capex" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '1101030101.104%'), ('account_id.code', '=like', '1101030102.104%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n2_fixed" model="account.report.line">
+    <field name="name">เงินฝากประจำ</field>
+    <field name="code">N2_FIXED</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n2_fixed" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1104010101.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_n2" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">N2</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">N2_CASH.balance + N2_BUDGET.balance + N2_CURRENT.balance + N2_SAVING.balance + N2_PENDING.balance + N2_PURPOSE.balance + N2_DONATE_BANK.balance + N2_UC_CAPEX.balance + N2_FIXED.balance</field>
+</record>
+    </field>
+</record>
+<record id="note_h3" model="account.report.line">
+    <field name="name">3 ลูกหนี้อื่นประกอบด้วย</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_line_n3_advance" model="account.report.line">
+    <field name="name">ลูกหนี้เงินยืมเงินนอกงบประมาณ / ในงบประมาณ</field>
+    <field name="code">N3_ADVANCE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n3_advance" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', ('account_id.code', '=like', '1102010101.101%'), ('account_id.code', '=like', '1102010102.101%'), ('account_id.code', '=like', '1102010108.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_n3" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">N3</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">N3_ADVANCE.balance</field>
+</record>
+    </field>
+</record>
+<record id="note_h4" model="account.report.line">
+    <field name="name">4 ลูกหนี้ค่ารักษาพยาบาล</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_line_n4_self" model="account.report.line">
+    <field name="name">ลูกหนี้ค่ารักษาชำระเงินเอง IPD</field>
+    <field name="code">N4_SELF</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_self" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1102050102.107%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_alien" model="account.report.line">
+    <field name="name">ลูกหนี้ UC เรียกเก็บ (ต่างด้าว)</field>
+    <field name="code">N4_ALIEN</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_alien" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', ('account_id.code', '=like', '1102050101.503%'), ('account_id.code', '=like', '1102050101.504%'), ('account_id.code', '=like', '1102050101.505%'), ('account_id.code', '=like', '1102050101.506%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_civil" model="account.report.line">
+    <field name="name">ลูกหนี้ข้าราชการ / ลูกจ้างประจำ / ข้าราชการบำนาญ (เบิกจ่ายตรง) และ อปท.</field>
+    <field name="code">N4_CIVIL</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_civil" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', ('account_id.code', '=like', '1102050101.401%'), ('account_id.code', '=like', '1102050101.402%'), ('account_id.code', '=like', '1102050102.801%'), ('account_id.code', '=like', '1102050102.802%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_soe" model="account.report.line">
+    <field name="name">ลูกหนี้รัฐวิสาหกิจ / องค์การส่วนท้องถิ่น (เบิกต้นสังกัด) / รูปแบบพิเศษ</field>
+    <field name="code">N4_SOE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_soe" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', ('account_id.code', '=like', '1102050102.108%'), ('account_id.code', '=like', '1102050102.109%'), ('account_id.code', '=like', '1102050102.803%'), ('account_id.code', '=like', '1102050102.804%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_status" model="account.report.line">
+    <field name="name">ลูกหนี้หน่วยงานอื่น (บุคคลที่มีปัญหาสถานะและสิทธิ)</field>
+    <field name="code">N4_STATUS</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_status" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', ('account_id.code', '=like', '1102050101.702%'), ('account_id.code', '=like', '1102050101.703%'), ('account_id.code', '=like', '1102050101.704%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_sso_ip" model="account.report.line">
+    <field name="name">ลูกหนี้กองทุนประกันสังคม IPD เครือข่าย</field>
+    <field name="code">N4_SSO_IP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_sso_ip" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1102050101.302%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_sso_op" model="account.report.line">
+    <field name="name">ลูกหนี้กองทุนประกันสังคม OPD เครือข่าย</field>
+    <field name="code">N4_SSO_OP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_sso_op" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1102050101.301%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_sso_72" model="account.report.line">
+    <field name="name">ลูกหนี้ประกันสังคม 72 ชม.</field>
+    <field name="code">N4_SSO_72</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_sso_72" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1102050101.308%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_sso_high" model="account.report.line">
+    <field name="name">ลูกหนี้ประกันสังคมค่าใช้จ่ายสูง / ฉุกเฉิน</field>
+    <field name="code">N4_SSO_HIGH</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_sso_high" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '1102050101.309%'), ('account_id.code', '=like', '1102050101.310%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_sso_ip_out" model="account.report.line">
+    <field name="name">ลูกหนี้ประกันสังคม IPD นอกเครือข่าย</field>
+    <field name="code">N4_SSO_IP_OUT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_sso_ip_out" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1102050101.304%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_sso_op_out" model="account.report.line">
+    <field name="name">ลูกหนี้ประกันสังคม OPD นอกเครือข่าย</field>
+    <field name="code">N4_SSO_OP_OUT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_sso_op_out" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1102050101.303%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_sso_other" model="account.report.line">
+    <field name="name">ลูกหนี้กองทุนประกันสังคม OPD+IPD ต่างสังกัด สป.</field>
+    <field name="code">N4_SSO_OTHER</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_n4_sso_other" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_lab" model="account.report.line">
+    <field name="name">ลูกหนี้ค่าสิ่งส่งตรวจและตรวจสุขภาพ (บุคคลภายนอก)</field>
+    <field name="code">N4_LAB</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_lab" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '1102050102.102%'), ('account_id.code', '=like', '1102050102.103%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_comp" model="account.report.line">
+    <field name="name">ลูกหนี้กองทุนทดแทน</field>
+    <field name="code">N4_COMP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_comp" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1102050101.307%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_uc_ip" model="account.report.line">
+    <field name="name">ลูกหนี้ประกันสุขภาพถ้วนหน้า IPD-UC ใน CUP</field>
+    <field name="code">N4_UC_IP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_uc_ip" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1102050101.202%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_uc_ip_prov" model="account.report.line">
+    <field name="name">ลูกหนี้ประกันสุขภาพถ้วนหน้า IPD-UC นอก CUP (ในจังหวัด)</field>
+    <field name="code">N4_UC_IP_PROV</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_n4_uc_ip_prov" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_uc_op_in" model="account.report.line">
+    <field name="name">ลูกหนี้ประกันสุขภาพถ้วนหน้า OPD-UC ใน CUP และ PP</field>
+    <field name="code">N4_UC_OP_IN</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_n4_uc_op_in" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_uc_op_out" model="account.report.line">
+    <field name="name">ลูกหนี้ประกันสุขภาพถ้วนหน้า OPD-UC นอก CUP ในจังหวัด</field>
+    <field name="code">N4_UC_OP_OUT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_uc_op_out" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '1102050101.203%'), ('account_id.code', '=like', '1102050102.201%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_uc_op_far" model="account.report.line">
+    <field name="name">ลูกหนี้ประกันสุขภาพถ้วนหน้า OPD-UC นอก CUP (ต่างจังหวัด)</field>
+    <field name="code">N4_UC_OP_FAR</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_n4_uc_op_far" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_uc_ip_far" model="account.report.line">
+    <field name="name">ลูกหนี้ประกันสุขภาพถ้วนหน้า IPD-UC นอก CUP (ต่างจังหวัด)</field>
+    <field name="code">N4_UC_IP_FAR</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_n4_uc_ip_far" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_uc_high" model="account.report.line">
+    <field name="name">ลูกหนี้ประกันสุขภาพถ้วนหน้า UC ค่าใช้จ่ายสูง / อุบัติเหตุฉุกเฉิน / EMS</field>
+    <field name="code">N4_UC_HIGH</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_uc_high" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', ('account_id.code', '=like', '1102050101.109%'), ('account_id.code', '=like', '1102050101.216%'), ('account_id.code', '=like', '1102050101.217%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n4_act" model="account.report.line">
+    <field name="name">ลูกหนี้พระราชบัญญัติคุ้มครองผู้ประสบภัยจากรถ (พรบ.)</field>
+    <field name="code">N4_ACT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n4_act" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '1102050102.602%'), ('account_id.code', '=like', '1102050102.603%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_n4" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">N4</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">N4_SELF.balance + N4_ALIEN.balance + N4_CIVIL.balance + N4_SOE.balance + N4_STATUS.balance + N4_SSO_IP.balance + N4_SSO_OP.balance + N4_SSO_72.balance + N4_SSO_HIGH.balance + N4_SSO_IP_OUT.balance + N4_SSO_OP_OUT.balance + N4_SSO_OTHER.balance + N4_LAB.balance + N4_COMP.balance + N4_UC_IP.balance + N4_UC_IP_PROV.balance + N4_UC_OP_IN.balance + N4_UC_OP_OUT.balance + N4_UC_OP_FAR.balance + N4_UC_IP_FAR.balance + N4_UC_HIGH.balance + N4_ACT.balance</field>
+</record>
+    </field>
+</record>
+<record id="note_h5" model="account.report.line">
+    <field name="name">5 สินค้าคงเหลือ</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_line_n5_drug" model="account.report.line">
+    <field name="name">ยาในและนอกบัญชียาหลักแห่งชาติ</field>
+    <field name="code">N5_DRUG</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n5_drug" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1105010103.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n5_pharm" model="account.report.line">
+    <field name="name">วัสดุเภสัชกรรม / เอกซเรย์ / ทันตกรรม</field>
+    <field name="code">N5_PHARM</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n5_pharm" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '1105010103.103%'), ('account_id.code', '=like', '1105010103.107%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n5_med" model="account.report.line">
+    <field name="name">วัสดุการแพทย์ทั่วไป</field>
+    <field name="code">N5_MED</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n5_med" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1105010103.104%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n5_sci" model="account.report.line">
+    <field name="name">วัสดุวิทยาศาสตร์และการแพทย์</field>
+    <field name="code">N5_SCI</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n5_sci" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1105010103.105%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_n5" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">N5</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">N5_DRUG.balance + N5_PHARM.balance + N5_MED.balance + N5_SCI.balance</field>
+</record>
+    </field>
+</record>
+<record id="note_h6" model="account.report.line">
+    <field name="name">6 สินทรัพย์ไม่หมุนเวียน</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_line_n6_land" model="account.report.line">
+    <field name="name">ที่ดิน</field>
+    <field name="code">N6_LAND</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n6_land" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '1204010102.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n6_bldg" model="account.report.line">
+    <field name="name">อาคารและสิ่งปลูกสร้าง - สุทธิ</field>
+    <field name="code">N6_BLDG</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n6_bldg" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '1205010101.101%'), ('account_id.code', '=like', '1205010102.101%'), ('account_id.code', '=like', '1205010103.101%'), ('account_id.code', '=like', '1205020101.101%'), ('account_id.code', '=like', '1205020102.101%'), ('account_id.code', '=like', '1205020103.101%'), ('account_id.code', '=like', '1205030101.101%'), ('account_id.code', '=like', '1205030102.101%'), ('account_id.code', '=like', '1205030103.101%'), ('account_id.code', '=like', '1205030106.101%'), ('account_id.code', '=like', '1205030107.101%'), ('account_id.code', '=like', '1205030108.101%'), ('account_id.code', '=like', '1205040101.101%'), ('account_id.code', '=like', '1205040101.102%'), ('account_id.code', '=like', '1205040101.103%'), ('account_id.code', '=like', '1205040101.104%'), ('account_id.code', '=like', '1205040101.105%'), ('account_id.code', '=like', '1205040101.106%'), ('account_id.code', '=like', '1205040102.101%'), ('account_id.code', '=like', '1205040102.102%'), ('account_id.code', '=like', '1205040102.103%'), ('account_id.code', '=like', '1205040102.104%'), ('account_id.code', '=like', '1205040102.105%'), ('account_id.code', '=like', '1205040102.106%'), ('account_id.code', '=like', '1205040103.101%'), ('account_id.code', '=like', '1205040103.102%'), ('account_id.code', '=like', '1205040103.103%'), ('account_id.code', '=like', '1205040103.104%'), ('account_id.code', '=like', '1205040103.105%'), ('account_id.code', '=like', '1205040103.106%'), ('account_id.code', '=like', '1205050101.101%'), ('account_id.code', '=like', '1205050101.102%'), ('account_id.code', '=like', '1205050101.103%'), ('account_id.code', '=like', '1205050101.104%'), ('account_id.code', '=like', '1205050101.105%'), ('account_id.code', '=like', '1205050101.106%'), ('account_id.code', '=like', '1205050101.107%'), ('account_id.code', '=like', '1205050101.108%'), ('account_id.code', '=like', '1205050101.109%'), ('account_id.code', '=like', '1205050102.101%'), ('account_id.code', '=like', '1205050102.102%'), ('account_id.code', '=like', '1205050102.103%'), ('account_id.code', '=like', '1205050102.104%'), ('account_id.code', '=like', '1205050102.105%'), ('account_id.code', '=like', '1205050102.106%'), ('account_id.code', '=like', '1205050102.107%'), ('account_id.code', '=like', '1205050102.108%'), ('account_id.code', '=like', '1205050102.109%'), ('account_id.code', '=like', '1205060101.101%'), ('account_id.code', '=like', '1205060102.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n6_equip" model="account.report.line">
+    <field name="name">ครุภัณฑ์และอุปกรณ์ - สุทธิ</field>
+    <field name="code">N6_EQUIP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n6_equip" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '1206010101.101%'), ('account_id.code', '=like', '1206010102.101%'), ('account_id.code', '=like', '1206010103.101%'), ('account_id.code', '=like', '1206030101.101%'), ('account_id.code', '=like', '1206030102.101%'), ('account_id.code', '=like', '1206030103.101%'), ('account_id.code', '=like', '1206040101.101%'), ('account_id.code', '=like', '1206040102.101%'), ('account_id.code', '=like', '1206040103.101%'), ('account_id.code', '=like', '1206050101.101%'), ('account_id.code', '=like', '1206050102.101%'), ('account_id.code', '=like', '1206050103.101%'), ('account_id.code', '=like', '1206060101.101%'), ('account_id.code', '=like', '1206060102.101%'), ('account_id.code', '=like', '1206060103.101%'), ('account_id.code', '=like', '1206070101.101%'), ('account_id.code', '=like', '1206070102.101%'), ('account_id.code', '=like', '1206070103.101%'), ('account_id.code', '=like', '1206090101.101%'), ('account_id.code', '=like', '1206090102.101%'), ('account_id.code', '=like', '1206090103.101%'), ('account_id.code', '=like', '1206100101.101%'), ('account_id.code', '=like', '1206100102.101%'), ('account_id.code', '=like', '1206100103.101%'), ('account_id.code', '=like', '1206110101.101%'), ('account_id.code', '=like', '1206110102.101%'), ('account_id.code', '=like', '1206110103.101%'), ('account_id.code', '=like', '1206120101.101%'), ('account_id.code', '=like', '1206120102.101%'), ('account_id.code', '=like', '1206120103.101%'), ('account_id.code', '=like', '1206130101.101%'), ('account_id.code', '=like', '1206130102.101%'), ('account_id.code', '=like', '1206130103.101%'), ('account_id.code', '=like', '1206140101.101%'), ('account_id.code', '=like', '1206140102.101%'), ('account_id.code', '=like', '1206140103.101%'), ('account_id.code', '=like', '1206150101.101%'), ('account_id.code', '=like', '1206150102.101%'), ('account_id.code', '=like', '1206150103.101%'), ('account_id.code', '=like', '1206160101.101%'), ('account_id.code', '=like', '1206160102.101%'), ('account_id.code', '=like', '1206160103.101%'), ('account_id.code', '=like', '1206170101.101%'), ('account_id.code', '=like', '1206170101.103%'), ('account_id.code', '=like', '1206170101.104%'), ('account_id.code', '=like', '1206170101.105%'), ('account_id.code', '=like', '1206170101.106%'), ('account_id.code', '=like', '1206170101.107%'), ('account_id.code', '=like', '1206170101.108%'), ('account_id.code', '=like', '1206170101.109%'), ('account_id.code', '=like', '1206170101.110%'), ('account_id.code', '=like', '1206170102.101%'), ('account_id.code', '=like', '1206170102.103%'), ('account_id.code', '=like', '1206170102.104%'), ('account_id.code', '=like', '1206170102.105%'), ('account_id.code', '=like', '1206170102.106%'), ('account_id.code', '=like', '1206170102.107%'), ('account_id.code', '=like', '1206170102.108%'), ('account_id.code', '=like', '1206170102.109%'), ('account_id.code', '=like', '1206170102.110%'), ('account_id.code', '=like', '1206180101.101%'), ('account_id.code', '=like', '1206180102.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n6_vehicle" model="account.report.line">
+    <field name="name">ยานพาหนะ - สุทธิ</field>
+    <field name="code">N6_VEHICLE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n6_vehicle" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', ('account_id.code', '=like', '1206020101.101%'), ('account_id.code', '=like', '1206020102.101%'), ('account_id.code', '=like', '1206020103.101%'), ('account_id.code', '=like', '1206170101.102%'), ('account_id.code', '=like', '1206170102.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n6_soft" model="account.report.line">
+    <field name="name">โปรแกรมคอมพิวเตอร์</field>
+    <field name="code">N6_SOFT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n6_soft" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '1209010101.101%'), ('account_id.code', '=like', '1209010102.101%'), ('account_id.code', '=like', '1209010103.101%'), ('account_id.code', '=like', '1209030101.101%'), ('account_id.code', '=like', '1209030101.104%'), ('account_id.code', '=like', '1209030102.101%'), ('account_id.code', '=like', '1209030102.103%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n6_wip" model="account.report.line">
+    <field name="name">งานระหว่างทำ</field>
+    <field name="code">N6_WIP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n6_wip" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', ('account_id.code', '=like', '1211010101.101%'), ('account_id.code', '=like', '1211010102.101%'), ('account_id.code', '=like', '1211010103.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n6_accrued" model="account.report.line">
+    <field name="name">รายได้ค้างรับอื่น / เงินงบประมาณค้างรับ</field>
+    <field name="code">N6_ACCRUED</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n6_accrued" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '1102050106.106%'), ('account_id.code', '=like', '1102050107.103%'), ('account_id.code', '=like', '1102050107.104%'), ('account_id.code', '=like', '1102050107.105%'), ('account_id.code', '=like', '1102050107.106%'), ('account_id.code', '=like', '1102050107.201%'), ('account_id.code', '=like', '1102050107.202%'), ('account_id.code', '=like', '1102050124.101%'), ('account_id.code', '=like', '1102050194.101%'), ('account_id.code', '=like', '1102050194.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_n6" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">N6</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">N6_LAND.balance + N6_BLDG.balance + N6_EQUIP.balance + N6_VEHICLE.balance + N6_SOFT.balance + N6_WIP.balance + N6_ACCRUED.balance</field>
+</record>
+<record id="note_land_remark" model="account.report.line">
+    <field name="name">หมายเหตุ ที่ดินมีมูลค่า 413,059,832.80 บาท บันทึกไว้ในทุนของหน่วยงาน</field>
+    <field name="hierarchy_level">3</field>
+</record>
+    </field>
+</record>
+<record id="note_h7" model="account.report.line">
+    <field name="name">7 หนี้สินอื่น</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_line_n7_deposit" model="account.report.line">
+    <field name="name">เงินรับฝากอื่น</field>
+    <field name="code">N7_DEPOSIT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n7_deposit" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '2111020199.105%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n7_tax" model="account.report.line">
+    <field name="name">เงินรับฝากภาษีหัก ณ ที่จ่าย</field>
+    <field name="code">N7_TAX</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n7_tax" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', ('account_id.code', '=like', '2102040103.101%'), ('account_id.code', '=like', '2102040104.101%'), ('account_id.code', '=like', '2102040106.101%'), ('account_id.code', '=like', '2111020199.107%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n7_patient" model="account.report.line">
+    <field name="name">เงินมัดจำค่ารักษาพยาบาล</field>
+    <field name="code">N7_PATIENT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_n7_patient" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n7_contract" model="account.report.line">
+    <field name="name">เงินมัดจำประกันสัญญา</field>
+    <field name="code">N7_CONTRACT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n7_contract" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', ('account_id.code', '=like', '2112010101.101%'), ('account_id.code', '=like', '2112010102.101%'), ('account_id.code', '=like', '2112010199.101%'), ('account_id.code', '=like', '2112010199.102%'), ('account_id.code', '=like', '2112010199.103%'), ('account_id.code', '=like', '2112010199.104%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_n7" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">N7</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">N7_DEPOSIT.balance + N7_TAX.balance + N7_PATIENT.balance + N7_CONTRACT.balance</field>
+</record>
+    </field>
+</record>
+<record id="note_h8" model="account.report.line">
+    <field name="name">8 หนี้สินหมุนเวียน</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_line_n8_voucher" model="account.report.line">
+    <field name="name">ใบสำคัญค้างจ่าย</field>
+    <field name="code">N8_VOUCHER</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n8_voucher" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '2102040102.101%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n8_comp" model="account.report.line">
+    <field name="name">ค่าตอบแทนค้างจ่าย</field>
+    <field name="code">N8_COMP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n8_comp" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '2102040110.101%'), ('account_id.code', '=like', '2102040110.102%'), ('account_id.code', '=like', '2102040110.103%'), ('account_id.code', '=like', '2102040110.104%'), ('account_id.code', '=like', '2102040110.105%'), ('account_id.code', '=like', '2102040110.106%'), ('account_id.code', '=like', '2102040110.107%'), ('account_id.code', '=like', '2102040110.108%'), ('account_id.code', '=like', '2102040110.109%'), ('account_id.code', '=like', '2102040110.110%'), ('account_id.code', '=like', '2102040110.111%'), ('account_id.code', '=like', '2102040110.112%'), ('account_id.code', '=like', '2102040110.113%'), ('account_id.code', '=like', '2102040110.114%'), ('account_id.code', '=like', '2102040110.115%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n8_travel" model="account.report.line">
+    <field name="name">ค่าเบี้ยเลี้ยง ที่พัก พาหนะ</field>
+    <field name="code">N8_TRAVEL</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_n8_travel" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n8_other" model="account.report.line">
+    <field name="name">ค่าใช้จ่ายอื่นค้างจ่าย</field>
+    <field name="code">N8_OTHER</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n8_other" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', ('account_id.code', '=like', '2102040198.101%'), ('account_id.code', '=like', '2102040199.101%'), ('account_id.code', '=like', '2102040199.105%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n8_xray" model="account.report.line">
+    <field name="name">ค่าสิ่งส่งตรวจ - หน่วยงานภายนอก (X-Ray)</field>
+    <field name="code">N8_XRAY</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n8_xray" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '2101020199.148%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_n8_util" model="account.report.line">
+    <field name="name">ค่าสาธารณูปโภคค้างจ่าย</field>
+    <field name="code">N8_UTIL</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n8_util" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '2102040101.101%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_n8" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">N8</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">N8_VOUCHER.balance + N8_COMP.balance + N8_TRAVEL.balance + N8_OTHER.balance + N8_XRAY.balance + N8_UTIL.balance</field>
+</record>
+    </field>
+</record>
+<record id="note_h9" model="account.report.line">
+    <field name="name">9 เจ้าหนี้ค่ารักษาพยาบาลค้างจ่าย</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_line_n9_alien" model="account.report.line">
+    <field name="name">เจ้าหนี้ค่ารักษาพยาบาลค้างจ่าย (แรงงานต่างด้าว)</field>
+    <field name="code">N9_ALIEN</field>
+    <field name="hierarchy_level">1</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_n9_alien" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '2101020199.501%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+    </field>
+</record>
+<record id="note_h10" model="account.report.line">
+    <field name="name">10 เจ้าหนี้เงินยืม UC</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_line_n10_uc" model="account.report.line">
+    <field name="name">เจ้าหนี้เงินยืม UC</field>
+    <field name="code">N10_UC</field>
+    <field name="hierarchy_level">1</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_n10_uc" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+    </field>
+</record>
+<record id="note_h11" model="account.report.line">
+    <field name="name">11 ใบสำคัญค้างจ่าย (เงินเดือน/ค่าจ้าง/เงินประจำตำแหน่ง)</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_line_n11_salary" model="account.report.line">
+    <field name="name">ใบสำคัญค้างจ่าย (เงินเดือน/ค่าจ้าง/เงินประจำตำแหน่ง)</field>
+    <field name="code">N11_SALARY</field>
+    <field name="hierarchy_level">1</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_n11_salary" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">from_beginning</field>
+        </record>
+    </field>
+</record>
+    </field>
+</record>
+<record id="note_h12" model="account.report.line">
+    <field name="name">12 รายได้</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_h12_1" model="account.report.line">
+    <field name="name">12.1 รายได้จากการขายสินค้าและบริการ</field>
+    <field name="hierarchy_level">1</field>
+    <field name="children_ids">
+<record id="note_line_i_sso_fee" model="account.report.line">
+    <field name="name">รายได้กองทุนประกันสังคม / รายได้ค่าบริหารจัดการประกันสังคม</field>
+    <field name="code">I_SSO_FEE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_sso_fee" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '4301020106.321%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_civil" model="account.report.line">
+    <field name="name">รายได้จากสวัสดิการข้าราชการ (จ่ายตรง) และ อปท.</field>
+    <field name="code">I_CIVIL</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_civil" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', ('account_id.code', '=like', '4301020104.401%'), ('account_id.code', '=like', '4301020104.402%'), ('account_id.code', '=like', '4301020104.801%'), ('account_id.code', '=like', '4301020104.802%'), ('account_id.code', '=like', '4301020104.805%'), ('account_id.code', '=like', '4301020104.806%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_soe" model="account.report.line">
+    <field name="name">รายได้จากรัฐวิสาหกิจ/บริษัท</field>
+    <field name="code">I_SOE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_soe" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '4301020104.104%'), ('account_id.code', '=like', '4301020104.105%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_sso" model="account.report.line">
+    <field name="name">รายได้กองทุนประกันสังคม (ค่ารักษาพยาบาล)</field>
+    <field name="code">I_SSO</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_sso" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '4301020106.305%'), ('account_id.code', '=like', '4301020106.306%'), ('account_id.code', '=like', '4301020106.307%'), ('account_id.code', '=like', '4301020106.308%'), ('account_id.code', '=like', '4301020106.312%'), ('account_id.code', '=like', '4301020106.313%'), ('account_id.code', '=like', '4301020106.314%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_comp_fund" model="account.report.line">
+    <field name="name">รายได้กองทุนทดแทน</field>
+    <field name="code">I_COMP_FUND</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_comp_fund" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '4301020106.311%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_act" model="account.report.line">
+    <field name="name">รายได้กองทุนผู้ประสบภัยจากรถ</field>
+    <field name="code">I_ACT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_act" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '4301020104.602%'), ('account_id.code', '=like', '4301020104.603%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_alien" model="account.report.line">
+    <field name="name">รายได้จากแรงงานต่างด้าวขึ้นทะเบียน / รายได้กองทุนแรงงานต่างด้าว</field>
+    <field name="code">I_ALIEN</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_alien" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '4301020106.503%'), ('account_id.code', '=like', '4301020106.504%'), ('account_id.code', '=like', '4301020106.509%'), ('account_id.code', '=like', '4301020106.512%'), ('account_id.code', '=like', '4301020106.513%'), ('account_id.code', '=like', '4301020106.514%'), ('account_id.code', '=like', '4301020106.516%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_diff" model="account.report.line">
+    <field name="name">ส่วนต่างที่สูง / ต่ำ - จ่ายตรง - อปท - UC - ปกส. - แรงงานต่างด้าว - สถานะและสิทธิ</field>
+    <field name="code">I_DIFF</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_diff" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '4301020104.110%'), ('account_id.code', '=like', '4301020104.111%'), ('account_id.code', '=like', '4301020104.405%'), ('account_id.code', '=like', '4301020104.406%'), ('account_id.code', '=like', '4301020104.803%'), ('account_id.code', '=like', '4301020104.804%'), ('account_id.code', '=like', '4301020104.807%'), ('account_id.code', '=like', '4301020104.808%'), ('account_id.code', '=like', '4301020105.229%'), ('account_id.code', '=like', '4301020105.231%'), ('account_id.code', '=like', '4301020105.232%'), ('account_id.code', '=like', '4301020105.239%'), ('account_id.code', '=like', '4301020105.240%'), ('account_id.code', '=like', '4301020105.251%'), ('account_id.code', '=like', '4301020105.252%'), ('account_id.code', '=like', '4301020105.257%'), ('account_id.code', '=like', '4301020105.258%'), ('account_id.code', '=like', '4301020105.260%'), ('account_id.code', '=like', '4301020105.271%'), ('account_id.code', '=like', '4301020106.315%'), ('account_id.code', '=like', '4301020106.317%'), ('account_id.code', '=like', '4301020106.319%'), ('account_id.code', '=like', '4301020106.320%'), ('account_id.code', '=like', '4301020106.505%'), ('account_id.code', '=like', '4301020106.507%'), ('account_id.code', '=like', '4301020106.510%'), ('account_id.code', '=like', '4301020106.511%'), ('account_id.code', '=like', '4301020106.515%'), ('account_id.code', '=like', '4301020106.519%'), ('account_id.code', '=like', '4301020106.704%'), ('account_id.code', '=like', '4301020106.705%'), ('account_id.code', '=like', '4301020106.706%'), ('account_id.code', '=like', '4301020106.711%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_self" model="account.report.line">
+    <field name="name">รายได้ที่ผู้รับบริการจ่ายเอง</field>
+    <field name="code">I_SELF</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_self" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '4301020104.106%'), ('account_id.code', '=like', '4301020104.107%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_uc_cr" model="account.report.line">
+    <field name="name">รายได้จากกองทุน UC (บริการเฉพาะ / COVID-19)</field>
+    <field name="code">I_UC_CR</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_uc_cr" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '4301020105.244%'), ('account_id.code', '=like', '4301020105.245%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_uc_op" model="account.report.line">
+    <field name="name">รายได้จากกองทุน UC-OP/PP (จากสถานพยาบาลในและนอกจังหวัด)</field>
+    <field name="code">I_UC_OP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_uc_op" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', ('account_id.code', '=like', '4301020105.201%'), ('account_id.code', '=like', '4301020105.203%'), ('account_id.code', '=like', '4301020105.207%'), ('account_id.code', '=like', '4301020105.241%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_uc_ip" model="account.report.line">
+    <field name="name">รายได้จากกองทุน UC-IP (จากสถานพยาบาลในและนอกจังหวัด)</field>
+    <field name="code">I_UC_IP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_uc_ip" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '4301020105.202%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_welfare" model="account.report.line">
+    <field name="name">รายได้เงินช่วยเหลือ (ค่าใช้จ่ายด้านสังคมสงเคราะห์)</field>
+    <field name="code">I_WELFARE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_i_welfare" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_uc_drug" model="account.report.line">
+    <field name="name">รายได้จากกองทุน UC (ลงทุน) / กองทุน UC (สนับสนุนยาและอื่น ๆ)</field>
+    <field name="code">I_UC_DRUG</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_uc_drug" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '4301020102.106%'), ('account_id.code', '=like', '4301020105.211%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_lab" model="account.report.line">
+    <field name="name">รายได้ค่าสิ่งส่งตรวจ / ค่าตรวจสุขภาพ</field>
+    <field name="code">I_LAB</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_lab" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', ('account_id.code', '=like', '4301020102.101%'), ('account_id.code', '=like', '4301020102.102%'), ('account_id.code', '=like', '4301020102.103%'), ('account_id.code', '=like', '4301020102.104%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_uc_other" model="account.report.line">
+    <field name="name">รายได้กองทุน UC เฉพาะโรคอื่น / PP อื่น / UC อื่น / UC-CF / EMS</field>
+    <field name="code">I_UC_OTHER</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_uc_other" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', ('account_id.code', '=like', '4301020102.105%'), ('account_id.code', '=like', '4301020105.222%'), ('account_id.code', '=like', '4301020105.223%'), ('account_id.code', '=like', '4301020105.228%'), ('account_id.code', '=like', '4301020105.243%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_capitation" model="account.report.line">
+    <field name="name">รายได้กองทุน UC-OP แบบเหมาจ่ายต่อผู้มีสิทธิ / UC-P&amp;P แบบเหมาจ่ายต่อผู้มีสิทธิ</field>
+    <field name="code">I_CAPITATION</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_i_capitation" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_status" model="account.report.line">
+    <field name="name">รายได้ค่ารักษาบุคคลที่มีปัญหาสถานะและสิทธิ</field>
+    <field name="code">I_STATUS</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_i_status" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', ('account_id.code', '=like', '4301020106.701%'), ('account_id.code', '=like', '4301020106.703%'), ('account_id.code', '=like', '4301020106.709%'), ('account_id.code', '=like', '4301020106.710%'), ('account_id.code', '=like', '4301020106.712%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_i_wage" model="account.report.line">
+    <field name="name">ส่วนปรับลดค่าแรง OP/PP/IP</field>
+    <field name="code">I_WAGE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_i_wage" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_i1" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">I1</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">I_SSO_FEE.balance + I_CIVIL.balance + I_SOE.balance + I_SSO.balance + I_COMP_FUND.balance + I_ACT.balance + I_ALIEN.balance + I_DIFF.balance + I_SELF.balance + I_UC_CR.balance + I_UC_OP.balance + I_UC_IP.balance + I_WELFARE.balance + I_UC_DRUG.balance + I_LAB.balance + I_UC_OTHER.balance + I_CAPITATION.balance + I_STATUS.balance + I_WAGE.balance</field>
+</record>
+    </field>
+</record>
+<record id="note_h12_2" model="account.report.line">
+    <field name="name">12.2 รายได้จากเงินช่วยเหลือ</field>
+    <field name="hierarchy_level">1</field>
+    <field name="children_ids">
+<record id="note_line_g_invest" model="account.report.line">
+    <field name="name">รายได้จากเงินช่วยเหลือเพื่อการลงทุน</field>
+    <field name="code">G_INVEST</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_g_invest" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_g_operate" model="account.report.line">
+    <field name="name">รายได้จากเงินช่วยเหลือเพื่อการดำเนินงาน (อปท.) / อื่น</field>
+    <field name="code">G_OPERATE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_g_operate" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', ('account_id.code', '=like', '4302010101.101%'), ('account_id.code', '=like', '4302010106.101%'), ('account_id.code', '=like', '4302010199.101%'), ('account_id.code', '=like', '4302020107.101%'), ('account_id.code', '=like', '4302020199.101%'), ('account_id.code', '=like', '4302040101.101%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_g_goods" model="account.report.line">
+    <field name="name">สินค้ารับโอนจากแม่ข่าย</field>
+    <field name="code">G_GOODS</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_g_goods" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_g_hub" model="account.report.line">
+    <field name="name">รายได้จากแม่ข่าย</field>
+    <field name="code">G_HUB</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_g_hub" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_i2" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">I2</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">G_INVEST.balance + G_OPERATE.balance + G_GOODS.balance + G_HUB.balance</field>
+</record>
+    </field>
+</record>
+<record id="note_h12_3" model="account.report.line">
+    <field name="name">12.3 รายได้อื่น</field>
+    <field name="hierarchy_level">1</field>
+    <field name="children_ids">
+<record id="note_line_o_other" model="account.report.line">
+    <field name="name">รายได้อื่น / อื่น-หน่วยงานอื่น / รายรับจากการขายซาก</field>
+    <field name="code">O_OTHER</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_o_other" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '4313010101.101%'), ('account_id.code', '=like', '4313010199.101%'), ('account_id.code', '=like', '4313010199.102%'), ('account_id.code', '=like', '4313010199.105%'), ('account_id.code', '=like', '4313010199.109%'), ('account_id.code', '=like', '4313010199.110%'), ('account_id.code', '=like', '4313010199.113%'), ('account_id.code', '=like', '4313010199.114%'), ('account_id.code', '=like', '4313010199.115%'), ('account_id.code', '=like', '4313010199.116%'), ('account_id.code', '=like', '4313010199.118%'), ('account_id.code', '=like', '4313010199.119%'), ('account_id.code', '=like', '4313010199.120%'), ('account_id.code', '=like', '4313010199.121%'), ('account_id.code', '=like', '4313010199.122%'), ('account_id.code', '=like', '4313010199.123%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_o_doctor" model="account.report.line">
+    <field name="name">รายได้โครงการผลิตแพทย์ / บุคลากรทางการแพทย์</field>
+    <field name="code">O_DOCTOR</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_o_doctor" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '4313010199.108%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_o_cgd" model="account.report.line">
+    <field name="name">รายได้ระหว่างหน่วยงาน-หน่วยงานรับเงินนอกงบประมาณจากกรมบัญชีกลาง</field>
+    <field name="code">O_CGD</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_o_cgd" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '4308010101.101%'), ('account_id.code', '=like', '4308010105.101%'), ('account_id.code', '=like', '4308010106.101%'), ('account_id.code', '=like', '4308010111.101%'), ('account_id.code', '=like', '4308010117.101%'), ('account_id.code', '=like', '4308010118.101%'), ('account_id.code', '=like', '4308010121.101%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_o_fine" model="account.report.line">
+    <field name="name">หนี้สูญรับคืน / รายได้ค่าปรับ / รายได้ระหว่างกันภายในกรมเดียวกัน</field>
+    <field name="code">O_FINE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_o_fine" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '4313010103.101%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_o_ppho" model="account.report.line">
+    <field name="name">รายได้เงินงบประมาณและนอกงบประมาณรับโอนจาก สสจ.</field>
+    <field name="code">O_PPHO</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_o_ppho" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '4313010199.117%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_o_fee" model="account.report.line">
+    <field name="name">รายได้จากค่าธรรมเนียม 30 บาท</field>
+    <field name="code">O_FEE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_o_fee" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '4313010199.202%')]"/>
+            <field name="subformula">-sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_i3" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">I3</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">O_OTHER.balance + O_DOCTOR.balance + O_CGD.balance + O_FINE.balance + O_PPHO.balance + O_FEE.balance</field>
+</record>
+    </field>
+</record>
+    </field>
+</record>
+<record id="note_h13" model="account.report.line">
+    <field name="name">13 ค่าใช้จ่าย</field>
+    <field name="hierarchy_level">0</field>
+    <field name="children_ids">
+<record id="note_h13_1" model="account.report.line">
+    <field name="name">13.1 ค่าใช้จ่ายด้านบุคลากร</field>
+    <field name="hierarchy_level">1</field>
+    <field name="children_ids">
+<record id="note_line_p_salary" model="account.report.line">
+    <field name="name">เงินเดือน</field>
+    <field name="code">P_SALARY</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_salary" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5101010101.101%'), ('account_id.code', '=like', '5101010101.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_gov_emp" model="account.report.line">
+    <field name="name">เงินเดือนพนักงานราชการ</field>
+    <field name="code">P_GOV_EMP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_gov_emp" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5101010115.101%'), ('account_id.code', '=like', '5101010115.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_position" model="account.report.line">
+    <field name="name">เงินประจำตำแหน่ง</field>
+    <field name="code">P_POSITION</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_position" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5101010103.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_perm" model="account.report.line">
+    <field name="name">ค่าจ้างประจำ</field>
+    <field name="code">P_PERM</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_perm" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5101010113.101%'), ('account_id.code', '=like', '5101010113.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_temp" model="account.report.line">
+    <field name="name">ค่าจ้างชั่วคราว</field>
+    <field name="code">P_TEMP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_temp" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', ('account_id.code', '=like', '5101010113.103%'), ('account_id.code', '=like', '5101010113.104%'), ('account_id.code', '=like', '5101010113.105%'), ('account_id.code', '=like', '5101010113.106%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_monthly" model="account.report.line">
+    <field name="name">ค่าตอบแทนข้าราชการ / ลูกจ้าง / พนักงานราชการ (รายเดือน)</field>
+    <field name="code">P_MONTHLY</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_monthly" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', ('account_id.code', '=like', '5101010116.101%'), ('account_id.code', '=like', '5101010116.102%'), ('account_id.code', '=like', '5101010116.105%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_provident" model="account.report.line">
+    <field name="name">เงินสมทบกองทุนสำรองเลี้ยงชีพพนักงานและเจ้าหน้าที่รัฐ</field>
+    <field name="code">P_PROVIDENT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_provident" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5101020112.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_gratuity" model="account.report.line">
+    <field name="name">บำเหน็จ</field>
+    <field name="code">P_GRATUITY</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_p_gratuity" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_death" model="account.report.line">
+    <field name="name">เงินช่วยเหลือพิเศษกรณีเสียชีวิต</field>
+    <field name="code">P_DEATH</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_death" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5101020101.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_gpf_comp" model="account.report.line">
+    <field name="name">เงินชดเชยสมาชิก กบข.</field>
+    <field name="code">P_GPF_COMP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_gpf_comp" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5101020103.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_gpf" model="account.report.line">
+    <field name="name">เงินสมทบ กบข.</field>
+    <field name="code">P_GPF</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_gpf" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5101020104.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_private" model="account.report.line">
+    <field name="name">เงินสมทบ กสจ.</field>
+    <field name="code">P_PRIVATE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_private" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5101020105.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_medical" model="account.report.line">
+    <field name="name">ค่ารักษาพยาบาล</field>
+    <field name="code">P_MEDICAL</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_medical" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', ('account_id.code', '=like', '5101030205.101%'), ('account_id.code', '=like', '5101030207.101%'), ('account_id.code', '=like', '5101030208.101%'), ('account_id.code', '=like', '5101040204.101%'), ('account_id.code', '=like', '5101040206.101%'), ('account_id.code', '=like', '5101040207.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_child" model="account.report.line">
+    <field name="name">ค่าศึกษาบุตร</field>
+    <field name="code">P_CHILD</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_child" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5101030101.101%'), ('account_id.code', '=like', '5101040202.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_ot" model="account.report.line">
+    <field name="name">ค่าล่วงเวลา (สนับสนุน)</field>
+    <field name="code">P_OT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_p_ot" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_pension_death" model="account.report.line">
+    <field name="name">เงินช่วยพิเศษกรณีผู้รับบำนาญตาย</field>
+    <field name="code">P_PENSION_DEATH</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_pension_death" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5101040111.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_sso" model="account.report.line">
+    <field name="name">เงินสมทบประกันสังคมส่วนนายจ้าง</field>
+    <field name="code">P_SSO</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_sso" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5101020106.101%'), ('account_id.code', '=like', '5101020106.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_wcf" model="account.report.line">
+    <field name="name">เงินสมทบกองทุนเงินทดแทน</field>
+    <field name="code">P_WCF</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_wcf" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5101020116.101%'), ('account_id.code', '=like', '5101020116.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_covid" model="account.report.line">
+    <field name="name">เงินเพิ่มพิเศษสำหรับบุคลากรสาธารณสุขในสถานการณ์ COVID-19</field>
+    <field name="code">P_COVID</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_p_covid" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_ceiling" model="account.report.line">
+    <field name="name">เงินตอบแทนพิเศษของข้าราชการเต็มขั้น</field>
+    <field name="code">P_CEILING</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_ceiling" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5101010109.101%'), ('account_id.code', '=like', '5101010109.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_ceiling_wage" model="account.report.line">
+    <field name="name">เงินตอบแทนพิเศษของลูกจ้างประจำเต็มขั้น</field>
+    <field name="code">P_CEILING_WAGE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_p_ceiling_wage" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5101010109.103%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_p_bonus" model="account.report.line">
+    <field name="name">เงินรางวัลประจำปีของหน่วยบริการ</field>
+    <field name="code">P_BONUS</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_p_bonus" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_p1" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">P1</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">P_SALARY.balance + P_GOV_EMP.balance + P_POSITION.balance + P_PERM.balance + P_TEMP.balance + P_MONTHLY.balance + P_PROVIDENT.balance + P_GRATUITY.balance + P_DEATH.balance + P_GPF_COMP.balance + P_GPF.balance + P_PRIVATE.balance + P_MEDICAL.balance + P_CHILD.balance + P_OT.balance + P_PENSION_DEATH.balance + P_SSO.balance + P_WCF.balance + P_COVID.balance + P_CEILING.balance + P_CEILING_WAGE.balance + P_BONUS.balance</field>
+</record>
+    </field>
+</record>
+<record id="note_h13_2" model="account.report.line">
+    <field name="name">13.2 ค่าใช้จ่ายในการดำเนินงาน</field>
+    <field name="hierarchy_level">1</field>
+    <field name="children_ids">
+<record id="note_line_e_fee" model="account.report.line">
+    <field name="name">ค่าตอบแทน</field>
+    <field name="code">E_FEE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_fee" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '5101010199.103%'), ('account_id.code', '=like', '5104040102.104%'), ('account_id.code', '=like', '5104040102.105%'), ('account_id.code', '=like', '5104040102.115%'), ('account_id.code', '=like', '5104040102.116%'), ('account_id.code', '=like', '5104040102.117%'), ('account_id.code', '=like', '5104040102.118%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_npp" model="account.report.line">
+    <field name="name">ค่าตอบแทนไม่ปฏิบัติเวชส่วนตัว</field>
+    <field name="code">E_NPP</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_npp" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', ('account_id.code', '=like', '5104040102.101%'), ('account_id.code', '=like', '5104040102.102%'), ('account_id.code', '=like', '5104040102.103%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_scarce" model="account.report.line">
+    <field name="name">ค่าตอบแทนแพทย์สาขาขาดแคลน</field>
+    <field name="code">E_SCARCE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_scarce" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5104040102.109%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_house" model="account.report.line">
+    <field name="name">ค่าเช่าบ้าน</field>
+    <field name="code">E_HOUSE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_house" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5101020108.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_rent" model="account.report.line">
+    <field name="name">ค่าเช่าอสังหาริมทรัพย์</field>
+    <field name="code">E_RENT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_rent" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5104030210.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_corpse" model="account.report.line">
+    <field name="name">ค่าฉีดยาศพ</field>
+    <field name="code">E_CORPSE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_e_corpse" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_bankfee" model="account.report.line">
+    <field name="name">ค่าธรรมเนียม</field>
+    <field name="code">E_BANKFEE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_bankfee" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5104010115.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_clean" model="account.report.line">
+    <field name="name">ค่าจ้างเหมากำจัดขยะ / ทำความสะอาด / สวนหย่อม / ประกอบอาหารผู้ป่วย</field>
+    <field name="code">E_CLEAN</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_clean" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5104010112.101%'), ('account_id.code', '=like', '5104010112.111%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_maintain" model="account.report.line">
+    <field name="name">ค่าจ้างเหมาปรับปรุงและบำรุงรักษา ลิฟต์ เครื่องปรับอากาศ และเครื่องตรวจพิเศษ</field>
+    <field name="code">E_MAINTAIN</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_maintain" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', ('account_id.code', '=like', '5104010107.108%'), ('account_id.code', '=like', '5104010107.109%'), ('account_id.code', '=like', '5104010107.111%'), ('account_id.code', '=like', '5104010107.112%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_insure" model="account.report.line">
+    <field name="name">ค่าเบี้ยประกันภัย / ค่าจ้างที่ปรึกษา / ค่าใช้จ่ายประชุม</field>
+    <field name="code">E_INSURE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_insure" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5104030202.101%'), ('account_id.code', '=like', '5104030203.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_lab" model="account.report.line">
+    <field name="name">ค่าจ้างตรวจทางห้องปฏิบัติการ / จ้างตรวจ X-Ray / ค่าจ้างเหมาบริการทางการแพทย์</field>
+    <field name="code">E_LAB</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_lab" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', ('account_id.code', '=like', '5104010112.112%'), ('account_id.code', '=like', '5104010112.114%'), ('account_id.code', '=like', '5104010112.115%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_remit" model="account.report.line">
+    <field name="name">เงินชดเชยค่างานสิ่งก่อสร้าง / ค่าใช้จ่ายผลักส่งเป็นรายได้แผ่นดิน</field>
+    <field name="code">E_REMIT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_e_remit" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_repair" model="account.report.line">
+    <field name="name">ค่าซ่อมแซมและบำรุงรักษาครุภัณฑ์ / สิ่งก่อสร้าง</field>
+    <field name="code">E_REPAIR</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_repair" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', ('account_id.code', '=like', '5104010107.101%'), ('account_id.code', '=like', '5104010107.103%'), ('account_id.code', '=like', '5104010107.104%'), ('account_id.code', '=like', '5104010107.106%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_material" model="account.report.line">
+    <field name="name">ค่าวัสดุ</field>
+    <field name="code">E_MATERIAL</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_material" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '5104010104.101%'), ('account_id.code', '=like', '5104010104.102%'), ('account_id.code', '=like', '5104010104.103%'), ('account_id.code', '=like', '5104010104.104%'), ('account_id.code', '=like', '5104010104.105%'), ('account_id.code', '=like', '5104010104.106%'), ('account_id.code', '=like', '5104010104.107%'), ('account_id.code', '=like', '5104010104.108%'), ('account_id.code', '=like', '5104010110.101%'), ('account_id.code', '=like', '5104030205.112%'), ('account_id.code', '=like', '5104030205.113%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_goods" model="account.report.line">
+    <field name="name">ค่าสินค้า (ค่ายาและเวชภัณฑ์)</field>
+    <field name="code">E_GOODS</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_goods" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', ('account_id.code', '=like', '5104030205.101%'), ('account_id.code', '=like', '5104030205.102%'), ('account_id.code', '=like', '5104030205.103%'), ('account_id.code', '=like', '5104030205.104%'), ('account_id.code', '=like', '5104030205.117%'), ('account_id.code', '=like', '5104030205.118%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_power" model="account.report.line">
+    <field name="name">ค่าไฟฟ้า</field>
+    <field name="code">E_POWER</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_power" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5104020101.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_water" model="account.report.line">
+    <field name="name">ค่าน้ำประปา</field>
+    <field name="code">E_WATER</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_water" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5104020103.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_post" model="account.report.line">
+    <field name="name">ค่าไปรษณีย์และโทรเลข</field>
+    <field name="code">E_POST</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_post" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5104020107.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_phone" model="account.report.line">
+    <field name="name">ค่าโทรศัพท์ / ค่าบริการสื่อสารโทรคมนาคม</field>
+    <field name="code">E_PHONE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_phone" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5104020105.101%'), ('account_id.code', '=like', '5104020106.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_small" model="account.report.line">
+    <field name="name">ค่าใช้จ่ายครุภัณฑ์และอุปกรณ์ (มูลค่าต่ำกว่าเกณฑ์)</field>
+    <field name="code">E_SMALL</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_small" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5104030206.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_project" model="account.report.line">
+    <field name="name">ค่าใช้จ่ายสัมมนา ฝึกอบรม โครงการ และไปราชการ</field>
+    <field name="code">E_PROJECT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_project" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', ('account_id.code', '=like', '5102010199.102%'), ('account_id.code', '=like', '5103010102.102%'), ('account_id.code', '=like', '5103010103.102%'), ('account_id.code', '=like', '5103010199.102%'), ('account_id.code', '=like', '5104030299.102%'), ('account_id.code', '=like', '5104030299.105%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_pts" model="account.report.line">
+    <field name="name">ค่าตอบแทนอื่นของเจ้าหน้าที่ / พตส. / พสร. / เสี่ยงภัย</field>
+    <field name="code">E_PTS</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_pts" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', ('account_id.code', '=like', '5101020114.107%'), ('account_id.code', '=like', '5101020114.114%'), ('account_id.code', '=like', '5101020115.101%'), ('account_id.code', '=like', '5104040102.107%'), ('account_id.code', '=like', '5104040102.108%'), ('account_id.code', '=like', '5104040102.120%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_social" model="account.report.line">
+    <field name="name">ค่าใช้จ่ายด้านสังคมสงเคราะห์ (สวัสดิการสังคมอื่น)</field>
+    <field name="code">E_SOCIAL</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_social" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5112010103.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_paid" model="account.report.line">
+    <field name="name">ค่าใช้จ่ายตามจ่าย</field>
+    <field name="code">E_PAID</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_paid" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5104030299.202%'), ('account_id.code', '=like', '5104030299.702%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_uc_capex" model="account.report.line">
+    <field name="name">ค่าจ้าง ค่าเช่า และค่าซ่อมบำรุงสิ่งก่อสร้างและครุภัณฑ์ (งบลงทุน UC)</field>
+    <field name="code">E_UC_CAPEX</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="False"/>
+    
+    <field name="expression_ids">
+        <record id="note_expr_e_uc_capex" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=', '__none__')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_e_service" model="account.report.line">
+    <field name="name">ค่าจ้างเหมาบริการอื่น / ค่าจ้างเหมารถ</field>
+    <field name="code">E_SERVICE</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_e_service" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5104010112.113%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_e2" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">E2</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">E_FEE.balance + E_NPP.balance + E_SCARCE.balance + E_HOUSE.balance + E_RENT.balance + E_CORPSE.balance + E_BANKFEE.balance + E_CLEAN.balance + E_MAINTAIN.balance + E_INSURE.balance + E_LAB.balance + E_REMIT.balance + E_REPAIR.balance + E_MATERIAL.balance + E_GOODS.balance + E_POWER.balance + E_WATER.balance + E_POST.balance + E_PHONE.balance + E_SMALL.balance + E_PROJECT.balance + E_PTS.balance + E_SOCIAL.balance + E_PAID.balance + E_UC_CAPEX.balance + E_SERVICE.balance</field>
+</record>
+    </field>
+</record>
+<record id="note_h13_3" model="account.report.line">
+    <field name="name">13.3 ค่าใช้จ่ายอื่น</field>
+    <field name="hierarchy_level">1</field>
+    <field name="children_ids">
+<record id="note_line_x_other" model="account.report.line">
+    <field name="name">ค่าใช้จ่ายอื่น</field>
+    <field name="code">X_OTHER</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_x_other" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '5212010199.104%'), ('account_id.code', '=like', '5212010199.105%'), ('account_id.code', '=like', '5212010199.106%'), ('account_id.code', '=like', '5212010199.107%'), ('account_id.code', '=like', '5212010199.108%'), ('account_id.code', '=like', '5212010199.109%'), ('account_id.code', '=like', '5212010199.110%'), ('account_id.code', '=like', '5212010199.111%'), ('account_id.code', '=like', '5212010199.112%'), ('account_id.code', '=like', '5212010199.113%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_x_disposal" model="account.report.line">
+    <field name="name">ค่าจำหน่ายครุภัณฑ์</field>
+    <field name="code">X_DISPOSAL</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_x_disposal" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '5203010105.101%'), ('account_id.code', '=like', '5203010106.101%'), ('account_id.code', '=like', '5203010107.101%'), ('account_id.code', '=like', '5203010109.101%'), ('account_id.code', '=like', '5203010110.101%'), ('account_id.code', '=like', '5203010111.101%'), ('account_id.code', '=like', '5203010112.101%'), ('account_id.code', '=like', '5203010113.101%'), ('account_id.code', '=like', '5203010114.101%'), ('account_id.code', '=like', '5203010115.101%'), ('account_id.code', '=like', '5203010117.101%'), ('account_id.code', '=like', '5203010119.101%'), ('account_id.code', '=like', '5203010120.101%'), ('account_id.code', '=like', '5203010122.101%'), ('account_id.code', '=like', '5203010126.101%'), ('account_id.code', '=like', '5203010141.101%'), ('account_id.code', '=like', '5203010142.101%'), ('account_id.code', '=like', '5203010145.101%'), ('account_id.code', '=like', '5203010146.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_x_transfer" model="account.report.line">
+    <field name="name">ค่าใช้จ่ายเงินนอกงบประมาณ/งบประมาณ โอนให้โรงพยาบาลและ สสจ.</field>
+    <field name="code">X_TRANSFER</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_x_transfer" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5212010199.114%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_x_asset_out" model="account.report.line">
+    <field name="name">ครุภัณฑ์โอนให้สำนักงานเขตงบลงทุน</field>
+    <field name="code">X_ASSET_OUT</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_x_asset_out" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5211010101.101%'), ('account_id.code', '=like', '5211010102.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_x_bad" model="account.report.line">
+    <field name="name">หนี้สูญ / หนี้สงสัยจะสูญ</field>
+    <field name="code">X_BAD</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_x_bad" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', '|', ('account_id.code', '=like', '5108010101.102%'), ('account_id.code', '=like', '5108010101.104%'), ('account_id.code', '=like', '5108010101.105%'), ('account_id.code', '=like', '5108010101.114%'), ('account_id.code', '=like', '5108010101.115%'), ('account_id.code', '=like', '5108010101.203%'), ('account_id.code', '=like', '5108010101.205%'), ('account_id.code', '=like', '5108010107.102%'), ('account_id.code', '=like', '5108010107.104%'), ('account_id.code', '=like', '5108010107.105%'), ('account_id.code', '=like', '5108010107.114%'), ('account_id.code', '=like', '5108010107.115%'), ('account_id.code', '=like', '5108010107.203%'), ('account_id.code', '=like', '5108010107.205%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_x_treasury" model="account.report.line">
+    <field name="name">ค่าใช้จ่ายระหว่างหน่วยงาน-ปรับเงินฝากคลัง</field>
+    <field name="code">X_TREASURY</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_x_treasury" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5210010105.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_x_doctor" model="account.report.line">
+    <field name="name">ค่าใช้จ่ายโครงการผลิตบุคลากรทางการแพทย์</field>
+    <field name="code">X_DOCTOR</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_x_doctor" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5212010199.101%'), ('account_id.code', '=like', '5212010199.102%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_x_subsidy" model="account.report.line">
+    <field name="name">ค่าใช้จ่ายอุดหนุนเพื่อการดำเนินงานอื่น</field>
+    <field name="code">X_SUBSIDY</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_x_subsidy" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="['|', ('account_id.code', '=like', '5107010101.101%'), ('account_id.code', '=like', '5107010199.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_line_x_special" model="account.report.line">
+    <field name="name">ค่าใช้จ่ายรายการพิเศษนอกเหนือการดำเนินงานปกติ</field>
+    <field name="code">X_SPECIAL</field>
+    <field name="hierarchy_level">3</field>
+    <field name="foldable" eval="True"/>
+    <field name="groupby">account_id</field>
+    <field name="expression_ids">
+        <record id="note_expr_x_special" model="account.report.expression">
+            <field name="label">balance</field>
+            <field name="engine">domain</field>
+            <field name="formula" eval="[('account_id.code', '=like', '5401010101.101%')]"/>
+            <field name="subformula">sum</field>
+            <field name="date_scope">strict_range</field>
+        </record>
+    </field>
+</record>
+<record id="note_total_x3" model="account.report.line">
+    <field name="name">รวม</field>
+    <field name="code">X3</field>
+    <field name="hierarchy_level">2</field>
+    <field name="aggregation_formula">X_OTHER.balance + X_DISPOSAL.balance + X_TRANSFER.balance + X_ASSET_OUT.balance + X_BAD.balance + X_TREASURY.balance + X_DOCTOR.balance + X_SUBSIDY.balance + X_SPECIAL.balance</field>
+</record>
+    </field>
+</record>
+    </field>
+</record>
+        </field>
+    </record>
+    <record id="action_financial_notes" model="ir.actions.client">
+        <field name="name">หมายเหตุประกอบงบการเงิน</field>
+        <field name="tag">account_report</field>
+        <field name="path">vpk-financial-notes</field>
+        <field name="context" eval="{'report_id': ref('vpk_hospital_balance_sheet.financial_notes')}"/>
+    </record>
+    <menuitem id="menu_financial_notes"
+              name="หมายเหตุประกอบงบการเงิน"
+              action="action_financial_notes"
+              parent="account.account_reports_legal_statements_menu"
+              sequence="8"
+              groups="account.group_account_readonly"/>
+</odoo>

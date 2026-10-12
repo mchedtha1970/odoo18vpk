@@ -42,6 +42,10 @@ export class VpkBudgetOverviewDashboard extends Component {
             allocated: 0,
             actual: 0,
             committed: 0,
+            pr_reserved: 0,
+            pr_reserved_pct: 0,
+            pr_reserved_count: 0,
+            pr_rows: [],
             remaining: 0,
             actual_pct: 0,
             committed_pct: 0,
@@ -157,6 +161,20 @@ export class VpkBudgetOverviewDashboard extends Component {
 
     openPurchaseOrders() {
         this.actionService.doAction("purchase.purchase_form_action");
+    }
+
+    openPrReservations() {
+        document.getElementById("o_vpk_bm_pr")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    openPurchaseRequest(requestId) {
+        this.actionService.doAction({
+            type: "ir.actions.act_window",
+            res_model: "purchase.request",
+            res_id: requestId,
+            views: [[false, "form"]],
+            target: "current",
+        });
     }
 
     openRequests() {

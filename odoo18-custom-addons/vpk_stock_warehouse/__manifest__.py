@@ -1,6 +1,6 @@
 {
     "name": "VPK Stock Warehouse Overview",
-    "version": "18.0.1.6.0",
+    "version": "18.0.1.6.1",
     "category": "Inventory",
     "summary": "Warehouse and bin/location explorer with panel navigation",
     "author": "VPK",

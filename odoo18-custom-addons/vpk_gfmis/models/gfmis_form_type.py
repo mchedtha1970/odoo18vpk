@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class GfmisFormType(models.Model):
     _name = "gfmis.form.type"
     _description = "แบบฟอร์ม GFMIS"
     _order = "sequence, code"
+    _rec_names_search = ["name", "code"]
 
     name = fields.Char(string="ชื่อแบบฟอร์ม", required=True, translate=True)
     code = fields.Char(string="รหัสแบบฟอร์ม", required=True, index=True)
@@ -51,6 +52,14 @@ class GfmisFormType(models.Model):
         required=True,
     )
     note = fields.Text(string="หมายเหตุ")
+
+    @api.depends("code", "name")
+    def _compute_display_name(self):
+        for form in self:
+            if form.code and form.name:
+                form.display_name = "%s %s" % (form.code, form.name)
+            else:
+                form.display_name = form.name or form.code or ""
 
     _sql_constraints = [
         ("code_uniq", "unique(code)", "รหัสแบบฟอร์มซ้ำ"),

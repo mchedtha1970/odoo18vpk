@@ -5,6 +5,7 @@ HOSPITAL_ITEM_TYPES = [
     ("medicine", "ยา"),
     ("medical_supply", "เวชภัณฑ์ทางการแพทย์"),
     ("material", "วัสดุ"),
+    ("scientific", "วัสดุวิทยาศาสตร์"),
     ("equipment", "ครุภัณฑ์"),
 ]
 
@@ -26,6 +27,8 @@ class ProductTemplate(models.Model):
             self.hospital_item_type = "medicine"
         elif "เวชภัณฑ์มิใช่ยา" in category_name or "วัสดุการแพทย์" in category_name:
             self.hospital_item_type = "medical_supply"
+        elif "วัสดุวิทยาศาสตร์" in category_name:
+            self.hospital_item_type = "scientific"
         elif "ครุภัณฑ์" in category_name:
             self.hospital_item_type = "equipment"
         elif self.categ_id:

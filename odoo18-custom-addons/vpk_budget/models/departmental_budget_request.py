@@ -1,5 +1,8 @@
+import base64
+import io
+
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 
 from .budget_budget import TH_MONTHS
 
@@ -297,9 +300,12 @@ class DepartmentalBudgetRequest(models.Model):
             "construction": {"label": "สิ่งก่อสร้าง", "amount": 0.0, "color": "#d9783c"},
             "project": {"label": "โครงการ", "amount": 0.0, "color": "#8a6a45"},
         }
+        for vals in category_totals.values():
+            vals["allocated"] = 0.0
         department_totals = {}
         for line in lines:
             amount = line.total_amount or 0.0
+            allocated = line.allocated_budget_amount or 0.0
             section = line.section_key
             category_key = section
             if section == "asset":
@@ -315,6 +321,7 @@ class DepartmentalBudgetRequest(models.Model):
                 )
             if category_key in category_totals:
                 category_totals[category_key]["amount"] += amount
+                category_totals[category_key]["allocated"] += allocated
 
             department = line.request_id.analytic_account_id
             if department:
@@ -346,25 +353,26 @@ class DepartmentalBudgetRequest(models.Model):
             reverse=True,
         )[:8]
 
-        period_start, _period_end = self.env["budget.budget"]._overview_period(
-            fiscal_year, self.env["budget.budget"]
-        )
-        month_labels = [
-            TH_MONTHS[(period_start.month - 1 + index) % 12] for index in range(12)
-        ]
-        monthly_amounts = [0.0] * 12
-        month_index = self.env["budget.budget"]._month_index
-        for request in active_requests:
-            index = month_index(request.request_date, period_start)
-            if index is not None:
-                monthly_amounts[index] += request.total_amount or 0.0
-        cumulative = []
-        running = 0.0
-        max_value = 0.0
-        for index, amount in enumerate(monthly_amounts):
-            running += amount
-            max_value = max(max_value, running)
-            cumulative.append({"label": month_labels[index], "amount": running})
+        gap_rows = []
+        for key, vals in category_totals.items():
+            if not vals["amount"] and not vals["allocated"]:
+                continue
+            requested = vals["amount"]
+            allocated = vals["allocated"]
+            gap_rows.append(
+                {
+                    "key": key,
+                    "label": vals["label"],
+                    "color": vals["color"],
+                    "requested": requested,
+                    "allocated": allocated,
+                    "gap": max(requested - allocated, 0.0),
+                    "percent": round(allocated / requested * 100) if requested else 0,
+                }
+            )
+        gap_rows.sort(key=lambda row: row["requested"], reverse=True)
+        gap_requested = sum(row["requested"] for row in gap_rows)
+        gap_allocated = sum(row["allocated"] for row in gap_rows)
 
         recent_requests = []
         for request in requests.sorted(lambda req: (req.request_date or fields.Date.today(), req.id), reverse=True)[:6]:
@@ -415,9 +423,13 @@ class DepartmentalBudgetRequest(models.Model):
             "category_breakdown": category_breakdown,
             "department_rows": department_rows,
             "recent_requests": recent_requests,
-            "trend": {
-                "points": cumulative,
-                "max": max_value or 1.0,
+            "allocation_gap": {
+                "rows": gap_rows,
+                "requested": gap_requested,
+                "allocated": gap_allocated,
+                "gap": max(gap_requested - gap_allocated, 0.0),
+                "percent": round(gap_allocated / gap_requested * 100) if gap_requested else 0,
+                "max": max([row["requested"] for row in gap_rows] + [row["allocated"] for row in gap_rows] + [1.0]),
             },
         }
 
@@ -876,6 +888,29 @@ class DepartmentalBudgetRequest(models.Model):
             },
         }
 
+    def action_open_material_allocation_wizard(self):
+        self.ensure_one()
+        target = self.env.context.get("allocation_target")
+        if target not in ("material", "asset"):
+            target = "asset" if self.show_asset_lines else "material"
+        if target == "asset" and not self.asset_line_ids:
+            raise UserError(_("ยังไม่มีรายการครุภัณฑ์"))
+        if target == "material" and not self.material_detail_ids:
+            raise UserError(_("ยังไม่มีรายการสินค้า"))
+        if self.state != "draft" and not self.can_edit_allocation:
+            raise ValidationError(_("ไม่สามารถระบุยอดจัดสรรในสถานะปัจจุบันได้"))
+        return {
+            "name": _("จัดสรรงบประมาณ"),
+            "type": "ir.actions.act_window",
+            "res_model": "vpk.budget.material.allocation.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_request_id": self.id,
+                "default_target": target,
+            },
+        }
+
     def action_copy_material_request_to_allocation(self):
         """Set allocated qty/amount equal to requested qty/amount on detail lines."""
         self.ensure_one()
@@ -1160,6 +1195,270 @@ class DepartmentalBudgetRequest(models.Model):
             "vpk_budget.action_report_departmental_budget_material"
         ).report_action(self)
 
+    def action_export_material_detail_excel(self):
+        self.ensure_one()
+        if not self.material_detail_ids:
+            raise UserError(_("ไม่มีรายการวัสดุสำหรับส่งออก"))
+        content = self._material_detail_xlsx()
+        filename = "คำขอตั้งงบวัสดุ-%s.xlsx" % (self.name or self.id).replace("/", "-")
+        attachment = self.env["ir.attachment"].create(
+            {
+                "name": filename,
+                "type": "binary",
+                "datas": base64.b64encode(content),
+                "mimetype": (
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ),
+                "res_model": self._name,
+                "res_id": self.id,
+            }
+        )
+        return {
+            "type": "ir.actions.act_url",
+            "url": "/web/content/%s?download=true" % attachment.id,
+            "target": "self",
+        }
+
+    def _material_detail_xlsx(self):
+        try:
+            import xlsxwriter
+        except ImportError as error:
+            raise UserError(
+                _("ไม่พบไลบรารี xlsxwriter กรุณาติดตั้งแพ็กเกจ python xlsxwriter")
+            ) from error
+
+        self.ensure_one()
+        years = self.env[
+            "departmental.budget.request.material.detail"
+        ]._get_usage_qty_year_labels(self.fiscal_year)
+        qty_fmt = "#,##0.00"
+        amount_fmt = "#,##0.00"
+
+        columns = [
+            ("ลำดับ", 8, None),
+            ("หมวดงบประมาณ", 30, None),
+            ("รหัสสินค้า", 14, "@"),
+            ("รายการ", 48, None),
+            ("หน่วยนับ", 12, None),
+            ("ปริมาณใช้ปี %s" % years["y3"], 14, qty_fmt),
+            ("ปริมาณใช้ปี %s" % years["y2"], 14, qty_fmt),
+            ("ปริมาณใช้ปี %s" % years["y1"], 14, qty_fmt),
+            ("ปริมาณคงเหลือยกมา", 14, qty_fmt),
+            ("มูลค่าคงเหลือยกมา", 16, amount_fmt),
+            ("ปริมาณที่ขอ", 14, qty_fmt),
+            ("ราคาต่อหน่วย", 14, amount_fmt),
+            ("มูลค่าที่ของบ", 18, amount_fmt),
+            ("ปริมาณที่จัดสรร", 14, qty_fmt),
+            ("มูลค่าที่จัดสรร", 18, amount_fmt),
+            ("หมายเหตุ", 28, None),
+        ]
+
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {"in_memory": True})
+        title_fmt = workbook.add_format(
+            {
+                "font_name": "TH Sarabun New",
+                "font_size": 16,
+                "bold": True,
+                "align": "center",
+                "valign": "vcenter",
+            }
+        )
+        type_fmt = workbook.add_format(
+            {
+                "font_name": "TH Sarabun New",
+                "font_size": 15,
+                "bold": True,
+                "align": "left",
+                "valign": "vcenter",
+            }
+        )
+        header_fmt = workbook.add_format(
+            {
+                "font_name": "TH Sarabun New",
+                "font_size": 14,
+                "bold": True,
+                "font_color": "white",
+                "bg_color": "#0B6848",
+                "align": "center",
+                "valign": "vcenter",
+                "text_wrap": True,
+                "border": 1,
+            }
+        )
+        allocated_header_fmt = workbook.add_format(
+            {
+                "font_name": "TH Sarabun New",
+                "font_size": 14,
+                "bold": True,
+                "font_color": "white",
+                "bg_color": "#7A1F2B",
+                "align": "center",
+                "valign": "vcenter",
+                "text_wrap": True,
+                "border": 1,
+            }
+        )
+        text_fmt = workbook.add_format(
+            {"font_name": "TH Sarabun New", "font_size": 14, "border": 1}
+        )
+        code_fmt = workbook.add_format(
+            {
+                "font_name": "TH Sarabun New",
+                "font_size": 14,
+                "border": 1,
+                "num_format": "@",
+            }
+        )
+        qty_format = workbook.add_format(
+            {
+                "font_name": "TH Sarabun New",
+                "font_size": 14,
+                "border": 1,
+                "num_format": qty_fmt,
+            }
+        )
+        amount_format = workbook.add_format(
+            {
+                "font_name": "TH Sarabun New",
+                "font_size": 14,
+                "border": 1,
+                "num_format": amount_fmt,
+            }
+        )
+        label_fmt = workbook.add_format(
+            {"font_name": "TH Sarabun New", "font_size": 14, "bold": True}
+        )
+        value_fmt = workbook.add_format(
+            {"font_name": "TH Sarabun New", "font_size": 14}
+        )
+        sum_fmt = workbook.add_format(
+            {
+                "font_name": "TH Sarabun New",
+                "font_size": 14,
+                "num_format": amount_fmt,
+                "align": "right",
+            }
+        )
+        column_formats = []
+        for _title, _width, number_format in columns:
+            if number_format == "@":
+                column_formats.append(code_fmt)
+            elif number_format == qty_fmt:
+                column_formats.append(qty_format)
+            elif number_format == amount_fmt:
+                column_formats.append(amount_format)
+            else:
+                column_formats.append(text_fmt)
+
+        sheet = workbook.add_worksheet("รายการวัสดุ")
+        last_col = len(columns) - 1
+        for col, (_title, width, _fmt) in enumerate(columns):
+            sheet.set_column(col, col, width)
+
+        fy = self._get_material_print_fiscal_years()
+        fund_name = self.fund_source_id.name or "เงินบำรุง"
+        titles = [
+            "สรุปแผนการใช้%s หมวดค่าวัสดุ ปีงบประมาณ %s (%s) และ"
+            % (fund_name, fy["prior_year"], fy["prior_period"]),
+            "คำขอตั้งปรับแผน%s หมวดค่าวัสดุ ประจำปีงบประมาณ %s"
+            % (fund_name, fy["current_year"]),
+        ]
+        for index, text in enumerate(titles):
+            sheet.merge_range(index, 0, index, last_col, text, title_fmt)
+            sheet.set_row(index, 24)
+        sheet.merge_range(
+            2,
+            0,
+            2,
+            last_col,
+            "ประเภทวัสดุ  %s" % self._get_material_print_type_label(),
+            type_fmt,
+        )
+        sheet.set_row(2, 22)
+
+        header_row = 3
+        for col, (title, _width, _fmt) in enumerate(columns):
+            fmt = allocated_header_fmt if title in ("ปริมาณที่จัดสรร", "มูลค่าที่จัดสรร") else header_fmt
+            sheet.write(header_row, col, title, fmt)
+        sheet.set_row(header_row, 42)
+
+        formula_columns = {12, 14}
+        for index, detail in enumerate(self.material_detail_ids, start=1):
+            row = header_row + index
+            excel_row = row + 1
+            product = detail.product_id
+            values = [
+                index,
+                detail.budget_post_id.display_name or "",
+                product.default_code or "",
+                product.name or detail.name or "",
+                (detail.product_uom_id or product.uom_id).name or "",
+                detail.usage_qty_y3 or 0.0,
+                detail.usage_qty_y2 or 0.0,
+                detail.usage_qty_y1 or 0.0,
+                detail.opening_qty or 0.0,
+                detail.opening_amount or 0.0,
+                detail.quantity or 0.0,
+                detail.unit_price or 0.0,
+                "=K%s*L%s" % (excel_row, excel_row),
+                detail.allocated_qty or 0.0,
+                "=N%s*L%s" % (excel_row, excel_row),
+                detail.note or "",
+            ]
+            for col, value in enumerate(values):
+                fmt = column_formats[col]
+                if col in formula_columns:
+                    sheet.write_formula(row, col, value, fmt)
+                elif col in (0, 5, 6, 7, 8, 9, 10, 11, 13):
+                    sheet.write_number(row, col, value or 0.0, fmt)
+                else:
+                    sheet.write_string(row, col, value or "", fmt)
+        last_excel_row = header_row + len(self.material_detail_ids) + 1
+        sheet.freeze_panes(4, 0)
+        sheet.autofilter(header_row, 0, last_excel_row - 1, last_col)
+        sheet.set_landscape()
+        sheet.set_paper(9)
+        sheet.center_horizontally()
+        sheet.repeat_rows(0, header_row)
+
+        summary = workbook.add_worksheet("สรุป")
+        summary.set_column(0, 0, 28)
+        summary.set_column(1, 1, 48)
+        first_data_row = header_row + 2
+        info = [
+            ("เลขที่คำขอ", self.name or "", value_fmt),
+            ("หน่วยงาน", self.analytic_account_id.display_name or "", value_fmt),
+            ("ปีงบประมาณ", years["current"] or self.fiscal_year or "", value_fmt),
+            (
+                "สถานะ",
+                dict(self._fields["state"].selection).get(self.state, self.state),
+                value_fmt,
+            ),
+            ("จำนวนรายการ", len(self.material_detail_ids), value_fmt),
+            (
+                "มูลค่าที่ของบรวม",
+                "=SUM('รายการวัสดุ'!M%s:M%s)" % (first_data_row, last_excel_row),
+                sum_fmt,
+            ),
+            (
+                "มูลค่าที่จัดสรรรวม",
+                "=SUM('รายการวัสดุ'!O%s:O%s)" % (first_data_row, last_excel_row),
+                sum_fmt,
+            ),
+        ]
+        for index, (label, value, fmt) in enumerate(info):
+            summary.write(index, 0, label, label_fmt)
+            if isinstance(value, str) and value.startswith("="):
+                summary.write_formula(index, 1, value, fmt)
+            elif isinstance(value, (int, float)):
+                summary.write_number(index, 1, value, fmt)
+            else:
+                summary.write_string(index, 1, value or "", fmt)
+
+        workbook.close()
+        return output.getvalue()
+
     def action_apply_usage_history(self):
         self.line_ids.action_apply_usage_history_to_material_line()
         return True
@@ -1409,6 +1708,49 @@ class DepartmentalBudgetRequest(models.Model):
     def _user_is_budget_unit(self):
         return self.env.user.has_group("vpk_budget.group_budget_request_budget_unit")
 
+    @api.model
+    def _user_sees_all_budget_requests(self):
+        """Budget Unit and Manager see every department and every form type."""
+        user = self.env.user
+        return user.has_group(
+            "vpk_budget.group_vpk_budget_manager"
+        ) or user.has_group("vpk_budget.group_budget_request_budget_unit")
+
+    @api.model
+    def action_open_budget_requests(self, form_type_id=False):
+        """Open budget requests. Highest budget roles are not limited to their own."""
+        domain = []
+        context = {}
+        name = "ทั้งหมด"
+        if form_type_id:
+            form_type = self.env["vpk.budget.request.form.type"].browse(form_type_id)
+            domain.append(("form_type_id", "=", form_type.id))
+            context["default_form_type_id"] = form_type.id
+            section = form_type._get_primary_section()
+            if section:
+                context["vpk_budget_form_section"] = section
+            name = form_type._get_request_menu_name() or name
+        if not self._user_sees_all_budget_requests():
+            domain.append(("requester_id", "=", self.env.uid))
+            context["search_default_my_request"] = 1
+
+        list_view = self.env.ref(
+            "vpk_budget.view_departmental_budget_request_list_by_form_type",
+            raise_if_not_found=False,
+        ) or self.env.ref("vpk_budget.view_departmental_budget_request_list")
+        form_view = self.env.ref("vpk_budget.view_departmental_budget_request_form")
+        search_view = self.env.ref("vpk_budget.view_departmental_budget_request_search")
+        return {
+            "type": "ir.actions.act_window",
+            "name": name,
+            "res_model": "departmental.budget.request",
+            "view_mode": "list,form",
+            "views": [(list_view.id, "list"), (form_view.id, "form")],
+            "search_view_id": search_view.id,
+            "domain": domain,
+            "context": context,
+        }
+
     def _check_header_write_allowed(self, vals):
         if not self._budget_request_lock_enabled():
             return
@@ -1473,19 +1815,67 @@ class DepartmentalBudgetRequest(models.Model):
             if extra:
                 raise ValidationError(_("หน่วยงบประมาณสามารถระบุยอดจัดสรรได้เท่านั้น"))
 
+    def _fiscal_year_from_annual_budget(self, budget):
+        """ปีงบประมาณ พ.ศ. จากช่วงวันที่ของแผนงบประมาณ."""
+        if not budget or not budget.date_from or not budget.date_to:
+            return False
+        be_year = self._request_fiscal_year_be({"annual_budget_id": budget.id})
+        return str(be_year) if be_year else False
+
+    @api.onchange("annual_budget_id")
+    def _onchange_annual_budget_id(self):
+        year = self._fiscal_year_from_annual_budget(self.annual_budget_id)
+        if year:
+            self.fiscal_year = year
+
+    @api.model
+    def _request_fiscal_year_be(self, vals):
+        budget = self.env["budget.budget"].browse(vals.get("annual_budget_id")).exists()
+        if budget and budget.date_from and budget.date_to:
+            middle = budget.date_from + (budget.date_to - budget.date_from) / 2
+            ce_year = middle.year + 1 if middle.month >= 10 else middle.year
+            return ce_year + 543
+        year = self._fiscal_year_to_be(vals.get("fiscal_year") or self.default_get(["fiscal_year"]).get("fiscal_year"))
+        return year or fields.Date.context_today(self).year + 543
+
+    @api.model
+    def _next_request_name(self, vals):
+        be_year = self._request_fiscal_year_be(vals)
+        code = "departmental.budget.request.%s" % be_year
+        sequence_model = self.env["ir.sequence"].sudo()
+        sequence = sequence_model.search([("code", "=", code)], limit=1)
+        if not sequence:
+            sequence = sequence_model.create({
+                "name": "คำของบประมาณ ปีงบประมาณ %s" % be_year,
+                "code": code,
+                "prefix": "DBR/%s/" % be_year,
+                "padding": 4,
+                "implementation": "no_gap",
+                "company_id": False,
+            })
+        return sequence.next_by_id()
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             self._normalize_line_type_commands(vals)
+            if vals.get("annual_budget_id") and not vals.get("fiscal_year"):
+                budget = self.env["budget.budget"].browse(vals["annual_budget_id"])
+                year = self._fiscal_year_from_annual_budget(budget)
+                if year:
+                    vals["fiscal_year"] = year
             if vals.get("name", _("New")) == _("New"):
-                vals["name"] = self.env["ir.sequence"].next_by_code(
-                    "departmental.budget.request"
-                ) or _("New")
+                vals["name"] = self._next_request_name(vals)
         records = super().create(vals_list)
         records._sync_header_totals()
         return records
 
     def write(self, vals):
+        if vals.get("annual_budget_id") and "fiscal_year" not in vals:
+            budget = self.env["budget.budget"].browse(vals["annual_budget_id"])
+            year = self._fiscal_year_from_annual_budget(budget)
+            if year:
+                vals = dict(vals, fiscal_year=year)
         self._normalize_line_type_commands(vals)
         self._check_header_write_allowed(vals)
         res = super().write(vals)
@@ -1953,6 +2343,40 @@ class DepartmentalBudgetRequestLine(models.Model):
                 ]
             )
 
+    def _budget_post_from_asset_category(self, categ):
+        """หมวดงบครุภัณฑ์ที่ชื่อตรงกับกลุ่มครุภัณฑ์ เช่น ครุภัณฑ์ไฟฟ้าและวิทยุ."""
+        self.ensure_one()
+        Post = self.env["account.budget.post"]
+        if not categ or not categ.name:
+            return Post.browse()
+        domain = [("section_key", "=", "asset")]
+        if self.company_id:
+            domain.append(("company_id", "in", [False, self.company_id.id]))
+        posts = Post.search(domain)
+        name = categ.name.strip()
+        exact = posts.filtered(
+            lambda post: (post.name or "").split(" - ")[-1].strip() == name
+        )
+        if len(exact) == 1:
+            return exact
+        contains = posts.filtered(lambda post: name in (post.name or ""))
+        if len(contains) == 1:
+            return contains
+        if "การแพทย์" in name:
+            medical = posts.filtered(
+                lambda post: "การแพทย์" in (post.name or "")
+                or "วิทยาศาสตร์" in (post.name or "")
+            )
+            if len(medical) == 1:
+                return medical
+        if "ก่อสร้าง" in name:
+            construction = posts.filtered(
+                lambda post: "ครุภัณฑ์ก่อสร้าง" in (post.name or "")
+            )
+            if len(construction) == 1:
+                return construction
+        return Post.browse()
+
     def _asset_categories_for_budget_post(self):
         """Match กลุ่มครุภัณฑ์ from a budget post name such as 'หมวดครุภัณฑ์ - ครุภัณฑ์สำนักงาน'."""
         self.ensure_one()
@@ -2026,20 +2450,41 @@ class DepartmentalBudgetRequestLine(models.Model):
         ):
             self.asset_product_id = False
             self.item_name = False
+        if self._is_asset_line() and self.asset_categ_id and not self.budget_post_id:
+            post = self._budget_post_from_asset_category(self.asset_categ_id)
+            if post:
+                self.budget_post_id = post
+
+    @api.model
+    def _price_from_asset_product(self, product):
+        """Cost when it exists, otherwise the product sale price."""
+        if not product:
+            return 0.0
+        sale_price = getattr(product, "lst_price", 0.0) or product.list_price or 0.0
+        return product.standard_price or sale_price
 
     @api.onchange("asset_product_id")
     def _onchange_asset_product_id(self):
         if not self.asset_product_id:
             return
-        self.item_name = self.asset_product_id.display_name
+        # รายละเอียดเป็นข้อความที่หน่วยงานกรอกเอง ไม่ถูกทับเมื่อเปลี่ยนรหัสรายการ
+        if not (self.item_name or "").strip():
+            self.item_name = self.asset_product_id.display_name
+        # ราคาที่กรอกหรือนำเข้าจากแบบฟอร์มไว้แล้ว ไม่ถูกทับด้วยราคามาตรฐานของรหัสสินค้า
         if not self.unit_price:
-            self.unit_price = self.asset_product_id.standard_price or 0.0
-        if self.asset_product_id.categ_id and not self.asset_categ_id:
+            self.unit_price = self._price_from_asset_product(self.asset_product_id)
+        self._onchange_asset_request_quantities()
+        if self.asset_product_id.categ_id:
             matched = self.env["vpk.budget.asset.category"]._find_for_product_category(
                 self.asset_product_id.categ_id
             )
-            if matched:
+            if matched and not self.asset_categ_id:
                 self.asset_categ_id = matched
+            categ = matched or self.asset_categ_id
+            if categ and not self.budget_post_id:
+                post = self._budget_post_from_asset_category(categ)
+                if post:
+                    self.budget_post_id = post
 
     @api.depends("budget_group_id")
     def _compute_allowed_material_sub_type_ids(self):
@@ -2227,6 +2672,9 @@ class DepartmentalBudgetRequestLine(models.Model):
                     + (vals.get("qty_addition") or 0.0)
                 )
                 vals["requested_quantity"] = asset_qty
+                if vals.get("asset_product_id") and not vals.get("unit_price"):
+                    product = self.env["product.template"].browse(vals["asset_product_id"])
+                    vals["unit_price"] = self._price_from_asset_product(product)
         lines = super().create(vals_list)
         lines.mapped("request_id")._sync_header_totals()
         return lines

@@ -1,8 +1,8 @@
 {
     "name": "VPK Product",
-    "version": "18.0.1.3.1",
+    "version": "18.0.1.4.0",
     "category": "Inventory",
-    "summary": "แถบหมวดหมู่สินค้า, เปลี่ยนหน่วยวัด, ชื่อซื้อ e-GP, และปรับป้ายคงเหลือ",
+    "summary": "ข้อมูลยา/เวชภัณฑ์ตาม TOR, แถบหมวดหมู่, เปลี่ยนหน่วยวัด, ชื่อซื้อ e-GP",
     "author": "VPK",
     "license": "LGPL-3",
     "depends": [

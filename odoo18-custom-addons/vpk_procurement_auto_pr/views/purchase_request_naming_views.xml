@@ -16,6 +16,7 @@
                 <attribute name="placeholder">บันทึกแล้วระบบจะออกเลขให้อัตโนมัติ</attribute>
             </xpath>
             <xpath expr="//field[@name='picking_type_id']" position="attributes">
+                <attribute name="string">รับสินค้าเข้าคลัง</attribute>
                 <attribute name="domain">[('code', '=', 'incoming'), '|', ('warehouse_id', '=', False), ('warehouse_id.company_id', '=', company_id)]</attribute>
             </xpath>
             <xpath expr="//field[@name='origin']" position="after">

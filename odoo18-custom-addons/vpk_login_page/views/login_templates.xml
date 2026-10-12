@@ -90,6 +90,23 @@
         <xpath expr="//form[@role='form']" position="attributes">
             <attribute name="t-attf-class">oe_login_form vpk-login-form</attribute>
         </xpath>
+        <xpath expr="//div[hasclass('field-login')]" position="before">
+            <t t-set="vpk_test_users" t-value="request.env['res.users'].sudo()._vpk_login_test_users()"/>
+            <div class="mb-3 vpk-login-test-users" t-if="vpk_test_users">
+                <label for="vpk_test_user" class="form-label vpk-login-label">ผู้ใช้ทดสอบ (ตามคู่มือ)</label>
+                <select id="vpk_test_user" class="form-select vpk-login-input vpk-login-test-select">
+                    <option value="">เลือกบทบาทเพื่อเข้าสู่ระบบ</option>
+                    <t t-foreach="vpk_test_users" t-as="test_user">
+                        <option t-att-value="test_user['login']"
+                                t-att-data-password="test_user['password'] or None"
+                                t-att-title="test_user['desc']">
+                            <t t-out="test_user['role']"/> · <t t-out="test_user['login']"/>
+                        </option>
+                    </t>
+                </select>
+                <small class="vpk-login-test-hint">เลือกแล้วกดเข้าสู่ระบบได้ทันที</small>
+            </div>
+        </xpath>
         <xpath expr="//div[hasclass('field-login')]/label[@for='login']" position="replace">
             <label for="login" class="form-label vpk-login-label">ชื่อผู้ใช้ / Username</label>
         </xpath>

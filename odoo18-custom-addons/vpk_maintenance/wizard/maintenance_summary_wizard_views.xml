@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_maintenance_request_summary_wizard" model="ir.ui.view">
+        <field name="name">maintenance.request.summary.wizard.form</field>
+        <field name="model">maintenance.request.summary.wizard</field>
+        <field name="arch" type="xml">
+            <form string="สรุปใบงานช่างซ่อมบำรุง">
+                <group>
+                    <field name="date_from"/>
+                    <field name="date_to"/>
+                    <field name="team_id" options="{'no_create': True}" placeholder="ว่างไว้ = ทุกทีม"/>
+                </group>
+                <footer>
+                    <button name="action_print" type="object" string="พิมพ์" class="btn-primary"/>
+                    <button string="ยกเลิก" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_maintenance_request_summary_wizard" model="ir.actions.act_window">
+        <field name="name">สรุปใบงานช่างซ่อมบำรุง</field>
+        <field name="res_model">maintenance.request.summary.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_maintenance_request_summary"
+        name="สรุปใบงานช่างซ่อมบำรุง"
+        parent="maintenance.menu_maintenance_title"
+        action="action_maintenance_request_summary_wizard"
+        sequence="15"
+        groups="maintenance.group_equipment_manager"/>
+</odoo>

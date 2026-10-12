@@ -30,7 +30,12 @@
             <t t-set-slot="footer">
                 <div class="o_vpk_sign_pdf_footer d-flex flex-wrap align-items-center gap-2 w-100">
                     <span class="text-muted me-auto">
-                        <t t-if="props.canSign">
+                        <t t-if="state.secretaryScreen">
+                            <t t-if="!state.reachedEnd">เลื่อนเอกสารจนถึงหน้าสุดท้าย จากนั้นกดตรวจสอบแล้ว</t>
+                            <t t-elif="!state.checked">ถึงหน้าสุดท้ายแล้ว กดตรวจสอบแล้ว</t>
+                            <t t-else="">ตรวจสอบแล้ว กดส่งผู้อำนวยการ</t>
+                        </t>
+                        <t t-elif="props.canSign">
                             <t t-if="!state.reachedEnd">เลื่อนเอกสารจนถึงหน้าสุดท้าย จากนั้นกดลงนาม</t>
                             <t t-else="">ตรวจท้ายเอกสารแล้วกดลงนาม</t>
                         </t>
@@ -38,16 +43,35 @@
                     <button class="btn btn-secondary" t-on-click="onClose" t-att-disabled="state.busy">
                         ปิด
                     </button>
-                    <button t-if="props.canSign" class="btn btn-danger" t-on-click="onReject" t-att-disabled="state.busy">
-                        ไม่อนุมัติ
-                    </button>
-                    <button t-if="props.canSign"
-                            class="btn btn-success"
-                            t-on-click="onSign"
-                            t-att-disabled="!signEnabled"
-                            t-att-title="state.reachedEnd ? '' : 'เลื่อนเอกสารจนถึงหน้าสุดท้ายก่อนลงนาม'">
-                        <i class="fa fa-pencil me-1"/>ลงนาม
-                    </button>
+                    <t t-if="state.secretaryScreen">
+                        <button class="btn btn-danger" t-on-click="onReject" t-att-disabled="state.busy">
+                            ตีกลับ
+                        </button>
+                        <button t-if="!state.checked"
+                                class="btn btn-success"
+                                t-on-click="onMarkChecked"
+                                t-att-disabled="!state.reachedEnd || state.busy"
+                                t-att-title="state.reachedEnd ? '' : 'เลื่อนเอกสารจนถึงหน้าสุดท้ายก่อนตรวจสอบ'">
+                            <i class="fa fa-check me-1"/>ตรวจสอบแล้ว
+                        </button>
+                        <span t-else="" class="badge text-bg-success fs-6">ตรวจสอบแล้ว</span>
+                        <button class="btn btn-primary"
+                                t-on-click="onSendDirector"
+                                t-att-disabled="!state.checked || state.busy">
+                            <i class="fa fa-share me-1"/>ส่งผู้อำนวยการ
+                        </button>
+                    </t>
+                    <t t-elif="props.canSign">
+                        <button class="btn btn-danger" t-on-click="onReject" t-att-disabled="state.busy">
+                            ไม่อนุมัติ
+                        </button>
+                        <button class="btn btn-success"
+                                t-on-click="onSign"
+                                t-att-disabled="!signEnabled"
+                                t-att-title="state.reachedEnd ? '' : 'เลื่อนเอกสารจนถึงหน้าสุดท้ายก่อนลงนาม'">
+                            <i class="fa fa-pencil me-1"/>ลงนาม
+                        </button>
+                    </t>
                 </div>
             </t>
         </Dialog>

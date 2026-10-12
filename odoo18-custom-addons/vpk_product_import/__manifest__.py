@@ -1,6 +1,6 @@
 {
     "name": "VPK Product Import",
-    "version": "18.0.1.3.0",
+    "version": "18.0.1.4.2",
     "category": "Inventory",
     "summary": "นำเข้า master สินค้าจาก Excel สำหรับ data migration",
     "author": "VPK",

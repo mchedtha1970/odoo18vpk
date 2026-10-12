@@ -31,6 +31,7 @@ class PurchaseRequest(models.Model):
     )
     picking_type_id = fields.Many2one(
         comodel_name="stock.picking.type",
+        string="รับสินค้าเข้าคลัง",
         domain=(
             "[('code', '=', 'incoming'),"
             " '|', ('warehouse_id', '=', False),"

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_official_document_type_list" model="ir.ui.view">
+        <field name="name">vpk.official.document.type.list</field>
+        <field name="model">vpk.official.document.type</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="create_from_purchase_request"/>
+                <field name="is_system" optional="hide"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_official_document_type_form" model="ir.ui.view">
+        <field name="name">vpk.official.document.type.form</field>
+        <field name="model">vpk.official.document.type</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="ปิดใช้งาน" bg_color="text-bg-danger" invisible="active"/>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code" readonly="is_system"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                            <field name="create_from_purchase_request"/>
+                            <field name="is_system" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note" placeholder="ใช้กับแบบฟอร์ม Word ที่อัปโหลดในเมนูแบบฟอร์มเอกสาร"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_official_document_type" model="ir.actions.act_window">
+        <field name="name">ประเภทเอกสาร</field>
+        <field name="res_model">vpk.official.document.type</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

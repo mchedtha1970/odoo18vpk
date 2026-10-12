@@ -126,6 +126,7 @@ class HisBatch(models.Model):
     invoice_count = fields.Integer(compute="_compute_doc_counts")
     payment_count = fields.Integer(compute="_compute_doc_counts")
     picking_count = fields.Integer(compute="_compute_doc_counts")
+    has_open_transfer = fields.Boolean(compute="_compute_has_open_transfer")
     line_error_count = fields.Integer(compute="_compute_line_error_count")
 
     _sql_constraints = [
@@ -156,6 +157,13 @@ class HisBatch(models.Model):
             rec.payment_count = len(rec.payment_ids)
             rec.picking_count = len(rec.picking_ids)
             rec.deposit_move_count = len(rec.deposit_move_ids)
+
+    @api.depends("picking_ids.state")
+    def _compute_has_open_transfer(self):
+        for rec in self:
+            rec.has_open_transfer = any(
+                picking.state != "cancel" for picking in rec.picking_ids
+            )
 
     @api.depends(
         "sale_line_ids.line_state",
@@ -333,6 +341,51 @@ class HisBatch(models.Model):
         self.error_message = "\n".join(errors) if errors else False
         self.state = "error" if errors else "ready"
         return self.state == "ready"
+
+    def action_create_transfer(self):
+        """Create the warehouse transfer in Ready and leave pick/pack to Inventory."""
+        self.ensure_one()
+        if self.batch_type != "stock_requisition":
+            raise UserError(_("สร้างใบโอนได้เฉพาะคำขอโอนจาก HIS"))
+        self._check_post_access()
+        if self.state != "ready":
+            if self.state in ("draft", "error"):
+                self._validate_batch()
+            if self.state != "ready":
+                raise UserError(
+                    _("Batch %s is not ready to post: %s")
+                    % (self.name, self.error_message or self.state)
+                )
+        if not self.has_open_transfer:
+            self.env["vpk.his.posting.service"]._post_stock_requisition(self)
+            self.message_post(
+                body=_(
+                    "สร้างใบโอนแล้ว สถานะ Ready รอหยิบและแพ็คตามขั้นตอนของคลัง"
+                )
+            )
+        return self.action_open_transfers()
+
+    def action_open_transfers(self):
+        self.ensure_one()
+        pickings = self.picking_ids.filtered(lambda picking: picking.state != "cancel")
+        if not pickings:
+            pickings = self.picking_ids
+        if len(pickings) == 1:
+            return {
+                "type": "ir.actions.act_window",
+                "name": _("ใบโอน"),
+                "res_model": "stock.picking",
+                "res_id": pickings.id,
+                "view_mode": "form",
+                "target": "current",
+            }
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("ใบโอน"),
+            "res_model": "stock.picking",
+            "view_mode": "list,form",
+            "domain": [("id", "in", pickings.ids)],
+        }
 
     def action_post(self):
         for batch in self:

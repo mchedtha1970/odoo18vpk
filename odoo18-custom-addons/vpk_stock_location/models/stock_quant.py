@@ -3,6 +3,7 @@ from io import BytesIO
 
 from odoo import _, models
 from odoo.exceptions import UserError
+from odoo.fields import Command
 
 try:
     import xlsxwriter
@@ -61,6 +62,27 @@ class StockQuant(models.Model):
             "type": "ir.actions.act_url",
             "url": "/web/content/%s?download=true" % attachment.id,
             "target": "self",
+        }
+
+    def action_create_mobile_count_sheet(self):
+        """เปิดใบนับจากแถวที่เลือก ให้แอปมือถือสแกนแล้วเขียนจำนวนกลับมา"""
+        quants = self.filtered(lambda quant: quant.location_id.usage in ("internal", "transit"))
+        if not quants:
+            raise UserError(_(
+                "เลือกแถวที่ต้องการนับก่อน "
+                "กรองตำแหน่งหรือสินค้า แล้วเลือกแถว "
+                "ถ้ามีหลายหน้า ให้กดเลือกทั้งหมด"
+            ))
+        sheet = self.env["stock.quant.count.sheet"].create({
+            "line_ids": [Command.create({"quant_id": quant.id}) for quant in quants],
+        })
+        return {
+            "type": "ir.actions.act_window",
+            "name": sheet.name,
+            "res_model": "stock.quant.count.sheet",
+            "res_id": sheet.id,
+            "view_mode": "form",
+            "target": "current",
         }
 
     def action_open_count_sheet_import(self):

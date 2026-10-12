@@ -17,6 +17,7 @@
                 <field name="state"/>
                 <field name="requested_by"/>
                 <field name="department_id"/>
+                <field name="procurement_method_id"/>
                 <field name="date_start"/>
                 <field name="estimated_cost"/>
                 <field name="currency_id"/>
@@ -41,6 +42,10 @@
                                 <div t-if="record.department_id.value">
                                     <i class="fa fa-building-o me-1"/>
                                     <t t-esc="record.department_id.value"/>
+                                </div>
+                                <div t-if="record.procurement_method_id.value">
+                                    <i class="fa fa-balance-scale me-1"/>
+                                    วิธี <t t-esc="record.procurement_method_id.value"/>
                                 </div>
                                 <div t-if="record.requested_by.value">
                                     <i class="fa fa-user me-1"/>
@@ -105,6 +110,7 @@
             >
                 <field name="name"/>
                 <field name="department_id" optional="show"/>
+                <field name="procurement_method_id" string="วิธีการจัดซื้อจัดจ้าง" optional="show"/>
                 <field name="requested_by"/>
                 <field name="date_start" optional="hide"/>
                 <field name="sent_to_procurement_date"/>

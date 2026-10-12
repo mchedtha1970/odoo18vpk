@@ -47,31 +47,43 @@
                         <section class="o_vpk_budget_panel o_vpk_budget_trend_panel">
                             <div class="o_vpk_budget_panel_header">
                                 <div>
-                                    <h3>แนวโน้มคำของบสะสม</h3>
-                                    <span>ปีงบประมาณราชการ 1 ต.ค. – 30 ก.ย. · <t t-esc="trendUnit"/></span>
+                                    <h3>คำขอเทียบยอดจัดสรร</h3>
+                                    <span>แยกตามหมวดงบประมาณ · ส่วนต่างคือยอดที่ยังไม่ได้รับจัดสรร</span>
+                                </div>
+                                <div class="o_vpk_budget_gap_summary" t-if="gap.rows.length">
+                                    <strong><t t-esc="gap.percent"/>%</strong>
+                                    <span>จัดสรรแล้วจากยอดขอ</span>
                                 </div>
                             </div>
-                            <div class="o_vpk_budget_trend_chart">
-                                <div class="o_vpk_budget_trend_body">
-                                    <div class="o_vpk_budget_trend_y">
-                                        <t t-foreach="yTicks" t-as="tick" t-key="tick_index">
-                                            <span t-att-style="'top:' + tick.top"><t t-esc="tick.label"/></span>
-                                        </t>
-                                    </div>
-                                    <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-                                        <t t-foreach="yTicks" t-as="tick" t-key="'grid-' + tick_index">
-                                            <line x1="0" x2="100" t-att-y1="tick.y" t-att-y2="tick.y" class="o_vpk_budget_trend_grid"/>
-                                        </t>
-                                        <path t-att-d="trendAreaPath" class="o_vpk_budget_trend_area"/>
-                                        <polyline t-att-points="trendPolyline" class="o_vpk_budget_trend_line"/>
-                                    </svg>
+                            <t t-if="gap.rows.length">
+                                <div class="o_vpk_budget_gap_totals">
+                                    <div><span>ยอดขอ</span><b>฿<t t-esc="formatShortAmount(gap.requested)"/></b></div>
+                                    <div><span>จัดสรรแล้ว</span><b class="is-allocated">฿<t t-esc="formatShortAmount(gap.allocated)"/></b></div>
+                                    <div><span>ส่วนต่าง</span><b class="is-gap">฿<t t-esc="formatShortAmount(gap.gap)"/></b></div>
                                 </div>
-                                <div class="o_vpk_budget_trend_axis">
-                                    <t t-foreach="state.data.trend.points" t-as="point" t-key="point.label">
-                                        <span><t t-esc="point.label"/></span>
+                                <div class="o_vpk_budget_gap_list">
+                                    <t t-foreach="gap.rows" t-as="row" t-key="row.key">
+                                        <div class="o_vpk_budget_gap_row">
+                                            <div class="o_vpk_budget_gap_label">
+                                                <strong><t t-esc="row.label"/></strong>
+                                                <small>จัดสรร <t t-esc="row.percent"/>%</small>
+                                            </div>
+                                            <div class="o_vpk_budget_gap_bars">
+                                                <div class="o_vpk_budget_gap_track">
+                                                    <span class="is-requested" t-att-style="gapWidth(row.requested)"/>
+                                                    <span class="is-allocated" t-att-style="gapWidth(row.allocated) + 'background:' + row.color + ';'"/>
+                                                </div>
+                                            </div>
+                                            <div class="o_vpk_budget_gap_values">
+                                                <b>฿<t t-esc="formatShortAmount(row.allocated)"/></b>
+                                                <small>จาก ฿<t t-esc="formatShortAmount(row.requested)"/></small>
+                                                <small class="is-gap" t-if="row.gap">ขาด ฿<t t-esc="formatShortAmount(row.gap)"/></small>
+                                            </div>
+                                        </div>
                                     </t>
                                 </div>
-                            </div>
+                            </t>
+                            <div t-else="" class="o_vpk_budget_gap_empty">ยังไม่มีคำของบในปีงบประมาณนี้</div>
                         </section>
 
                         <section class="o_vpk_budget_panel">

@@ -32,14 +32,28 @@ class PurchaseRequisitionEgpDocument(models.Model):
         return res
 
     def action_send_for_signature_inbox(self):
-        """ส่งเข้ากล่องอนุมัติแบบเดียวกับหนังสือราชการในใบขอซื้อ."""
+        """เปิดตัวเลือกส่งลงนาม หรือข้ามการอนุมัติเพื่อทดสอบ."""
         self.ensure_one()
         code = self.document_type_id.code
         if code == "winner_announcement":
-            return self.action_send_for_signature()
-        if code == "award_approval":
-            return self.action_request_award_approval()
-        raise UserError(_("เอกสารนี้ยังไม่มีขั้นตอนส่งเพื่อลงนาม"))
+            if self.signature_state == "signed":
+                raise UserError(_("เอกสารนี้ลงนามแล้ว"))
+            if self.signature_state == "waiting":
+                raise UserError(_("เอกสารถูกส่งลงนามแล้ว กำลังรอลงนาม"))
+            if not self.document_file:
+                self.action_generate_winner_document()
+            official = self._ensure_winner_official_document()
+        elif code == "award_approval":
+            if self.signature_state == "signed":
+                raise UserError(_("เอกสารนี้ลงนามแล้ว"))
+            if self.signature_state == "waiting":
+                raise UserError(_("เอกสารถูกส่งขออนุมัติแล้ว"))
+            if not self.document_file:
+                raise UserError(_("ยังไม่มีไฟล์รายงาน กรุณาพิมพ์รายงานก่อนขออนุมัติ"))
+            official = self._ensure_award_official_document()
+        else:
+            raise UserError(_("เอกสารนี้ยังไม่มีขั้นตอนส่งเพื่อลงนาม"))
+        return official.action_open_send_wizard()
 
     def action_request_award_approval(self):
         self.ensure_one()

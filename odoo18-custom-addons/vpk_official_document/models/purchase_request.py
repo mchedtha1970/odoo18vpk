@@ -10,7 +10,6 @@ PR_APPROVAL_PACKET_TYPES = (
     "specific_method_approval",
 )
 
-
 class PurchaseRequest(models.Model):
     _inherit = "purchase.request"
 
@@ -21,6 +20,10 @@ class PurchaseRequest(models.Model):
     )
     official_document_count = fields.Integer(
         compute="_compute_official_document_count",
+    )
+    vpk_documents_signed_complete = fields.Boolean(
+        string="ลงนามครบแล้ว",
+        compute="_compute_vpk_documents_signed_complete",
     )
     issued_wa_committee_order_id = fields.Many2one(
         comodel_name="vpk.official.document",
@@ -41,6 +44,17 @@ class PurchaseRequest(models.Model):
         comodel_name="vpk.official.document",
         compute="_compute_official_document_count",
         string="รายงานขออนุมัติจัดซื้อจัดจ้างที่ออกแล้ว",
+    )
+    issued_purchase_approval_memo_id = fields.Many2one(
+        comodel_name="vpk.official.document",
+        compute="_compute_official_document_count",
+        string="บันทึกข้อความอนุมัติขอซื้อที่ออกแล้ว",
+    )
+    purchase_approval_memo_ids = fields.One2many(
+        comodel_name="vpk.official.document",
+        inverse_name="request_id",
+        string="เอกสารอนุมัติขอซื้อ",
+        domain=[("document_type", "=", "purchase_approval_memo")],
     )
     specific_method_approval_ids = fields.One2many(
         comodel_name="vpk.official.document",
@@ -73,6 +87,11 @@ class PurchaseRequest(models.Model):
     )
     has_approval_attachments = fields.Boolean(
         compute="_compute_approval_attachment_ids",
+    )
+    official_document_to_create = fields.Many2one(
+        comodel_name="vpk.official.document.type",
+        string="เอกสารที่จะสร้าง",
+        domain="[('create_from_purchase_request', '=', True)]",
     )
 
     @api.depends("official_document_ids", "official_document_ids.state")
@@ -109,6 +128,12 @@ class PurchaseRequest(models.Model):
             rec.issued_specific_method_approval_id = rec.official_document_ids.filtered(
                 lambda doc: (
                     doc.document_type == "specific_method_approval"
+                    and doc.state != "cancelled"
+                )
+            )[:1]
+            rec.issued_purchase_approval_memo_id = rec.official_document_ids.filtered(
+                lambda doc: (
+                    doc.document_type == "purchase_approval_memo"
                     and doc.state != "cancelled"
                 )
             )[:1]
@@ -194,6 +219,17 @@ class PurchaseRequest(models.Model):
         for request in self:
             if "can_send_to_egp" in request._fields:
                 request.can_send_to_egp = request._vpk_related_documents_all_approved()
+
+    @api.depends(
+        "official_document_ids",
+        "official_document_ids.state",
+        "official_document_ids.document_type",
+        "official_document_ids.validation_status",
+        "official_document_ids.review_ids.status",
+    )
+    def _compute_vpk_documents_signed_complete(self):
+        for rec in self:
+            rec.vpk_documents_signed_complete = rec._vpk_related_documents_all_approved()
 
     def _vpk_related_documents_all_approved(self):
         """True when every issued official document on this PR is fully signed."""
@@ -369,4 +405,30 @@ class PurchaseRequest(models.Model):
         document = self.env[
             "vpk.official.document"
         ].create_specific_method_approval_from_purchase_request(self)
+        return document._action_open_form()
+
+    def action_create_selected_official_document(self):
+        self.ensure_one()
+        creators = {
+            "wa_committee_order": self.action_create_wa_committee_order,
+            "spec_price_committee": self.action_create_spec_price_committee,
+            "integrity_over_100k": self.action_create_integrity_over_100k,
+            "specific_method_approval": self.action_create_specific_method_approval,
+        }
+        document_type = self.official_document_to_create
+        creator = creators.get(document_type.code) if document_type else None
+        if not creator:
+            if not document_type:
+                raise UserError(_("กรุณาเลือกเอกสารที่จะสร้าง"))
+            raise UserError(
+                _("ยังไม่รองรับการสร้าง %(name)s จากใบขอซื้อ")
+                % {"name": document_type.display_name}
+            )
+        return creator()
+
+    def action_create_purchase_approval_memo(self):
+        self.ensure_one()
+        document = self.env[
+            "vpk.official.document"
+        ].create_purchase_approval_memo_from_purchase_request(self)
         return document._action_open_form()

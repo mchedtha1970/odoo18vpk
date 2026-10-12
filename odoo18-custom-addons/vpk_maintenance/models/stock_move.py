@@ -46,7 +46,7 @@ class StockMove(models.Model):
         for move in self:
             qty = move.quantity if move.state == "done" else move.product_uom_qty
             move.parts_qty = qty
-            layers = move.stock_valuation_layer_ids
+            layers = move.sudo().stock_valuation_layer_ids
             if layers:
                 value = abs(sum(layers.mapped("value")))
                 move.parts_value = value

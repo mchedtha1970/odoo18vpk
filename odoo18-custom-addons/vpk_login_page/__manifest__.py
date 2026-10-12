@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "VPK Login Page",
-    "version": "18.0.1.2.1",
+    "version": "18.0.1.3.1",
     "category": "Tools",
     "summary": "Full screen hospital branded login / signup / reset password page",
     "description": """
@@ -18,6 +18,8 @@ Texts can be changed without touching the code through System Parameters:
 * ``vpk_login_page.tagline``
 * ``vpk_login_page.welcome_subtitle``
 * ``vpk_login_page.footnote``
+* ``vpk_login_page.test_users_enabled`` (True shows the UAT user picker)
+* ``vpk_login_page.test_users_password`` (filled in with the picked UAT user)
     """,
     "author": "VPK",
     "depends": ["web", "website"],

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_maintenance_summary" model="report.paperformat">
+        <field name="name">สรุปใบงานช่างซ่อมบำรุง A4 แนวนอน</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">8</field>
+        <field name="margin_bottom">8</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="action_report_maintenance_summary" model="ir.actions.report">
+        <field name="name">สรุปใบงานช่างซ่อมบำรุง</field>
+        <field name="model">maintenance.request.summary.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_maintenance.report_maintenance_summary</field>
+        <field name="report_file">vpk_maintenance.report_maintenance_summary</field>
+        <field name="print_report_name">'สรุปใบงานช่างซ่อมบำรุง'</field>
+        <field name="paperformat_id" ref="paperformat_maintenance_summary"/>
+    </record>
+
+    <template id="report_maintenance_summary">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="report" t-value="o._prepare_summary()"/>
+                <t t-call="web.basic_layout">
+                    <style type="text/css">
+                        <t t-out="o._report_font_css()"/>
+                        .vpk-sum, .vpk-sum * {
+                            font-family: "THSarabunNew", sans-serif !important;
+                            font-size: 14pt;
+                            line-height: 1.05;
+                            color: #000;
+                        }
+                        .vpk-sum strong, .vpk-sum .title, .vpk-sum th, .vpk-sum .total-row td {
+                            font-family: "THSarabunNew-Bold", "THSarabunNew", sans-serif !important;
+                            font-weight: normal !important;
+                        }
+                        .title { text-align: center; font-size: 18pt !important; margin: 0; }
+                        .sub { text-align: center; font-size: 16pt !important; margin: 0 0 6px; }
+                        .vpk-sum table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+                        .vpk-sum th, .vpk-sum td {
+                            border: 1px solid #000;
+                            padding: 1px 3px;
+                            text-align: center;
+                            vertical-align: middle;
+                        }
+                        .vpk-sum th { background: #f7f7f7; font-size: 13pt !important; }
+                        .seq { width: 12mm; }
+                        .name { width: 42mm; text-align: left !important; padding-left: 6px !important; }
+                        .total { width: 22mm; }
+                        .foot { text-align: right; margin: 4px 0 0; font-size: 14pt !important; }
+                    </style>
+                    <div class="vpk-sum">
+                        <p class="title">
+                            สรุปใบงานช่างซ่อมบำรุง <t t-esc="report['hospital']"/> ประจำปีงบประมาณ <t t-esc="report['fiscal_year']"/>
+                        </p>
+                        <p class="sub"><t t-esc="report['period']"/></p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="seq" rowspan="2">ลำดับ</th>
+                                    <th class="name" rowspan="2">แผนกช่าง</th>
+                                    <th t-att-colspan="len(report['months'])">เดือน</th>
+                                    <th class="total" rowspan="2">รวมใบงานทั้งปี</th>
+                                </tr>
+                                <tr>
+                                    <th t-foreach="report['months']" t-as="month">
+                                        <t t-esc="month['label']"/>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="report['rows']" t-as="row">
+                                    <td><t t-esc="row['sequence']"/></td>
+                                    <td class="name"><t t-esc="row['name']"/></td>
+                                    <td t-foreach="row['cells']" t-as="cell"><t t-esc="cell"/></td>
+                                    <td><t t-esc="row['total']"/></td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td colspan="2">รวมใบงานทั้งหมดแต่ละเดือน</td>
+                                    <td t-foreach="report['column_totals']" t-as="cell"><t t-esc="cell"/></td>
+                                    <td><t t-esc="report['grand_total']"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="foot"><t t-esc="report['printed_on']"/></p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

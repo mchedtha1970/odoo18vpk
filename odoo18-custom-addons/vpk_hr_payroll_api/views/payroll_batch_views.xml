@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_payroll_batch_list" model="ir.ui.view">
+        <field name="name">vpk.hr.payroll.batch.list</field>
+        <field name="model">vpk.hr.payroll.batch</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="pay_date"/>
+                <field name="period"/>
+                <field name="external_id"/>
+                <field name="source_system"/>
+                <field name="debit_total"/>
+                <field name="credit_total"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_payroll_batch_form" model="ir.ui.view">
+        <field name="name">vpk.hr.payroll.batch.form</field>
+        <field name="model">vpk.hr.payroll.batch</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_validate" type="object" string="ตรวจข้อมูล" invisible="state in ('posted', 'cancelled')"/>
+                    <button name="action_post" type="object" string="ผ่านและสร้างสมุดรายวัน" class="btn-primary" invisible="state != 'ready'" groups="vpk_hr_payroll_api.group_hr_payroll_accountant"/>
+                    <button name="action_cancel" type="object" string="ยกเลิก" invisible="state in ('posted', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,ready,posted"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_move" type="object" class="oe_stat_button" icon="fa-book" invisible="not move_id">
+                            <field name="move_id" widget="statinfo" string="สมุดรายวัน"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="external_id" readonly="state != 'draft'"/>
+                            <field name="source_system" readonly="state != 'draft'"/>
+                            <field name="pay_date" readonly="state == 'posted'"/>
+                            <field name="period" readonly="state == 'posted'"/>
+                        </group>
+                        <group>
+                            <field name="journal_id" readonly="state == 'posted'"/>
+                            <field name="debit_total"/>
+                            <field name="credit_total"/>
+                            <field name="control_debit_total" readonly="state == 'posted'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="description" readonly="state == 'posted'"/>
+                    <field name="error_message" invisible="not error_message" readonly="1"/>
+                    <field name="line_ids" readonly="state == 'posted'">
+                        <list>
+                            <field name="component_code"/>
+                            <field name="description"/>
+                            <field name="department_code"/>
+                            <field name="side"/>
+                            <field name="account_id"/>
+                            <field name="amount"/>
+                            <field name="line_state"/>
+                            <field name="error_message"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_hr_payroll_batch_search" model="ir.ui.view">
+        <field name="name">vpk.hr.payroll.batch.search</field>
+        <field name="model">vpk.hr.payroll.batch</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="external_id"/>
+                <field name="period"/>
+                <filter name="ready" string="พร้อมผ่าน" domain="[('state', '=', 'ready')]"/>
+                <filter name="posted" string="ลงบัญชีแล้ว" domain="[('state', '=', 'posted')]"/>
+                <filter name="error" string="ผิดพลาด" domain="[('state', '=', 'error')]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_hr_payroll_batch" model="ir.actions.act_window">
+        <field name="name">ชุดเงินเดือนจาก HR</field>
+        <field name="res_model">vpk.hr.payroll.batch</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

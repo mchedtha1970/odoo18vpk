@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_tier_validation.ApprovalStatusBoard">
+        <div class="o_vpk_approval_board">
+            <div class="o_vpk_approval_board_scroll" t-if="state.ready">
+                <header class="o_vpk_approval_head">
+                    <div>
+                        <h1 class="o_vpk_approval_title">สถานะการอนุมัติเอกสาร</h1>
+                        <p>ดูได้ทั้งเอกสารที่อยู่ระหว่างอนุมัติ และเอกสารที่อนุมัติครบแล้ว</p>
+                    </div>
+                    <div class="o_vpk_approval_head_side">
+                        <span class="o_vpk_approval_count">
+                            <t t-esc="state.data.total"/> เอกสาร
+                        </span>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" t-on-click="loadData">
+                            รีเฟรช
+                        </button>
+                        <span class="o_vpk_approval_updated">อัปเดต <t t-esc="state.data.updated_at"/> น.</span>
+                    </div>
+                </header>
+
+                <div class="o_vpk_approval_filters" t-if="state.data.types.length">
+                    <button type="button"
+                            t-att-class="state.progress === 'all' ? 'is-active' : ''"
+                            t-on-click="() => this.setProgress('all')">
+                        ทั้งหมด
+                        <span t-esc="state.data.total"/>
+                    </button>
+                    <button type="button"
+                            t-att-class="state.progress === 'open' ? 'is-active' : ''"
+                            t-on-click="() => this.setProgress('open')">
+                        อยู่ระหว่างอนุมัติ
+                        <span t-esc="state.data.open_count"/>
+                    </button>
+                    <button type="button"
+                            t-att-class="state.progress === 'done' ? 'is-active' : ''"
+                            t-on-click="() => this.setProgress('done')">
+                        อนุมัติครบแล้ว
+                        <span t-esc="state.data.done_count"/>
+                    </button>
+                    <button type="button"
+                            t-att-class="state.filter === 'all' ? 'is-active' : ''"
+                            t-on-click="() => this.setFilter('all')">
+                        ทุกประเภท
+                        <span t-esc="state.data.total"/>
+                    </button>
+                    <t t-foreach="state.data.types" t-as="docType" t-key="docType.key">
+                        <button type="button"
+                                t-att-class="state.filter === docType.key ? 'is-active' : ''"
+                                t-on-click="() => this.setFilter(docType.key)">
+                            <t t-esc="docType.label"/>
+                            <span t-esc="docType.count"/>
+                        </button>
+                    </t>
+                </div>
+
+                <t t-if="!visibleTypes.length">
+                    <div class="o_vpk_approval_empty">
+                        <h2 t-if="state.progress === 'open'">ไม่มีเอกสารที่อยู่ระหว่างอนุมัติ</h2>
+                        <h2 t-elif="state.progress === 'done'">ไม่มีเอกสารที่อนุมัติครบแล้ว</h2>
+                        <h2 t-else="">ยังไม่มีเอกสารในสายอนุมัติ</h2>
+                        <p>เมื่อมีเอกสารส่งอนุมัติ จะเห็นทั้งรายการที่รออยู่และรายการที่อนุมัติครบแล้วที่นี่</p>
+                    </div>
+                </t>
+
+                <t t-foreach="visibleTypes" t-as="docType" t-key="docType.key">
+                    <section class="o_vpk_approval_type">
+                        <h2>
+                            <t t-esc="docType.label"/>
+                            <span t-esc="docType.count"/>
+                        </h2>
+                        <div class="o_vpk_approval_grid">
+                            <article t-att-class="'o_vpk_approval_card is-' + card.progress" t-foreach="docType.documents" t-as="card" t-key="card.model + '-' + card.res_id">
+                                <header>
+                                    <span class="o_vpk_approval_type_chip" t-esc="docType.label"/>
+                                    <button type="button" class="o_vpk_approval_doc" t-on-click="() => this.openDocument(card)">
+                                        <t t-esc="card.name"/>
+                                    </button>
+                                    <p t-if="card.subtitle" t-esc="card.subtitle"/>
+                                    <div t-if="card.progress === 'done'" class="o_vpk_approval_done">
+                                        <strong t-esc="card.progress_label"/>
+                                    </div>
+                                    <div t-else="" class="o_vpk_approval_waiting">
+                                        <span>อยู่ระหว่างอนุมัติ · รออยู่ที่</span>
+                                        <strong t-esc="card.waiting_on"/>
+                                    </div>
+                                </header>
+                                <ol>
+                                    <li t-foreach="card.steps" t-as="step" t-key="step_index" t-att-class="'is-' + step.status + (step.current ? ' is-current' : '')">
+                                        <span class="o_vpk_approval_seq" t-esc="step.sequence"/>
+                                        <span class="o_vpk_approval_person" t-esc="step.person"/>
+                                        <span class="o_vpk_approval_status" t-esc="step.status_label"/>
+                                    </li>
+                                </ol>
+                            </article>
+                        </div>
+                    </section>
+                </t>
+            </div>
+            <div class="o_vpk_approval_loading" t-else="">กำลังโหลดสถานะการอนุมัติ...</div>
+        </div>
+    </t>
+</templates>

@@ -44,7 +44,7 @@
             </field>
             <field name="picking_type_id" position="after">
                 <field name="budget_requested_amount" readonly="1"/>
-                <field name="budget_available_amount" readonly="1"/>
+                <field name="budget_available_amount" invisible="1"/>
                 <field name="budget_check_state" readonly="1"/>
                 <field name="budget_check_date" readonly="1"/>
                 <field name="budget_reservation_active" readonly="1"/>
@@ -52,6 +52,9 @@
             <field name="line_ids" position="attributes">
                 <attribute name="context">{'default_budget_post_id': budget_post_id}</attribute>
             </field>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='estimated_cost']" position="before">
+                <field name="budget_unit_price" widget="monetary"/>
+            </xpath>
             <xpath expr="//field[@name='line_ids']/list/field[@name='estimated_cost']" position="attributes">
                 <attribute name="string">งบประมาณ</attribute>
             </xpath>
@@ -62,8 +65,8 @@
                 <field name="budget_line_id"/>
                 <field name="budget_line_available_amount" readonly="1"/>
             </xpath>
-            <xpath expr="//notebook" position="inside">
-                <page string="ตรวจสอบงบประมาณ">
+            <xpath expr="//notebook/page[.//field[@name='line_ids']]" position="after">
+                <page string="ตรวจสอบงบประมาณ" name="budget_check">
                     <group>
                         <group>
                             <field name="budget_section_key"
@@ -77,13 +80,35 @@
                         </group>
                         <group>
                             <field name="budget_requested_amount" readonly="1"/>
-                            <field name="budget_available_amount" readonly="1"/>
+                            <field name="budget_available_amount" invisible="1"/>
                             <field name="budget_check_state" readonly="1"/>
                             <field name="budget_check_date" readonly="1"/>
                             <field name="budget_reservation_active" readonly="1"/>
                         </group>
                     </group>
-                    <group>
+                    <field name="budget_check_by_product" invisible="1"/>
+                    <field name="budget_check_line_ids" nolabel="1" readonly="1"
+                           invisible="not budget_check_line_ids">
+                        <list create="false" edit="false" delete="false"
+                              decoration-danger="is_short">
+                            <field name="sequence" column_invisible="1"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="is_short" column_invisible="1"/>
+                            <field name="name"/>
+                            <field name="allocated_amount"
+                                   column_invisible="not parent.budget_check_by_product"/>
+                            <field name="approved_amount"
+                                   column_invisible="parent.budget_check_by_product"/>
+                            <field name="actual_amount"
+                                   column_invisible="parent.budget_check_by_product"/>
+                            <field name="other_reserved_amount"/>
+                            <field name="committed_amount"/>
+                            <field name="available_amount"/>
+                            <field name="required_amount"/>
+                            <field name="remaining_amount"/>
+                        </list>
+                    </field>
+                    <group invisible="budget_check_line_ids">
                         <field name="budget_check_message" readonly="1" nolabel="1"/>
                     </group>
                 </page>
@@ -111,6 +136,9 @@
         <field name="model">purchase.request.line</field>
         <field name="inherit_id" ref="purchase_request.purchase_request_line_form"/>
         <field name="arch" type="xml">
+            <field name="estimated_cost" position="before">
+                <field name="budget_unit_price" widget="monetary" readonly="is_editable == False"/>
+            </field>
             <field name="estimated_cost" position="after">
                 <field name="budget_post_id" readonly="is_editable == False"/>
                 <field name="budget_reserved_amount" widget="monetary" readonly="is_editable == False"/>
@@ -126,6 +154,9 @@
         <field name="model">purchase.request.line</field>
         <field name="inherit_id" ref="purchase_request.purchase_request_line_tree"/>
         <field name="arch" type="xml">
+            <field name="estimated_cost" position="before">
+                <field name="budget_unit_price" optional="show"/>
+            </field>
             <field name="estimated_cost" position="after">
                 <field name="budget_post_id" optional="show"/>
                 <field name="budget_reserved_amount" optional="show"/>

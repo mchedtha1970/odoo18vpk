@@ -1200,20 +1200,16 @@ class TestHisRemittance(TestHisApiCommon):
         batch = self.env["vpk.his.batch"].browse(result["batch_id"])
         self.assertEqual(batch.source_warehouse_id, src_wh)
         self.assertEqual(batch.dest_warehouse_id, dest_wh)
-        batch.action_post()
-        self.assertEqual(batch.state, "posted")
-        self.assertEqual(len(batch.picking_ids), 1)
-        self.assertEqual(batch.picking_ids.state, "done")
-        self.assertEqual(
-            batch.picking_ids.location_id, batch.source_location_id
-        )
-        self.assertEqual(
-            batch.picking_ids.location_dest_id, batch.dest_location_id
-        )
+        batch.action_create_transfer()
+        self.assertEqual(batch.state, "ready")
+        self.assertTrue(batch.picking_ids)
+        self.assertFalse(batch.picking_ids.filtered(lambda picking: picking.state == "done"))
+        ready = batch.picking_ids.filtered(lambda picking: picking.state == "assigned")
+        self.assertTrue(ready)
         src_qty = product.with_context(location=src_wh.lot_stock_id.id).qty_available
         dest_qty = product.with_context(location=dest_wh.lot_stock_id.id).qty_available
-        self.assertEqual(src_qty, 90.0)
-        self.assertEqual(dest_qty, 10.0)
+        self.assertEqual(src_qty, 100.0)
+        self.assertEqual(dest_qty, 0.0)
 
     def test_stock_requisition_requires_lines(self):
         src_wh = self.env["stock.warehouse"].search([], limit=1)

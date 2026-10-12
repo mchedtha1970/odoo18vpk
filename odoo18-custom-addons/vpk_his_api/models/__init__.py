@@ -13,5 +13,6 @@ from . import his_stock_line
 from . import his_requisition_line
 from . import his_api_service
 from . import his_posting
+from . import stock_picking
 from . import his_remittance
 from . import res_config_settings

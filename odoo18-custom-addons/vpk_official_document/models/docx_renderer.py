@@ -894,3 +894,246 @@ def render_specific_method_approval_docx(template_bytes, values):
     output = io.BytesIO()
     document.save(output)
     return output.getvalue()
+
+
+def _align_purchase_item_with_intro(paragraph, intro):
+    """Keep each purchase line at the same first-line indent as the opening paragraph.
+
+    thaiDistribute stretches a short line across the page, so the item looks centered.
+    Justify leaves that single line at the indent, and wraps the same way as the intro.
+    """
+    if OxmlElement is None or qn is None:
+        return
+    p_pr = paragraph._p.get_or_add_pPr()
+    intro_pr = intro._p.find(qn("w:pPr")) if intro is not None else None
+    ind = None
+    if intro_pr is not None:
+        source = intro_pr.find(qn("w:ind"))
+        if source is not None:
+            ind = deepcopy(source)
+    existing = p_pr.find(qn("w:ind"))
+    if existing is not None:
+        p_pr.remove(existing)
+    if ind is None:
+        ind = OxmlElement("w:ind")
+        ind.set(qn("w:firstLine"), "1417")
+    p_pr.append(ind)
+    jc = p_pr.find(qn("w:jc"))
+    if jc is None:
+        jc = OxmlElement("w:jc")
+        p_pr.append(jc)
+    jc.set(qn("w:val"), "both")
+
+
+def _table_plain_text(table):
+    return "".join(cell.text or "" for row in table.rows for cell in row.cells)
+
+
+def _remove_table(table):
+    element = table._tbl
+    parent = element.getparent()
+    if parent is not None:
+        parent.remove(element)
+
+
+def _set_table_widths(table, widths):
+    table.autofit = False
+    table.allow_autofit = False
+    tbl = table._tbl
+    tbl_pr = tbl.tblPr
+    if tbl_pr is None:
+        tbl_pr = OxmlElement("w:tblPr")
+        tbl.insert(0, tbl_pr)
+    total = sum(widths)
+    tbl_w = tbl_pr.find(qn("w:tblW"))
+    if tbl_w is None:
+        tbl_w = OxmlElement("w:tblW")
+        tbl_pr.append(tbl_w)
+    tbl_w.set(qn("w:w"), str(total))
+    tbl_w.set(qn("w:type"), "dxa")
+    grid = tbl.find(qn("w:tblGrid"))
+    if grid is not None:
+        tbl.remove(grid)
+    grid = OxmlElement("w:tblGrid")
+    for width in widths:
+        col = OxmlElement("w:gridCol")
+        col.set(qn("w:w"), str(width))
+        grid.append(col)
+    tbl_pr.addnext(grid)
+    for row in table.rows:
+        cells = _unique_row_cells(row)
+        for cell, width in zip(cells, widths):
+            tc_pr = cell._tc.get_or_add_tcPr()
+            tc_w = tc_pr.find(qn("w:tcW"))
+            if tc_w is None:
+                tc_w = OxmlElement("w:tcW")
+                tc_pr.append(tc_w)
+            tc_w.set(qn("w:w"), str(int(width)))
+            tc_w.set(qn("w:type"), "dxa")
+            borders = tc_pr.find(qn("w:tcBorders"))
+            if borders is not None:
+                tc_pr.remove(borders)
+            borders = OxmlElement("w:tcBorders")
+            for edge in ("top", "left", "bottom", "right"):
+                element = OxmlElement("w:%s" % edge)
+                element.set(qn("w:val"), "nil")
+                borders.append(element)
+            tc_pr.append(borders)
+
+
+def _write_sign_cell(cell, person):
+    name = (person.get("name") or "").strip() or "................................"
+    position = (person.get("position") or "").strip()
+    paragraph = cell.paragraphs[0]
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_pr = paragraph._p.get_or_add_pPr()
+    spacing = p_pr.find(qn("w:spacing"))
+    if spacing is None:
+        spacing = OxmlElement("w:spacing")
+        p_pr.append(spacing)
+    spacing.set(qn("w:before"), "1100")
+    spacing.set(qn("w:after"), "0")
+    _set_paragraph_text(paragraph, "(%s)" % name)
+    for run in paragraph.runs:
+        _set_run_font(run)
+    extra = cell.add_paragraph()
+    extra.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    extra.paragraph_format.space_before = 0
+    extra.paragraph_format.space_after = 0
+    run = extra.add_run(position)
+    _set_run_font(run)
+
+
+def _move_table_before(table, following):
+    element = table._tbl
+    if following is None:
+        return element
+    parent = element.getparent()
+    if parent is not None:
+        parent.remove(element)
+    following.addprevious(element)
+    return element
+
+
+def _add_sign_row(document, people, widths, following):
+    table = document.add_table(rows=1, cols=len(widths))
+    _set_table_widths(table, widths)
+    cells = _unique_row_cells(table.rows[0])
+    for cell, person in zip(cells, people):
+        if person:
+            _write_sign_cell(cell, person)
+    _move_table_before(table, following)
+    return table._tbl
+
+
+def _rebuild_purchase_sign_blocks(document, signers):
+    """Replace the fixed three signature slots with one block per signer row."""
+    if not signers or OxmlElement is None:
+        return
+    targets = [
+        table
+        for table in list(document.tables)
+        if any(
+            token in _table_plain_text(table)
+            for token in (
+                "{{proposer_name}}",
+                "{{reviewer_name}}",
+                "{{approver_name}}",
+            )
+        )
+    ]
+    if not targets:
+        return
+    last = targets[-1]._tbl
+    following = last.getnext()
+    parent = last.getparent()
+    for table in targets:
+        element = table._tbl
+        if element.getparent() is parent:
+            parent.remove(element)
+    content_width = 9354
+    half = content_width // 2
+    first = signers[0]
+    rest = signers[1:]
+    cursor = following
+    if not rest:
+        _add_sign_row(document, [first], [content_width], cursor)
+        return
+    # The first signer stays centered above the later approvers.
+    _add_sign_row(document, [first], [content_width], cursor)
+    index = 0
+    while index < len(rest):
+        pair = rest[index : index + 2]
+        if len(pair) == 1:
+            _add_sign_row(document, [None, pair[0]], [half, half], cursor)
+        else:
+            _add_sign_row(document, pair, [half, half], cursor)
+        index += 2
+
+
+def render_purchase_approval_memo_docx(template_bytes, values):
+    """Fill บันทึกข้อความอนุมัติขอซื้อ. Empty item lines are removed."""
+    _require_docx()
+    document = Document(io.BytesIO(template_bytes))
+    _rebuild_purchase_sign_blocks(document, values.get("signers") or [])
+    items = [line for line in (values.get("items") or []) if (line or "").strip()]
+    mapping = {
+        "agency": values.get("agency") or "",
+        "memo_number": values.get("memo_number") or "",
+        "memo_date": values.get("memo_date") or "",
+        "subject": values.get("subject") or "",
+        "recipient": values.get("recipient") or "",
+        "intro": values.get("intro") or "",
+        "body_2": values.get("body_2") or "",
+        "proposer_name": values.get("proposer_name") or "................................",
+        "proposer_position": values.get("proposer_position") or "",
+        "reviewer_name": values.get("reviewer_name") or "................................",
+        "reviewer_position": values.get("reviewer_position") or "",
+        "reviewer_date": values.get("reviewer_date") or "",
+        "approver_name": values.get("approver_name") or "................................",
+        "approver_position": values.get("approver_position") or "",
+        "approver_date": values.get("approver_date") or "",
+    }
+    for index in range(1, 6):
+        mapping["item_%s" % index] = items[index - 1] if index <= len(items) else ""
+    item_five = None
+    intro_para = None
+    item_paras = []
+    for paragraph in list(_iter_paragraphs(document)):
+        text = _paragraph_text(paragraph)
+        if "{{" not in text:
+            continue
+        if "{{intro}}" in text:
+            intro_para = paragraph
+        if text.strip() == "{{body_2}}" and not mapping.get("body_2"):
+            _remove_paragraph(paragraph)
+            continue
+        if "{{item_5}}" in text:
+            item_five = paragraph
+        stripped = text.strip()
+        if (
+            stripped.startswith("{{item_")
+            and stripped.endswith("}}")
+            and not mapping.get(stripped[2:-2])
+        ):
+            _remove_paragraph(paragraph)
+            if paragraph is item_five:
+                item_five = None
+            continue
+        if stripped.startswith("{{item_") and stripped.endswith("}}"):
+            item_paras.append(paragraph)
+        new = text
+        for key, value in mapping.items():
+            new = new.replace("{{%s}}" % key, value or "")
+        if new != text:
+            _set_paragraph_text(paragraph, new)
+    for paragraph in item_paras:
+        _align_purchase_item_with_intro(paragraph, intro_para)
+    if item_five is not None and len(items) > 5:
+        cursor = item_five
+        for extra in items[5:]:
+            cursor = _insert_paragraph_after(cursor, extra, style_from=item_five)
+    _apply_thai_font(document)
+    output = io.BytesIO()
+    document.save(output)
+    return output.getvalue()

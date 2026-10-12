@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_stock_quant_count_sheet_list" model="ir.ui.view">
+        <field name="name">stock.quant.count.sheet.list</field>
+        <field name="model">stock.quant.count.sheet</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="counted_count"/>
+                <field name="line_count"/>
+                <field name="state"/>
+                <field name="create_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_stock_quant_count_sheet_form" model="ir.ui.view">
+        <field name="name">stock.quant.count.sheet.form</field>
+        <field name="model">stock.quant.count.sheet</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_close" type="object" string="ปิดใบนับ" invisible="state != 'open'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="open,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="user_id" readonly="1"/>
+                            <field name="create_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="counted_count"/>
+                            <field name="line_count"/>
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        นับจากแอปมือถือด้วยการสแกน QR แล้วจำนวนจะกลับมาที่คอลัมน์จำนวนที่นับได้
+                        ยอดในระบบยังไม่เปลี่ยน จนกว่าจะตรวจส่วนต่างบนหน้าการปรับปรุงสินค้าคงคลังแล้วกดนำไปใช้
+                    </div>
+                    <field name="line_ids" readonly="state != 'open'">
+                        <list editable="bottom">
+                            <field name="location_id"/>
+                            <field name="product_id"/>
+                            <field name="lot_id"/>
+                            <field name="uom_id"/>
+                            <field name="system_qty"/>
+                            <field name="counted_qty"/>
+                            <field name="counted"/>
+                            <field name="quant_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_stock_quant_count_sheet" model="ir.actions.act_window">
+        <field name="name">ใบนับที่เปิดอยู่</field>
+        <field name="res_model">stock.quant.count.sheet</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'open')]</field>
+    </record>
+
+    <menuitem
+        id="menu_stock_quant_count_sheet"
+        name="ใบนับที่เปิดอยู่"
+        parent="stock.menu_stock_inventory_control"
+        action="action_stock_quant_count_sheet"
+        sequence="25"/>
+</odoo>

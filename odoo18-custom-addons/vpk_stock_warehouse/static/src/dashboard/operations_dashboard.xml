@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="vpk_stock_warehouse.OperationsDashboard">
-        <div class="o_vpk_ops">
+        <div t-att-class="props.className" class="o_vpk_ops">
             <div class="o_vpk_ops_scroll" t-if="state.ready">
                 <header class="o_vpk_ops_header">
                     <div>

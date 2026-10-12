@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "VPK Asset Transfer",
-    "version": "18.0.1.3.7",
+    "version": "18.0.1.3.8",
     "category": "Accounting",
     "summary": "ใบโอนทรัพย์สินระหว่างหน่วยงาน (อนุมัติผ่าน Tier Validation)",
     "author": "VPK",

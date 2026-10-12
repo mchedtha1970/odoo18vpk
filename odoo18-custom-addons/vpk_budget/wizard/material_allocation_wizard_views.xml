@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_budget_material_allocation_wizard" model="ir.ui.view">
+        <field name="name">vpk.budget.material.allocation.wizard.form</field>
+        <field name="model">vpk.budget.material.allocation.wizard</field>
+        <field name="arch" type="xml">
+            <form string="จัดสรรงบประมาณ">
+                <group>
+                    <field name="request_id"/>
+                    <field name="target" invisible="1"/>
+                    <field name="available_budget_post_ids" invisible="1"/>
+                    <field
+                        name="budget_post_id"
+                        options="{'no_create': True, 'no_open': True}"
+                        placeholder="ทุกรายการในคำของบ"
+                    />
+                    <field name="mode" widget="radio"/>
+                    <field name="percent" invisible="mode == 'equal'"/>
+                </group>
+                <div class="alert alert-info" role="alert" invisible="target != 'material'">
+                    ปริมาณที่จัดสรรคิดจากปริมาณที่ขอ
+                    เท่ากับที่ขอคือ 100%
+                    เพิ่ม 10% ได้ 110%
+                    ลด 10% ได้ 90%
+                    ไม่เลือกหมวดงบประมาณ ระบบจัดสรรทุกรายการในคำของบนี้
+                </div>
+                <div class="alert alert-info" role="alert" invisible="target != 'asset'">
+                    งบประมาณที่ได้รับคิดจากงบประมาณที่ขอ
+                    เท่ากับที่ขอคือ 100%
+                    เพิ่ม 10% ได้ 110%
+                    ลด 10% ได้ 90%
+                    ไม่เลือกหมวดงบประมาณ ระบบจัดสรรทุกรายการในคำของบนี้
+                </div>
+                <footer>
+                    <button
+                        name="action_apply"
+                        string="จัดสรร"
+                        type="object"
+                        class="btn-primary"
+                    />
+                    <button string="ยกเลิก" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

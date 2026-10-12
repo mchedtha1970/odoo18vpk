@@ -1,6 +1,6 @@
 {
     "name": "VPK Sequential Approval Workflow",
-    "version": "18.0.1.5.51",
+    "version": "18.0.1.5.62",
     "category": "Tools",
     "summary": "Multi-level sequential approval for Purchase, Stock, Bills and more",
     "description": """
@@ -17,7 +17,7 @@ Supported documents out of the box:
 - Stock Transfer (การรับ-จ่ายสินค้า)
 - Expense (ค่าใช้จ่าย)
 
-Configure at: Settings → การอนุมัติตามลำดับ → กำหนดลำดับการอนุมัติ
+Configure at: Settings → กล่องอนุมัติเอกสาร → กำหนดลำดับการอนุมัติ
     """,
     "author": "VPK",
     "license": "LGPL-3",
@@ -39,6 +39,7 @@ Configure at: Settings → การอนุมัติตามลำดั�
     ],
     "data": [
         "security/vpk_pr_security_groups.xml",
+        "security/ir.model.access.csv",
         "data/vpk_pr_user_groups.xml",
         "data/report_paperformat.xml",
         "report/purchase_request_official_memo_templates.xml",
@@ -46,6 +47,7 @@ Configure at: Settings → การอนุมัติตามลำดั�
         "views/purchase_request_memo_views.xml",
         "views/purchase_request_views.xml",
         "views/tier_review_views.xml",
+        "views/tier_validation_secretary_buttons.xml",
         "views/menu.xml",
     ],
     "assets": {
@@ -64,6 +66,9 @@ Configure at: Settings → การอนุมัติตามลำดั�
             "vpk_tier_validation/static/src/scss/pending_review_dashboard.scss",
             "vpk_tier_validation/static/src/dashboard/pending_review_dashboard.js",
             "vpk_tier_validation/static/src/dashboard/pending_review_dashboard.xml",
+            "vpk_tier_validation/static/src/scss/approval_status_board.scss",
+            "vpk_tier_validation/static/src/dashboard/approval_status_board.js",
+            "vpk_tier_validation/static/src/dashboard/approval_status_board.xml",
             "vpk_tier_validation/static/src/js/sidebar_menu_badge.js",
             "vpk_tier_validation/static/src/xml/sidebar_menu_badge.xml",
             "vpk_tier_validation/static/src/xml/tier_review_widget_label.xml",

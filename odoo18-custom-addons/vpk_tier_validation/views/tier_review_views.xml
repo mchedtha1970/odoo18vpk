@@ -22,6 +22,9 @@
                 <field name="requested_by"/>
                 <field name="res_display_name"/>
                 <field name="model_display_name"/>
+                <field name="vpk_card_title"/>
+                <field name="vpk_card_number"/>
+                <field name="vpk_card_department"/>
                 <field name="model"/>
                 <field name="res_id"/>
                 <field name="can_review"/>
@@ -37,15 +40,18 @@
                                 </span>
                             </div>
                             <div class="o_vpk_review_card_title">
-                                <strong t-esc="record.res_display_name.value or record.name.value"/>
-                            </div>
-                            <div class="o_vpk_review_card_subtitle text-muted">
-                                <t t-esc="record.model_display_name.value"/>
+                                <strong t-esc="record.vpk_card_title.value"/>
                             </div>
                             <div class="o_vpk_review_card_meta">
-                                <div>
-                                    <i class="fa fa-check-square-o me-1" title="Approval step"/>
-                                    <t t-esc="record.name.value"/>
+                                <div t-if="record.vpk_card_number.value">
+                                    <i class="fa fa-file-text-o me-1" title="Document number"/>
+                                    เลขที่เอกสาร
+                                    <t t-esc="record.vpk_card_number.value"/>
+                                </div>
+                                <div t-if="record.vpk_card_department.value">
+                                    <i class="fa fa-building-o me-1" title="Department"/>
+                                    เอกสารจากหน่วยงาน
+                                    <t t-esc="record.vpk_card_department.value"/>
                                 </div>
                                 <div t-if="record.requested_by.value">
                                     <i class="fa fa-user me-1" title="Requested by"/>

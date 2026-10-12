@@ -1,6 +1,15 @@
-.o_vpk_ops {
+.o_action_manager > .o_action.o_vpk_ops {
+    flex: 1 1 auto;
+    min-height: 0;
     height: 100%;
-    overflow: auto;
+}
+
+.o_vpk_ops {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
     background: #f3f1ee;
     color: #1c2430;
     font-family: "Prompt", sans-serif !important;
@@ -14,9 +23,14 @@
     }
 
     .o_vpk_ops_scroll {
-        padding: 28px 32px 40px;
-        max-width: 1440px;
-        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: auto;
+        padding: 20px 24px 24px;
     }
 
     .o_vpk_ops_loading {
@@ -121,6 +135,15 @@
         display: grid;
         gap: 14px;
         grid-template-columns: 1.35fr 1fr;
+        flex: 1 1 auto;
+        align-items: stretch;
+        min-height: 280px;
+
+        > .o_vpk_ops_card {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
     }
 
     .o_vpk_ops_kpi,
@@ -339,6 +362,10 @@
         font-size: 13px;
     }
 
+    .o_vpk_ops_bottom .o_vpk_ops_empty {
+        flex: 1 1 auto;
+    }
+
     .o_vpk_ops_legend {
         display: flex;
         gap: 12px;
@@ -361,16 +388,20 @@
 
     .o_vpk_ops_chart {
         display: flex;
-        align-items: flex-end;
+        align-items: stretch;
         gap: 8px;
-        height: 210px;
-        padding: 8px 4px 0;
+        flex: 1 1 auto;
+        min-height: 210px;
+        padding: 8px 4px 12px;
         overflow-x: auto;
     }
 
     .o_vpk_ops_chart_group {
         flex: 1 0 36px;
         min-width: 36px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
         text-align: center;
 
         small {
@@ -382,7 +413,8 @@
     }
 
     .o_vpk_ops_chart_bars {
-        height: 168px;
+        flex: 1 1 auto;
+        min-height: 168px;
         display: flex;
         align-items: flex-end;
         justify-content: center;
@@ -408,6 +440,7 @@
         list-style: none;
         margin: 0;
         padding: 0 0 8px;
+        flex: 1 1 auto;
 
         li {
             display: flex;

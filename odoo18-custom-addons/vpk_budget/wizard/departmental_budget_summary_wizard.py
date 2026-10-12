@@ -262,7 +262,7 @@ class DepartmentalBudgetSummaryWizard(models.TransientModel):
                         "request_id": request.id,
                         "department_name": request.analytic_account_id.name or "",
                         "budget_post_id": line.budget_post_id.id,
-                        "line_label": line.item_name or "",
+                        "line_label": line.item_description or line.item_name or "",
                         "current_quantity": line.current_quantity,
                         "current_age_year": line.current_age_year or "",
                         "requested_quantity": line.requested_quantity,

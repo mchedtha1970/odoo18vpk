@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'VPK Sidebar App Menu',
-    'version': '18.0.1.7.68',
+    'version': '18.0.1.7.70',
     'category': 'Tools',
     'summary': 'Replace standard Odoo app menu with vertical sidebar navigation',
     'description': """

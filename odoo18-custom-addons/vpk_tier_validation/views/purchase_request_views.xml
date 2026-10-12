@@ -36,7 +36,7 @@
                 <attribute name="invisible">1</attribute>
             </field>
             <field name="assigned_to" position="after">
-                <field name="tier_approver_names" readonly="1"/>
+                <field name="tier_approver_names" invisible="1"/>
             </field>
         </field>
     </record>
@@ -70,6 +70,18 @@
             </field>
             <field name="date_approved" position="attributes">
                 <attribute name="invisible">1</attribute>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_form_requested_by_label" model="ir.ui.view">
+        <field name="name">purchase.request.form.requested.by.label</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
+        <field name="priority">80</field>
+        <field name="arch" type="xml">
+            <field name="requested_by" position="attributes">
+                <attribute name="string">ผู้ทำรายการขอซื้อ</attribute>
             </field>
         </field>
     </record>

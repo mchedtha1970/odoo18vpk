@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_finance_flow.FinanceFlowDashboard">
+        <div t-att-class="props.className" class="o_vpk_flow">
+            <div class="o_vpk_flow_scroll" t-if="state.ready">
+                <header class="o_vpk_flow_header">
+                    <div>
+                        <div class="o_vpk_flow_kicker">Accounts payable · Treasury · Accounting</div>
+                        <h1>ติดตามงานเจ้าหนี้ การเงิน และบัญชี</h1>
+                        <p class="o_vpk_flow_updated">
+                            <t t-esc="state.data.date_label"/>
+                            <span> · อัปเดตล่าสุด </span>
+                            <t t-esc="state.data.updated_at"/> น.
+                        </p>
+                    </div>
+                    <div class="o_vpk_flow_periods">
+                        <t t-foreach="periods" t-as="period" t-key="period.id">
+                            <button type="button"
+                                    t-att-class="{'is-active': state.period === period.id}"
+                                    t-on-click="() => this.setPeriod(period.id)">
+                                <t t-esc="period.label"/>
+                            </button>
+                        </t>
+                    </div>
+                </header>
+
+                <section class="o_vpk_flow_kpis">
+                    <t t-foreach="state.data.kpis" t-as="kpi" t-key="kpi.key">
+                        <article t-att-class="'o_vpk_flow_kpi is-' + kpi.tone">
+                            <div class="o_vpk_flow_kpi_top">
+                                <span t-esc="kpi.label"/>
+                                <span t-esc="kpi.hint"/>
+                            </div>
+                            <div class="o_vpk_flow_kpi_value" t-esc="kpi.value"/>
+                            <p t-esc="kpi.foot"/>
+                        </article>
+                    </t>
+                </section>
+
+                <section class="o_vpk_flow_steps">
+                    <t t-foreach="state.data.flow" t-as="step" t-key="step.label">
+                        <button type="button" class="o_vpk_flow_step" t-on-click="() => this.openAction(step)">
+                            <strong t-esc="step.count"/>
+                            <span t-esc="step.label"/>
+                        </button>
+                        <i t-if="!step_last" class="fa fa-long-arrow-right"/>
+                    </t>
+                </section>
+
+                <section class="o_vpk_flow_columns">
+                    <t t-foreach="state.data.columns" t-as="column" t-key="column.key">
+                        <article class="o_vpk_flow_card">
+                            <header class="o_vpk_flow_card_head">
+                                <div>
+                                    <h2 t-esc="column.title"/>
+                                    <p t-esc="column.subtitle"/>
+                                </div>
+                                <button type="button" class="o_vpk_flow_link" t-if="column.action" t-on-click="() => this.openAction(column)">
+                                    ดูทั้งหมด
+                                </button>
+                            </header>
+                            <div class="o_vpk_flow_stages">
+                                <t t-foreach="column.stages" t-as="stage" t-key="stage.key">
+                                    <button type="button"
+                                            t-att-class="'o_vpk_flow_stage is-' + stage.tone"
+                                            t-on-click="() => this.openAction(stage)">
+                                        <strong t-esc="stage.count"/>
+                                        <span t-esc="stage.label"/>
+                                    </button>
+                                </t>
+                            </div>
+                            <div class="o_vpk_flow_table">
+                                <div class="o_vpk_flow_row is-head">
+                                    <span>เลขที่</span>
+                                    <span t-esc="column.meta_header"/>
+                                    <span>สถานะ</span>
+                                    <span>จำนวนเงิน</span>
+                                </div>
+                                <t t-if="!column.rows.length">
+                                    <div class="o_vpk_flow_empty">ไม่มีงานค้างในคอลัมน์นี้</div>
+                                </t>
+                                <t t-foreach="column.rows" t-as="row" t-key="row.model + '-' + row.id">
+                                    <button type="button" class="o_vpk_flow_row" t-on-click="() => this.openRecord(row)">
+                                        <span class="o_vpk_flow_name">
+                                            <t t-esc="row.name"/>
+                                            <small t-esc="row.when"/>
+                                        </span>
+                                        <span class="o_vpk_flow_meta" t-esc="row.meta"/>
+                                        <span>
+                                            <em t-att-class="'o_vpk_flow_badge is-' + row.tone" t-esc="row.status"/>
+                                        </span>
+                                        <span class="o_vpk_flow_time" t-esc="row.time"/>
+                                    </button>
+                                </t>
+                            </div>
+                        </article>
+                    </t>
+                </section>
+
+                <section class="o_vpk_flow_bottom">
+                    <article class="o_vpk_flow_card">
+                        <header class="o_vpk_flow_card_head">
+                            <div>
+                                <h2>ขยับในช่วงนี้</h2>
+                                <p>รายการที่ถูกแก้ไขตามช่วงเวลาที่เลือก</p>
+                            </div>
+                        </header>
+                        <div t-if="!state.data.movement.length" class="o_vpk_flow_empty">ยังไม่มีความเคลื่อนไหวในช่วงนี้</div>
+                        <t t-foreach="state.data.movement" t-as="row" t-key="row.model + '-' + row.id">
+                            <button type="button" class="o_vpk_flow_move" t-on-click="() => this.openRecord(row)">
+                                <em t-esc="row.desk"/>
+                                <strong t-esc="row.name"/>
+                                <span t-esc="row.meta"/>
+                                <span t-esc="row.status"/>
+                                <span t-esc="row.when"/>
+                            </button>
+                        </t>
+                    </article>
+                    <article class="o_vpk_flow_card">
+                        <header class="o_vpk_flow_card_head">
+                            <h2>ต้องดำเนินการ</h2>
+                            <span t-if="state.data.alert_count" class="o_vpk_flow_alert_count">
+                                <t t-esc="state.data.alert_count"/> รายการ
+                            </span>
+                        </header>
+                        <div t-if="!state.data.alerts.length" class="o_vpk_flow_empty">ไม่มีงานที่ต้องเร่ง</div>
+                        <ul class="o_vpk_flow_alerts">
+                            <t t-foreach="state.data.alerts" t-as="alert" t-key="alert.model + '-' + alert.id + '-' + alert.message">
+                                <li>
+                                    <div>
+                                        <strong>
+                                            <i class="fa fa-exclamation-triangle"/>
+                                            <t t-esc="alert.name"/>
+                                            <span t-esc="alert.message"/>
+                                        </strong>
+                                        <p t-esc="alert.detail"/>
+                                    </div>
+                                    <button type="button" t-on-click="() => this.openRecord(alert)">
+                                        <t t-esc="alert.action_label"/>
+                                    </button>
+                                </li>
+                            </t>
+                        </ul>
+                    </article>
+                </section>
+            </div>
+            <div t-else="" class="o_vpk_flow_loading">กำลังโหลดความเคลื่อนไหวของงาน...</div>
+        </div>
+    </t>
+</templates>

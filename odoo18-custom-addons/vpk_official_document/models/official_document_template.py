@@ -1,7 +1,7 @@
 # Copyright 2026 VPK
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class OfficialDocumentTemplate(models.Model):
@@ -13,24 +13,15 @@ class OfficialDocumentTemplate(models.Model):
     code = fields.Char(string="รหัส", required=True, index=True)
     sequence = fields.Integer(default=10)
     document_type = fields.Selection(
-        selection=[
-            ("wa_committee_order", "คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ"),
-            ("integrity_over_100k", "แบบแสดงความบริสุทธิ์ใจ (วงเงินมากกว่า ๑๐๐,๐๐๐ บาท)"),
-            (
-                "spec_price_committee",
-                "ขออนุมัติแต่งตั้งคณะกรรมการกำหนดรายละเอียดคุณลักษณะ",
-            ),
-            (
-                "specific_method_approval",
-                "รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง",
-            ),
-            ("winner_announcement", "ประกาศผู้ชนะการเสนอราคา"),
-            ("award_approval", "รายงานผลการพิจารณาจัดซื้อจัดจ้าง"),
-        ],
+        selection="_selection_document_type",
         string="ประเภทเอกสาร",
         required=True,
         default="wa_committee_order",
     )
+
+    @api.model
+    def _selection_document_type(self):
+        return self.env["vpk.official.document.type"].selection_pairs()
     datas = fields.Binary(string="ไฟล์ Word (.docx)", required=True, attachment=True)
     filename = fields.Char(string="ชื่อไฟล์")
     note = fields.Text(

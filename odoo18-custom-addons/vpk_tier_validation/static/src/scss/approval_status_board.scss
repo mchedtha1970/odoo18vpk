@@ -1,0 +1,394 @@
+.o_action_manager > .o_action:has(.o_vpk_approval_board) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+}
+
+@font-face {
+    font-family: "VPK Prompt";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("../fonts/prompt-thai-400.woff2") format("woff2");
+    unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+
+@font-face {
+    font-family: "VPK Prompt";
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("../fonts/prompt-latin-400.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+2000-206F;
+}
+
+@font-face {
+    font-family: "VPK Prompt";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("../fonts/prompt-thai-500.woff2") format("woff2");
+    unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+
+@font-face {
+    font-family: "VPK Prompt";
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("../fonts/prompt-latin-500.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+2000-206F;
+}
+
+@font-face {
+    font-family: "VPK Prompt";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("../fonts/prompt-thai-600.woff2") format("woff2");
+    unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+
+@font-face {
+    font-family: "VPK Prompt";
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("../fonts/prompt-latin-600.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+2000-206F;
+}
+
+@font-face {
+    font-family: "VPK Prompt";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("../fonts/prompt-thai-700.woff2") format("woff2");
+    unicode-range: U+0E01-0E5B, U+200C-200D, U+25CC;
+}
+
+@font-face {
+    font-family: "VPK Prompt";
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("../fonts/prompt-latin-700.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+2000-206F;
+}
+
+body.o_web_client .o_vpk_approval_board,
+body.o_web_client .o_vpk_approval_board *:not(.fa):not(.oi) {
+    font-family: "VPK Prompt", "Prompt", sans-serif !important;
+}
+
+.o_vpk_approval_board {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    background: #f6f4f1;
+    color: #1c2430;
+    font-family: "VPK Prompt", "Prompt", sans-serif !important;
+
+    *:not(.fa):not(.oi) {
+        font-family: "VPK Prompt", "Prompt", sans-serif !important;
+    }
+
+    .o_vpk_approval_board_scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        padding: 20px 20px 32px;
+    }
+
+    .o_vpk_approval_loading,
+    .o_vpk_approval_empty {
+        padding: 48px 20px;
+        color: #6b7280;
+    }
+
+    .o_vpk_approval_empty h2 {
+        margin: 0 0 6px;
+        color: #1c2430;
+        font-size: 20px;
+    }
+
+    .o_vpk_approval_head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+
+        h1,
+        h1.o_vpk_approval_title {
+            margin: 0 0 4px;
+            font-size: 26px;
+            font-family: "VPK Prompt", sans-serif !important;
+            font-weight: 500 !important;
+        }
+
+        p {
+            font-family: "VPK Prompt", sans-serif !important;
+            font-weight: 400 !important;
+        }
+
+        p {
+            margin: 0;
+            color: #6b7280;
+        }
+    }
+
+    .o_vpk_approval_head_side {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .o_vpk_approval_count {
+        background: #1f6b4a;
+        color: #fff;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-weight: 600;
+    }
+
+    .o_vpk_approval_updated {
+        color: #8b909a;
+        font-size: 13px;
+    }
+
+    .o_vpk_approval_filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 18px;
+
+        button {
+            border: 1px solid #e4dfd8;
+            background: #fff;
+            border-radius: 999px;
+            padding: 6px 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+
+            span {
+                background: #f3f0eb;
+                border-radius: 999px;
+                min-width: 22px;
+                text-align: center;
+                font-size: 12px;
+                padding: 1px 6px;
+            }
+        }
+
+        button.is-active {
+            background: #1c2430;
+            border-color: #1c2430;
+            color: #fff;
+
+            span {
+                background: rgba(255, 255, 255, 0.16);
+            }
+        }
+    }
+
+    .o_vpk_approval_type {
+        margin-bottom: 22px;
+
+        > h2 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 12px;
+            font-size: 16px;
+
+            span {
+                color: #6b7280;
+                font-weight: 500;
+            }
+        }
+    }
+
+    .o_vpk_approval_grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 340px);
+        gap: 16px;
+        align-items: start;
+    }
+
+    @media (max-width: 720px) {
+        .o_vpk_approval_grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .o_vpk_approval_card {
+        background: #fff;
+        border: 1px solid #e7e2db;
+        border-radius: 16px;
+        box-shadow: 0 10px 28px rgba(28, 36, 48, 0.08);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+
+        > header {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            padding: 14px 16px 12px;
+            background: linear-gradient(180deg, #fffaf2 0%, #fff 70%);
+            border-bottom: 1px solid #f0e6d4;
+
+            p {
+                margin: 0;
+                color: #6b7280;
+                font-size: 13px;
+            }
+        }
+
+        ol {
+            list-style: none;
+            margin: 0;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        li {
+            display: grid;
+            grid-template-columns: 28px minmax(0, 1fr);
+            grid-template-areas:
+                "seq person"
+                "seq status";
+            align-items: center;
+            column-gap: 10px;
+            row-gap: 2px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid #e7e2db;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(28, 36, 48, 0.04);
+        }
+
+        li.is-approved {
+            background: #f3faf6;
+            border-color: #cfe8da;
+        }
+
+        li.is-pending,
+        li.is-current {
+            background: #fff8ee;
+            border-color: #f0d7a6;
+            box-shadow: 0 4px 10px rgba(154, 103, 0, 0.08);
+        }
+
+        li.is-rejected {
+            background: #fdecec;
+            border-color: #f3c7c3;
+        }
+    }
+
+    .o_vpk_approval_type_chip {
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .o_vpk_approval_doc {
+        border: 0;
+        background: transparent;
+        padding: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #14523a;
+        text-align: left;
+    }
+
+    .o_vpk_approval_waiting {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        margin-top: 6px;
+
+        span {
+            font-size: 12px;
+            color: #8b909a;
+        }
+
+        strong {
+            color: #9a6700;
+        }
+    }
+
+    .o_vpk_approval_card.is-done > header {
+        background: linear-gradient(180deg, #f3faf6 0%, #fff 70%);
+        border-bottom-color: #d7eadf;
+    }
+
+    .o_vpk_approval_done {
+        margin-top: 6px;
+
+        strong {
+            color: #1f6b4a;
+        }
+    }
+
+    .o_vpk_approval_seq {
+        grid-area: seq;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        border: 1px solid #ddd6cc;
+        font-weight: 700;
+        font-size: 13px;
+    }
+
+    .o_vpk_approval_person {
+        grid-area: person;
+    }
+
+    .o_vpk_approval_status {
+        grid-area: status;
+        justify-self: start;
+    }
+
+    .o_vpk_approval_person {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .o_vpk_approval_status {
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    li.is-approved .o_vpk_approval_status {
+        color: #1f6b4a;
+    }
+
+    li.is-pending .o_vpk_approval_status,
+    li.is-current .o_vpk_approval_status {
+        color: #9a6700;
+    }
+
+    li.is-waiting .o_vpk_approval_status {
+        color: #6b7280;
+    }
+
+    li.is-rejected .o_vpk_approval_status {
+        color: #b42318;
+    }
+}

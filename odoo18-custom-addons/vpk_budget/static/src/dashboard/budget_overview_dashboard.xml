@@ -76,6 +76,17 @@
                             <span class="o_vpk_bm_kpi_foot">ครบกำหนด <t t-esc="formatMillion(state.data.committed)"/> ลบ.</span>
                         </button>
 
+                        <button type="button" class="o_vpk_bm_kpi o_vpk_bm_kpi_reserved" t-on-click="() => this.openPrReservations()">
+                            <span class="o_vpk_bm_kpi_label">จองงบ PR</span>
+                            <div class="o_vpk_bm_kpi_row">
+                                <strong><t t-esc="formatMillion(state.data.pr_reserved)"/></strong>
+                                <small>ล้านบาท</small>
+                                <em><t t-esc="formatPercent(state.data.pr_reserved_pct)"/></em>
+                            </div>
+                            <span class="o_vpk_bm_kpi_sub">ใบขอซื้อที่ยังถือวงเงิน</span>
+                            <span class="o_vpk_bm_kpi_foot">จองงบแล้ว <t t-esc="state.data.pr_reserved_count"/> รายการ</span>
+                        </button>
+
                         <button type="button" class="o_vpk_bm_kpi o_vpk_bm_kpi_mute" t-on-click="() => this.openBudgetLines()">
                             <span class="o_vpk_bm_kpi_label">คงเหลือถึงสิ้นปีงบประมาณ</span>
                             <div class="o_vpk_bm_kpi_row">
@@ -92,7 +103,7 @@
                         <div class="o_vpk_bm_status_head">
                             <div>
                                 <h3>สถานะงบประมาณภาพรวม</h3>
-                                <span>เบิกจ่าย <t t-esc="formatPercent(state.data.actual_pct)"/> · ก่อหนี้ <t t-esc="formatMillion(state.data.committed)"/> · คงเหลือ <t t-esc="formatPercent(state.data.remaining_pct)"/></span>
+                                <span>เบิกจ่าย <t t-esc="formatPercent(state.data.actual_pct)"/> · จองงบ PR <t t-esc="formatMillion(state.data.pr_reserved)"/> · ก่อหนี้ <t t-esc="formatMillion(state.data.committed)"/> · คงเหลือ <t t-esc="formatPercent(state.data.remaining_pct)"/></span>
                             </div>
                             <div class="o_vpk_bm_status_total">
                                 วงเงินที่ได้รับจัดสรร <b><t t-esc="formatMillion(state.data.allocated)"/> ล้านบาท</b>
@@ -105,6 +116,9 @@
                             <div class="o_vpk_bm_stack_committed" t-att-style="'width:' + usageWidth(state.data.committed_pct)">
                                 <t t-if="state.data.committed_pct >= 8"><t t-esc="formatPercent(state.data.committed_pct)"/></t>
                             </div>
+                            <div class="o_vpk_bm_stack_reserved" t-att-style="'width:' + usageWidth(state.data.pr_reserved_pct)">
+                                <t t-if="state.data.pr_reserved_pct >= 8"><t t-esc="formatPercent(state.data.pr_reserved_pct)"/></t>
+                            </div>
                             <div class="o_vpk_bm_stack_remain" t-att-style="'width:' + usageWidth(state.data.remaining_pct)">
                                 <t t-if="state.data.remaining_pct >= 8"><t t-esc="formatPercent(state.data.remaining_pct)"/></t>
                             </div>
@@ -112,12 +126,41 @@
                         <div class="o_vpk_bm_stack_legend">
                             <span><i class="o_vpk_bm_dot o_vpk_bm_dot_actual"/>เบิกจ่ายแล้ว</span>
                             <span><i class="o_vpk_bm_dot o_vpk_bm_dot_committed"/>ก่อหนี้ผูกพัน (PO / สัญญา)</span>
+                            <span><i class="o_vpk_bm_dot o_vpk_bm_dot_reserved"/>จองงบ PR</span>
                             <span><i class="o_vpk_bm_dot o_vpk_bm_dot_remain"/>คงเหลือยังไม่ผูกพัน</span>
                             <span class="o_vpk_bm_plan">เป้าสิ้นไตรมาส Q3 = <t t-esc="formatPercent(state.data.plan_pct)"/></span>
-                        </div>
-                    </section>
+                            </div>
+                        </section>
 
-                    <div class="o_vpk_bm_grid">
+                        <section class="o_vpk_bm_panel" id="o_vpk_bm_pr">
+                            <div class="o_vpk_bm_panel_head">
+                                <div>
+                                    <h3>สถานะการจองงบใบขอซื้อ</h3>
+                                    <span>จองงบแล้ว <t t-esc="state.data.pr_reserved_count"/> รายการ · ยอดที่ยังถือวงเงิน <t t-esc="formatMillion(state.data.pr_reserved)"/> ล้านบาท</span>
+                                </div>
+                            </div>
+                            <table class="o_vpk_bm_table" t-if="state.data.pr_rows.length">
+                                <thead>
+                                    <tr>
+                                        <th>ใบขอซื้อ</th>
+                                        <th>หน่วยงาน</th>
+                                        <th class="text-end">ยอดจอง</th>
+                                        <th>สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="state.data.pr_rows" t-as="pr" t-key="pr.id" class="o_vpk_bm_pr_row" t-on-click="() => this.openPurchaseRequest(pr.id)">
+                                        <td><t t-esc="pr.name"/></td>
+                                        <td><t t-esc="pr.department"/></td>
+                                        <td class="text-end"><t t-esc="formatMillion(pr.amount)"/></td>
+                                        <td><span t-attf-class="o_vpk_bm_pill o_tone_{{pr.tone}}"><t t-esc="pr.status_label"/></span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="o_vpk_bm_empty" t-else="">ยังไม่มีใบขอซื้อที่ผูกกับงบปีนี้</div>
+                        </section>
+
+                        <div class="o_vpk_bm_grid">
                         <section class="o_vpk_bm_panel">
                             <div class="o_vpk_bm_panel_head">
                                 <div>
@@ -188,7 +231,7 @@
                         <div class="o_vpk_bm_panel_head">
                             <div>
                                 <h3>งบประมาณตามประเภทรายจ่าย</h3>
-                                <span>จัดสรร · ก่อหนี้ผูกพัน · เบิกจ่าย · คงเหลือ</span>
+                                <span>จัดสรร · จองงบ PR · ก่อหนี้ผูกพัน · เบิกจ่าย · คงเหลือ</span>
                             </div>
                             <span class="o_vpk_bm_unit">หน่วย: ล้านบาท</span>
                         </div>
@@ -198,6 +241,7 @@
                                     <tr>
                                         <th>ประเภทงบ</th>
                                         <th class="text-end">จัดสรร</th>
+                                        <th class="text-end">จองงบ PR</th>
                                         <th class="text-end">ก่อหนี้ผูกพัน</th>
                                         <th class="text-end">เบิกจ่าย</th>
                                         <th class="text-end">คงเหลือ</th>
@@ -209,8 +253,9 @@
                                     <t t-foreach="state.data.expense_types" t-as="row" t-key="row.key">
                                         <tr>
                                             <td><t t-esc="row.name"/></td>
-                                            <td class="text-end"><t t-esc="formatMillion(row.allocated)"/></td>
-                                            <td class="text-end"><t t-esc="formatMillion(row.committed)"/></td>
+                                        <td class="text-end"><t t-esc="formatMillion(row.allocated)"/></td>
+                                        <td class="text-end"><t t-esc="formatMillion(row.reserved)"/></td>
+                                        <td class="text-end"><t t-esc="formatMillion(row.committed)"/></td>
                                             <td class="text-end"><t t-esc="formatMillion(row.actual)"/></td>
                                             <td class="text-end"><t t-esc="formatMillion(row.remaining)"/></td>
                                             <td>
@@ -233,6 +278,7 @@
                                     <tr>
                                         <th>รวม</th>
                                         <th class="text-end"><t t-esc="formatMillion(state.data.allocated)"/></th>
+                                        <th class="text-end"><t t-esc="formatMillion(state.data.pr_reserved)"/></th>
                                         <th class="text-end"><t t-esc="formatMillion(state.data.committed)"/></th>
                                         <th class="text-end"><t t-esc="formatMillion(state.data.actual)"/></th>
                                         <th class="text-end"><t t-esc="formatMillion(state.data.remaining)"/></th>

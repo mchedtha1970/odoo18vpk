@@ -1,6 +1,6 @@
 {
     "name": "VPK Procurement Inbox Dashboard",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "category": "Purchases",
     "summary": "Dashboard ให้พัสดุ monitor และรับงานใบขอซื้อจากหน่วยงาน",
     "description": """

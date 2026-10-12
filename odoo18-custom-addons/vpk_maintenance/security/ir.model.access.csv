@@ -1,3 +1,10 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_maintenance_assessment_result_user,maintenance.assessment.result user,model_maintenance_assessment_result,base.group_user,1,0,0,0
 access_maintenance_assessment_result_manager,maintenance.assessment.result manager,model_maintenance_assessment_result,maintenance.group_equipment_manager,1,1,1,1
+access_maintenance_department_user,maintenance.department user,model_maintenance_department,base.group_user,1,0,1,0
+access_maintenance_department_manager,maintenance.department manager,model_maintenance_department,maintenance.group_equipment_manager,1,1,1,1
+access_maintenance_request_material_line_user,maintenance.request.material.line user,model_maintenance_request_material_line,base.group_user,1,1,1,1
+access_maintenance_request_cost_line_user,maintenance.request.cost.line user,model_maintenance_request_cost_line,base.group_user,1,1,1,1
+access_maintenance_request_summary_wizard,maintenance.request.summary.wizard,model_maintenance_request_summary_wizard,base.group_user,1,1,1,1
+access_maintenance_vendor_send_user,maintenance.vendor.send user,model_maintenance_vendor_send,base.group_user,1,1,1,0
+access_maintenance_vendor_send_manager,maintenance.vendor.send manager,model_maintenance_vendor_send,maintenance.group_equipment_manager,1,1,1,1

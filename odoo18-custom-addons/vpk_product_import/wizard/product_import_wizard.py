@@ -63,9 +63,92 @@ COLUMN_MAP = {
     ],
     "list_price": ["list_price", "ราคาขาย", "sale_price"],
     "standard_price": ["standard_price", "ต้นทุน", "cost"],
-    "barcode": ["barcode", "บาร์โค้ด"],
+    "barcode": ["barcode", "บาร์โค้ด", "bar code"],
     "description": ["description", "รายละเอียด", "note"],
+    "generic_name": ["generic_name", "ชื่อสามัญ"],
+    "trade_name": ["trade_name", "ชื่อการค้า"],
+    "manufacturer_name": ["manufacturer_name", "ชื่อผู้ผลิต"],
+    "distributor_name": ["distributor_name", "ชื่อตัวแทนจำหน่าย"],
+    "packaging_type": ["packaging_type", "ชนิดการบรรจุ"],
+    "pack_size": ["pack_size", "ขนาดบรรจุ"],
+    "storage_method": ["storage_method", "วิธีการเก็บรักษา"],
+    "drug_category": ["drug_category", "drug category"],
+    "ned_group": ["ned_group", "กลุ่มบัญชียาหลักแห่งชาติ"],
+    "pharmaco_group": ["pharmaco_group", "กลุ่ม pharmaco", "pharmaco"],
+    "generic_code": ["generic_code", "generic code"],
+    "tmt_tpu": ["tmt_tpu", "tmt tpu"],
+    "tmt_fsn": ["tmt_fsn", "tmt fsn"],
+    "tmt_gpu": ["tmt_gpu", "tmt gpu"],
+    "gmu_name": ["gmu_name", "gmu name"],
+    "manufacturer_market_code": [
+        "manufacturer_market_code",
+        "รหัสผู้ผลิต/ผู้ทำการตลาด",
+        "รหัสผู้ผลิต",
+    ],
+    "vendor_product_code": ["vendor_product_code", "รหัสสินค้าผู้จำหน่าย"],
+    "drug_code_24": [
+        "drug_code_24",
+        "รหัสยา 24 หลัก",
+        "รหัสยา ๒๔หลัก",
+        "รหัสยา24หลัก",
+    ],
 }
+
+STORAGE_METHOD_MAP = {
+    "room": "room",
+    "อุณหภูมิห้อง": "room",
+    "ห้องอุณหภูมิ": "room",
+    "cold": "cold",
+    "ห้องเย็น": "cold",
+    "เย็น": "cold",
+}
+
+NED_GROUP_MAP = {
+    "a": "a",
+    "ก": "a",
+    "บัญชี ก": "a",
+    "บัญชีก": "a",
+    "b": "b",
+    "ข": "b",
+    "บัญชี ข": "b",
+    "บัญชีข": "b",
+    "c": "c",
+    "ค": "c",
+    "บัญชี ค": "c",
+    "บัญชีค": "c",
+    "d": "d",
+    "ง": "d",
+    "บัญชี ง": "d",
+    "บัญชีง": "d",
+    "e": "e",
+    "จ": "e",
+    "บัญชี จ": "e",
+    "บัญชีจ": "e",
+    "non_ed": "non_ed",
+    "non-ed": "non_ed",
+    "นอกบัญชียาหลักแห่งชาติ": "non_ed",
+    "นอกบัญชียาหลัก": "non_ed",
+    "นอกบัญชี": "non_ed",
+}
+
+ITEM_MASTER_FIELDS = [
+    "generic_name",
+    "trade_name",
+    "manufacturer_name",
+    "distributor_name",
+    "packaging_type",
+    "pack_size",
+    "drug_category",
+    "pharmaco_group",
+    "generic_code",
+    "tmt_tpu",
+    "tmt_fsn",
+    "tmt_gpu",
+    "gmu_name",
+    "manufacturer_market_code",
+    "vendor_product_code",
+    "drug_code_24",
+]
 
 BOOL_TRUE = {"1", "true", "yes", "y", "t", "x", "ใช่", "จริง"}
 BOOL_FALSE = {"0", "false", "no", "n", "f", "ไม่", "เท็จ", ""}
@@ -226,12 +309,32 @@ class ProductImportWizard(models.TransientModel):
             "standard_price",
             "barcode",
             "description",
+            "generic_name",
+            "trade_name",
+            "manufacturer_name",
+            "distributor_name",
+            "packaging_type",
+            "pack_size",
+            "storage_method",
+            "drug_category",
+            "ned_group",
+            "pharmaco_group",
+            "generic_code",
+            "tmt_tpu",
+            "tmt_fsn",
+            "tmt_gpu",
+            "gmu_name",
+            "manufacturer_market_code",
+            "vendor_product_code",
+            "drug_code_24",
         ]
         widths = [
             14, 36, 36, 40, 12, 12, 10, 12, 10,
             18, 14, 10, 12, 10,
             12, 10, 16,
             12, 14, 16, 30,
+            22, 22, 22, 24, 16, 16, 16, 18, 22, 18, 16,
+            16, 28, 16, 18, 24, 22, 24,
         ]
         for col, (h, w) in enumerate(zip(headers, widths)):
             ws.write(0, col, h, header_fmt)
@@ -299,7 +402,10 @@ class ProductImportWizard(models.TransientModel):
             "use_expiration_date = 1 หรือ 0 | "
             "tracking = none/lot/serial | "
             "expiration_time/use_time/removal_time/alert_time = จำนวนวัน | "
-            "purchase_method = receive (ตามจำนวนที่รับ) หรือ purchase (ตามจำนวนที่สั่ง)",
+            "purchase_method = receive (ตามจำนวนที่รับ) หรือ purchase (ตามจำนวนที่สั่ง) | "
+            "storage_method = room (อุณหภูมิห้อง) หรือ cold (ห้องเย็น) | "
+            "ned_group = a/b/c/d/e หรือ non_ed (บัญชี ก–จ / นอกบัญชียาหลัก) | "
+            "drug_code_24 = ตัวเลข 24 หลัก",
             note_fmt,
         )
 
@@ -534,40 +640,62 @@ class ProductImportWizard(models.TransientModel):
     def _read_xlsx_rows(self):
         raw = base64.b64decode(self.data_file)
         wb = openpyxl.load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
-        # Prefer sheet named Products; else first sheet
-        if "Products" in wb.sheetnames:
-            ws = wb["Products"]
-        else:
-            ws = wb[wb.sheetnames[0]]
+        # Drug and non-drug item masters are separate sheets. Keep Products
+        # so older single-sheet files still import.
+        preferred = ("ยา", "เวชภัณฑ์", "Products")
+        names = [name for name in preferred if name in wb.sheetnames]
+        if not names:
+            names = [wb.sheetnames[0]]
 
-        rows_iter = ws.iter_rows(values_only=True)
-        try:
-            header_row = next(rows_iter)
-        except StopIteration:
-            return []
-
-        col_index = self._map_headers(header_row)
-        if "default_code" not in col_index or "name" not in col_index:
+        result = []
+        found_header = False
+        for name in names:
+            ws = wb[name]
+            rows_iter = ws.iter_rows(values_only=True)
+            header_row = None
+            data_start = 2
+            for idx, row in enumerate(rows_iter, start=1):
+                if self._is_field_header(row):
+                    header_row = row
+                    data_start = idx + 1
+                    break
+                if idx >= 5:
+                    break
+            if not header_row:
+                continue
+            col_index = self._map_headers(header_row)
+            if "default_code" not in col_index or "name" not in col_index:
+                continue
+            found_header = True
+            for idx, row in enumerate(rows_iter, start=data_start):
+                if not row or all(c is None or str(c).strip() == "" for c in row):
+                    continue
+                data = {}
+                for field, col in col_index.items():
+                    if col < len(row):
+                        data[field] = row[col]
+                code = data.get("default_code")
+                if code is None or str(code).strip() == "":
+                    continue
+                if str(code).strip().startswith("หมายเหตุ"):
+                    continue
+                result.append((f"{name} แถว {idx}", data))
+        if not found_header:
             raise UserError(
                 _("Excel must contain columns default_code and name (or Thai aliases).")
             )
-
-        result = []
-        for idx, row in enumerate(rows_iter, start=2):
-            if not row or all(c is None or str(c).strip() == "" for c in row):
-                continue
-            data = {}
-            for field, col in col_index.items():
-                if col < len(row):
-                    data[field] = row[col]
-            # Skip note/instruction rows
-            code = data.get("default_code")
-            if code is None or str(code).strip() == "":
-                continue
-            if str(code).strip().startswith("หมายเหตุ"):
-                continue
-            result.append((idx, data))
         return result
+
+    def _is_field_header(self, row):
+        """True when the row is the technical header (default_code + name)."""
+        if not row:
+            return False
+        cells = {
+            str(cell).strip().lower()
+            for cell in row
+            if cell not in (None, "")
+        }
+        return "default_code" in cells and "name" in cells
 
     def _map_headers(self, header_row):
         normalized = []
@@ -668,11 +796,52 @@ class ProductImportWizard(models.TransientModel):
         ):
             vals["egp_purchase_name"] = str(raw.get("egp_purchase_name")).strip()
 
+        template_fields = self.env["product.template"]._fields
+        code_fields = {
+            "generic_code",
+            "tmt_tpu",
+            "tmt_gpu",
+            "manufacturer_market_code",
+            "vendor_product_code",
+            "drug_code_24",
+        }
+        for field_name in ITEM_MASTER_FIELDS:
+            if field_name not in template_fields:
+                continue
+            value = raw.get(field_name)
+            if value in (None, ""):
+                continue
+            if field_name in code_fields:
+                vals[field_name] = self._normalize_default_code(value)
+            else:
+                vals[field_name] = str(value).strip()
+        if "storage_method" in template_fields and raw.get("storage_method") not in (None, ""):
+            vals["storage_method"] = self._parse_storage_method(raw.get("storage_method"))
+        if "ned_group" in template_fields and raw.get("ned_group") not in (None, ""):
+            vals["ned_group"] = self._parse_ned_group(raw.get("ned_group"))
+
         cost = raw.get("standard_price")
         if cost not in (None, ""):
             vals["standard_price"] = self._parse_float(cost, default=0.0)
 
         return vals, code
+
+    def _parse_storage_method(self, value):
+        text = str(value).strip().lower()
+        if text not in STORAGE_METHOD_MAP:
+            raise UserError(
+                _("วิธีการเก็บรักษาไม่ถูกต้อง: %s (ใช้ room หรือ cold)") % value
+            )
+        return STORAGE_METHOD_MAP[text]
+
+    def _parse_ned_group(self, value):
+        text = str(value).strip().lower()
+        if text not in NED_GROUP_MAP:
+            raise UserError(
+                _("กลุ่มบัญชียาหลักแห่งชาติไม่ถูกต้อง: %s (ใช้ a–e หรือ non_ed)")
+                % value
+            )
+        return NED_GROUP_MAP[text]
 
     def _parse_int(self, value, default=0):
         if value is None or value == "":

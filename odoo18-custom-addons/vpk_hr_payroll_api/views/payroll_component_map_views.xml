@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_payroll_component_map_list" model="ir.ui.view">
+        <field name="name">vpk.hr.payroll.component.map.list</field>
+        <field name="model">vpk.hr.payroll.component.map</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="side"/>
+                <field name="account_id"/>
+                <field name="active"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_hr_payroll_component_map" model="ir.actions.act_window">
+        <field name="name">รหัสเงินเดือน</field>
+        <field name="res_model">vpk.hr.payroll.component.map</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

@@ -10,6 +10,7 @@ from odoo.tools.misc import file_path
 from .docx_renderer import (
     OfficialDocumentRenderError,
     render_integrity_over_100k_docx,
+    render_purchase_approval_memo_docx,
     render_spec_price_committee_docx,
     render_specific_method_approval_docx,
     render_wa_committee_order_docx,
@@ -20,21 +21,6 @@ from .pdf_stamp import SignatureStampError, stamp_signature_on_pdf
 THAI_DIGITS = str.maketrans("0123456789", "๐๑๒๓๔๕๖๗๘๙")
 WORK_DETAIL_PLACEHOLDER = "รายละเอียดตามเอกสารแนบท้าย"
 
-DOCUMENT_TYPE_SELECTION = [
-    ("wa_committee_order", "คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ"),
-    ("integrity_over_100k", "แบบแสดงความบริสุทธิ์ใจ (วงเงินมากกว่า ๑๐๐,๐๐๐ บาท)"),
-    (
-        "spec_price_committee",
-        "ขออนุมัติแต่งตั้งคณะกรรมการกำหนดรายละเอียดคุณลักษณะ",
-    ),
-    (
-        "specific_method_approval",
-        "รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง",
-    ),
-    ("winner_announcement", "ประกาศผู้ชนะการเสนอราคา"),
-    ("award_approval", "รายงานผลการพิจารณาจัดซื้อจัดจ้าง"),
-]
-
 TEMPLATE_FILES = {
     "wa_committee_order": "vpk_official_document/static/src/templates/wa_committee_order.docx",
     "integrity_over_100k": "vpk_official_document/static/src/templates/integrity_over_100k.docx",
@@ -42,6 +28,7 @@ TEMPLATE_FILES = {
     "specific_method_approval": "vpk_official_document/static/src/templates/specific_method_approval.docx",
     "winner_announcement": "vpk_purchase_agreement_egp/static/src/templates/winner_announcement.docx",
     "award_approval": "vpk_official_document/static/src/templates/award_approval.docx",
+    "purchase_approval_memo": "vpk_official_document/static/src/templates/purchase_approval_memo.docx",
 }
 
 ROLE_LABELS = {
@@ -85,7 +72,7 @@ class OfficialDocument(models.Model):
         tracking=True,
     )
     document_type = fields.Selection(
-        selection=DOCUMENT_TYPE_SELECTION,
+        selection="_selection_document_type",
         string="ประเภท",
         required=True,
         default="wa_committee_order",
@@ -124,6 +111,7 @@ class OfficialDocument(models.Model):
     item_summary = fields.Char(string="รายการซื้อ/จ้าง")
     procurement_method = fields.Char(string="วิธีจัดซื้อจัดจ้าง")
     body = fields.Text(string="ย่อหน้าแรก")
+    body_2 = fields.Text(string="ย่อหน้าที่ 2")
     duty = fields.Text(string="อำนาจหน้าที่")
     effective = fields.Text(string="ข้อความทั้งนี้")
     signer_id = fields.Many2one(
@@ -205,6 +193,12 @@ class OfficialDocument(models.Model):
         required=True,
         tracking=True,
     )
+    vpk_secretary_screen_state = fields.Selection(
+        selection=[("checked", "ตรวจสอบแล้ว")],
+        string="สถานะการตรวจสอบ",
+        copy=False,
+        tracking=True,
+    )
     signature_state = fields.Selection(
         selection=[
             ("not_sent", "ยังไม่ส่งลงนาม"),
@@ -214,6 +208,12 @@ class OfficialDocument(models.Model):
         string="สถานะการลงนาม",
         compute="_compute_signature_state",
         store=True,
+    )
+    signer_line_ids = fields.One2many(
+        comodel_name="vpk.official.document.signer",
+        inverse_name="document_id",
+        string="ผู้ลงนาม",
+        copy=True,
     )
     line_ids = fields.One2many(
         comodel_name="vpk.official.document.line",
@@ -318,6 +318,10 @@ class OfficialDocument(models.Model):
     approver_acting = fields.Char(string="ปฏิบัติราชการแทน")
     note = fields.Text(string="หมายเหตุ")
 
+    @api.model
+    def _selection_document_type(self):
+        return self.env["vpk.official.document.type"].selection_pairs()
+
     @api.depends("line_ids")
     def _compute_line_count(self):
         for rec in self:
@@ -413,6 +417,14 @@ class OfficialDocument(models.Model):
                     rec.write(rec._specific_section_vals(overwrite=False))
             elif rec.document_type == "integrity_over_100k" and not rec.subject:
                 rec.subject = "แบบแสดงความบริสุทธิ์ใจในการจัดซื้อจัดจ้าง"
+            elif rec.document_type == "purchase_approval_memo":
+                if not rec.subject:
+                    rec.subject = rec._default_subject()
+                if not rec.body:
+                    rec.body = rec._purchase_approval_memo_values()["intro"]
+                if not rec.body_2:
+                    rec.body_2 = rec._default_purchase_approval_body_2()
+                rec._seed_purchase_approval_signers()
         return records
 
     def action_refresh_text(self):
@@ -431,6 +443,11 @@ class OfficialDocument(models.Model):
                     vals["amount_total"] = rec._spec_amount()
                 vals.update(rec._specific_section_vals(overwrite=False))
                 vals["work_detail"] = rec._default_work_detail()
+            if rec.document_type == "purchase_approval_memo":
+                vals["body"] = rec._purchase_approval_memo_values(refresh_intro=True)[
+                    "intro"
+                ]
+                vals["body_2"] = rec._default_purchase_approval_body_2()
             rec.write(vals)
         return True
 
@@ -458,7 +475,10 @@ class OfficialDocument(models.Model):
 
     def _uses_pr_saraban_number(self):
         self.ensure_one()
-        return self.document_type == "specific_method_approval"
+        return self.document_type in (
+            "specific_method_approval",
+            "purchase_approval_memo",
+        )
 
     def _saraban_doc_type(self):
         self.ensure_one()
@@ -478,7 +498,11 @@ class OfficialDocument(models.Model):
 
     def _ensure_saraban_book_no(self):
         for rec in self:
-            if rec.document_type != "specific_method_approval" or not rec.request_id:
+            if (
+                rec.document_type
+                not in ("specific_method_approval", "purchase_approval_memo")
+                or not rec.request_id
+            ):
                 continue
             number = rec._saraban_book_no_from_request(rec.request_id)
             if number and not rec.saraban_book_no:
@@ -512,7 +536,8 @@ class OfficialDocument(models.Model):
     def _onchange_request_id_saraban(self):
         if (
             self.request_id
-            and self.document_type == "specific_method_approval"
+            and self.document_type
+            in ("specific_method_approval", "purchase_approval_memo")
             and not self.saraban_book_no
         ):
             self.saraban_book_no = self._saraban_book_no_from_request(self.request_id)
@@ -622,7 +647,7 @@ class OfficialDocument(models.Model):
         )
         doc_type = vals.get("document_type") or "wa_committee_order"
         if (
-            doc_type == "specific_method_approval"
+            doc_type in ("specific_method_approval", "purchase_approval_memo")
             and vals.get("request_id")
         ):
             request = self.env["purchase.request"].browse(vals["request_id"])
@@ -647,7 +672,11 @@ class OfficialDocument(models.Model):
                 signer_position = company.vpk_memo_approver_position
             vals.setdefault("signer_name", signer_name or "")
             vals.setdefault("signer_position", signer_position or "")
-        if doc_type in ("spec_price_committee", "specific_method_approval"):
+        if doc_type in (
+            "spec_price_committee",
+            "specific_method_approval",
+            "purchase_approval_memo",
+        ):
             memo_agency = ""
             if "vpk_memo_agency" in company._fields:
                 memo_agency = company.vpk_memo_agency
@@ -659,7 +688,7 @@ class OfficialDocument(models.Model):
             if "vpk_memo_default_to" in company._fields:
                 memo_to = company.vpk_memo_default_to
             vals.setdefault("recipient", memo_to or "ผู้ว่าราชการจังหวัดภูเก็ต")
-            if doc_type == "specific_method_approval":
+            if doc_type in ("specific_method_approval", "purchase_approval_memo"):
                 head_user = self._person_user_from_company(
                     company,
                     "official_doc_head_officer_id",
@@ -801,6 +830,8 @@ class OfficialDocument(models.Model):
             )
         if self.document_type == "specific_method_approval":
             return f"รายงานขออนุมัติซื้อ/จ้าง{item}  โดยวิธีเฉพาะเจาะจง"
+        if self.document_type == "purchase_approval_memo":
+            return f"ขออนุมัติจัดซื้อ{item}"
         method = self.procurement_method or "วิธีเฉพาะเจาะจง"
         return f"แต่งตั้งคณะกรรมการตรวจรับพัสดุ  สำหรับการซื้อ/จ้าง{item}  โดย{method}"
 
@@ -1406,6 +1437,7 @@ class OfficialDocument(models.Model):
             "integrity_over_100k": "แบบแสดงความบริสุทธิ์ใจ",
             "spec_price_committee": "ขออนุมัติแต่งตั้งคณะกรรมการกำหนดคุณลักษณะ",
             "specific_method_approval": "รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง",
+            "purchase_approval_memo": "บันทึกข้อความอนุมัติขอซื้อ",
         }
         return {
             "type": "ir.actions.act_window",
@@ -1548,6 +1580,54 @@ class OfficialDocument(models.Model):
         document.line_ids = document._committee_commands_from_source()
         document.subject = document._default_subject()
         document.body = document._default_body()
+        return document
+
+    @api.model
+    def create_purchase_approval_memo_from_purchase_request(self, request):
+        request.ensure_one()
+        existing = self._find_existing_document(
+            "purchase_approval_memo", request=request
+        )
+        if existing:
+            return existing
+        item = self._item_summary_from_request(request)
+        method = self._method_from_request(request) or "วิธีเฉพาะเจาะจง"
+        department_name = (
+            request.department_id.name
+            if request.department_id
+            else request.company_id.name
+        )
+        amount = request.estimated_cost if "estimated_cost" in request._fields else 0.0
+        budget = ""
+        if "budget_id" in request._fields and request.budget_id:
+            budget = request.budget_id.display_name
+        reason = ""
+        if "expense_reason" in request._fields and request.expense_reason:
+            reason = request.expense_reason.strip()
+        document = self.create(
+            {
+                "document_type": "purchase_approval_memo",
+                "request_id": request.id,
+                "department_id": request.department_id.id,
+                "department_name": department_name,
+                "item_summary": item,
+                "procurement_method": method,
+                "recipient": (
+                    request.memo_to
+                    if "memo_to" in request._fields and request.memo_to
+                    else self._recipient_from_request(request)
+                ),
+                "amount_total": amount,
+                "budget_source": budget,
+                "reason_text": reason,
+                "company_id": request.company_id.id,
+            }
+        )
+        document._apply_integrity_people_from_request(request)
+        document.subject = document._default_subject()
+        document.body = document._purchase_approval_memo_values()["intro"]
+        document.body_2 = document._default_purchase_approval_body_2()
+        document._seed_purchase_approval_signers()
         return document
 
     def _apply_integrity_people_from_request(self, request):
@@ -1775,6 +1855,263 @@ class OfficialDocument(models.Model):
         self._sync_winner_egp_attachment()
         return attachment
 
+    def _purchase_approval_item_lines(self):
+        self.ensure_one()
+        request = self.request_id
+        lines = []
+        if request:
+            source = request.line_ids.filtered(
+                lambda line: not getattr(line, "cancelled", False) and line.product_qty
+            )
+            for index, line in enumerate(source, start=1):
+                name = (line.name or line.product_id.display_name or "").strip()
+                qty = self._format_qty_display(line.product_qty)
+                uom = line.product_uom_id.name if "product_uom_id" in line._fields else ""
+                amount = self._format_amount_display(line.estimated_cost or 0.0)
+                detail = "%s จำนวน %s" % (name, qty)
+                if uom:
+                    detail = "%s %s" % (detail, uom)
+                detail = "%s เป็นเงิน %s บาท" % (detail, amount)
+                lines.append("%s. %s" % (self._thai_digits(index), detail))
+        if lines:
+            return lines
+        text = (self.work_detail or "").strip()
+        if not text:
+            return []
+        result = []
+        for index, raw in enumerate(
+            [line.strip() for line in text.splitlines() if line.strip()], start=1
+        ):
+            if raw[:1].isdigit() or raw[:1] in "๐๑๒๓๔๕๖๗๘๙":
+                result.append(raw)
+            else:
+                result.append("%s. %s" % (self._thai_digits(index), raw))
+        return result
+
+    def _default_purchase_approval_body_2(self):
+        self.ensure_one()
+        item = self.item_summary or self.subject or "พัสดุตามรายการ"
+        method = self.procurement_method or "วิธีเฉพาะเจาะจง"
+        return (
+            "ทั้งนี้  ได้ตรวจสอบความจำเป็นและงบประมาณแล้ว  "
+            "เห็นควรอนุมัติให้จัดซื้อ%s  โดย%s  "
+            "ตามรายละเอียดข้างต้น"
+            % (item, method)
+        )
+
+    def _seed_purchase_approval_signers(self):
+        """Start from the company officer, head, and director. Rows can then be changed."""
+        Signer = self.env["vpk.official.document.signer"]
+        for rec in self.filtered(
+            lambda doc: doc.document_type == "purchase_approval_memo"
+            and not doc.signer_line_ids
+        ):
+            rows = []
+            sequence = 1
+            seen = set()
+            for user, position, fallback in (
+                (rec.officer_id, rec.officer_position, "เจ้าหน้าที่"),
+                (rec.head_officer_id, rec.head_officer_position, "หัวหน้าเจ้าหน้าที่"),
+                (rec.signer_id, rec.signer_position, "ผู้อำนวยการ"),
+            ):
+                if not user or user.id in seen:
+                    continue
+                seen.add(user.id)
+                rows.append(
+                    {
+                        "document_id": rec.id,
+                        "sequence": sequence,
+                        "user_id": user.id,
+                        "position": position or fallback,
+                        "is_sign": True,
+                    }
+                )
+                sequence += 1
+            if rows:
+                Signer.with_context(vpk_skip_signer_sync=True).create(rows)
+                rec._sync_signers_from_lines()
+
+    def _sync_signers_from_lines(self):
+        for rec in self:
+            lines = rec.signer_line_ids.sorted(
+                key=lambda line: (line.sequence, line.id)
+            )
+            if not lines:
+                continue
+            users = lines.mapped("user_id")
+            officer = users[:1]
+            head = users[1:2] if len(users) >= 3 else self.env["res.users"]
+            signer = users[-1:] if len(users) > 1 else officer
+            vals = {
+                "officer_id": officer.id,
+                "head_officer_id": head.id,
+                "signer_id": signer.id,
+            }
+            if lines[:1].position:
+                vals["officer_position"] = lines[0].position
+            if len(lines) >= 3 and lines[1].position:
+                vals["head_officer_position"] = lines[1].position
+            if lines[-1:].position and len(lines) > 1:
+                vals["signer_position"] = lines[-1].position
+            elif len(lines) == 1 and lines.position:
+                vals["signer_position"] = lines.position
+            rec.with_context(skip_validation_check=True).write(vals)
+
+    def _purchase_approval_signer_rows(self):
+        self.ensure_one()
+        if self.document_type == "purchase_approval_memo" and not self.signer_line_ids:
+            self._seed_purchase_approval_signers()
+        rows = []
+        for line in self.signer_line_ids.sorted(
+            key=lambda item: (item.sequence, item.id)
+        ):
+            name = ""
+            auto_position = ""
+            if line.user_id:
+                name, auto_position = self._person_from_user(line.user_id)
+            rows.append(
+                {
+                    "sequence": line.sequence,
+                    "name": name or "................................",
+                    "position": line.position or auto_position or "",
+                }
+            )
+        return rows
+
+    def _vpk_definition_for_added_approvers(self):
+        self.ensure_one()
+        Definition = self.env["tier.definition"]
+        if self.document_type:
+            found = Definition.search(
+                [
+                    ("model", "=", self._name),
+                    ("active", "=", True),
+                    ("definition_domain", "ilike", self.document_type),
+                ],
+                limit=1,
+                order="sequence, id",
+            )
+            if found:
+                return found
+        return Definition.search(
+            [("model", "=", self._name), ("active", "=", True)],
+            limit=1,
+            order="sequence, id",
+        )
+
+    def _vpk_create_reviews_from_signer_lines(self):
+        """Create one review per row in the approver table."""
+        Review = self.env["tier.review"]
+        created = Review.browse()
+        for doc in self:
+            if doc.document_type == "purchase_approval_memo" and not doc.signer_line_ids:
+                doc._seed_purchase_approval_signers()
+            lines = doc.signer_line_ids.filtered("user_id").sorted(
+                key=lambda line: (line.sequence, line.id)
+            )
+            if not lines:
+                if doc.document_type == "purchase_approval_memo":
+                    raise UserError(_("กรุณาเพิ่มผู้ลงนามอย่างน้อย 1 คน"))
+                continue
+            if doc.review_ids.filtered(
+                lambda review: review.status in ("waiting", "pending")
+            ):
+                continue
+            definition = doc._vpk_definition_for_added_approvers()
+            if not definition:
+                raise UserError(_("ยังไม่ได้ตั้งลำดับลงนามของเอกสารนี้"))
+            secretary = doc._vpk_director_secretary_user()
+            ordered_lines = list(lines)
+            if secretary and secretary not in lines.user_id:
+                director_at = [
+                    index
+                    for index, line in enumerate(ordered_lines)
+                    if line.user_id == doc.signer_id
+                ]
+                insert_at = director_at[-1] if director_at else len(ordered_lines)
+                ordered_lines.insert(insert_at, secretary)
+            vals_list = []
+            for index, line in enumerate(ordered_lines, start=1):
+                user = line if line._name == "res.users" else line.user_id
+                name, _position = doc._person_from_user(user)
+                if line._name == "res.users":
+                    role = "check"
+                else:
+                    role = line._vpk_approval_role()
+                vals_list.append(
+                    {
+                        "model": doc._name,
+                        "res_id": doc.id,
+                        "definition_id": definition.id,
+                        "requested_by": self.env.uid,
+                        "sequence": index,
+                        "vpk_signer_user_id": user.id,
+                        "vpk_signer_name": name or user.name,
+                        "vpk_approval_role": role,
+                    }
+                )
+            created |= Review.sudo().create(vals_list)
+        if created:
+            created._compute_reviewer_ids()
+            created._compute_can_review()
+        return created
+
+    def _vpk_create_purchase_approval_sign_reviews(self):
+        """Create one review per signer row, in the table order."""
+        return self._vpk_create_reviews_from_signer_lines()
+
+    def _purchase_approval_memo_values(self, refresh_intro=False):
+        self.ensure_one()
+        amount = self.amount_total or self._spec_amount()
+        count = self._thai_digits(len(self._purchase_approval_item_lines()) or self._spec_item_count())
+        intro = "" if refresh_intro else (self.body or "").strip()
+        if not intro:
+            department = self._request_department_name()
+            subject = self.subject or "พัสดุตามรายการ"
+            budget = self.budget_source or self._spec_budget_source() or "งบประมาณของหน่วยงาน"
+            intro = (
+                "ด้วย%s  มีความประสงค์ขออนุมัติจัดซื้อ%s  "
+                "จำนวน  %s  รายการ  รวมเป็นเงินทั้งสิ้น  %s  บาท  (%s)  "
+                "โดยใช้งบประมาณจาก%s  รายละเอียดดังต่อไปนี้"
+                % (
+                    department,
+                    subject,
+                    count,
+                    self._format_amount_display(amount),
+                    self._baht_text_display(amount),
+                    budget,
+                )
+            )
+        signers = self._purchase_approval_signer_rows()
+        proposer = signers[:1]
+        reviewer = signers[1:2] if len(signers) >= 3 else []
+        approver = signers[-1:] if len(signers) > 1 else signers[:1]
+        return {
+            "agency": self.agency or self._request_department_name(),
+            "memo_number": self._printed_document_number(),
+            "memo_date": self._format_order_date(),
+            "subject": self.subject or "",
+            "recipient": self.recipient or "ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต",
+            "intro": intro,
+            "body_2": (self.body_2 or "").strip() or self._default_purchase_approval_body_2(),
+            "items": self._purchase_approval_item_lines(),
+            "signers": signers,
+            "proposer_name": (proposer[0]["name"] if proposer else self.officer_name) or "",
+            "proposer_position": (
+                proposer[0]["position"] if proposer else self.officer_position
+            )
+            or "",
+            "reviewer_name": reviewer[0]["name"] if reviewer else "",
+            "reviewer_position": reviewer[0]["position"] if reviewer else "",
+            "reviewer_date": "",
+            "approver_name": (approver[0]["name"] if approver else self.signer_name) or "",
+            "approver_position": (
+                approver[0]["position"] if approver else self.signer_position
+            )
+            or "",
+            "approver_date": "",
+        }
+
     def _render_docx_bytes(self):
         self.ensure_one()
         self._ensure_saraban_book_no()
@@ -1796,6 +2133,11 @@ class OfficialDocument(models.Model):
                 return render_specific_method_approval_docx(
                     self._get_template_bytes(),
                     self._specific_method_render_values(),
+                )
+            if self.document_type == "purchase_approval_memo":
+                return render_purchase_approval_memo_docx(
+                    self._get_template_bytes(),
+                    self._purchase_approval_memo_values(),
                 )
             if not self.line_ids:
                 if self.document_type == "spec_price_committee":
@@ -1949,13 +2291,84 @@ class OfficialDocument(models.Model):
                 "res_model": self._name,
                 "res_id": self.id,
                 "title": self.pdf_filename or self.display_name,
-                "can_sign": can_sign,
+                "can_sign": can_sign and not self.vpk_secretary_can_screen,
+                "secretary_screen": bool(self.vpk_secretary_can_screen),
             },
         }
 
     def action_open_sign_viewer(self):
         """Fallback when the form JS dialog is not available."""
         return self.action_open_pdf_viewer()
+
+    def action_open_send_wizard(self):
+        self.ensure_one()
+        if self.state == "cancelled":
+            raise UserError(_("ไม่สามารถส่งเอกสารที่ยกเลิกแล้ว"))
+        if self.signature_state == "signed" or self.state == "approved":
+            raise UserError(_("เอกสารนี้ลงนามแล้ว"))
+        if self.signature_state == "waiting":
+            raise UserError(_("เอกสารถูกส่งลงนามแล้ว กำลังรอลงนาม"))
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("ส่งเอกสาร"),
+            "res_model": "vpk.official.document.send.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {"default_document_id": self.id},
+        }
+
+    def action_skip_approval_for_test(self):
+        """Mark the document signed without the approval inbox, for flow testing."""
+        now = fields.Datetime.now()
+        for rec in self:
+            if rec.state == "cancelled":
+                raise UserError(_("ไม่สามารถส่งเอกสารที่ยกเลิกแล้ว"))
+            if rec.state == "approved":
+                continue
+            if not rec._get_pdf_attachment():
+                rec.with_context(skip_validation_check=True).action_generate_pdf()
+            if not rec._get_pdf_attachment():
+                raise UserError(_("ยังไม่มีไฟล์ PDF กรุณากดพิมพ์ PDF ก่อน"))
+            pending = rec.review_ids.filtered(
+                lambda review: review.status in ("waiting", "pending")
+            )
+            if pending:
+                pending.sudo().write(
+                    {
+                        "status": "approved",
+                        "done_by": self.env.user.id,
+                        "reviewed_date": now,
+                    }
+                )
+            # skip_check_state_condition forces the tier gate and creates
+            # signer reviews, which then block this test skip.
+            rec.sudo().with_context(
+                skip_validation_check=True,
+                vpk_skip_tier_gate=True,
+            ).write(
+                {
+                    "state": "approved",
+                    "signed_on": rec.signed_on or now,
+                }
+            )
+            rec.message_post(
+                body=_(
+                    "ข้ามการอนุมัติเพื่อทดสอบเดินเอกสารต่อ โดย %s"
+                )
+                % self.env.user.display_name
+            )
+            if rec.document_type == "award_approval":
+                rec._approve_linked_award_report()
+            if rec.document_type in (
+                "wa_committee_order",
+                "specific_method_approval",
+            ):
+                request = rec.sudo().request_id
+                if request:
+                    request._vpk_approve_if_packet_complete()
+            if rec.request_id and "can_send_to_egp" in rec.request_id._fields:
+                rec.request_id.invalidate_recordset(["can_send_to_egp"])
+        return True
 
     def action_send_for_signature(self):
         for rec in self:
@@ -1969,8 +2382,17 @@ class OfficialDocument(models.Model):
                 rec.with_context(skip_validation_check=True).action_generate_pdf()
             if not rec._get_pdf_attachment():
                 raise UserError(_("ยังไม่มีไฟล์ PDF กรุณากดพิมพ์ PDF ก่อน"))
-            rec.with_context(skip_validation_check=True).write({"state": "to_approve"})
-            if rec.document_type in (
+            rec.with_context(skip_validation_check=True).write(
+                {"state": "to_approve", "vpk_secretary_screen_state": False}
+            )
+            if rec.signer_line_ids.filtered("user_id") or (
+                rec.document_type == "purchase_approval_memo"
+            ):
+                created = rec._vpk_create_reviews_from_signer_lines()
+                if created:
+                    rec._notify_review_requested(created)
+                    rec._update_counter({"review_created": True})
+            elif rec.document_type in (
                 "specific_method_approval",
                 "award_approval",
             ):
@@ -2183,6 +2605,11 @@ class OfficialDocument(models.Model):
             return request.evaluate_formula_tier(tier)
         return super().evaluate_formula_tier(tier)
 
+    def _tier_validation_check_state_on_write(self, vals):
+        if self.env.context.get("vpk_skip_tier_gate"):
+            return
+        return super()._tier_validation_check_state_on_write(vals)
+
     def _validate_tier(self, tiers=False):
         res = super()._validate_tier(tiers)
         for rec in self:
@@ -2212,9 +2639,32 @@ class OfficialDocument(models.Model):
 
     def _rejected_tier(self, tiers=False):
         res = super()._rejected_tier(tiers)
+        secretary = self._vpk_director_secretary_user()
+        returned = self.browse()
+        if secretary:
+            for rec in self.filtered(lambda doc: doc.state == "to_approve"):
+                secretary_rejected = rec.review_ids.filtered(
+                    lambda review: review.status == "rejected"
+                    and secretary in review.reviewer_ids
+                )
+                if not secretary_rejected:
+                    continue
+                partners = rec.review_ids.mapped("requested_by.partner_id")
+                rec.review_ids.sudo().unlink()
+                rec.sudo().with_context(skip_validation_check=True).write(
+                    {"state": "generated", "vpk_secretary_screen_state": False}
+                )
+                rec.sudo().message_post(
+                    body=_(
+                        "เลขาผู้อำนวยการตีกลับเอกสารให้ผู้จัดทำแก้ไข "
+                        "แล้วส่งขออนุมัติใหม่"
+                    ),
+                    partner_ids=partners.ids,
+                )
+                returned |= rec
         if self.env.context.get("vpk_skip_pr_reject_from_packet"):
             return res
-        for rec in self:
+        for rec in self - returned:
             if rec.document_type not in (
                 "wa_committee_order",
                 "specific_method_approval",
@@ -2230,18 +2680,26 @@ class OfficialDocument(models.Model):
         return res
 
     def request_validation(self):
-        approval = self.filtered(
+        with_signers = self.filtered(
+            lambda doc: doc.signer_line_ids.filtered("user_id")
+            or doc.document_type == "purchase_approval_memo"
+        )
+        created = with_signers._vpk_create_reviews_from_signer_lines()
+        if created:
+            with_signers._notify_review_requested(created)
+            with_signers._update_counter({"review_created": True})
+        rest = self - with_signers
+        approval = rest.filtered(
             lambda doc: doc.document_type == "specific_method_approval"
         )
-        integrity = self.filtered(
+        integrity = rest.filtered(
             lambda doc: doc.document_type == "integrity_over_100k"
         )
-        winners = self.filtered(
+        winners = rest.filtered(
             lambda doc: doc.document_type == "winner_announcement"
         )
-        awards = self.filtered(lambda doc: doc.document_type == "award_approval")
-        others = self - approval - integrity - winners - awards
-        created = self.env["tier.review"]
+        awards = rest.filtered(lambda doc: doc.document_type == "award_approval")
+        others = rest - approval - integrity - winners - awards
         if others:
             created |= super(OfficialDocument, others).request_validation()
         if approval:
@@ -2270,18 +2728,112 @@ class OfficialDocument(models.Model):
             if report and report.state not in ("approved", "cancelled"):
                 report.action_approve()
 
+    def action_secretary_mark_checked(self):
+        """Secretary marks the document reviewed before it can go to the director."""
+        for rec in self:
+            if not rec.vpk_secretary_can_screen:
+                raise UserError(_("เฉพาะเลขาผู้อำนวยการที่กำลังกลั่นกรองเอกสารนี้"))
+            if rec.vpk_secretary_screen_state == "checked":
+                continue
+            rec.sudo().with_context(skip_validation_check=True).write(
+                {"vpk_secretary_screen_state": "checked"}
+            )
+            rec.sudo().message_post(body=_("เลขาผู้อำนวยการตรวจสอบเอกสารแล้ว"))
+        return True
+
+    def action_secretary_send_director(self):
+        """Forward a reviewed document to the director."""
+        for rec in self:
+            if not rec.vpk_secretary_can_screen:
+                raise UserError(_("เฉพาะเลขาผู้อำนวยการที่กำลังกลั่นกรองเอกสารนี้"))
+            if rec.vpk_secretary_screen_state != "checked":
+                raise UserError(_("กรุณากดตรวจสอบแล้ว ก่อนส่งผู้อำนวยการ"))
+        return self.validate_tier()
+
+    def _vpk_director_secretary_user(self):
+        return self.env.ref(
+            "vpk_official_document.user_director_secretary",
+            raise_if_not_found=False,
+        )
+
+    def _vpk_insert_secretary_before_director(self):
+        """Put the secretary ahead of a director step that was opened without one."""
+        secretary = self._vpk_director_secretary_user()
+        if not secretary:
+            return self.env["tier.review"]
+        Review = self.env["tier.review"].sudo()
+        created = Review.browse()
+        for doc in self.filtered(lambda item: item.state == "to_approve" and item.signer_id):
+            if doc.signer_id == secretary:
+                continue
+            reviews = doc.review_ids
+            if reviews.filtered(
+                lambda review: review.vpk_signer_user_id == secretary
+                or secretary in review.reviewer_ids
+            ):
+                continue
+            director_review = reviews.filtered(
+                lambda review: review.status in ("pending", "waiting")
+                and (
+                    review.vpk_signer_user_id == doc.signer_id
+                    or doc.signer_id in review.reviewer_ids
+                )
+            ).sorted("sequence")[:1]
+            if not director_review:
+                continue
+            slot = director_review.sequence or 1
+            later = reviews.filtered(lambda review: (review.sequence or 0) >= slot)
+            for review in later.sorted(key=lambda item: item.sequence or 0, reverse=True):
+                vals = {"sequence": (review.sequence or 0) + 1}
+                if review == director_review:
+                    vals.update({"status": "waiting", "can_review": False})
+                review.with_context(
+                    tier_validation_defer_compute_can_review=True
+                ).write(vals)
+            name, _position = doc._person_from_user(secretary)
+            created |= Review.with_context(
+                tier_validation_defer_compute_can_review=True
+            ).create(
+                {
+                    "model": doc._name,
+                    "res_id": doc.id,
+                    "definition_id": director_review.definition_id.id,
+                    "requested_by": director_review.requested_by.id or self.env.uid,
+                    "sequence": slot,
+                    "status": "waiting",
+                    "vpk_signer_user_id": secretary.id,
+                    "vpk_signer_name": name or secretary.name,
+                }
+            )
+            open_reviews = doc.review_ids.filtered(
+                lambda review: review.status in ("waiting", "pending")
+            )
+            open_reviews._compute_reviewer_ids()
+            open_reviews._compute_can_review()
+        return created
+
     def _vpk_sequential_sign_definitions(self, document_type=None):
         if document_type == "award_approval":
             xmlids = (
                 "vpk_official_document.tier_definition_award_approval_officer",
                 "vpk_official_document.tier_definition_award_approval_head_officer",
+                "vpk_official_document.tier_definition_award_approval_secretary",
                 "vpk_official_document.tier_definition_award_approval_director",
             )
             domain_hint = "award_approval"
+        elif document_type == "purchase_approval_memo":
+            xmlids = (
+                "vpk_official_document.tier_definition_purchase_approval_officer",
+                "vpk_official_document.tier_definition_purchase_approval_head_officer",
+                "vpk_official_document.tier_definition_purchase_approval_secretary",
+                "vpk_official_document.tier_definition_purchase_approval_director",
+            )
+            domain_hint = "purchase_approval_memo"
         else:
             xmlids = (
                 "vpk_official_document.tier_definition_specific_method_officer",
                 "vpk_official_document.tier_definition_specific_method_head_officer",
+                "vpk_official_document.tier_definition_specific_method_secretary",
                 "vpk_official_document.tier_definition_specific_method_director",
             )
             domain_hint = "specific_method_approval"
@@ -2290,7 +2842,7 @@ class OfficialDocument(models.Model):
             definition = self.env.ref(xmlid, raise_if_not_found=False)
             if definition:
                 definitions |= definition
-        if len(definitions) == 3:
+        if len(definitions) == len(xmlids):
             return definitions
         return self.env["tier.definition"].search(
             [
@@ -2341,17 +2893,18 @@ class OfficialDocument(models.Model):
             missing.append(_("ผู้อำนวยการ"))
         if missing:
             raise UserError(
-                _("กรุณาระบุ %s ในเอกสารขออนุมัติจัดซื้อจัดจ้าง") % "  ".join(missing)
+                _("กรุณาระบุ %s ในเอกสาร") % "  ".join(missing)
             )
         return True
 
     def _vpk_create_sequential_sign_reviews(self):
-        """Create officer → head officer → director reviews in order."""
+        """Create officer → head officer → secretary → director reviews in order."""
         Review = self.env["tier.review"]
         created = Review.browse()
         for doc in self:
             if doc.document_type not in (
                 "specific_method_approval",
+                "purchase_approval_memo",
                 "award_approval",
             ):
                 continue
@@ -2359,11 +2912,16 @@ class OfficialDocument(models.Model):
                 lambda review: review.status in ("waiting", "pending")
             ):
                 continue
+            if doc.document_type == "purchase_approval_memo" or doc.signer_line_ids.filtered(
+                "user_id"
+            ):
+                created |= doc._vpk_create_reviews_from_signer_lines()
+                continue
             doc._vpk_ensure_sequential_signers()
             definitions = doc._vpk_sequential_sign_definitions(doc.document_type)
-            if len(definitions) < 3:
+            if len(definitions) < 3:  # officer, head, and director are required
                 raise UserError(
-                    _("ยังไม่ได้ตั้งลำดับลงนามของรายงานขออนุมัติจัดซื้อจัดจ้าง")
+                    _("ยังไม่ได้ตั้งลำดับลงนามของเอกสารนี้")
                 )
             vals_list = []
             sequence = 0
@@ -2405,7 +2963,7 @@ class OfficialDocument(models.Model):
 
     @api.model
     def _vpk_ensure_winner_tier_definitions(self):
-        """Winner announcement is signed by director only."""
+        """Winner announcement is screened by the secretary, then signed by the director."""
         signer_field = self.env.ref(
             "vpk_official_document.field_vpk_official_document__signer_id",
             raise_if_not_found=False,
@@ -2414,18 +2972,37 @@ class OfficialDocument(models.Model):
             "vpk_official_document.tier_definition_winner_announcement_generator",
             raise_if_not_found=False,
         )
+        secretary_def = self.env.ref(
+            "vpk_official_document.tier_definition_winner_announcement_secretary",
+            raise_if_not_found=False,
+        )
         director = self.env.ref(
             "vpk_official_document.tier_definition_winner_announcement_director",
             raise_if_not_found=False,
         )
         if generator and generator.active:
             generator.sudo().write({"active": False})
+        secretary_user = self._vpk_director_secretary_user()
+        if secretary_def and secretary_user:
+            vals = {}
+            if secretary_def.review_type != "individual":
+                vals["review_type"] = "individual"
+            if secretary_def.reviewer_id != secretary_user:
+                vals["reviewer_id"] = secretary_user.id
+            if secretary_def.sequence != 10:
+                vals["sequence"] = 10
+            if not secretary_def.approve_sequence:
+                vals["approve_sequence"] = True
+            if not secretary_def.active:
+                vals["active"] = True
+            if vals:
+                secretary_def.sudo().write(vals)
         if director and signer_field:
             vals = {}
             if director.reviewer_field_id != signer_field:
                 vals["reviewer_field_id"] = signer_field.id
-            if director.sequence != 10:
-                vals["sequence"] = 10
+            if director.sequence != 20:
+                vals["sequence"] = 20
             if director.review_type != "field":
                 vals["review_type"] = "field"
             if not director.approve_sequence:
@@ -2438,12 +3015,21 @@ class OfficialDocument(models.Model):
 
     def _vpk_winner_sign_definitions(self):
         self._vpk_ensure_winner_tier_definitions()
+        secretary_def = self.env.ref(
+            "vpk_official_document.tier_definition_winner_announcement_secretary",
+            raise_if_not_found=False,
+        )
         director = self.env.ref(
             "vpk_official_document.tier_definition_winner_announcement_director",
             raise_if_not_found=False,
         )
+        definitions = self.env["tier.definition"]
+        if secretary_def and secretary_def.active:
+            definitions |= secretary_def
         if director and director.active:
-            return [director]
+            definitions |= director
+        if definitions:
+            return list(definitions.sorted("sequence"))
         found = self.env["tier.definition"].search(
             [
                 ("model", "=", self._name),
@@ -2458,7 +3044,7 @@ class OfficialDocument(models.Model):
         return list(found)
 
     def _vpk_create_winner_sign_reviews(self):
-        """Create director-only review for winner announcement."""
+        """Create secretary then director reviews for winner announcement."""
         Review = self.env["tier.review"]
         created = Review.browse()
         definitions = self._vpk_winner_sign_definitions()
@@ -2687,12 +3273,17 @@ class OfficialDocument(models.Model):
         """Clone PR reviews onto committee orders; approval/integrity use sequential signers."""
         Review = self.env["tier.review"]
         committee_created = Review.browse()
-        sequential_types = ("specific_method_approval", "integrity_over_100k")
+        sequential_types = (
+            "specific_method_approval",
+            "purchase_approval_memo",
+            "integrity_over_100k",
+        )
         committee = self.filtered(
             lambda doc: doc.document_type not in sequential_types
         )
         approval = self.filtered(
-            lambda doc: doc.document_type == "specific_method_approval"
+            lambda doc: doc.document_type
+            in ("specific_method_approval", "purchase_approval_memo")
         )
         integrity = self.filtered(
             lambda doc: doc.document_type == "integrity_over_100k"
@@ -2734,6 +3325,113 @@ class OfficialDocument(models.Model):
             committee._notify_review_requested(committee_created)
             self._update_counter({"review_created": True})
         return committee_created | sequential_created
+
+
+class OfficialDocumentSigner(models.Model):
+    _name = "vpk.official.document.signer"
+    _description = "ผู้ลงนามหนังสือราชการ"
+    _order = "sequence, id"
+
+    document_id = fields.Many2one(
+        comodel_name="vpk.official.document",
+        required=True,
+        ondelete="cascade",
+        index=True,
+    )
+    sequence = fields.Integer(string="ลำดับอนุมัติ", default=1)
+    user_id = fields.Many2one(
+        comodel_name="res.users",
+        string="ชื่อ",
+        ondelete="restrict",
+        domain=[("share", "=", False)],
+    )
+    position = fields.Char(string="ตำแหน่ง")
+    is_check = fields.Boolean(string="ตรวจสอบ")
+    is_sign = fields.Boolean(string="ลงนาม", default=True)
+    company_id = fields.Many2one(related="document_id.company_id", store=True)
+
+    def _is_director_secretary(self, user):
+        secretary = self.env.ref(
+            "vpk_official_document.user_director_secretary",
+            raise_if_not_found=False,
+        )
+        return bool(secretary and user == secretary)
+
+    def _vpk_approval_role(self):
+        self.ensure_one()
+        if self.is_check and not self.is_sign:
+            return "check"
+        return "sign"
+
+    @api.onchange("user_id")
+    def _onchange_user_id(self):
+        if not self.user_id:
+            return
+        _name, position = self.env["vpk.official.document"]._person_from_user(
+            self.user_id
+        )
+        if position:
+            self.position = position
+        if self._is_director_secretary(self.user_id):
+            self.is_check = True
+            self.is_sign = False
+        elif not self.is_check:
+            self.is_sign = True
+
+    @api.onchange("is_check")
+    def _onchange_is_check(self):
+        if self.is_check:
+            self.is_sign = False
+
+    @api.onchange("is_sign")
+    def _onchange_is_sign(self):
+        if self.is_sign:
+            self.is_check = False
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        Document = self.env["vpk.official.document"]
+        for vals in vals_list:
+            if vals.get("user_id") and not vals.get("position"):
+                user = self.env["res.users"].browse(vals["user_id"])
+                _name, position = Document._person_from_user(user)
+                if position:
+                    vals["position"] = position
+            if vals.get("is_check") and vals.get("is_sign"):
+                vals["is_sign"] = False
+            elif "is_check" not in vals and "is_sign" not in vals:
+                user = self.env["res.users"].browse(vals.get("user_id"))
+                if user and self._is_director_secretary(user):
+                    vals["is_check"] = True
+                    vals["is_sign"] = False
+                else:
+                    vals["is_sign"] = True
+            if not vals.get("sequence") and vals.get("document_id"):
+                siblings = self.search([("document_id", "=", vals["document_id"])])
+                vals["sequence"] = max(siblings.mapped("sequence") or [0]) + 1
+        records = super().create(vals_list)
+        if not self.env.context.get("vpk_skip_signer_sync"):
+            records.mapped("document_id")._sync_signers_from_lines()
+        return records
+
+    def write(self, vals):
+        if vals.get("user_id") and "position" not in vals:
+            user = self.env["res.users"].browse(vals["user_id"])
+            _name, position = self.env["vpk.official.document"]._person_from_user(
+                user
+            )
+            if position:
+                vals = dict(vals, position=position)
+        result = super().write(vals)
+        if not self.env.context.get("vpk_skip_signer_sync"):
+            self.mapped("document_id")._sync_signers_from_lines()
+        return result
+
+    def unlink(self):
+        documents = self.mapped("document_id")
+        result = super().unlink()
+        documents._sync_signers_from_lines()
+        return result
 
 
 class OfficialDocumentLine(models.Model):

@@ -330,10 +330,21 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
         sheet = workbook["รายการวัสดุ"] if "รายการวัสดุ" in workbook.sheetnames else workbook.active
         rows = list(sheet.iter_rows(values_only=True))
         workbook.close()
-        header = rows[0] if rows else None
+        header_index = next(
+            (
+                index
+                for index, candidate in enumerate(rows[:12])
+                if any(
+                    str(cell or "").strip() in ("รหัสสินค้า", "รายการ")
+                    for cell in (candidate or [])
+                )
+            ),
+            0,
+        )
+        header = rows[header_index] if rows else None
         if not header:
             return []
-        rows = rows[1:]
+        rows = rows[header_index + 1 :]
         columns = []
         for cell in header:
             key = str(cell or "").strip().casefold()
@@ -343,7 +354,7 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
                 _("ไม่พบคอลัมน์ รหัสสินค้า หรือ รายการ ในแถวแรกของไฟล์")
             )
         parsed = []
-        for index, values in enumerate(rows, start=2):
+        for index, values in enumerate(rows, start=header_index + 2):
             if not values or not any(value not in (None, "") for value in values):
                 continue
             row = {}

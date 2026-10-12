@@ -11,8 +11,8 @@ msgstr ""
 
 #. module: vpk_tier_validation
 #: model:ir.ui.menu,name:vpk_tier_validation.menu_vpk_tier_validation_root
-msgid "การอนุมัติตามลำดับ"
-msgstr "การอนุมัติตามลำดับ"
+msgid "กล่องอนุมัติเอกสาร"
+msgstr "กล่องอนุมัติเอกสาร"
 
 #. module: vpk_tier_validation
 #: model:ir.ui.menu,name:vpk_tier_validation.menu_vpk_tier_definition

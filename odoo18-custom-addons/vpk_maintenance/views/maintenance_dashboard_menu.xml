@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_vpk_maintenance_dashboard" model="ir.actions.client">
+        <field name="name">ติดตามงานซ่อม</field>
+        <field name="tag">vpk_maintenance_dashboard</field>
+    </record>
+
+    <menuitem
+        id="menu_vpk_maintenance_dashboard"
+        name="ติดตามงานซ่อม"
+        parent="maintenance.menu_maintenance_title"
+        action="action_vpk_maintenance_dashboard"
+        sequence="-1"
+        groups="maintenance.group_equipment_manager,base.group_user"/>
+</odoo>

@@ -36,6 +36,12 @@ class BudgetRequestFormType(models.Model):
         copy=False,
         ondelete="set null",
     )
+    request_server_action_id = fields.Many2one(
+        comodel_name="ir.actions.server",
+        string="Department Request Server Action",
+        copy=False,
+        ondelete="set null",
+    )
     summary_action_id = fields.Many2one(
         comodel_name="ir.actions.act_window",
         string="Summary Wizard Action",
@@ -140,9 +146,11 @@ class BudgetRequestFormType(models.Model):
     def unlink(self):
         menus = self.request_menu_id | self.summary_menu_id
         actions = self.request_action_id | self.summary_action_id
+        server_actions = self.request_server_action_id
         res = super().unlink()
         menus.sudo().exists().unlink()
         actions.sudo().exists().unlink()
+        server_actions.sudo().exists().unlink()
         return res
 
     @api.model
@@ -183,14 +191,10 @@ class BudgetRequestFormType(models.Model):
                 "type": "ir.actions.act_window",
                 "res_model": "departmental.budget.request",
                 "view_mode": "list,form",
-                "domain": (
-                    f"[('form_type_id', '=', {form_type.id}), "
-                    f"('requester_id', '=', uid)]"
-                ),
+                "domain": f"[('form_type_id', '=', {form_type.id})]",
                 "context": repr(
                     {
                         "default_form_type_id": form_type.id,
-                        "search_default_my_request": 1,
                         "vpk_budget_form_section": form_section,
                     }
                 ),
@@ -229,10 +233,26 @@ class BudgetRequestFormType(models.Model):
                 }
             )
 
+            server_vals = {
+                "name": menu_name,
+                "model_id": self.env["ir.model"]._get(
+                    "departmental.budget.request"
+                ).id,
+                "state": "code",
+                "code": "action = model.action_open_budget_requests(%s)"
+                % form_type.id,
+            }
+            if form_type.request_server_action_id:
+                server_action = form_type.request_server_action_id
+                server_action.write(server_vals)
+            else:
+                server_action = self.env["ir.actions.server"].create(server_vals)
+                form_type.request_server_action_id = server_action
+
             menu_vals = {
                 "name": menu_name,
                 "parent_id": parent_menu.id,
-                "action": f"ir.actions.act_window,{action.id}",
+                "action": f"ir.actions.server,{server_action.id}",
                 "sequence": form_type.sequence + 10,
                 "groups_id": [(6, 0, [user_group.id])],
                 "active": form_type.active,

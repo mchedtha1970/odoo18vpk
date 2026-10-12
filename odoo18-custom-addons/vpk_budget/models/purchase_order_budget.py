@@ -84,11 +84,89 @@ class PurchaseOrder(models.Model):
                 if vals:
                     line.with_context(skip_budget_check_reset=True).write(vals)
 
+    def _check_product_allocation_on_confirm(self):
+        """Block PO confirm when a line exceeds that product's allocated balance.
+
+        Returns the lines already checked at product level so the category
+        pool is not used as a second gate for the same lines.
+        """
+        self.ensure_one()
+        checked = self.env["purchase.order.line"]
+        groups = {}
+        for line in self.order_line.filtered("product_id"):
+            pr_lines = line.purchase_request_lines
+            request = pr_lines[:1].request_id if pr_lines else self.env["purchase.request"]
+            if not request or not request._uses_product_allocation_check():
+                continue
+            key = (
+                request.budget_analytic_account_id.id,
+                request.budget_fund_source_id.id,
+                request.budget_group_id.id,
+                line.product_id.id,
+            )
+            bucket = groups.setdefault(
+                key,
+                {
+                    "request": request,
+                    "product": line.product_id,
+                    "lines": self.env["purchase.order.line"],
+                    "required": 0.0,
+                },
+            )
+            bucket["lines"] |= line
+            bucket["required"] += line._get_budget_line_amount_company()
+            checked |= line
+        for bucket in groups.values():
+            request = bucket["request"]
+            product = bucket["product"]
+            linked_pr_lines = bucket["lines"].mapped("purchase_request_lines").filtered(
+                lambda prl: prl.product_id == product
+                and prl.request_id.budget_reservation_active
+                and not prl.cancelled
+            )
+            still_reserved = 0.0
+            if request.budget_reservation_active:
+                still_reserved = sum(
+                    prl._get_budget_effective_reserved_amount_company()
+                    for prl in request.line_ids.filtered(
+                        lambda prl: not prl.cancelled
+                        and prl.product_id == product
+                        and prl.id not in linked_pr_lines.ids
+                    )
+                )
+            allocated = request._get_product_allocated_amount(product)
+            other_pr = request._get_other_pr_reserved_amount_for_product(product)
+            other_po = request._get_po_committed_amount_for_product(
+                product, exclude_order=self
+            )
+            available = allocated - other_pr - still_reserved - other_po
+            required = bucket["required"]
+            if available + 1e-6 < required:
+                raise ValidationError(
+                    _(
+                        "งบประมาณของสินค้าไม่เพียงพอสำหรับยืนยันใบสั่งซื้อ %(po)s\n"
+                        "สินค้า: %(product)s\n"
+                        "จัดสรร: %(allocated)s\n"
+                        "คงเหลือ (หลังหักจอง/ผูกพันอื่น): %(available)s\n"
+                        "ยอด PO ที่จะผูกพัน: %(required)s"
+                    )
+                    % {
+                        "po": self.display_name,
+                        "product": product.display_name,
+                        "allocated": "{:,.2f}".format(allocated),
+                        "available": "{:,.2f}".format(available),
+                        "required": "{:,.2f}".format(required),
+                    }
+                )
+        return checked
+
     def _check_budget_before_po_confirm(self):
         """Ensure budget still covers PO when confirming (PR reserve will move to commit)."""
         for order in self:
+            product_checked = order._check_product_allocation_on_confirm()
             lines = order.order_line.filtered(
-                lambda line: line.budget_line_id or line.purchase_request_lines
+                lambda line, checked=product_checked: line not in checked
+                and (line.budget_line_id or line.purchase_request_lines)
             )
             if not lines:
                 continue

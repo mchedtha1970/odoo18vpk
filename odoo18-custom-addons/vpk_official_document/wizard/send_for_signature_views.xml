@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_official_document_send_wizard" model="ir.ui.view">
+        <field name="name">vpk.official.document.send.wizard.form</field>
+        <field name="model">vpk.official.document.send.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ส่งเอกสาร">
+                <group>
+                    <field name="document_id"/>
+                    <field name="skip_approval"/>
+                </group>
+                <div class="alert alert-warning" role="alert" invisible="not skip_approval">
+                    ระบบจะถือว่าเอกสารนี้ลงนามครบแล้ว และไม่ส่งเข้ากล่องอนุมัติ
+                    ใช้สำหรับทดสอบเดินเอกสารขั้นถัดไปเท่านั้น
+                </div>
+                <footer>
+                    <button name="action_confirm" type="object" string="ส่งเอกสาร" class="btn-primary"/>
+                    <button string="ยกเลิก" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

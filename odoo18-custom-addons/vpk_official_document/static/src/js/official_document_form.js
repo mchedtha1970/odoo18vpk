@@ -77,7 +77,8 @@ export class OfficialDocumentFormController extends FormController {
                 attachmentId: pdfId,
                 resModel: this.props.resModel,
                 resId: this.model.root.resId,
-                canSign: Boolean(data.can_review),
+                canSign: Boolean(data.can_review) && !data.vpk_secretary_can_screen,
+                secretaryScreen: Boolean(data.vpk_secretary_can_screen),
                 onSigned: async () => {
                     if (this.model.root.resId) {
                         await this.model.root.load();

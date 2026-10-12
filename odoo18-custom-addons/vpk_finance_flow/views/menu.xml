@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_vpk_finance_flow_dashboard" model="ir.actions.client">
+        <field name="name">ติดตามงานการเงิน</field>
+        <field name="tag">vpk_finance_flow_dashboard</field>
+    </record>
+
+    <menuitem
+        id="menu_vpk_finance_flow_dashboard"
+        name="ติดตามงานการเงิน"
+        parent="account.menu_finance"
+        action="action_vpk_finance_flow_dashboard"
+        sequence="1"
+        groups="account.group_account_invoice"/>
+</odoo>

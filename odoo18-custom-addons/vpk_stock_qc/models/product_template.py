@@ -20,6 +20,15 @@ class ProductTemplate(models.Model):
                 or "เวชภัณฑ์ ยา" in category_name
             )
 
+    @api.onchange("cold_chain")
+    def _onchange_cold_chain_storage_method(self):
+        if "storage_method" not in self._fields:
+            return
+        if self.cold_chain:
+            self.storage_method = "cold"
+        elif self.storage_method == "cold":
+            self.storage_method = "room"
+
 
 class ProductProduct(models.Model):
     _inherit = "product.product"

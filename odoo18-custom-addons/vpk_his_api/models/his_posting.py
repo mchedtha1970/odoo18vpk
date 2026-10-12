@@ -26,6 +26,7 @@ class HisPostingService(models.AbstractModel):
             self._post_stock(batch)
         elif batch.batch_type == "stock_requisition":
             self._post_stock_requisition(batch)
+            return True
         else:
             raise UserError(_("Unknown batch type %s") % batch.batch_type)
         batch.state = "posted"
@@ -400,11 +401,17 @@ class HisPostingService(models.AbstractModel):
         picking_type = source_wh.int_type_id if source_wh else False
         if not picking_type:
             picking_type = self._get_his_internal_picking_type(source_wh, dest_loc)
-        picking = self._create_requisition_picking(
+        open_pickings = batch.picking_ids.filtered(lambda picking: picking.state != "cancel")
+        if open_pickings:
+            return open_pickings
+        pickings = self._create_requisition_picking(
             batch, lines, picking_type, source_loc, dest_loc
         )
-        lines.write({"picking_id": picking.id})
-        batch.picking_ids = picking
+        ready = self._requisition_ready_picking(pickings)
+        if ready:
+            lines.write({"picking_id": ready.id})
+        batch.picking_ids = pickings
+        return pickings
 
     @api.model
     def _get_his_internal_picking_type(self, warehouse, dest_location):
@@ -450,7 +457,6 @@ class HisPostingService(models.AbstractModel):
                 }
             )
         )
-        line_moves = []
         grouped = defaultdict(lambda: self.env["vpk.his.requisition.line"])
         for line in lines:
             grouped[line.product_id.id] |= line
@@ -470,11 +476,197 @@ class HisPostingService(models.AbstractModel):
             lots = product_lines.mapped("lot_id")
             if len(lots) == 1 and lots[:1] and "restrict_lot_id" in Move._fields:
                 vals["restrict_lot_id"] = lots.id
-            move = Move.create(vals)
-            for line in product_lines:
-                line_moves.append((line, move))
-        self._validate_picking(picking, line_moves)
-        return picking
+            Move.create(vals)
+        return self._release_requisition_picking(picking)
+
+    @api.model
+    def _release_requisition_picking(self, picking):
+        """Confirm the transfer and reserve it. Do not validate.
+
+        Central-warehouse requests use the existing pick, pack, then destination
+        chain. Other warehouses with pick and pack locations follow the same
+        Odoo steps. A one-step warehouse stays a single internal transfer in Ready.
+        """
+        self._restore_move_locations(picking)
+        if self._central_transfer_flow_applies(picking):
+            picking.action_confirm()
+        elif self._warehouse_has_pick_pack(picking):
+            self._start_pick_pack_flow(picking)
+        else:
+            picking.action_confirm()
+            if picking.state not in ("assigned", "done", "cancel"):
+                picking.action_assign()
+        return self._collect_transfer_pickings(picking)
+
+    @api.model
+    def _restore_move_locations(self, picking):
+        """Keep the requested destination if the operation type recomputed it."""
+        move = picking.move_ids[:1]
+        if not move or not move.location_dest_id:
+            return
+        if (
+            picking.location_id == move.location_id
+            and picking.location_dest_id == move.location_dest_id
+        ):
+            return
+        picking.with_context(vpk_keep_picking_locations=True).write(
+            {
+                "location_id": move.location_id.id,
+                "location_dest_id": move.location_dest_id.id,
+            }
+        )
+
+    @api.model
+    def _central_transfer_flow_applies(self, picking):
+        checker = getattr(picking, "_vpk_is_central_transfer_request", None)
+        if not checker:
+            return False
+        return bool(picking._vpk_is_central_transfer_request())
+
+    @api.model
+    def _warehouse_has_pick_pack(self, picking):
+        warehouse = picking.picking_type_id.warehouse_id
+        return bool(
+            warehouse
+            and warehouse.pick_type_id
+            and warehouse.pack_type_id
+            and warehouse.wh_pack_stock_loc_id
+            and warehouse.wh_output_stock_loc_id
+            and warehouse.lot_stock_id
+            and warehouse.int_type_id
+        )
+
+    @api.model
+    def _start_pick_pack_flow(self, picking):
+        """Pick from stock, pack, then an internal move to the requested warehouse."""
+        picking.ensure_one()
+        warehouse = picking.picking_type_id.warehouse_id
+        pick_type = warehouse.pick_type_id
+        pack_type = warehouse.pack_type_id
+        inactive_types = (pick_type | pack_type).filtered(lambda ptype: not ptype.active)
+        if inactive_types:
+            inactive_types.sudo().write({"active": True})
+        pack_loc = warehouse.wh_pack_stock_loc_id
+        output_loc = warehouse.wh_output_stock_loc_id
+        final_dest = picking.move_ids[:1].location_dest_id or picking.location_dest_id
+        if not picking.group_id:
+            picking.group_id = self.env["procurement.group"].sudo().create(
+                {
+                    "name": picking.origin or picking.name or _("โอนจาก HIS"),
+                    "move_type": picking.move_type,
+                }
+            )
+        write_vals = {
+            "picking_type_id": pick_type.id,
+            "location_id": warehouse.lot_stock_id.id,
+            "location_dest_id": pack_loc.id,
+        }
+        if "vpk_central_chain" in picking._fields:
+            write_vals["vpk_central_chain"] = True
+            write_vals["vpk_central_chain_role"] = "pick"
+        picking.with_context(vpk_request_from_central=False).write(write_vals)
+        picking.with_context(vpk_keep_picking_locations=True).write(
+            {
+                "location_id": warehouse.lot_stock_id.id,
+                "location_dest_id": pack_loc.id,
+            }
+        )
+        moves = picking.move_ids.filtered(lambda move: move.state not in ("done", "cancel"))
+        moves.write(
+            {
+                "location_final_id": final_dest.id,
+                "group_id": picking.group_id.id,
+                "warehouse_id": warehouse.id,
+            }
+        )
+        picking.with_context(
+            vpk_keep_picking_locations=True,
+            vpk_request_from_central=False,
+        ).action_confirm()
+        if picking.state not in ("assigned", "done", "cancel"):
+            picking.action_assign()
+
+        pack_moves = self.env["stock.move"]
+        deliver_moves = self.env["stock.move"]
+        for move in picking.move_ids.filtered(lambda item: item.state not in ("done", "cancel")):
+            if move.move_dest_ids:
+                continue
+            pack_move = self._chain_next_move(
+                move, pack_loc, output_loc, final_dest, pack_type, warehouse
+            )
+            deliver_move = self._chain_next_move(
+                pack_move,
+                output_loc,
+                final_dest,
+                final_dest,
+                warehouse.int_type_id,
+                warehouse,
+            )
+            pack_moves |= pack_move
+            deliver_moves |= deliver_move
+        chain_ctx = {
+            "vpk_keep_picking_locations": True,
+            "vpk_request_from_central": False,
+        }
+        if pack_moves:
+            pack_moves.with_context(
+                **chain_ctx, vpk_central_chain_role="pack"
+            )._action_confirm(merge=False)
+        if deliver_moves:
+            deliver_moves.with_context(
+                **chain_ctx, vpk_central_chain_role="deliver"
+            )._action_confirm(merge=False)
+
+    @api.model
+    def _chain_next_move(self, move, location, location_dest, location_final, picking_type, warehouse):
+        if hasattr(move, "_vpk_chain_move"):
+            return move._vpk_chain_move(
+                location, location_dest, location_final, picking_type, warehouse
+            )
+        new_move = move.copy(
+            {
+                "product_uom_qty": move.product_uom_qty,
+                "location_id": location.id,
+                "location_dest_id": location_dest.id,
+                "location_final_id": location_final.id,
+                "picking_id": False,
+                "picking_type_id": picking_type.id,
+                "warehouse_id": warehouse.id,
+                "procure_method": "make_to_order",
+                "origin": move.picking_id.name or move.origin or "",
+                "group_id": move.group_id.id,
+                "rule_id": False,
+                "move_orig_ids": [Command.link(move.id)],
+            }
+        )
+        if new_move.move_line_ids:
+            new_move.move_line_ids.unlink()
+        return new_move
+
+    @api.model
+    def _collect_transfer_pickings(self, picking):
+        found = picking
+        if picking.group_id:
+            found |= self.env["stock.picking"].sudo().search(
+                [("group_id", "=", picking.group_id.id)]
+            )
+        pending = picking.move_ids
+        seen = self.env["stock.move"]
+        while pending:
+            seen |= pending
+            dest = pending.move_dest_ids - seen
+            found |= dest.picking_id
+            pending = dest
+        return found.exists()
+
+    @api.model
+    def _requisition_ready_picking(self, pickings):
+        if "vpk_central_chain_role" in pickings._fields:
+            pick = pickings.filtered(lambda picking: picking.vpk_central_chain_role == "pick")[:1]
+            if pick:
+                return pick
+        ready = pickings.filtered(lambda picking: picking.state == "assigned")[:1]
+        return ready or pickings[:1]
 
     @api.model
     def _get_his_picking_type(self, warehouse, consumption):

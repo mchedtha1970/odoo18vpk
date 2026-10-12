@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_maintenance_vendor_send" model="report.paperformat">
+        <field name="name">คำร้องส่งเครื่องซ่อมบริษัท A4</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">12</field>
+        <field name="margin_bottom">12</field>
+        <field name="margin_left">14</field>
+        <field name="margin_right">14</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="action_report_maintenance_vendor_send" model="ir.actions.report">
+        <field name="name">คำร้องส่งเครื่องซ่อมบริษัท</field>
+        <field name="model">maintenance.vendor.send</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_maintenance.report_maintenance_vendor_send</field>
+        <field name="report_file">vpk_maintenance.report_maintenance_vendor_send</field>
+        <field name="print_report_name">'คำร้องส่งซ่อม-%s' % (object.name or '')</field>
+        <field name="binding_model_id" ref="model_maintenance_vendor_send"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_maintenance_vendor_send"/>
+    </record>
+
+    <template id="report_maintenance_vendor_send">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.basic_layout">
+                    <style type="text/css">
+                        <t t-out="o._report_font_css()"/>
+                        .vpk-vs, .vpk-vs * {
+                            font-family: "THSarabunNew", sans-serif !important;
+                            font-size: 16pt;
+                            line-height: 1.2;
+                            color: #000;
+                        }
+                        .vpk-vs .title {
+                            font-family: "THSarabunNew-Bold", "THSarabunNew", sans-serif !important;
+                            font-weight: normal !important;
+                            font-size: 18pt !important;
+                            text-align: center;
+                            margin: 0 0 10px;
+                        }
+                        .vpk-vs table { width: 100%; border-collapse: collapse; }
+                        .vpk-vs td { vertical-align: bottom; padding: 3px 4px; }
+                        .vpk-vs .lab { white-space: nowrap; width: 1%; padding-right: 6px; }
+                        .vpk-vs .dots { border-bottom: 1px dotted #000; }
+                        .vpk-vs .symptom td { height: 28px; }
+                        .vpk-vs .signs { margin-top: 28px; }
+                        .vpk-vs .signs td { padding-top: 16px; }
+                        .vpk-vs .right { text-align: right; }
+                    </style>
+                    <div class="vpk-vs">
+                        <p class="title">คำร้องส่งเครื่องซ่อมบริษัท/ศูนย์บริการ/ห้างร้าน ของ<t t-esc="o.company_id.name or ''"/></p>
+                        <table>
+                            <tr>
+                                <td class="lab">แผนกช่าง</td>
+                                <td class="dots"><t t-esc="o.team_id.name or ''"/></td>
+                                <td class="lab">วันที่</td>
+                                <td class="dots" style="width: 38mm;"><t t-esc="o._report_short_date(o.send_date)"/></td>
+                            </tr>
+                            <tr>
+                                <td class="lab">ชื่อเครื่อง</td>
+                                <td class="dots"><t t-esc="o.equipment_name or ''"/></td>
+                                <td class="lab">ที่ห้อง</td>
+                                <td class="dots"><t t-esc="o.room or ''"/></td>
+                            </tr>
+                            <tr>
+                                <td class="lab">รุ่น</td>
+                                <td class="dots"><t t-esc="o.equipment_model or ''"/></td>
+                                <td class="lab">หมายเลขเครื่อง</td>
+                                <td class="dots"><t t-esc="o.machine_number or ''"/></td>
+                            </tr>
+                            <tr>
+                                <td class="lab">หมายเลขครุภัณฑ์</td>
+                                <td class="dots"><t t-esc="o.asset_number or ''"/></td>
+                                <td class="lab">ตึก / หน่วยงาน</td>
+                                <td class="dots"><t t-esc="o.building or ''"/></td>
+                            </tr>
+                        </table>
+                        <table class="symptom" style="margin-top: 8px;">
+                            <tr>
+                                <td class="lab">อาการเสีย</td>
+                                <td class="dots"><t t-esc="o._report_symptom_lines()[0]"/></td>
+                            </tr>
+                            <t t-foreach="o._report_symptom_lines()[1:]" t-as="line">
+                                <tr>
+                                    <td class="lab"/>
+                                    <td class="dots"><t t-esc="line"/></td>
+                                </tr>
+                            </t>
+                        </table>
+                        <table style="margin-top: 14px;">
+                            <tr>
+                                <td class="lab">ชื่อศูนย์บริการ / บริษัท</td>
+                                <td class="dots"><t t-esc="o.vendor_name or ''"/></td>
+                                <td class="lab">ที่อยู่</td>
+                                <td class="dots"><t t-esc="o.vendor_address or ''"/></td>
+                            </tr>
+                            <tr>
+                                <td class="lab">อ้างอิงเลขที่รับงานช่างซ่อมบำรุง</td>
+                                <td class="dots"><t t-esc="o.request_id.receipt_number or o.request_id.name or ''"/></td>
+                                <td class="lab">ลงวันที่</td>
+                                <td class="dots"><t t-esc="o._report_short_date(o.sign_date)"/></td>
+                            </tr>
+                        </table>
+                        <table class="signs">
+                            <tr>
+                                <td style="width: 48%;"/>
+                                <td class="lab right">เจ้าหน้าที่ช่างผู้ส่งซ่อม</td>
+                                <td class="dots" style="width: 55mm;"><t t-esc="o.technician_id.name or ''"/></td>
+                            </tr>
+                            <tr>
+                                <td/>
+                                <td class="lab right">หัวหน้างานซ่อมบำรุง</td>
+                                <td class="dots"><t t-esc="o.supervisor_id.name or ''"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

@@ -185,6 +185,128 @@
         }
     }
 
+    .o_vpk_budget_gap_summary {
+        text-align: right;
+
+        strong {
+            display: block;
+            font-size: 28px;
+            line-height: 1;
+            color: #1b6f60;
+        }
+
+        span {
+            font-size: 12px;
+        }
+    }
+
+    .o_vpk_budget_gap_totals {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+
+        div {
+            border: 1px solid var(--bs-line);
+            border-radius: 12px;
+            padding: 10px 12px;
+        }
+
+        span {
+            display: block;
+            color: var(--bs-muted);
+            font-size: 12px;
+        }
+
+        b {
+            font-size: 18px;
+
+            &.is-allocated { color: #1b6f60; }
+            &.is-gap { color: #b4533a; }
+        }
+    }
+
+    .o_vpk_budget_gap_list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .o_vpk_budget_gap_row {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr) 150px;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .o_vpk_budget_gap_label,
+    .o_vpk_budget_gap_values {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.3;
+
+        small {
+            color: var(--bs-muted);
+            font-size: 12px;
+        }
+
+        .is-gap {
+            color: #b4533a;
+        }
+    }
+
+    .o_vpk_budget_gap_values {
+        text-align: right;
+    }
+
+    @media (max-width: 900px) {
+        .o_vpk_budget_gap_row {
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 6px 12px;
+        }
+
+        .o_vpk_budget_gap_bars {
+            grid-column: 1 / -1;
+            grid-row: 2;
+        }
+
+        .o_vpk_budget_gap_totals b {
+            font-size: 16px;
+        }
+    }
+
+    .o_vpk_budget_gap_track {
+        position: relative;
+        height: 16px;
+        border-radius: 99px;
+        background: #f4f1ea;
+        overflow: hidden;
+
+        span {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            border-radius: 99px;
+        }
+
+        .is-requested {
+            background: repeating-linear-gradient(
+                -45deg,
+                rgba(180, 83, 58, 0.18),
+                rgba(180, 83, 58, 0.18) 4px,
+                rgba(180, 83, 58, 0.08) 4px,
+                rgba(180, 83, 58, 0.08) 8px
+            );
+        }
+    }
+
+    .o_vpk_budget_gap_empty {
+        padding: 40px 0;
+        color: var(--bs-muted);
+        text-align: center;
+    }
+
     .o_vpk_budget_trend_chart {
         height: auto;
     }

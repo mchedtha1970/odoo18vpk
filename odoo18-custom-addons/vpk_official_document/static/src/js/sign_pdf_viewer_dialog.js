@@ -16,12 +16,14 @@ export class SignPdfViewerDialog extends Component {
         resModel: String,
         resId: Number,
         canSign: { type: Boolean, optional: true },
+        secretaryScreen: { type: Boolean, optional: true },
         onSigned: { type: Function, optional: true },
         onRejected: { type: Function, optional: true },
     };
     static defaultProps = {
         title: _t("เอกสาร"),
         canSign: true,
+        secretaryScreen: false,
     };
 
     setup() {
@@ -34,6 +36,8 @@ export class SignPdfViewerDialog extends Component {
             loading: true,
             error: false,
             reachedEnd: false,
+            checked: false,
+            secretaryScreen: false,
             busy: false,
             objectUrl: "",
             viewerUrl: "",
@@ -42,7 +46,7 @@ export class SignPdfViewerDialog extends Component {
         this._pdfUnbind = [];
 
         onWillStart(async () => {
-            await this._prepareViewer();
+            await Promise.all([this._prepareViewer(), this._loadScreenState()]);
         });
 
         onWillDestroy(() => {
@@ -60,6 +64,24 @@ export class SignPdfViewerDialog extends Component {
                 }
             }
         });
+    }
+
+    async _loadScreenState() {
+        this.state.secretaryScreen = Boolean(this.props.secretaryScreen);
+        if (this.props.resModel !== "vpk.official.document" || !this.props.resId) {
+            return;
+        }
+        const [doc] = await this.orm.read(this.props.resModel, [this.props.resId], [
+            "vpk_secretary_can_screen",
+            "vpk_secretary_screen_state",
+        ]);
+        if (!doc) {
+            return;
+        }
+        this.state.secretaryScreen = Boolean(
+            doc.vpk_secretary_can_screen || this.props.secretaryScreen
+        );
+        this.state.checked = doc.vpk_secretary_screen_state === "checked";
     }
 
     async _prepareViewer() {
@@ -175,6 +197,41 @@ export class SignPdfViewerDialog extends Component {
         } catch (_err) {
             this.state.busy = false;
         }
+    }
+
+    async onMarkChecked() {
+        if (!this.state.reachedEnd || this.state.busy) {
+            this.notification.add(_t("เลื่อนเอกสารจนถึงหน้าสุดท้ายก่อนตรวจสอบ"), {
+                type: "warning",
+            });
+            return;
+        }
+        this.state.busy = true;
+        try {
+            await this.orm.call(this.props.resModel, "action_secretary_mark_checked", [
+                [this.props.resId],
+            ]);
+            this.state.checked = true;
+            this.notification.add(_t("ตรวจสอบแล้ว"), { type: "success" });
+        } catch (_err) {
+            // ORM service already shows the error
+        }
+        this.state.busy = false;
+    }
+
+    async onSendDirector() {
+        if (!this.state.checked) {
+            this.notification.add(_t("กรุณากดตรวจสอบแล้ว ก่อนส่งผู้อำนวยการ"), {
+                type: "warning",
+            });
+            return;
+        }
+        await this._callTier("action_secretary_send_director", async () => {
+            this.notification.add(_t("ส่งผู้อำนวยการแล้ว"), { type: "success" });
+            if (this.props.onSigned) {
+                await this.props.onSigned();
+            }
+        });
     }
 
     async onSign() {

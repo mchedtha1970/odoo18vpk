@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_official_document_type" model="ir.sequence">
+        <field name="name">ประเภทหนังสือราชการ</field>
+        <field name="code">vpk.official.document.type</field>
+        <field name="prefix">type.</field>
+        <field name="padding">3</field>
+    </record>
+
+    <record id="document_type_wa_committee_order" model="vpk.official.document.type">
+        <field name="name">คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ</field>
+        <field name="code">wa_committee_order</field>
+        <field name="sequence">10</field>
+        <field name="is_system">True</field>
+        <field name="create_from_purchase_request">True</field>
+    </record>
+    <record id="document_type_integrity_over_100k" model="vpk.official.document.type">
+        <field name="name">แบบแสดงความบริสุทธิ์ใจ (วงเงินมากกว่า ๑๐๐,๐๐๐ บาท)</field>
+        <field name="code">integrity_over_100k</field>
+        <field name="sequence">20</field>
+        <field name="is_system">True</field>
+        <field name="create_from_purchase_request">True</field>
+    </record>
+    <record id="document_type_spec_price_committee" model="vpk.official.document.type">
+        <field name="name">ขออนุมัติแต่งตั้งคณะกรรมการกำหนดรายละเอียดคุณลักษณะ</field>
+        <field name="code">spec_price_committee</field>
+        <field name="sequence">30</field>
+        <field name="is_system">True</field>
+        <field name="create_from_purchase_request">True</field>
+    </record>
+    <record id="document_type_specific_method_approval" model="vpk.official.document.type">
+        <field name="name">รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง</field>
+        <field name="code">specific_method_approval</field>
+        <field name="sequence">40</field>
+        <field name="is_system">True</field>
+        <field name="create_from_purchase_request">True</field>
+    </record>
+    <record id="document_type_winner_announcement" model="vpk.official.document.type">
+        <field name="name">ประกาศผู้ชนะการเสนอราคา</field>
+        <field name="code">winner_announcement</field>
+        <field name="sequence">50</field>
+        <field name="is_system">True</field>
+    </record>
+    <record id="document_type_purchase_approval_memo" model="vpk.official.document.type">
+        <field name="name">บันทึกข้อความอนุมัติขอซื้อ</field>
+        <field name="code">purchase_approval_memo</field>
+        <field name="sequence">70</field>
+        <field name="is_system">True</field>
+    </record>
+    <record id="document_type_award_approval" model="vpk.official.document.type">
+        <field name="name">รายงานผลการพิจารณาจัดซื้อจัดจ้าง</field>
+        <field name="code">award_approval</field>
+        <field name="sequence">60</field>
+        <field name="is_system">True</field>
+    </record>
+</odoo>
