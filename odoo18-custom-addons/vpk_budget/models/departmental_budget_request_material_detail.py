@@ -338,10 +338,6 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
         "material_sub_type_id",
         "material_sub_type_id.budget_group_id.product_categ_id",
         "budget_post_id",
-        "request_id.load_material_sub_type_id",
-        "request_id.load_material_sub_type_id.budget_group_id.product_categ_id",
-        "request_id.load_budget_group_id",
-        "request_id.load_budget_group_id.product_categ_id",
     )
     def _compute_filter_product_categ_id(self):
         for detail in self:

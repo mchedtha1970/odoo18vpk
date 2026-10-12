@@ -99,38 +99,14 @@
                         </group>
                     </group>
                     <group invisible="not show_material_lines" string="โหลดรายการวัสดุ">
-                        <group>
-                            <field name="form_section_key" invisible="1"/>
-                            <field
-                                name="load_budget_post_id"
-                                string="หมวดงบประมาณ"
-                                options="{'no_create': True}"
-                                readonly="not can_edit_request_content"
+                        <div class="o_row" colspan="2">
+                            <button
+                                name="action_open_load_wizard"
+                                type="object"
+                                string="โหลดรายการ"
+                                class="btn-primary"
+                                invisible="not can_edit_request_content"
                             />
-                            <field
-                                name="load_budget_group_id"
-                                string="กลุ่มวัสดุ"
-                                options="{'no_create': True, 'no_open': True}"
-                                readonly="not can_edit_request_content"
-                            />
-                            <field
-                                name="load_material_sub_type_id"
-                                string="ประเภทวัสดุ"
-                                options="{'no_create': True, 'no_open': True}"
-                                context="{'material_sub_type_budget_group_id': load_budget_group_id}"
-                                readonly="not can_edit_request_content"
-                            />
-                        </group>
-                        <group>
-                            <div class="o_row" colspan="2">
-                                <button
-                                    name="action_load_material_category_products"
-                                    type="object"
-                                    string="โหลดรายการสินค้าทั้งหมวด"
-                                    class="btn-primary"
-                                    invisible="not can_edit_request_content"
-                                    confirm="ระบบจะสร้างรายการสินค้าทั้งหมดในหมวด/กลุ่มที่เลือก (ข้ามรายการที่มีอยู่แล้ว) ต้องการดำเนินการต่อหรือไม่?"
-                                />
                                 <button
                                     name="action_open_material_detail_import"
                                     type="object"
@@ -185,16 +161,26 @@
                                 readonly="1"
                                 colspan="2"
                             />
-                        </group>
                     </group>
-                    <group invisible="not show_asset_lines">
-                        <field
-                            name="asset_category_ids"
-                            string="กลุ่มครุภัณฑ์"
-                            widget="many2many_tags"
-                            readonly="1"
-                            colspan="2"
-                        />
+                    <group invisible="not show_asset_lines" string="โหลดรายการครุภัณฑ์">
+                        <div class="o_row" colspan="2">
+                            <button
+                                name="action_open_load_wizard"
+                                type="object"
+                                string="โหลดรายการ"
+                                class="btn-primary"
+                                invisible="not can_edit_request_content"
+                            />
+                        </div>
+                        <group>
+                            <field
+                                name="asset_category_ids"
+                                string="กลุ่มครุภัณฑ์ในคำขอ"
+                                widget="many2many_tags"
+                                readonly="1"
+                                colspan="2"
+                            />
+                        </group>
                     </group>
                     <notebook>
                         <page string="รายการคำของบ" invisible="form_type_id">
@@ -282,7 +268,7 @@
                             <field name="plan_year_be" invisible="1"/>
                             <field
                                 name="material_detail_ids"
-                                context="{'vpk_usage_fiscal_year': fiscal_year, 'default_material_sub_type_id': load_material_sub_type_id, 'default_budget_post_id': load_budget_post_id}"
+                                context="{'vpk_usage_fiscal_year': fiscal_year}"
                                 class="o_vpk_material_detail_lines"
                                 readonly="not can_edit_request_content and not can_edit_allocation"
                                 options="{'limit': 40}"
@@ -466,6 +452,7 @@
                         <page string="แบบตั้งงบโครงการ" invisible="not show_project_lines">
                             <field
                                 name="project_line_ids"
+                                class="o_vpk_project_lines"
                                 context="{'default_line_type': 'project_budget'}"
                                 readonly="not can_edit_request_content and not can_edit_allocation"
                             >
@@ -478,7 +465,7 @@
                                     <field name="item_name" readonly="not parent.can_edit_request_content"/>
                                     <field name="item_description" readonly="not parent.can_edit_request_content"/>
                                     <field name="duration" readonly="not parent.can_edit_request_content"/>
-                                    <field name="target_group" readonly="not parent.can_edit_request_content"/>
+                                    <field name="target_group" widget="text" readonly="not parent.can_edit_request_content"/>
                                     <field name="requested_quantity" readonly="not parent.can_edit_request_content"/>
                                     <field name="unit_price" readonly="not parent.can_edit_request_content"/>
                                     <field
@@ -493,8 +480,8 @@
                                         sum="รวมงบประมาณที่ได้รับ"
                                         readonly="not parent.can_edit_allocation"
                                     />
-                                    <field name="objective" readonly="not parent.can_edit_request_content"/>
-                                    <field name="expected_benefit" readonly="not parent.can_edit_request_content"/>
+                                    <field name="objective" widget="text" readonly="not parent.can_edit_request_content"/>
+                                    <field name="expected_benefit" widget="text" readonly="not parent.can_edit_request_content"/>
                                     <field name="owner_name" readonly="not parent.can_edit_request_content"/>
                                 </list>
                             </field>

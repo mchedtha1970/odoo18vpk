@@ -202,6 +202,23 @@
             }
         }
     }
+
+    .o_vpk_project_lines {
+        td[name="target_group"],
+        td[name="objective"],
+        td[name="expected_benefit"] {
+            white-space: pre-wrap !important;
+            text-overflow: unset !important;
+            overflow: visible !important;
+            vertical-align: top;
+            min-width: 280px;
+        }
+
+        .o_field_text textarea,
+        .o_field_text {
+            white-space: pre-wrap;
+        }
+    }
 }
 
 body.o_web_client.o_vpk_sidebar_menu .o_form_view.o_vpk_departmental_budget_request_form.o_xxl_form_view {

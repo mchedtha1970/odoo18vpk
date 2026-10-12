@@ -35,6 +35,9 @@ HEADER_FIELDS = {
     "price": "price",
     "หมายเหตุ": "note",
     "note": "note",
+    "หมวดงบประมาณ": "budget_post",
+    "หมวด": "budget_post",
+    "budget_post": "budget_post",
 }
 
 
@@ -46,6 +49,19 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
         comodel_name="departmental.budget.request",
         required=True,
         readonly=True,
+    )
+    company_id = fields.Many2one(related="request_id.company_id")
+    form_section_key = fields.Char(related="request_id.form_section_key")
+    budget_post_ids = fields.Many2many(
+        comodel_name="account.budget.post",
+        relation="vpk_budget_material_import_wizard_post_rel",
+        column1="wizard_id",
+        column2="budget_post_id",
+        string="หมวดงบประมาณ",
+        domain=(
+            "[('company_id', 'in', [False, company_id]),"
+            " '|', ('section_key', '=', False), ('section_key', '=', form_section_key)]"
+        ),
     )
     data_file = fields.Binary(string="ไฟล์ Excel")
     filename = fields.Char(string="ชื่อไฟล์")
@@ -79,16 +95,8 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
                 _("ไม่พบไลบรารี xlsxwriter กรุณาติดตั้งแพ็กเกจ python xlsxwriter")
             )
         request = self.request_id
-        subtype = request._require_material_load_subtype()
-        categs = request._product_categories_for_material_load(subtype)
-        products = self.env["product.product"].search(
-            [
-                ("purchase_ok", "=", True),
-                ("active", "=", True),
-                ("categ_id", "child_of", categs.ids),
-            ],
-            order="default_code, id",
-        )
+        targets = request._material_load_targets(self.budget_post_ids)
+        post_names = ", ".join(post.display_name for post, _subtype in targets)
 
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output, {"in_memory": True})
@@ -105,7 +113,7 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
         note.write(
             3,
             0,
-            "หมวดที่เลือก: %s" % (request.load_budget_post_id.display_name or ""),
+            "หมวดที่เลือก: %s" % post_names,
         )
 
         sheet = workbook.add_worksheet("รายการวัสดุ")
@@ -116,17 +124,23 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
             "ราคาต่อหน่วย",
             "ปริมาณที่ขอ",
             "หมายเหตุ",
+            "หมวดงบประมาณ",
         ]
-        widths = [18, 48, 14, 16, 14, 28]
+        widths = [18, 48, 14, 16, 14, 28, 42]
         for col, (title, width) in enumerate(zip(headers, widths)):
             sheet.write(0, col, title, header_fmt)
             sheet.set_column(col, col, width)
-        for row, product in enumerate(products, start=1):
-            price = product.standard_price or product.lst_price or 0.0
-            sheet.write_string(row, 0, product.default_code or "", code_fmt)
-            sheet.write(row, 1, product.display_name or "", text_fmt)
-            sheet.write(row, 2, product.uom_id.name or "", text_fmt)
-            sheet.write(row, 3, price, text_fmt)
+        row = 1
+        for post, subtype in targets:
+            products = request._products_for_material_subtype(subtype)
+            for product in products:
+                price = product.standard_price or product.lst_price or 0.0
+                sheet.write_string(row, 0, product.default_code or "", code_fmt)
+                sheet.write(row, 1, product.display_name or "", text_fmt)
+                sheet.write(row, 2, product.uom_id.name or "", text_fmt)
+                sheet.write(row, 3, price, text_fmt)
+                sheet.write(row, 6, post.display_name or "", text_fmt)
+                row += 1
         workbook.close()
 
         attachment = self.env["ir.attachment"].create(
@@ -156,13 +170,16 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
         if not self.data_file:
             raise UserError(_("กรุณาเลือกไฟล์ Excel"))
         request = self.request_id
-        subtype = request._require_material_load_subtype()
+        targets = request._material_load_targets(self.budget_post_ids)
         rows = self._read_excel_rows()
         if not rows:
             raise UserError(_("ไม่พบแถวข้อมูลในชีตรายการวัสดุ"))
 
-        products = self._products_for_subtype(request, subtype)
-        by_code, by_name = self._product_indexes(products)
+        catalogs = []
+        for post, subtype in targets:
+            products = self._products_for_subtype(request, subtype)
+            by_code, by_name = self._product_indexes(products)
+            catalogs.append((post, subtype, by_code, by_name))
         existing = {
             detail.product_id.id: detail
             for detail in request.material_detail_ids
@@ -175,6 +192,15 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
         base_seq = max(request.material_detail_ids.mapped("sequence") or [0])
 
         for row_no, row in rows:
+            catalog, reason = self._catalog_for_row(row, catalogs)
+            if reason == "skip":
+                skipped += 1
+                continue
+            if reason:
+                errors += 1
+                logs.append(_("แถว %s: %s") % (row_no, reason))
+                continue
+            post, subtype, by_code, by_name = catalog
             product, reason = self._match_product(row, by_code, by_name)
             if reason == "skip":
                 skipped += 1
@@ -218,7 +244,7 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
                         "unit_price": price,
                         "note": note or current.note,
                         "material_sub_type_id": subtype.id,
-                        "budget_post_id": request.load_budget_post_id.id,
+                        "budget_post_id": post.id,
                     }
                 )
                 updated += 1
@@ -231,7 +257,7 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
                     "product_id": product.id,
                     "name": product.display_name,
                     "material_sub_type_id": subtype.id,
-                    "budget_post_id": request.load_budget_post_id.id,
+                    "budget_post_id": post.id,
                     "product_uom_id": product.uom_id.id,
                     "quantity": quantity,
                     "unit_price": price,
@@ -242,7 +268,8 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
 
         if to_create:
             Detail.with_context(skip_material_amount_sync=True).create(to_create)
-        request._ensure_material_overview_line(subtype, request.load_budget_post_id)
+        for post, subtype in targets:
+            request._ensure_material_overview_line(subtype, post)
         request._sync_material_amounts_from_details()
 
         summary = _(
@@ -268,6 +295,47 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
             "view_mode": "form",
             "target": "new",
         }
+
+    def _catalog_for_row(self, row, catalogs):
+        code = (row.get("code") or "").strip()
+        name = (row.get("name") or "").strip()
+        if not code and not name:
+            return None, "skip"
+        label = (row.get("budget_post") or "").strip()
+        if label:
+            folded = label.casefold()
+            matched = [
+                catalog
+                for catalog in catalogs
+                if folded == (catalog[0].display_name or "").casefold()
+                or folded == (catalog[0].name or "").casefold()
+                or folded in (catalog[0].display_name or "").casefold()
+            ]
+            exact = [
+                catalog
+                for catalog in matched
+                if folded == (catalog[0].display_name or "").casefold()
+                or folded == (catalog[0].name or "").casefold()
+            ]
+            if len(exact) == 1:
+                return exact[0], None
+            if len(matched) == 1:
+                return matched[0], None
+            if not matched:
+                return None, _("ไม่พบหมวด %s ในหมวดที่เลือก") % label
+            return None, _("หมวด %s ตรงกับมากกว่า 1 หมวดที่เลือก") % label
+        if len(catalogs) == 1:
+            return catalogs[0], None
+        hits = []
+        for catalog in catalogs:
+            product, _reason = self._match_product(row, catalog[2], catalog[3])
+            if product:
+                hits.append(catalog)
+        if len(hits) == 1:
+            return hits[0], None
+        if not hits:
+            return None, _("ไม่พบรายการในหมวดที่เลือก")
+        return None, _("รายการนี้อยู่ได้หลายหมวด กรุณาระบุคอลัมน์หมวดงบประมาณ")
 
     def _products_for_subtype(self, request, subtype):
         categs = request._product_categories_for_material_load(subtype)
@@ -368,6 +436,8 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
             row["price"] = self._to_number(row.get("price"), blank_ok=True)
             note = row.get("note")
             row["note"] = "" if note is None else str(note).strip()
+            budget_post = row.get("budget_post")
+            row["budget_post"] = "" if budget_post is None else str(budget_post).strip()
             parsed.append((index, row))
         return parsed
 
