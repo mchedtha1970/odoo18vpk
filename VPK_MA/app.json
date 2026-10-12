@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "VPK ซ่อมบำรุง",
+    "slug": "vpk-ma",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B6E6E"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vpk.maintenance",
+      "infoPlist": {
+        "NSCameraUsageDescription": "ใช้กล้องเพื่อสแกน QR รหัสทรัพย์สิน"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B6E6E",
+        "foregroundImage": "./assets/adaptive-icon.png"
+      },
+      "package": "com.vpk.maintenance"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ใช้กล้องเพื่อสแกน QR รหัสทรัพย์สิน",
+          "recordAudioAndroid": false
+        }
+      ]
+    ]
+  }
+}
