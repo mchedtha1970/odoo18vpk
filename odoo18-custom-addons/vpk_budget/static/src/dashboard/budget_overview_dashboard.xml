@@ -33,6 +33,16 @@
                                 </t>
                             </select>
                         </label>
+                        <label>
+                            หน่วยงาน
+                            <select class="form-select form-select-sm o_vpk_bm_dept" t-on-change="onDepartmentChange">
+                                <t t-foreach="state.data.departments" t-as="department" t-key="department.id">
+                                    <option t-att-value="department.id" t-att-selected="department.id === state.data.department_id">
+                                        <t t-esc="department.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </label>
                         <button class="btn o_vpk_bm_export" t-on-click="() => this.exportReport()">
                             <i class="fa fa-download me-1"/>ส่งออกรายงาน
                         </button>

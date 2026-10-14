@@ -11,7 +11,7 @@ from docx.oxml.ns import qn
 from docx.shared import Cm, Pt, RGBColor
 
 ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "คู่มือการใช้งาน-ระบบจัดซื้อจัดจ้าง.docx"
+OUT = ROOT / "คู่มือการใช้งาน" / "คู่มือการใช้งาน-ระบบจัดซื้อจัดจ้าง.docx"
 FIG = ROOT / "manual_assets" / "figures"
 
 NAVY = RGBColor(0x0B, 0x68, 0x48)

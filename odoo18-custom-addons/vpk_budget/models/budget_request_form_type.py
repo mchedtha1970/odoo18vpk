@@ -83,6 +83,16 @@ class BudgetRequestFormType(models.Model):
         self.ensure_one()
         return (self.name or self.code or "").strip()
 
+    def _get_summary_menu_name(self):
+        self.ensure_one()
+        labels = {
+            "material": "หมวดวัสดุ",
+            "asset": "หมวดพัสดุ",
+            "construction": "ก่อสร้าง",
+            "project": "โครงการ",
+        }
+        return labels.get(self._get_primary_section()) or self._get_request_menu_name()
+
     def _get_primary_section(self):
         self.ensure_one()
         for section_key in ("material", "asset", "construction", "project"):
@@ -285,9 +295,9 @@ class BudgetRequestFormType(models.Model):
         for form_type in self.with_context(active_test=False).search(
             [], order="sequence, name, id"
         ):
-            menu_name = form_type._get_request_menu_name()
+            menu_name = form_type._get_summary_menu_name()
             action_vals = {
-                "name": menu_name,
+                "name": "สรุปแผนการใช้เงินบำรุง",
                 "type": "ir.actions.act_window",
                 "res_model": "departmental.budget.request.summary.wizard",
                 "view_mode": "form",

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_document.DocumentFileField" t-inherit="web.BinaryField" t-inherit-mode="primary">
+        <xpath expr="//button[hasclass('o_download_file_button')]" position="before">
+            <button class="btn btn-link btn-sm lh-1 fa fa-eye"
+                    data-tooltip="เปิดไฟล์"
+                    aria-label="เปิดไฟล์"
+                    t-on-click.stop.prevent="openFile"/>
+        </xpath>
+        <xpath expr="//a[hasclass('o_form_uri')]" position="attributes">
+            <attribute name="t-on-click.prevent">openFile</attribute>
+        </xpath>
+        <xpath expr="//a[hasclass('o_form_uri')]/span" position="attributes">
+            <attribute name="class">fa fa-eye me-2</attribute>
+        </xpath>
+    </t>
+</templates>

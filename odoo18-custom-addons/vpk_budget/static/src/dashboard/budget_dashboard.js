@@ -16,11 +16,15 @@ export class VpkBudgetDashboard extends Component {
         this.openRequests = this.openRequests.bind(this);
         this.openRequest = this.openRequest.bind(this);
         this.onYearChange = this.onYearChange.bind(this);
+        this.onDepartmentChange = this.onDepartmentChange.bind(this);
         this.state = useState({
             ready: false,
+            departmentId: 0,
             data: {
                 fiscal_year: "",
                 year_options: [],
+                department_id: 0,
+                departments: [],
                 cards: [],
                 state_breakdown: [],
                 category_breakdown: [],
@@ -39,19 +43,30 @@ export class VpkBudgetDashboard extends Component {
         return { controlPanel: {} };
     }
 
-    async loadData(fiscalYear = false) {
+    async loadData(fiscalYear = false, departmentId = undefined) {
         this.state.ready = false;
+        const year = fiscalYear || this.state.data.fiscal_year;
+        const department =
+            departmentId === undefined ? this.state.departmentId : departmentId;
         this.state.data = await this.orm.call(
             "departmental.budget.request",
             "get_budget_dashboard_data",
             [],
-            { fiscal_year: fiscalYear || undefined }
+            {
+                fiscal_year: year || undefined,
+                department_id: department || undefined,
+            }
         );
+        this.state.departmentId = this.state.data.department_id || 0;
         this.state.ready = true;
     }
 
     async onYearChange(ev) {
-        await this.loadData(ev.target.value);
+        await this.loadData(ev.target.value, this.state.departmentId);
+    }
+
+    async onDepartmentChange(ev) {
+        await this.loadData(this.state.data.fiscal_year, Number(ev.target.value) || 0);
     }
 
     formatAmount(amount) {
@@ -95,13 +110,28 @@ export class VpkBudgetDashboard extends Component {
         return `background: conic-gradient(${stops.join(", ")});`;
     }
 
+    departmentDomain() {
+        const departmentId = this.state.departmentId;
+        if (!departmentId) {
+            return [];
+        }
+        if (departmentId === -1) {
+            return [["analytic_account_id", "=", false]];
+        }
+        return [["analytic_account_id", "=", departmentId]];
+    }
+
     openRequests(domain = []) {
         this.actionService.doAction({
             type: "ir.actions.act_window",
             name: "คำของบประมาณ",
             res_model: "departmental.budget.request",
             views: [[false, "list"], [false, "form"]],
-            domain: [["fiscal_year", "=", this.state.data.fiscal_year], ...domain],
+            domain: [
+                ["fiscal_year", "=", this.state.data.fiscal_year],
+                ...this.departmentDomain(),
+                ...domain,
+            ],
         });
     }
 

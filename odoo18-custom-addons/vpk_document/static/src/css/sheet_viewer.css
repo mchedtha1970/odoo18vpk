@@ -1,0 +1,249 @@
+html, body {
+    margin: 0;
+    height: 100%;
+    background: #fff;
+    color: #202124;
+    font-family: Arial, "Sarabun", sans-serif;
+}
+
+.gs-app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.gs-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 52px;
+    padding: 0 16px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fff;
+}
+
+.gs-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    background:
+        linear-gradient(#fff, #fff) 7px 6px / 14px 2px no-repeat,
+        linear-gradient(#fff, #fff) 7px 13px / 14px 2px no-repeat,
+        linear-gradient(#fff, #fff) 7px 20px / 14px 2px no-repeat,
+        linear-gradient(#fff, #fff) 6px 7px / 2px 14px no-repeat,
+        linear-gradient(#fff, #fff) 13px 7px / 2px 14px no-repeat,
+        linear-gradient(#fff, #fff) 20px 7px / 2px 14px no-repeat,
+        #188038;
+    flex: 0 0 auto;
+}
+
+.gs-title {
+    font-size: 18px;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gs-formula {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 8px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #fff;
+}
+
+.gs-namebox {
+    width: 92px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border: 1px solid #dadce0;
+    border-radius: 2px;
+    font-size: 13px;
+    flex: 0 0 auto;
+}
+
+.gs-fx {
+    width: 24px;
+    color: #5f6368;
+    font-style: italic;
+    font-family: Georgia, serif;
+    text-align: center;
+    flex: 0 0 auto;
+}
+
+.gs-formula-value {
+    flex: 1;
+    height: 24px;
+    line-height: 24px;
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    font-size: 13px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.gs-formula-value:hover,
+.gs-namebox:hover {
+    border-color: #dadce0;
+}
+
+.gs-grid-wrap {
+    flex: 1;
+    overflow: auto;
+    background: #fff;
+    position: relative;
+}
+
+.gs-grid {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+}
+
+.gs-grid th,
+.gs-grid td {
+    border-right: 1px solid #e1e3e1;
+    border-bottom: 1px solid #e1e3e1;
+    padding: 0;
+    background: #fff;
+    font-weight: 400;
+}
+
+.gs-grid thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    height: 24px;
+    background: #f8f9fa;
+    color: #444;
+    text-align: center;
+    font-size: 12px;
+}
+
+.gs-grid .gs-rowhead {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    width: 46px;
+    min-width: 46px;
+    background: #f8f9fa;
+    color: #666;
+    text-align: center;
+    font-size: 12px;
+}
+
+.gs-grid thead .gs-corner {
+    left: 0;
+    z-index: 4;
+    width: 46px;
+}
+
+.gs-grid td {
+    height: 22px;
+    vertical-align: middle;
+    background: #fff;
+}
+
+.gs-grid td .gs-cell {
+    display: block;
+    min-height: 20px;
+    line-height: 1.25;
+    padding: 2px 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+
+.gs-grid td.gs-wrap {
+    height: auto;
+}
+
+.gs-grid td.gs-wrap .gs-cell {
+    white-space: pre-wrap;
+    word-break: break-word;
+    height: auto;
+    overflow: visible;
+}
+
+.gs-grid td.gs-empty {
+    background: transparent;
+}
+
+.gs-grid td.gs-flow {
+    overflow: visible;
+}
+
+.gs-grid td.gs-flow .gs-cell {
+    overflow: visible;
+    width: max-content;
+    max-width: none;
+    position: relative;
+    z-index: 2;
+}
+
+.gs-grid td.gs-selected {
+    outline: 2px solid #1a73e8;
+    outline-offset: -2px;
+    z-index: 1;
+    position: relative;
+}
+
+.gs-grid td.gs-selected .gs-cell {
+    background: #fff;
+}
+
+.gs-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 36px;
+    padding: 0 8px;
+    border-top: 1px solid #e0e0e0;
+    background: #f9fbfd;
+    overflow-x: auto;
+}
+
+.gs-tab {
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: transparent;
+    color: #444;
+    height: 28px;
+    padding: 0 14px;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.gs-tab:hover {
+    background: #e8eaed;
+}
+
+.gs-tab.active {
+    background: #fff;
+    border-color: #dadce0;
+    color: #188038;
+    font-weight: 600;
+    box-shadow: inset 0 3px 0 #188038;
+}
+
+.gs-note {
+    margin-left: auto;
+    color: #5f6368;
+    font-size: 12px;
+    padding-right: 8px;
+    white-space: nowrap;
+}
+
+.gs-error {
+    padding: 24px;
+    color: #b06000;
+}

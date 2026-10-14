@@ -12,7 +12,7 @@ from docx.oxml.ns import qn
 from docx.shared import Cm, Pt
 
 ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "คู่มือการใช้งาน-ระบบซ่อมบำรุง.docx"
+OUT = ROOT / "คู่มือการใช้งาน" / "คู่มือการใช้งาน-ระบบซ่อมบำรุง.docx"
 _spec = importlib.util.spec_from_file_location(
     "proc_manual", ROOT / "build_procurement_user_manual_docx.py"
 )

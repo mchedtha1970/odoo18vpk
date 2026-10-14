@@ -4,10 +4,10 @@
         <field name="name">departmental.budget.request.summary.wizard.form</field>
         <field name="model">departmental.budget.request.summary.wizard</field>
         <field name="arch" type="xml">
-            <form string="สรุปรายการคำของบประมาณ">
+            <form string="สรุปแผนการใช้เงินบำรุง">
                 <sheet>
                     <div class="oe_title">
-                        <h1>สรุปรายการคำของบประมาณ</h1>
+                        <h1>สรุปแผนการใช้เงินบำรุง</h1>
                         <div class="text-muted" invisible="not form_type_id">
                             แบบฟอร์ม:
                             <field name="form_type_id" readonly="1" class="oe_inline" nolabel="1"/>
@@ -23,14 +23,30 @@
                                 options="{'no_create': True, 'no_open': True}"
                                 readonly="is_form_type_locked"
                             />
-                            <field name="fiscal_year" placeholder="เช่น 2026"/>
-                            <field name="budget_post_id" options="{'no_create': True}"/>
-                            <field name="fund_source_id" options="{'no_create': True}"/>
+                            <field name="fiscal_year" invisible="1"/>
+                            <field
+                                name="annual_budget_id"
+                                options="{'no_create': True, 'no_open': True}"
+                            />
+                            <field
+                                name="budget_post_id"
+                                placeholder="ไม่เลือก แสดงทุกหมวด"
+                                options="{'no_create': True, 'no_open': True}"
+                            />
+                            <field
+                                name="fund_source_id"
+                                placeholder="ไม่เลือก แสดงทุกแหล่งเงิน"
+                                options="{'no_create': True, 'no_open': True}"
+                            />
                         </group>
                         <group>
-                            <field name="analytic_account_id" options="{'no_create': True}"/>
-                            <field name="prior_fiscal_year_ce" string="ปีงบก่อนหน้า (ค.ศ.)"/>
-                            <field name="current_fiscal_year_ce" string="ปีงบปัจจุบัน (ค.ศ.)"/>
+                            <field
+                                name="analytic_account_id"
+                                placeholder="ไม่เลือก แสดงทุกหน่วยงาน"
+                                options="{'no_create': True, 'no_open': True}"
+                            />
+                            <field name="prior_fiscal_year_ce" string="ปีงบก่อนหน้า (พ.ศ.)"/>
+                            <field name="current_fiscal_year_ce" string="ปีงบปัจจุบัน (พ.ศ.)"/>
                         </group>
                     </group>
                     <div class="mb-3">
@@ -102,7 +118,7 @@
     </record>
 
     <record id="action_departmental_budget_summary_wizard" model="ir.actions.act_window">
-        <field name="name">สรุปรายการคำของบประมาณ</field>
+        <field name="name">สรุปแผนการใช้เงินบำรุง</field>
         <field name="res_model">departmental.budget.request.summary.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
@@ -110,9 +126,9 @@
 
     <menuitem
         id="menu_departmental_budget_summary_root"
-        name="สรุปรายการคำของบประมาณ"
-        parent="menu_vpk_budget_root"
-        sequence="20"
+        name="สรุปแผนการใช้เงินบำรุง"
+        parent="menu_vpk_budget_reports"
+        sequence="10"
         groups="group_vpk_budget_user"
     />
 

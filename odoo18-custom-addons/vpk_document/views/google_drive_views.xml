@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_document_google_settings" model="ir.ui.view">
+        <field name="name">vpk.document.google.settings.form</field>
+        <field name="model">vpk.document.google.settings</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="client_id" placeholder="xxxxx.apps.googleusercontent.com"/>
+                    <field name="client_secret" password="True"/>
+                    <field name="redirect_uri"/>
+                </group>
+                <div class="text-muted">
+                    นำ Redirect URI ไปใส่ใน Google Cloud ที่ Authorized redirect URIs
+                    ให้ตรงทุกตัวอักษร จากนั้นบันทึก ไฟล์ Excel จะเปิดใน Google Sheets
+                    และไฟล์ Word จะเปิดใน Google Docs
+                </div>
+                <footer>
+                    <button name="action_save" type="object" string="บันทึก" class="btn-primary"/>
+                    <button name="action_disconnect" type="object" string="ยกเลิกการเชื่อมบัญชีนี้"/>
+                    <button special="cancel" string="ปิด"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vpk_document_google_settings" model="ir.actions.act_window">
+        <field name="name">Google Drive</field>
+        <field name="res_model">vpk.document.google.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

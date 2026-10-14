@@ -262,7 +262,7 @@ class DepartmentalBudgetRequest(models.Model):
     )
 
     @api.model
-    def get_budget_dashboard_data(self, fiscal_year=None):
+    def get_budget_dashboard_data(self, fiscal_year=None, department_id=None):
         years = [
             year
             for year in self.search([], order="fiscal_year desc").mapped("fiscal_year")
@@ -271,7 +271,12 @@ class DepartmentalBudgetRequest(models.Model):
         years = list(dict.fromkeys(years))
         fiscal_year = fiscal_year or (years[0] if years else str(fields.Date.context_today(self).year + 543))
 
-        requests = self.search([("fiscal_year", "=", fiscal_year)])
+        year_requests = self.search([("fiscal_year", "=", fiscal_year)])
+        departments = self._dashboard_departments(year_requests)
+        valid_department_ids = {item["id"] for item in departments}
+        if department_id and int(department_id) not in valid_department_ids:
+            department_id = None
+        requests = self._filter_requests_by_department(year_requests, department_id)
         active_requests = requests.filtered(lambda request: request.state != "rejected")
         lines = active_requests.mapped("line_ids")
 
@@ -426,6 +431,8 @@ class DepartmentalBudgetRequest(models.Model):
         return {
             "fiscal_year": fiscal_year,
             "year_options": years or [fiscal_year],
+            "department_id": int(department_id) if department_id else 0,
+            "departments": departments,
             "cards": [
                 {"label": "คำของบทั้งหมด", "amount": total_requested, "icon": "fa-folder-open", "color": "#243037"},
                 {"label": "อนุมัติแล้ว", "amount": approved_total, "icon": "fa-check-circle", "color": "#1b6f60"},
@@ -445,6 +452,32 @@ class DepartmentalBudgetRequest(models.Model):
                 "max": max([row["requested"] for row in gap_rows] + [row["allocated"] for row in gap_rows] + [1.0]),
             },
         }
+
+    @api.model
+    def _dashboard_departments(self, requests):
+        options = [{"id": 0, "name": "ทุกหน่วยงาน"}]
+        seen = {}
+        has_blank = False
+        for request in requests:
+            department = request.analytic_account_id
+            if not department:
+                has_blank = True
+                continue
+            seen.setdefault(department.id, department.display_name)
+        for dept_id, name in sorted(seen.items(), key=lambda item: item[1]):
+            options.append({"id": dept_id, "name": name})
+        if has_blank:
+            options.append({"id": -1, "name": "ไม่ระบุหน่วยงาน"})
+        return options
+
+    @api.model
+    def _filter_requests_by_department(self, requests, department_id):
+        if not department_id:
+            return requests
+        dept_id = int(department_id)
+        if dept_id == -1:
+            return requests.filtered(lambda request: not request.analytic_account_id)
+        return requests.filtered(lambda request: request.analytic_account_id.id == dept_id)
 
     @api.depends(
         "form_type_id",

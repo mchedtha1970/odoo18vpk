@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_document_form" model="ir.ui.view">
+        <field name="name">vpk.document.form</field>
+        <field name="model">vpk.document</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_view_file" type="object" string="เปิดไฟล์"
+                            class="btn-primary" icon="fa-eye"
+                            invisible="not id or not file"/>
+                    <button name="action_open_google_sheet" type="object"
+                            string="เปิดใน Google Sheets" icon="fa-external-link"
+                            invisible="not id or file_type != 'excel'"/>
+                    <button name="action_open_google_sheet" type="object"
+                            string="เปิดใน Google Docs" icon="fa-external-link"
+                            invisible="not id or file_type != 'word'"/>
+                    <button name="action_download" type="object" string="ดาวน์โหลด"
+                            icon="fa-download"
+                            invisible="not id or not file"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="เก็บถาวร" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title" invisible="id">
+                        <h1>อัปโหลดเอกสาร</h1>
+                    </div>
+                    <div class="oe_title" invisible="not id">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="ชื่อเอกสาร" required="id"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="category_id"/>
+                            <field name="upload_ids" widget="many2many_binary" invisible="id"
+                                   options="{'accepted_file_extensions': '.pdf,.xls,.xlsx,.xlsm,.doc,.docx,.png,.jpg,.jpeg,.gif,.webp,.bmp,.tif,.tiff'}"/>
+                            <div class="text-muted" colspan="2" invisible="id">
+                                เลือกได้หลายไฟล์ในครั้งเดียว แต่ละไฟล์จะถูกสร้างเป็นเอกสารแยก
+                                ในหมวดหมู่ที่เลือก และใช้ชื่อไฟล์เป็นชื่อเอกสาร
+                            </div>
+                            <field name="file" filename="file_name" widget="vpk_document_file"
+                                   invisible="not id" required="id"/>
+                            <field name="file_name" invisible="1"/>
+                            <div class="text-muted" colspan="2" invisible="not id">
+                                รองรับ PDF, Excel (.xls, .xlsx), Word (.doc, .docx) และรูปภาพ
+                            </div>
+                            <field name="file_type" widget="badge" readonly="1" invisible="not id"
+                                   decoration-danger="file_type == 'pdf'"
+                                   decoration-success="file_type == 'excel'"
+                                   decoration-info="file_type == 'word'"
+                                   decoration-warning="file_type == 'image'"/>
+                        </group>
+                        <group>
+                            <field name="document_date"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="mimetype" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="รายละเอียด">
+                            <field name="description" nolabel="1" placeholder="รายละเอียดเพิ่มเติมของเอกสาร..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_document_preview" model="ir.ui.view">
+        <field name="name">vpk.document.preview</field>
+        <field name="model">vpk.document</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0" delete="0">
+                <header>
+                    <button name="action_download" type="object" string="ดาวน์โหลด"
+                            class="btn-primary" icon="fa-download"/>
+                    <button special="cancel" string="ปิด"/>
+                </header>
+                <sheet>
+                    <field name="file_name" invisible="1"/>
+                    <field name="file_type" invisible="1"/>
+                    <field name="preview_html" widget="html" nolabel="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_document_list" model="ir.ui.view">
+        <field name="name">vpk.document.list</field>
+        <field name="model">vpk.document</field>
+        <field name="arch" type="xml">
+            <list>
+                <button name="action_view_file" type="object"
+                        icon="fa-file-pdf-o"
+                        title="เปิด PDF" string="เปิด PDF"
+                        class="text-danger"
+                        invisible="file_type != 'pdf'"/>
+                <button name="action_open_google_sheet" type="object"
+                        icon="fa-external-link"
+                        title="เปิดใน Google Sheets" string="Google Sheets"
+                        invisible="file_type != 'excel'"/>
+                <button name="action_open_google_sheet" type="object"
+                        icon="fa-external-link"
+                        title="เปิดใน Google Docs" string="Google Docs"
+                        invisible="file_type != 'word'"/>
+                <field name="name"/>
+                <field name="category_id"/>
+                <field name="file_type" widget="badge"
+                       decoration-danger="file_type == 'pdf'"
+                       decoration-success="file_type == 'excel'"
+                       decoration-info="file_type == 'word'"
+                       decoration-warning="file_type == 'image'"/>
+                <field name="file_name"/>
+                <field name="document_date"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_document_kanban" model="ir.ui.view">
+        <field name="name">vpk.document.kanban</field>
+        <field name="model">vpk.document</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="category_id" records_draggable="0">
+                <field name="name"/>
+                <field name="file_type"/>
+                <field name="file_name"/>
+                <field name="document_date"/>
+                <field name="category_id"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click">
+                            <strong><field name="name"/></strong>
+                            <div class="mt-1">
+                                <field name="file_type" widget="badge"/>
+                            </div>
+                            <div class="text-muted"><field name="file_name"/></div>
+                            <div><field name="document_date"/></div>
+                            <footer>
+                                <button name="action_view_file" type="object"
+                                        class="btn btn-link p-0" icon="fa-eye">เปิดไฟล์</button>
+                            </footer>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_vpk_document_search" model="ir.ui.view">
+        <field name="name">vpk.document.search</field>
+        <field name="model">vpk.document</field>
+        <field name="arch" type="xml">
+            <search>
+                <searchpanel view_types="kanban,list">
+                    <field name="category_id"
+                           string="โฟลเดอร์"
+                           icon="fa-folder"
+                           enable_counters="1"
+                           expand="1"
+                           hierarchize="1"/>
+                </searchpanel>
+                <field name="name"/>
+                <field name="file_name"/>
+                <field name="category_id"/>
+                <field name="user_id"/>
+                <separator/>
+                <filter name="type_pdf" string="PDF" domain="[('file_type', '=', 'pdf')]"/>
+                <filter name="type_excel" string="Excel" domain="[('file_type', '=', 'excel')]"/>
+                <filter name="type_word" string="Word" domain="[('file_type', '=', 'word')]"/>
+                <filter name="type_image" string="รูปภาพ" domain="[('file_type', '=', 'image')]"/>
+                <separator/>
+                <filter name="my_documents" string="ไฟล์ของฉัน"
+                        domain="[('user_id', '=', uid)]"/>
+                <group expand="0" string="จัดกลุ่ม">
+                    <filter name="group_category" string="หมวดหมู่"
+                            context="{'group_by': 'category_id'}"/>
+                    <filter name="group_type" string="ชนิดไฟล์"
+                            context="{'group_by': 'file_type'}"/>
+                    <filter name="group_user" string="ผู้อัปโหลด"
+                            context="{'group_by': 'user_id'}"/>
+                    <filter name="group_month" string="เดือน"
+                            context="{'group_by': 'document_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_document" model="ir.actions.act_window">
+        <field name="name">ไฟล์เอกสาร</field>
+        <field name="res_model">vpk.document</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">แนบไฟล์เอกสาร</p>
+            <p>อัปโหลด PDF, Excel, Word หรือรูปภาพ แล้วกดดูไฟล์ได้ทันที</p>
+        </field>
+    </record>
+</odoo>

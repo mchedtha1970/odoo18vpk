@@ -48,6 +48,9 @@ odoo18-custom-addons/stock-logistics-workflow-18.0/
 # Nested git metadata if any remain
 odoo18-custom-addons/*/.git/
 
+# Google OAuth client secrets
+docs/Google/client_secret_*.json
+
 # Server-local conf copies (passwords / host paths)
 odoo18vpk-fixed.conf
 odoo18vpk-s1-test.conf

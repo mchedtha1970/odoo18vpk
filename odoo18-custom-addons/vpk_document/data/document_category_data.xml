@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="category_general" model="vpk.document.category">
+        <field name="name">เอกสารทั่วไป</field>
+        <field name="code">GENERAL</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="category_contract" model="vpk.document.category">
+        <field name="name">สัญญา</field>
+        <field name="code">CONTRACT</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="category_report" model="vpk.document.category">
+        <field name="name">รายงาน</field>
+        <field name="code">REPORT</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="category_image" model="vpk.document.category">
+        <field name="name">รูปภาพ</field>
+        <field name="code">IMAGE</field>
+        <field name="sequence">40</field>
+    </record>
+</odoo>

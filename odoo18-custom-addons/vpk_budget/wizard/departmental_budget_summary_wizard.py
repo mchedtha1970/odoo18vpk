@@ -14,10 +14,17 @@ class DepartmentalBudgetSummaryWizard(models.TransientModel):
     _name = "departmental.budget.request.summary.wizard"
     _description = "Departmental Budget Request Summary Wizard"
 
-    fiscal_year = fields.Char(
+    annual_budget_id = fields.Many2one(
+        comodel_name="budget.budget",
         string="ปีงบประมาณ",
         required=True,
-        default=lambda self: str(fields.Date.context_today(self).year),
+        domain="[('company_id', '=', company_id)]",
+        default=lambda self: self._default_annual_budget(),
+    )
+    fiscal_year = fields.Char(
+        string="ปีงบประมาณ",
+        compute="_compute_fiscal_year",
+        store=True,
     )
     budget_post_id = fields.Many2one(
         comodel_name="account.budget.post",
@@ -96,15 +103,41 @@ class DepartmentalBudgetSummaryWizard(models.TransientModel):
                 else False
             )
 
+    @api.model
+    def _default_annual_budget(self):
+        today = fields.Date.context_today(self)
+        budget = self.env["budget.budget"].search(
+            [
+                ("company_id", "=", self.env.company.id),
+                ("date_from", "<=", today),
+                ("date_to", ">=", today),
+            ],
+            limit=1,
+            order="date_from desc, id desc",
+        )
+        if budget:
+            return budget
+        return self.env["budget.budget"].search(
+            [("company_id", "=", self.env.company.id)],
+            limit=1,
+            order="date_from desc, id desc",
+        )
+
+    @api.depends("annual_budget_id", "annual_budget_id.date_from", "annual_budget_id.date_to")
+    def _compute_fiscal_year(self):
+        request_model = self.env["departmental.budget.request"]
+        for wizard in self:
+            wizard.fiscal_year = (
+                request_model._fiscal_year_from_annual_budget(wizard.annual_budget_id) or ""
+            )
+
     @api.depends("fiscal_year")
     def _compute_fiscal_year_labels(self):
         request_model = self.env["departmental.budget.request"]
         for wizard in self:
-            ce_current = request_model._fiscal_year_to_ce(wizard.fiscal_year)
-            wizard.current_fiscal_year_ce = str(ce_current) if ce_current else ""
-            wizard.prior_fiscal_year_ce = (
-                str(ce_current - 1) if ce_current else ""
-            )
+            be_current = request_model._fiscal_year_to_be(wizard.fiscal_year)
+            wizard.current_fiscal_year_ce = str(be_current) if be_current else ""
+            wizard.prior_fiscal_year_ce = str(be_current - 1) if be_current else ""
 
     @api.depends(
         "line_ids.prior_year_plan_amount",
@@ -365,8 +398,8 @@ class DepartmentalBudgetSummaryWizard(models.TransientModel):
 
     def action_load_summary(self):
         self.ensure_one()
-        if not self.fiscal_year:
-            raise UserError(_("กรุณาระบุปีงบประมาณ"))
+        if not self.annual_budget_id:
+            raise UserError(_("กรุณาเลือกปีงบประมาณ"))
         if not self.form_type_id:
             raise UserError(_("กรุณาเลือกแบบฟอร์มคำของบ"))
 
@@ -513,7 +546,7 @@ class DepartmentalBudgetSummaryWizard(models.TransientModel):
 
         filter_parts = [
             f"แบบฟอร์ม: {form_type_name}",
-            f"ปีงบประมาณ (ค.ศ.): {fy['ce_current']}",
+            f"ปีงบประมาณ (พ.ศ.): {fy['be_current']}",
             f"หมวดงบประมาณ: {budget_post_name}",
         ]
         if self.analytic_account_id:

@@ -17,6 +17,7 @@ export class VpkBudgetOverviewDashboard extends Component {
             ready: false,
             fiscalYear: false,
             fundSourceId: 0,
+            departmentId: 0,
             data: this._emptyData(),
         });
         onWillStart(async () => {
@@ -34,6 +35,8 @@ export class VpkBudgetOverviewDashboard extends Component {
             year_options: [],
             fund_source_id: 0,
             fund_sources: [],
+            department_id: 0,
+            departments: [],
             company_name: "",
             org_label: "",
             as_of_label: "",
@@ -74,11 +77,13 @@ export class VpkBudgetOverviewDashboard extends Component {
         };
     }
 
-    async loadData(fiscalYear = false, fundSourceId = undefined) {
+    async loadData(fiscalYear = false, fundSourceId = undefined, departmentId = undefined) {
         this.state.ready = false;
         const year = fiscalYear === false ? this.state.fiscalYear : fiscalYear;
         const fund =
             fundSourceId === undefined ? this.state.fundSourceId : fundSourceId;
+        const department =
+            departmentId === undefined ? this.state.departmentId : departmentId;
         this.state.data = await this.orm.call(
             "budget.budget",
             "get_annual_expenditure_overview",
@@ -86,19 +91,37 @@ export class VpkBudgetOverviewDashboard extends Component {
             {
                 fiscal_year: year || undefined,
                 fund_source_id: fund || undefined,
+                department_id: department || undefined,
             }
         );
         this.state.fiscalYear = this.state.data.fiscal_year;
         this.state.fundSourceId = this.state.data.fund_source_id || 0;
+        this.state.departmentId = this.state.data.department_id || 0;
         this.state.ready = true;
     }
 
     async onYearChange(ev) {
-        await this.loadData(ev.target.value, this.state.fundSourceId);
+        await this.loadData(
+            ev.target.value,
+            this.state.fundSourceId,
+            this.state.departmentId
+        );
     }
 
     async onFundChange(ev) {
-        await this.loadData(this.state.fiscalYear, Number(ev.target.value) || 0);
+        await this.loadData(
+            this.state.fiscalYear,
+            Number(ev.target.value) || 0,
+            this.state.departmentId
+        );
+    }
+
+    async onDepartmentChange(ev) {
+        await this.loadData(
+            this.state.fiscalYear,
+            this.state.fundSourceId,
+            Number(ev.target.value) || 0
+        );
     }
 
     formatMillion(amount) {

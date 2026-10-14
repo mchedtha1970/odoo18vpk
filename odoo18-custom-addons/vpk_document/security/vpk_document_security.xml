@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="rule_vpk_document_company" model="ir.rule">
+        <field name="name">เอกสารแนบไฟล์ multi-company</field>
+        <field name="model_id" ref="model_vpk_document"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+    <record id="rule_vpk_document_google_token_own" model="ir.rule">
+        <field name="name">โทเคน Google Drive ของตนเอง</field>
+        <field name="model_id" ref="model_vpk_document_google_token"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+    </record>
+    <record id="rule_vpk_document_google_link_own" model="ir.rule">
+        <field name="name">Google Sheets ของตนเอง</field>
+        <field name="model_id" ref="model_vpk_document_google_link"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+    </record>
+</odoo>

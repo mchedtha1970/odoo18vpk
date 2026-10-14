@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_vpk_document_root"
+              name="เอกสาร"
+              sequence="46"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_vpk_document_documents"
+              name="ไฟล์เอกสาร"
+              parent="menu_vpk_document_root"
+              action="action_vpk_document"
+              sequence="10"/>
+
+    <menuitem id="menu_vpk_document_config"
+              name="การตั้งค่า"
+              parent="menu_vpk_document_root"
+              sequence="90"/>
+
+    <menuitem id="menu_vpk_document_category"
+              name="หมวดหมู่ไฟล์"
+              parent="menu_vpk_document_config"
+              action="action_vpk_document_category"
+              sequence="10"/>
+
+    <menuitem id="menu_vpk_document_google"
+              name="Google Drive"
+              parent="menu_vpk_document_config"
+              action="action_vpk_document_google_settings"
+              groups="base.group_system"
+              sequence="20"/>
+</odoo>

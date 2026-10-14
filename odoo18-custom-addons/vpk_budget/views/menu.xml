@@ -55,17 +55,11 @@
         groups="group_vpk_budget_user"
     />
 
-    <record id="action_vpk_budget_department_dashboard" model="ir.actions.client">
-        <field name="name">บริการงบประมาณรายแผนก</field>
-        <field name="tag">vpk_budget_department_dashboard</field>
-    </record>
-
     <menuitem
-        id="menu_vpk_budget_dashboard_department"
-        name="บริการงบประมาณรายแผนก"
-        parent="menu_vpk_budget_dashboard"
-        action="action_vpk_budget_department_dashboard"
-        sequence="8"
+        id="menu_vpk_budget_reports"
+        name="รายงาน"
+        parent="menu_vpk_budget_root"
+        sequence="30"
         groups="group_vpk_budget_user"
     />
 

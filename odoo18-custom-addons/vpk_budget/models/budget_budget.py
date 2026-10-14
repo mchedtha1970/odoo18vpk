@@ -46,7 +46,9 @@ class Budget(models.Model):
     _inherit = "budget.budget"
 
     @api.model
-    def get_annual_expenditure_overview(self, fiscal_year=None, fund_source_id=None):
+    def get_annual_expenditure_overview(
+        self, fiscal_year=None, fund_source_id=None, department_id=None
+    ):
         """Hospital annual budget monitoring dashboard."""
         fiscal_year, year_options, selected_budgets = self._get_fiscal_year_budgets(
             fiscal_year
@@ -57,6 +59,13 @@ class Budget(models.Model):
             lines = lines.filtered(
                 lambda line: line.fund_source_id.id == int(fund_source_id)
             )
+        departments = self._overview_departments(
+            lines, fiscal_year, fund_source_id
+        )
+        valid_department_ids = {item["id"] for item in departments}
+        if department_id and int(department_id) not in valid_department_ids:
+            department_id = None
+        lines = self._filter_lines_by_department(lines, department_id)
 
         period_start, period_end = self._overview_period(fiscal_year, selected_budgets)
         today = fields.Date.context_today(self)
@@ -81,7 +90,9 @@ class Budget(models.Model):
         remaining_pct = self._pct(remaining, allocated)
         vs_plan = actual_pct - plan_pct
 
-        prior_allocated, prior_actual = self._prior_year_totals(fiscal_year, fund_source_id)
+        prior_allocated, prior_actual = self._prior_year_totals(
+            fiscal_year, fund_source_id, department_id
+        )
         yoy_allocated_pct = self._pct(allocated - prior_allocated, prior_allocated) if prior_allocated else 0.0
         yoy_actual_pct = self._pct(actual - prior_actual, prior_actual) if prior_actual else 0.0
 
@@ -207,7 +218,7 @@ class Budget(models.Model):
             )
 
         project_data = self._overview_projects(
-            fiscal_year, lines, committed_map, plan_pct, fund_source_id
+            fiscal_year, lines, committed_map, plan_pct, fund_source_id, department_id
         )
         projects = project_data["items"]
         project_total = project_data["total"]
@@ -272,6 +283,8 @@ class Budget(models.Model):
             "year_options": year_options or [fiscal_year],
             "fund_source_id": int(fund_source_id) if fund_source_id else 0,
             "fund_sources": fund_sources,
+            "department_id": int(department_id) if department_id else 0,
+            "departments": departments,
             "company_name": company.name or "โรงพยาบาล",
             "org_label": org_label,
             "as_of_label": as_of_label,
@@ -363,6 +376,44 @@ class Budget(models.Model):
             for source in self.env["vpk.budget.fund.source"].search([]):
                 options.append({"id": source.id, "name": source.name})
         return options
+
+    @api.model
+    def _overview_departments(self, lines, fiscal_year=None, fund_source_id=None):
+        options = [{"id": 0, "name": "ทุกหน่วยงาน"}]
+        seen = {}
+        has_blank = False
+        for line in lines:
+            department = line.analytic_account_id
+            if not department:
+                has_blank = True
+                continue
+            seen[department.id] = department.display_name
+        request_domain = []
+        if fiscal_year:
+            request_domain.append(("fiscal_year", "=", fiscal_year))
+        if fund_source_id:
+            request_domain.append(("fund_source_id", "=", int(fund_source_id)))
+        requests = self.env["departmental.budget.request"].search(request_domain)
+        for request in requests:
+            department = request.analytic_account_id
+            if not department:
+                has_blank = True
+                continue
+            seen.setdefault(department.id, department.display_name)
+        for dept_id, name in sorted(seen.items(), key=lambda item: item[1]):
+            options.append({"id": dept_id, "name": name})
+        if has_blank:
+            options.append({"id": -1, "name": "ไม่ระบุหน่วยงาน"})
+        return options
+
+    @api.model
+    def _filter_lines_by_department(self, lines, department_id):
+        if not department_id:
+            return lines
+        dept_id = int(department_id)
+        if dept_id == -1:
+            return lines.filtered(lambda line: not line.analytic_account_id)
+        return lines.filtered(lambda line: line.analytic_account_id.id == dept_id)
 
     @api.model
     def _expense_type_meta(self, line):
@@ -511,7 +562,7 @@ class Budget(models.Model):
         return monthly
 
     @api.model
-    def _prior_year_totals(self, fiscal_year, fund_source_id=None):
+    def _prior_year_totals(self, fiscal_year, fund_source_id=None, department_id=None):
         if not str(fiscal_year).isdigit():
             return 0.0, 0.0
         _year, _options, prior_budgets = self._get_fiscal_year_budgets(str(int(fiscal_year) - 1))
@@ -520,12 +571,15 @@ class Budget(models.Model):
             prior_lines = prior_lines.filtered(
                 lambda line: line.fund_source_id.id == int(fund_source_id)
             )
+        prior_lines = self._filter_lines_by_department(prior_lines, department_id)
         allocated = sum(prior_lines.mapped("planned_amount"))
         actual = sum(self._line_spent_amount(line) for line in prior_lines)
         return allocated, actual
 
     @api.model
-    def _overview_projects(self, fiscal_year, lines, committed_map, plan_pct, fund_source_id=None):
+    def _overview_projects(
+        self, fiscal_year, lines, committed_map, plan_pct, fund_source_id=None, department_id=None
+    ):
         request_domain = [
             ("request_id.fiscal_year", "=", fiscal_year),
             ("request_id.state", "not in", ("rejected",)),
@@ -533,6 +587,12 @@ class Budget(models.Model):
         ]
         if fund_source_id:
             request_domain.append(("request_id.fund_source_id", "=", int(fund_source_id)))
+        if department_id:
+            dept_id = int(department_id)
+            if dept_id == -1:
+                request_domain.append(("request_id.analytic_account_id", "=", False))
+            else:
+                request_domain.append(("request_id.analytic_account_id", "=", dept_id))
         request_lines = self.env["departmental.budget.request.line"].search(
             request_domain, order="total_amount desc, id desc", limit=40
         )
@@ -784,197 +844,3 @@ class Budget(models.Model):
     def _line_spent_amount(self, line):
         practical = line.practical_amount or 0.0
         return abs(practical) if practical < 0 else practical
-
-    @api.model
-    def get_department_budget_dashboard(self, fiscal_year=None, department_id=None):
-        """Dashboard data for departmental budget management."""
-        fiscal_year, year_options, selected_budgets = self._get_fiscal_year_budgets(
-            fiscal_year
-        )
-        lines = selected_budgets.mapped("budget_line")
-        colors = ["#16a34a", "#8b5cf6", "#f59e0b", "#06b6d4", "#3b82f6", "#ef4444", "#64748b"]
-
-        department_map = {}
-        for line in lines:
-            department = line.analytic_account_id
-            key = department.id if department else 0
-            vals = department_map.setdefault(
-                key,
-                {
-                    "id": key,
-                    "name": department.name if department else "ไม่ระบุหน่วยงาน",
-                    "allocated": 0.0,
-                    "actual": 0.0,
-                },
-            )
-            vals["allocated"] += line.planned_amount or 0.0
-            vals["actual"] += self._line_spent_amount(line)
-
-        departments = []
-        for index, vals in enumerate(
-            sorted(department_map.values(), key=lambda item: item["name"])
-        ):
-            departments.append(
-                {
-                    "id": vals["id"],
-                    "name": vals["name"],
-                    "allocated": vals["allocated"],
-                    "actual": vals["actual"],
-                    "color": colors[index % len(colors)],
-                }
-            )
-
-        if not departments:
-            departments = [
-                {
-                    "id": 0,
-                    "name": "ไม่ระบุหน่วยงาน",
-                    "allocated": 0.0,
-                    "actual": 0.0,
-                    "color": colors[0],
-                }
-            ]
-
-        selected_id = department_id
-        if selected_id not in [dept["id"] for dept in departments]:
-            selected_id = departments[0]["id"]
-        selected_dept = next(dept for dept in departments if dept["id"] == selected_id)
-
-        dept_lines = lines.filtered(
-            lambda line: (line.analytic_account_id.id if line.analytic_account_id else 0)
-            == selected_id
-        )
-        total_budget = sum(dept_lines.mapped("planned_amount"))
-        spent = sum(self._line_spent_amount(line) for line in dept_lines)
-        remaining = total_budget - spent
-        usage_pct = (spent / total_budget * 100.0) if total_budget else 0.0
-
-        # Project/control rows by budgetary position
-        project_map = {}
-        for line in dept_lines:
-            post = line.general_budget_id
-            key = post.id if post else 0
-            vals = project_map.setdefault(
-                key,
-                {
-                    "id": key,
-                    "name": post.name if post else "ไม่ระบุหมวดงบประมาณ",
-                    "allocated": 0.0,
-                    "actual": 0.0,
-                },
-            )
-            vals["allocated"] += line.planned_amount or 0.0
-            vals["actual"] += self._line_spent_amount(line)
-
-        project_rows = []
-        for vals in sorted(project_map.values(), key=lambda item: item["allocated"], reverse=True):
-            allocated_amt = vals["allocated"]
-            actual_amt = vals["actual"]
-            remain_amt = allocated_amt - actual_amt
-            row_usage = (actual_amt / allocated_amt * 100.0) if allocated_amt else 0.0
-            project_rows.append(
-                {
-                    "id": vals["id"],
-                    "name": vals["name"],
-                    "allocated": allocated_amt,
-                    "actual": actual_amt,
-                    "remaining": remain_amt,
-                    "usage_pct": row_usage,
-                    "bar_color": "#f59e0b" if row_usage >= 70 else "#16a34a",
-                }
-            )
-
-        # Category breakdown by budget group / post
-        category_map = {}
-        for line in dept_lines:
-            group = line.budget_group_id
-            post = line.general_budget_id
-            if group:
-                key = f"g-{group.id}"
-                label = group.name
-            elif post:
-                key = f"p-{post.id}"
-                label = post.name
-            else:
-                key = "other"
-                label = "อื่นๆ"
-            vals = category_map.setdefault(
-                key, {"key": key, "label": label, "amount": 0.0}
-            )
-            vals["amount"] += self._line_spent_amount(line) or (line.planned_amount or 0.0)
-
-        category_total = sum(item["amount"] for item in category_map.values()) or 1.0
-        category_breakdown = []
-        for index, vals in enumerate(
-            sorted(category_map.values(), key=lambda item: item["amount"], reverse=True)[:8]
-        ):
-            category_breakdown.append(
-                {
-                    "key": vals["key"],
-                    "label": vals["label"],
-                    "amount": vals["amount"],
-                    "percent": vals["amount"] / category_total * 100.0,
-                    "color": colors[index % len(colors)],
-                }
-            )
-
-        recent_domain = [("fiscal_year", "=", fiscal_year)]
-        if selected_id:
-            recent_domain.append(("analytic_account_id", "=", selected_id))
-        recent_requests = []
-        for request in self.env["departmental.budget.request"].search(
-            recent_domain, order="request_date desc, id desc", limit=6
-        ):
-            recent_requests.append(
-                {
-                    "id": request.id,
-                    "name": request.name,
-                    "department": request.analytic_account_id.name or "",
-                    "date": request.request_date.isoformat() if request.request_date else "",
-                    "amount": request.total_received_budget_amount
-                    or request.total_amount
-                    or 0.0,
-                    "state": request.state,
-                    "state_label": dict(
-                        request._fields["state"]._description_selection(self.env)
-                    ).get(request.state, request.state),
-                }
-            )
-
-        return {
-            "fiscal_year": fiscal_year,
-            "year_options": year_options,
-            "departments": departments,
-            "selected_department_id": selected_id,
-            "selected_department_name": selected_dept["name"],
-            "cards": [
-                {
-                    "label": "งบประมาณทั้งหมดของแผนก",
-                    "amount": total_budget,
-                    "icon": "fa-clock-o",
-                    "color": "#3b82f6",
-                },
-                {
-                    "label": "เบิกใช้ไปแล้ว",
-                    "amount": spent,
-                    "icon": "fa-bullseye",
-                    "color": "#ef4444",
-                },
-                {
-                    "label": "งบประมาณคงเหลือ",
-                    "amount": remaining,
-                    "icon": "fa-check-circle",
-                    "color": "#16a34a",
-                },
-                {
-                    "label": "สัดส่วนการใช้งบ",
-                    "amount": usage_pct,
-                    "is_percent": True,
-                    "icon": "fa-bolt",
-                    "color": "#f59e0b",
-                },
-            ],
-            "project_rows": project_rows,
-            "category_breakdown": category_breakdown,
-            "recent_requests": recent_requests,
-        }

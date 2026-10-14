@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_document_user,vpk.document.user,model_vpk_document,base.group_user,1,1,1,1
+access_vpk_document_category_user,vpk.document.category.user,model_vpk_document_category,base.group_user,1,1,1,1
+access_vpk_document_google_settings_system,vpk.document.google.settings.system,model_vpk_document_google_settings,base.group_system,1,1,1,1
+access_vpk_document_google_token_user,vpk.document.google.token.user,model_vpk_document_google_token,base.group_user,1,1,1,1
+access_vpk_document_google_link_user,vpk.document.google.link.user,model_vpk_document_google_link,base.group_user,1,1,1,1
