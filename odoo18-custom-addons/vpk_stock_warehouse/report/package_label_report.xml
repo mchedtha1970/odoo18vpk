@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ฉลากติดกล่อง A5 แนวนอน ใช้ฟอนต์ราชการ TH Sarabun New -->
+    <record id="paperformat_vpk_package_label" model="report.paperformat">
+        <field name="name">ฉลากติดกล่อง (A5 แนวนอน)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A5</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">6</field>
+        <field name="margin_bottom">6</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="stock.action_report_quant_package_barcode" model="ir.actions.report">
+        <field name="paperformat_id" ref="paperformat_vpk_package_label"/>
+    </record>
+
+    <template id="report_package_barcode_vpk" inherit_id="stock.report_package_barcode">
+        <xpath expr="//t[@t-foreach='docs']" position="replace">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="package_quants" t-value="o.quant_ids.filtered('quantity')"/>
+                <t t-set="ml" t-value="env['stock.move.line'].search([('result_package_id', '=', o.id)], order='id desc', limit=1)"/>
+                <t t-set="company" t-value="o.company_id or env.company"/>
+                <div class="page o_vpk_pack_label">
+                    <table class="pl-head">
+                        <tr>
+                            <td class="pl-logo">
+                                <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" alt="logo"/>
+                            </td>
+                            <td class="pl-org">
+                                <div class="pl-org-name"><t t-esc="company.name"/></div>
+                                <div class="pl-org-sub">ฉลากติดกล่องพัสดุ</div>
+                            </td>
+                            <td class="pl-date">
+                                <div class="pl-small">วันที่แพ็ค</div>
+                                <div class="pl-date-val">
+                                    <span t-if="o.pack_date" t-field="o.pack_date" t-options="{'widget': 'date', 'format': 'd MMM yyyy'}"/>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                    <table class="pl-id">
+                        <tr>
+                            <td class="pl-id-no">
+                                <div class="pl-small">เลขที่กล่อง</div>
+                                <div class="pl-no"><span t-field="o.name"/></div>
+                            </td>
+                            <td class="pl-id-bar">
+                                <div t-field="o.name" t-options="{'widget': 'barcode', 'width': 600, 'height': 100, 'img_style': 'width:90mm;height:17mm;'}"/>
+                            </td>
+                        </tr>
+                    </table>
+                    <table class="pl-route">
+                        <tr>
+                            <td>
+                                <span class="pl-label">ต้นทาง</span>
+                                <span class="pl-val"><t t-esc="(ml.picking_id.location_id or o.location_id).complete_name if (ml.picking_id.location_id or o.location_id) else '-'"/></span>
+                            </td>
+                            <td class="pl-arrow">&#9654;</td>
+                            <td>
+                                <span class="pl-label">ปลายทาง</span>
+                                <span class="pl-val"><t t-esc="(ml.move_id.location_final_id or ml.location_dest_id).complete_name if (ml.move_id.location_final_id or ml.location_dest_id) else '-'"/></span>
+                            </td>
+                            <td t-if="o.package_type_id or ml.picking_id">
+                                <span class="pl-label">อ้างอิง</span>
+                                <span class="pl-val"><t t-esc="ml.picking_id.name or o.package_type_id.name"/></span>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="pl-items-wrap"><table class="pl-items">
+                        <thead>
+                            <tr>
+                                <th style="width:6%;" class="c">ลำดับ</th>
+                                <th>รายการสินค้า</th>
+                                <th style="width:17%;" class="c">เลขล็อต</th>
+                                <th style="width:15%;" class="c">วันหมดอายุ</th>
+                                <th style="width:14%;" class="r">จำนวน</th>
+                                <th style="width:11%;" class="c">QR ล็อต</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="package_quants" t-as="q">
+                                <tr>
+                                    <td class="c"><t t-esc="q_index + 1"/></td>
+                                    <td><t t-esc="q.product_id.display_name"/></td>
+                                    <td class="c"><t t-esc="q.lot_id.name or '-'"/></td>
+                                    <td class="c">
+                                        <span t-if="q.lot_id.expiration_date" t-field="q.lot_id.expiration_date" t-options="{'widget': 'date', 'format': 'd MMM yyyy'}"/>
+                                        <t t-else="">-</t>
+                                    </td>
+                                    <td class="r">
+                                        <t t-esc="'{:,.2f}'.format(q.quantity)"/>
+                                        <t t-esc="q.product_id.uom_id.name"/>
+                                    </td>
+                                    <td class="c">
+                                        <span t-if="q.lot_id" t-out="q.lot_id.name" t-options="{'widget': 'barcode', 'symbology': 'QR', 'img_style': 'width:14mm;height:14mm;'}"/>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table></div>
+                    <table class="pl-sign">
+                        <tr>
+                            <td>ผู้แพ็ค ................................................</td>
+                            <td>ผู้ตรวจรับ ................................................</td>
+                            <td class="r">ตรวจสอบรายการให้ตรงก่อนเปิดกล่อง</td>
+                        </tr>
+                    </table>
+                </div>
+                <p style="page-break-after: always;"/>
+            </t>
+        </xpath>
+    </template>
+</odoo>

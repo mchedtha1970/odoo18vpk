@@ -141,6 +141,17 @@ class PurchaseRequisitionAwardReport(models.Model):
         readonly=True,
         tracking=True,
     )
+    signer_line_ids = fields.One2many(
+        comodel_name="purchase.requisition.award.report.signer",
+        inverse_name="report_id",
+        string="ผู้อนุมัติ",
+        copy=True,
+    )
+    approvers_prepared = fields.Boolean(
+        string="เตรียมผู้อนุมัติแล้ว",
+        default=False,
+        copy=False,
+    )
     state = fields.Selection(
         selection=[
             ("draft", "ร่าง"),
@@ -175,6 +186,13 @@ class PurchaseRequisitionAwardReport(models.Model):
                 )
         reports = super().create(vals_list)
         reports._generate_lines_from_bids()
+        pending = reports.filtered(
+            lambda report: not report.approvers_prepared and not report.signer_line_ids
+        )
+        pending._seed_award_signers()
+        reports.filtered(lambda report: not report.approvers_prepared).write(
+            {"approvers_prepared": True}
+        )
         return reports
 
     @api.onchange("requisition_id")
@@ -248,6 +266,128 @@ class PurchaseRequisitionAwardReport(models.Model):
                     if line.bid_id == report.winner_bid_id
                     else "not_selected"
                 )
+
+    @api.model
+    def _seed_missing_award_signers(self):
+        """Fill draft reports that were created before the approver table existed."""
+        pending = self.search(
+            [("approvers_prepared", "=", False), ("state", "=", "draft")]
+        )
+        pending.filtered(lambda report: not report.signer_line_ids)._seed_award_signers()
+        pending.write({"approvers_prepared": True})
+        return True
+
+    def _company_person_user(self, company, user_field, name_field):
+        user = (
+            company[user_field]
+            if user_field in company._fields
+            else self.env["res.users"]
+        )
+        if user:
+            return user
+        name = " ".join(
+            ((company[name_field] if name_field in company._fields else "") or "").split()
+        )
+        if not name:
+            return self.env["res.users"]
+        return self.env["res.users"].search(
+            [("name", "=", name), ("share", "=", False)],
+            limit=1,
+        )
+
+    def _person_label(self, user):
+        if not user:
+            return "", ""
+        employee = user.employee_id if "employee_id" in user._fields else False
+        if not employee and "employee_ids" in user._fields:
+            employee = user.employee_ids[:1]
+        name = (employee.name if employee else "") or user.name or ""
+        position = ""
+        if employee:
+            position = employee.job_title or (
+                employee.job_id.name if employee.job_id else ""
+            )
+        return name, position
+
+    def _seed_award_signers(self):
+        """Start from officer, head officer, and director. Rows can then be changed."""
+        Signer = self.env["purchase.requisition.award.report.signer"]
+        for report in self.filtered(lambda item: not item.signer_line_ids):
+            company = report.company_id or self.env.company
+            rows = []
+            sequence = 1
+            seen = set()
+            people = (
+                (
+                    "official_doc_officer_id",
+                    "official_doc_officer_name",
+                    "official_doc_officer_position",
+                    "เจ้าหน้าที่",
+                ),
+                (
+                    "official_doc_head_officer_id",
+                    "official_doc_head_officer_name",
+                    "official_doc_head_officer_position",
+                    "หัวหน้าเจ้าหน้าที่",
+                ),
+                (
+                    "official_doc_signer_id",
+                    "official_doc_signer_name",
+                    "official_doc_signer_position",
+                    "ผู้อำนวยการ",
+                ),
+            )
+            for user_field, name_field, position_field, fallback in people:
+                user = report._company_person_user(company, user_field, name_field)
+                if not user or user.id in seen:
+                    continue
+                seen.add(user.id)
+                _name, auto_position = report._person_label(user)
+                company_position = (
+                    company[position_field] if position_field in company._fields else ""
+                )
+                rows.append(
+                    {
+                        "report_id": report.id,
+                        "sequence": sequence,
+                        "user_id": user.id,
+                        "position": company_position or auto_position or fallback,
+                        "is_sign": True,
+                    }
+                )
+                sequence += 1
+            if rows:
+                Signer.create(rows)
+
+    def _docx_people_from_signers(self, values):
+        """Use the approver table when it has names."""
+        self.ensure_one()
+        lines = self.signer_line_ids.filtered("user_id").sorted(
+            key=lambda line: (line.sequence, line.id)
+        )
+        if not lines:
+            return values
+        result = dict(values)
+        officer = lines[:1]
+        head = lines[1:2] if len(lines) >= 3 else lines.browse()
+        signer = lines[-1:] if len(lines) > 1 else officer
+
+        def apply(line, name_key, position_key):
+            if not line:
+                return
+            name, auto_position = self._person_label(line.user_id)
+            if name:
+                result[name_key] = name
+            position = line.position or auto_position
+            if position and position_key in result:
+                result[position_key] = position
+
+        apply(officer, "officer_name", "officer_position")
+        apply(head, "head_officer_name", "head_officer_position")
+        apply(signer, "signer_name", "signer_position")
+        if result.get("signer_position") and "approver_authority" in result:
+            result["approver_authority"] = result["signer_position"]
+        return result
 
     def action_submit(self):
         for report in self:
@@ -476,7 +616,7 @@ class PurchaseRequisitionAwardReport(models.Model):
             "official_doc_signer_position",
             self._company_text("vpk_memo_approver_position", "ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต"),
         )
-        return {
+        values = {
             "agency": self._docx_agency(),
             "memo_number": self._thai_digits(self.name or ""),
             "memo_date": self._format_memo_date(),
@@ -516,6 +656,7 @@ class PurchaseRequisitionAwardReport(models.Model):
                 "ปฏิบัติราชการแทนผู้ว่าราชการจังหวัดภูเก็ต",
             ),
         }
+        return self._docx_people_from_signers(values)
 
     def _official_award_template(self):
         """Template record already set on หนังสือราชการ for this form."""
@@ -622,7 +763,7 @@ class PurchaseRequisitionAwardReport(models.Model):
                 "vpk_memo_approver_position", "ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต"
             ),
         )
-        return {
+        values = {
             "agency": self._docx_agency(),
             "memo_number": self._thai_digits(self.name or ""),
             "order_date": self._format_memo_date(),
@@ -660,6 +801,7 @@ class PurchaseRequisitionAwardReport(models.Model):
                 "ปฏิบัติราชการแทนผู้ว่าราชการจังหวัดภูเก็ต",
             ),
         }
+        return self._docx_people_from_signers(values)
 
     def _render_docx_bytes(self):
         self.ensure_one()
@@ -772,6 +914,85 @@ class PurchaseRequisitionAwardReportLine(models.Model):
         required=True,
     )
     notes = fields.Char(string="เหตุผล/หมายเหตุ")
+
+
+class PurchaseRequisitionAwardReportSigner(models.Model):
+    _name = "purchase.requisition.award.report.signer"
+    _description = "ผู้อนุมัติรายงานผลการพิจารณา"
+    _order = "sequence, id"
+
+    report_id = fields.Many2one(
+        comodel_name="purchase.requisition.award.report",
+        required=True,
+        ondelete="cascade",
+        index=True,
+    )
+    sequence = fields.Integer(string="ลำดับอนุมัติ", default=1)
+    user_id = fields.Many2one(
+        comodel_name="res.users",
+        string="ชื่อ",
+        ondelete="restrict",
+        domain=[("share", "=", False)],
+    )
+    position = fields.Char(string="ตำแหน่ง")
+    is_check = fields.Boolean(string="ตรวจสอบ")
+    is_sign = fields.Boolean(string="ลงนาม", default=True)
+    company_id = fields.Many2one(related="report_id.company_id", store=True)
+
+    def _is_director_secretary(self, user):
+        secretary = self.env.ref(
+            "vpk_official_document.user_director_secretary",
+            raise_if_not_found=False,
+        )
+        return bool(secretary and user == secretary)
+
+    @api.onchange("user_id")
+    def _onchange_user_id(self):
+        if not self.user_id:
+            return
+        _name, position = self.env[
+            "purchase.requisition.award.report"
+        ]._person_label(self.user_id)
+        if position:
+            self.position = position
+        if self._is_director_secretary(self.user_id):
+            self.is_check = True
+            self.is_sign = False
+        elif not self.is_check:
+            self.is_sign = True
+
+    @api.onchange("is_check")
+    def _onchange_is_check(self):
+        if self.is_check:
+            self.is_sign = False
+
+    @api.onchange("is_sign")
+    def _onchange_is_sign(self):
+        if self.is_sign:
+            self.is_check = False
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        Report = self.env["purchase.requisition.award.report"]
+        for vals in vals_list:
+            if vals.get("user_id") and not vals.get("position"):
+                user = self.env["res.users"].browse(vals["user_id"])
+                _name, position = Report._person_label(user)
+                if position:
+                    vals["position"] = position
+            if vals.get("is_check") and vals.get("is_sign"):
+                vals["is_sign"] = False
+            elif "is_check" not in vals and "is_sign" not in vals:
+                user = self.env["res.users"].browse(vals.get("user_id"))
+                if user and self._is_director_secretary(user):
+                    vals["is_check"] = True
+                    vals["is_sign"] = False
+                else:
+                    vals["is_sign"] = True
+            if not vals.get("sequence") and vals.get("report_id"):
+                siblings = self.search([("report_id", "=", vals["report_id"])])
+                vals["sequence"] = max(siblings.mapped("sequence") or [0]) + 1
+        return super().create(vals_list)
 
 
 class PurchaseRequisition(models.Model):

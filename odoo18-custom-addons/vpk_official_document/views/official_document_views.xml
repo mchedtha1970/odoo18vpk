@@ -43,7 +43,7 @@
                             string="ส่งเพื่อลงนาม"
                             class="btn-primary"
                             icon="fa-paper-plane"
-                            groups="purchase.group_purchase_user"
+                            groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
                             invisible="state in ('to_approve', 'approved', 'cancelled')"/>
                     <button name="action_open_sign_viewer" type="object"
                             string="เปิดไฟล์เพื่อลงนาม"
@@ -54,7 +54,7 @@
                             string="ขอเลขจากระบบสารบรรณ"
                             class="btn-primary"
                             icon="fa-bookmark"
-                            groups="purchase.group_purchase_user"
+                            groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
                             invisible="state == 'cancelled' or saraban_document_id"/>
                     <button name="action_open_saraban_document" type="object"
                             string="เปิดงานสารบรรณ"
@@ -297,6 +297,8 @@
                         domain="[('document_type', '=', 'spec_price_committee')]"/>
                 <filter name="specific_method_approval" string="รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง"
                         domain="[('document_type', '=', 'specific_method_approval')]"/>
+                <filter name="inspection_report" string="ใบตรวจรับ"
+                        domain="[('document_type', '=', 'inspection_report')]"/>
                 <filter name="winner_announcement" string="ประกาศผู้ชนะ"
                         domain="[('document_type', '=', 'winner_announcement')]"/>
                 <filter name="award_approval" string="รายงานผลการพิจารณาจัดซื้อจัดจ้าง"
@@ -340,6 +342,14 @@
         <field name="view_mode">list,form</field>
         <field name="domain">[('document_type', '=', 'purchase_approval_memo')]</field>
         <field name="context">{'default_document_type': 'purchase_approval_memo'}</field>
+    </record>
+
+    <record id="action_inspection_report" model="ir.actions.act_window">
+        <field name="name">ใบตรวจรับการจัดซื้อ/จัดจ้าง</field>
+        <field name="res_model">vpk.official.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'inspection_report')]</field>
+        <field name="context">{'default_document_type': 'inspection_report'}</field>
     </record>
 
     <record id="action_specific_method_approval" model="ir.actions.act_window">

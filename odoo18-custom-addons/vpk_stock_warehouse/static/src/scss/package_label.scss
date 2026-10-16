@@ -1,0 +1,147 @@
+/* ฉลากติดกล่อง — ฟอนต์ราชการ TH Sarabun New (l10n_th_base_utils) */
+.o_vpk_pack_label {
+    font-family: "THSarabunNew", "TH Sarabun New", sans-serif !important;
+    color: #1f2a30;
+}
+.o_vpk_pack_label * {
+    font-family: inherit !important;
+    color: inherit;
+    box-sizing: border-box;
+}
+.o_vpk_pack_label {
+    font-size: 16pt;
+    line-height: 1.15;
+    border: 2px solid #0b6848;
+    border-radius: 6px;
+    padding: 0;
+    overflow: hidden;
+}
+.o_vpk_pack_label table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+.o_vpk_pack_label .pl-small {
+    font-size: 12pt;
+    color: #5b6b75;
+}
+.o_vpk_pack_label .pl-head {
+    background: #0b6848;
+}
+.o_vpk_pack_label .pl-head td {
+    padding: 8px 12px;
+    vertical-align: middle;
+}
+.o_vpk_pack_label .pl-head,
+.o_vpk_pack_label .pl-head * {
+    color: #ffffff !important;
+}
+.o_vpk_pack_label .pl-logo {
+    width: 18mm;
+}
+.o_vpk_pack_label .pl-logo img {
+    height: 17mm;
+    width: auto;
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 1px;
+}
+.o_vpk_pack_label .pl-org-name {
+    font-size: 24pt;
+    font-family: "THSarabunNew-Bold", "THSarabunNew", sans-serif !important;
+    font-weight: bold;
+}
+.o_vpk_pack_label .pl-org-sub {
+    font-size: 15pt;
+}
+.o_vpk_pack_label .pl-date {
+    text-align: right;
+    width: 38mm;
+}
+.o_vpk_pack_label .pl-date .pl-small {
+    color: #cfe8dc !important;
+}
+.o_vpk_pack_label .pl-date-val {
+    font-size: 20pt;
+    font-family: "THSarabunNew-Bold", "THSarabunNew", sans-serif !important;
+    font-weight: bold;
+}
+.o_vpk_pack_label .pl-id td {
+    padding: 8px 12px;
+    vertical-align: middle;
+}
+.o_vpk_pack_label .pl-id-no {
+    width: 48%;
+}
+.o_vpk_pack_label .pl-no {
+    font-size: 48pt;
+    font-family: "THSarabunNew-Bold", "THSarabunNew", sans-serif !important;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #0b6848;
+    line-height: 1.05;
+}
+.o_vpk_pack_label .pl-id-bar {
+    text-align: right;
+}
+.o_vpk_pack_label .pl-route {
+    background: #eef6f1;
+    border-top: 1px solid #c8dccf;
+    border-bottom: 1px solid #c8dccf;
+}
+.o_vpk_pack_label .pl-route td {
+    padding: 6px 12px;
+    vertical-align: middle;
+}
+.o_vpk_pack_label .pl-arrow {
+    width: 8mm;
+    text-align: center;
+    color: #0b6848;
+    font-size: 16pt;
+}
+.o_vpk_pack_label .pl-label {
+    display: block;
+    font-size: 12pt;
+    color: #5b6b75;
+}
+.o_vpk_pack_label .pl-val {
+    display: block;
+    font-size: 18pt;
+    font-family: "THSarabunNew-Bold", "THSarabunNew", sans-serif !important;
+    font-weight: bold;
+}
+.o_vpk_pack_label .pl-items {
+    margin-top: 4px;
+}
+.o_vpk_pack_label .pl-items th {
+    background: #e3efe8;
+    border-bottom: 1.5px solid #0b6848;
+    padding: 5px 8px;
+    font-size: 15pt;
+    font-family: "THSarabunNew-Bold", "THSarabunNew", sans-serif !important;
+    font-weight: bold;
+}
+.o_vpk_pack_label .pl-items td {
+    border-bottom: 1px solid #dbe5df;
+    padding: 8px 8px;
+    font-size: 17pt;
+    vertical-align: middle;
+}
+.o_vpk_pack_label .c {
+    text-align: center;
+}
+.o_vpk_pack_label .r {
+    text-align: right;
+}
+.o_vpk_pack_label .pl-sign td {
+    padding: 22px 12px 10px 12px;
+    font-size: 14pt;
+    color: #5b6b75;
+}
+
+.o_vpk_pack_label .pl-items-wrap {
+    min-height: 50mm;
+}
+.o_vpk_pack_label .pl-sign {
+    border-top: 1px solid #c8dccf;
+}

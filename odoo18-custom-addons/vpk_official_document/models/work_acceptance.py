@@ -1,7 +1,8 @@
 # Copyright 2026 VPK
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
 
 class WorkAcceptance(models.Model):
@@ -26,6 +27,17 @@ class WorkAcceptance(models.Model):
         string="แบบแสดงความบริสุทธิ์ใจที่ออกแล้ว",
     )
 
+    issued_inspection_report_id = fields.Many2one(
+        comodel_name="vpk.official.document",
+        compute="_compute_official_document_count",
+        string="ใบตรวจรับที่ออกแล้ว",
+    )
+    official_document_to_create = fields.Many2one(
+        comodel_name="vpk.official.document.type",
+        string="เอกสารที่จะสร้าง",
+        domain="[('create_from_work_acceptance', '=', True)]",
+    )
+
     @api.depends("official_document_ids", "official_document_ids.state")
     def _compute_official_document_count(self):
         Document = self.env["vpk.official.document"].sudo()
@@ -48,6 +60,12 @@ class WorkAcceptance(models.Model):
             rec.issued_integrity_document_id = rec.official_document_ids.filtered(
                 lambda doc: (
                     doc.document_type == "integrity_over_100k"
+                    and doc.state != "cancelled"
+                )
+            )[:1]
+            rec.issued_inspection_report_id = rec.official_document_ids.filtered(
+                lambda doc: (
+                    doc.document_type == "inspection_report"
                     and doc.state != "cancelled"
                 )
             )[:1]
@@ -102,3 +120,27 @@ class WorkAcceptance(models.Model):
             self
         )
         return document._action_open_form()
+
+    def action_create_inspection_report(self):
+        """ออกใบตรวจรับการจัดซื้อ/จัดจ้าง (ถ้าออกแล้วเปิดฉบับเดิม)."""
+        self.ensure_one()
+        document = self.env["vpk.official.document"].create_inspection_report_from_work_acceptance(
+            self
+        )
+        return document._action_open_form()
+
+    def action_create_selected_official_document(self):
+        self.ensure_one()
+        creators = {
+            "inspection_report": self.action_create_inspection_report,
+        }
+        document_type = self.official_document_to_create
+        if not document_type:
+            raise UserError(_("กรุณาเลือกเอกสารที่จะสร้าง"))
+        creator = creators.get(document_type.code)
+        if not creator:
+            raise UserError(
+                _("ยังไม่รองรับการสร้าง %(name)s จากใบรับมอบงาน")
+                % {"name": document_type.display_name}
+            )
+        return creator()

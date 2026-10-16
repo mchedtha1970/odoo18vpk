@@ -89,32 +89,23 @@ class PurchaseRequestLine(models.Model):
         column1="line_id",
         column2="attachment_id",
         string="เอกสารแนบคุณลักษณะ",
-        help="แนบเอกสารหรือรูปภาพคุณลักษณะ (Scan / PDF / รูป) แยกตามรายการสินค้าที่สั่งซื้อ",
+        help="แนบไฟล์ PDF คุณลักษณะ แยกตามรายการสินค้าที่สั่งซื้อ",
     )
     spec_attachment_count = fields.Integer(
         string="จำนวนไฟล์คุณลักษณะ",
         compute="_compute_spec_attachment_count",
     )
 
-    @api.depends("spec_attachment_ids", "spec_scan_image")
+    @api.depends("spec_attachment_ids")
     def _compute_spec_attachment_count(self):
         for line in self:
-            count = len(line.spec_attachment_ids)
-            if line.spec_scan_image:
-                count += 1
-            line.spec_attachment_count = count
+            line.spec_attachment_count = len(line.spec_attachment_ids)
 
     def action_open_spec_attachments(self):
         """เปิด Viewer ไฟล์แนบคุณลักษณะภายในหน้าจอ Odoo"""
         self.ensure_one()
         attachments = self.spec_attachment_ids
-        binary_atts = self.env["ir.attachment"].search([
-            ("res_model", "=", "purchase.request.line"),
-            ("res_id", "=", self.id),
-            ("res_field", "=", "spec_scan_image"),
-        ])
-        attachments |= binary_atts
-        if not attachments and not self.spec_scan_image:
+        if not attachments:
             raise UserError(_("รายการนี้ยังไม่มีไฟล์แนบคุณลักษณะ"))
         return self.env["purchase.spec.attachment.viewer"].action_open_viewer(
             attachments,
@@ -138,3 +129,8 @@ class PurchaseRequestLine(models.Model):
             "views": [(view.id, "form")] if view else [(False, "form")],
             "target": "new",
         }
+
+    def action_save_spec_line(self):
+        """บันทึกไฟล์คุณลักษณะแล้วโหลดใบขอซื้อใหม่ เพื่อให้จำนวนไฟล์อัปเดต."""
+        self.ensure_one()
+        return {"type": "ir.actions.client", "tag": "reload"}

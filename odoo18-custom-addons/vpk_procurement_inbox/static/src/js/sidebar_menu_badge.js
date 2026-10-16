@@ -8,7 +8,6 @@ import { useService } from "@web/core/utils/hooks";
 const BADGE_MENU_XMLIDS = new Set([
     "vpk_procurement_inbox.menu_procurement_inbox_dashboard",
     "vpk_procurement_inbox.menu_procurement_inbox_dashboard_pr",
-    "vpk_tier_validation.menu_purchase_request_sent_to_procurement",
     "vpk_tier_validation.menu_purchase_request_sent_to_procurement_purchase",
 ]);
 
@@ -16,16 +15,26 @@ patch(NavBar.prototype, {
     setup() {
         super.setup(...arguments);
         this.orm = useService("orm");
+        this.busService = useService("bus_service");
         this.procurementInboxBadge = useState({ count: 0 });
         this._vpkProcurementInboxTimer = null;
+        this._vpkProcurementInboxBusHandler = () => this._loadProcurementInboxCount();
         onMounted(() => {
             this._loadProcurementInboxCount();
+            this.busService.subscribe(
+                "vpk_procurement_inbox/updated",
+                this._vpkProcurementInboxBusHandler
+            );
             this._vpkProcurementInboxTimer = setInterval(
                 () => this._loadProcurementInboxCount(),
                 60000
             );
         });
         onWillUnmount(() => {
+            this.busService.unsubscribe(
+                "vpk_procurement_inbox/updated",
+                this._vpkProcurementInboxBusHandler
+            );
             if (this._vpkProcurementInboxTimer) {
                 clearInterval(this._vpkProcurementInboxTimer);
             }

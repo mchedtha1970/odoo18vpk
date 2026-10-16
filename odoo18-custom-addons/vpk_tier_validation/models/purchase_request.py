@@ -49,6 +49,13 @@ class PurchaseRequest(models.Model):
         res = super()._get_after_validation_exceptions()
         return list(set(res + WORKFLOW_AFTER_VALIDATION_FIELDS))
 
+    def _check_state_conditions(self, vals):
+        # vpk_in_auto_confirm means the packet documents already approved
+        # this PR. Do not open a new tier review while writing state=approved.
+        if self.env.context.get("vpk_in_auto_confirm"):
+            return False
+        return super()._check_state_conditions(vals)
+
     def _validate_tier(self, tiers=False):
         res = super()._validate_tier(tiers)
         self._vpk_auto_confirm_if_validated()

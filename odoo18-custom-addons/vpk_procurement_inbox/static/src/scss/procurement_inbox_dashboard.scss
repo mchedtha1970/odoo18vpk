@@ -53,6 +53,11 @@
             box-shadow: 0 0 0 1px #c62828 inset;
         }
 
+        &.claimed.active {
+            border-color: #1d4e89;
+            box-shadow: 0 0 0 1px #1d4e89 inset;
+        }
+
         &.ok.active {
             border-color: #2c7a45;
             box-shadow: 0 0 0 1px #2c7a45 inset;
@@ -73,6 +78,10 @@
 
     .o_vpk_inbox_kpi.warn .o_vpk_inbox_kpi_value {
         color: #c47e14;
+    }
+
+    .o_vpk_inbox_kpi.claimed .o_vpk_inbox_kpi_value {
+        color: #1d4e89;
     }
 
     .o_vpk_inbox_kpi.danger .o_vpk_inbox_kpi_value {

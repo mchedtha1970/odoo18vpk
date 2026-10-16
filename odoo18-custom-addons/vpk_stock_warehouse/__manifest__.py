@@ -1,19 +1,23 @@
 {
     "name": "VPK Stock Warehouse Overview",
-    "version": "18.0.1.6.1",
+    "version": "18.0.1.7.0",
     "category": "Inventory",
     "summary": "Warehouse and bin/location explorer with panel navigation",
     "author": "VPK",
     "license": "LGPL-3",
-    "depends": ["stock"],
+    "depends": ["stock", "l10n_th_base_utils"],
     "data": [
         "data/central_transfer_flow.xml",
         "views/stock_location_overview_views.xml",
         "views/vendor_receipt_schedule_views.xml",
         "views/central_transfer_flow_views.xml",
         "views/menu.xml",
+        "report/package_label_report.xml",
     ],
     "assets": {
+        "web.report_assets_common": [
+            "vpk_stock_warehouse/static/src/scss/package_label.scss",
+        ],
         "web.assets_backend": [
             "vpk_stock_warehouse/static/src/scss/warehouse_overview.scss",
             "vpk_stock_warehouse/static/src/scss/operations_dashboard.scss",

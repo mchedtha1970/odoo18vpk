@@ -9,6 +9,7 @@ from odoo.tools.misc import file_path
 
 from .docx_renderer import (
     OfficialDocumentRenderError,
+    render_inspection_report_docx,
     render_integrity_over_100k_docx,
     render_purchase_approval_memo_docx,
     render_spec_price_committee_docx,
@@ -29,6 +30,14 @@ TEMPLATE_FILES = {
     "winner_announcement": "vpk_purchase_agreement_egp/static/src/templates/winner_announcement.docx",
     "award_approval": "vpk_official_document/static/src/templates/award_approval.docx",
     "purchase_approval_memo": "vpk_official_document/static/src/templates/purchase_approval_memo.docx",
+    "inspection_report": "vpk_official_document/static/src/templates/inspection_report.docx",
+}
+
+INSPECTION_ROLE_LABELS = {
+    "chairman": "ประธานกรรมการฯ",
+    "committee": "กรรมการ",
+    "member": "กรรมการ",
+    "secretary": "กรรมการและเลขานุการ",
 }
 
 ROLE_LABELS = {
@@ -37,6 +46,9 @@ ROLE_LABELS = {
     "member": "กรรมการ",
     "secretary": "กรรมการและเลขานุการ",
 }
+
+# Documents that appoint a committee: signed once by the director.
+COMMITTEE_ORDER_TYPES = ("wa_committee_order", "spec_price_committee")
 
 
 class OfficialDocument(models.Model):
@@ -417,6 +429,13 @@ class OfficialDocument(models.Model):
                     rec.write(rec._specific_section_vals(overwrite=False))
             elif rec.document_type == "integrity_over_100k" and not rec.subject:
                 rec.subject = "แบบแสดงความบริสุทธิ์ใจในการจัดซื้อจัดจ้าง"
+            elif rec.document_type == "inspection_report":
+                if not rec.subject:
+                    rec.subject = rec._default_subject()
+                if rec.wa_id:
+                    if not rec.line_ids:
+                        rec.line_ids = rec._committee_commands_from_source()
+                    rec._seed_inspection_signers()
             elif rec.document_type == "purchase_approval_memo":
                 if not rec.subject:
                     rec.subject = rec._default_subject()
@@ -832,6 +851,8 @@ class OfficialDocument(models.Model):
             return f"รายงานขออนุมัติซื้อ/จ้าง{item}  โดยวิธีเฉพาะเจาะจง"
         if self.document_type == "purchase_approval_memo":
             return f"ขออนุมัติจัดซื้อ{item}"
+        if self.document_type == "inspection_report":
+            return "ใบตรวจรับการจัดซื้อ/จัดจ้าง"
         method = self.procurement_method or "วิธีเฉพาะเจาะจง"
         return f"แต่งตั้งคณะกรรมการตรวจรับพัสดุ  สำหรับการซื้อ/จ้าง{item}  โดย{method}"
 
@@ -1339,6 +1360,8 @@ class OfficialDocument(models.Model):
                 raise UserError(
                     _("ไม่พบคณะกรรมการตรวจรับในใบขอซื้อหรือใบตรวจรับที่อ้างอิง")
                 )
+            if rec.document_type == "inspection_report":
+                rec._seed_inspection_signers(replace=True)
         return True
 
     def _pr_committee_records(self):
@@ -1360,6 +1383,9 @@ class OfficialDocument(models.Model):
         commands = []
         sequence = 10
         pr_members = self._pr_committee_records()
+        if self.document_type == "inspection_report" and self.wa_id.committee_ids:
+            # ใบตรวจรับใช้กรรมการตรวจรับของใบรับมอบงานก่อน
+            pr_members = self.env["procurement.committee"]
         if pr_members:
             for member in pr_members:
                 role = member.approve_role or "committee"
@@ -1438,6 +1464,8 @@ class OfficialDocument(models.Model):
             "spec_price_committee": "ขออนุมัติแต่งตั้งคณะกรรมการกำหนดคุณลักษณะ",
             "specific_method_approval": "รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง",
             "purchase_approval_memo": "บันทึกข้อความอนุมัติขอซื้อ",
+            "winner_announcement": "ประกาศผู้ชนะการเสนอราคา",
+            "inspection_report": "ใบตรวจรับการจัดซื้อ/จัดจ้าง",
         }
         return {
             "type": "ir.actions.act_window",
@@ -1681,6 +1709,217 @@ class OfficialDocument(models.Model):
         return document
 
     @api.model
+    def create_inspection_report_from_work_acceptance(self, acceptance):
+        """สร้างใบตรวจรับจากใบรับมอบงาน (ถ้ามีแล้วเปิดฉบับเดิม)."""
+        acceptance.ensure_one()
+        existing = self._find_existing_document(
+            "inspection_report", acceptance=acceptance
+        )
+        if existing:
+            return existing
+        request = self._request_from_work_acceptance(acceptance)
+        document = self.create(
+            {
+                "document_type": "inspection_report",
+                "wa_id": acceptance.id,
+                "purchase_id": acceptance.purchase_id.id,
+                "request_id": request.id if request else False,
+                "department_id": request.department_id.id if request else False,
+                "date": acceptance.acceptance_date or fields.Date.context_today(self),
+                "item_summary": (
+                    acceptance.purchase_id.name if acceptance.purchase_id else acceptance.name
+                ),
+                "company_id": acceptance.company_id.id,
+            }
+        )
+        if not document.signer_line_ids:
+            raise UserError(
+                _("กรุณาบันทึกคณะกรรมการตรวจรับในแท็บคณะกรรมการก่อนออกใบตรวจรับ")
+            )
+        return document
+
+    def _seed_inspection_signers(self, replace=False):
+        """ผู้ลงนามเริ่มต้นคือกรรมการตรวจรับ (ประธานก่อน) แก้ไขในตารางผู้อนุมัติได้."""
+        Signer = self.env["vpk.official.document.signer"]
+        for rec in self.filtered(lambda doc: doc.document_type == "inspection_report"):
+            if rec.signer_line_ids and not replace:
+                continue
+            if replace:
+                rec.signer_line_ids.with_context(vpk_skip_signer_sync=True).unlink()
+            rows = []
+            seen = set()
+            for line in rec._vpk_integrity_committee_lines():
+                user = rec._vpk_line_signer_user(line)
+                if not user or user.id in seen:
+                    continue
+                seen.add(user.id)
+                if not line.user_id:
+                    line.write({"user_id": user.id})
+                _name, position = rec._person_from_user(user)
+                rows.append(
+                    {
+                        "document_id": rec.id,
+                        "sequence": len(rows) + 1,
+                        "user_id": user.id,
+                        "position": line.position or position,
+                        "is_sign": True,
+                    }
+                )
+            if rows:
+                Signer.with_context(vpk_skip_signer_sync=True).create(rows)
+                rec._sync_signers_from_lines()
+
+    def _inspection_signer_rows(self):
+        """ผู้ลงนามที่พิมพ์ในใบตรวจรับ ตามตารางผู้อนุมัติ (ชื่อต้องตรงกับที่ใช้ประทับลายเซ็น)."""
+        self.ensure_one()
+        role_by_user = {}
+        for line in self.line_ids:
+            user = self._vpk_line_signer_user(line)
+            if user:
+                role_by_user[user.id] = line.role
+        rows = []
+        signers = self.signer_line_ids.filtered(
+            lambda item: item.user_id and not (item.is_check and not item.is_sign)
+        ).sorted(key=lambda item: (item.sequence, item.id))
+        for signer in signers:
+            name, _position = self._person_from_user(signer.user_id)
+            role = role_by_user.get(signer.user_id.id, "committee")
+            rows.append(
+                {
+                    "role": INSPECTION_ROLE_LABELS.get(role, "กรรมการ"),
+                    "name": name or signer.user_id.name,
+                }
+            )
+        if rows:
+            return rows
+        for line in self.line_ids.sorted(key=lambda item: (item.sequence, item.id)):
+            rows.append(
+                {
+                    "role": INSPECTION_ROLE_LABELS.get(line.role, "กรรมการ"),
+                    "name": (line.name or "").strip("()"),
+                }
+            )
+        return rows
+
+    def _inspection_render_values(self):
+        self.ensure_one()
+        wa = self.sudo().wa_id
+        if not wa:
+            raise UserError(_("ใบตรวจรับต้องอ้างอิงใบรับมอบงาน"))
+        purchase = wa.purchase_id
+        contract = wa.contract_id
+        request = self.sudo().request_id or self._request_from_work_acceptance(wa)
+        company = self.company_id
+        thai = self._thai_digits
+
+        def thai_date(value):
+            if not value:
+                return ""
+            return thai(self.env["thai.utils"].format_thai_date(value))
+
+        if contract:
+            ref_text = "ตาม สัญญา เลขที่ {} ลงวันที่ {}".format(
+                thai(contract.name), thai_date(contract.date_start)
+            )
+            total = contract.amount_total
+        else:
+            order_date = purchase.date_approve or purchase.date_order
+            if hasattr(order_date, "date"):
+                order_date = order_date.date()
+            ref_text = "ตาม ใบสั่งซื้อ เลขที่ {} ลงวันที่ {}".format(
+                thai(purchase.name or ""), thai_date(order_date)
+            )
+            total = purchase.amount_total
+        kind_names = ""
+        if request:
+            kind_names = " ".join(
+                filter(
+                    None,
+                    [
+                        request.procurement_type_id.name
+                        if "procurement_type_id" in request._fields
+                        else "",
+                        request.purchase_type_id.name
+                        if "purchase_type_id" in request._fields
+                        else "",
+                    ],
+                )
+            )
+        found = [word for word in ("ซื้อ", "จ้าง", "เช่า") if word in kind_names]
+        if len(found) == 1:
+            verb = found[0]
+        else:
+            # ชื่อประเภทรวมหลายคำ (เช่น ซื้อ/จ้าง/เช่า) ให้ดูจากชนิดสินค้าในใบสั่งซื้อ
+            products = purchase.order_line.mapped("product_id")
+            verb = (
+                "จ้าง"
+                if products and all(p.type == "service" for p in products)
+                else "ซื้อ"
+            )
+        project = ""
+        for source in (purchase, request):
+            if source and "egp_project_name" in source._fields and source.egp_project_name:
+                project = source.egp_project_name
+                break
+        if not project and request:
+            project = self._item_summary_from_request(request)
+        project = project or purchase.name or wa.name or ""
+        method = (
+            self.procurement_method
+            or (self._method_from_request(request) if request else "")
+            or "วิธีเฉพาะเจาะจง"
+        )
+        if not method.startswith("วิธี"):
+            method = f"วิธี{method}"
+        intro = "{} {} ได้ตกลง {} กับ {} สำหรับโครงการ {} โดย{} เป็นจำนวนเงินทั้งสิ้น {} บาท ({})".format(
+            ref_text,
+            company.name or "",
+            verb,
+            purchase.partner_id.name or "",
+            project,
+            method,
+            self._format_amount_display(total),
+            self._baht_text_display(total),
+        )
+        installment = wa.contract_installment_id
+        if installment:
+            inspect_intro = "คณะกรรมการตรวจรับพัสดุ ได้ตรวจรับงาน{} แล้ว ผลปรากฏ ดังนี้".format(
+                thai(installment.name)
+            )
+        else:
+            inspect_intro = "คณะกรรมการตรวจรับพัสดุ ได้ตรวจรับพัสดุแล้ว ผลปรากฏ ดังนี้"
+        checked, unchecked = "☑", "☐"
+        penalty = wa.penalty_amount or 0.0
+        has_penalty = bool(wa.has_penalty)
+        complete = wa.inspection_completeness != "incomplete"
+        payout = wa.payment_amount or 0.0
+        project_no = ""
+        for source in (purchase, request):
+            if source and "egp_project_reference" in source._fields and source.egp_project_reference:
+                project_no = source.egp_project_reference
+                break
+        return {
+            "report_date": "วันที่ {}".format(self._format_order_date()),
+            "intro": intro,
+            "inspect_intro": inspect_intro,
+            "chk_correct": checked if wa.inspection_correct else unchecked,
+            "chk_complete": checked if complete else unchecked,
+            "chk_incomplete": unchecked if complete else checked,
+            "chk_fine": checked if has_penalty else unchecked,
+            "fine_text": (
+                " เป็นจำนวนเงิน {} บาท".format(self._format_amount_display(penalty))
+                if has_penalty and penalty > 0
+                else ""
+            ),
+            "chk_nofine": unchecked if has_penalty else checked,
+            "pay_amount": self._format_amount_display(payout),
+            "signers": self._inspection_signer_rows(),
+            "project_no": thai(project_no or "-"),
+            "contract_no": thai((contract.name if contract else "") or "-"),
+            "wa_no": thai(wa.name or "-"),
+        }
+
+    @api.model
     def create_integrity_from_work_acceptance(self, acceptance):
         acceptance.ensure_one()
         request = self._request_from_work_acceptance(acceptance)
@@ -1798,6 +2037,8 @@ class OfficialDocument(models.Model):
         self.ensure_one()
         suffix = self.order_no or self.name
         source = self.sudo().request_id.name or self.sudo().wa_id.name or self.id
+        if self.document_type == "inspection_report":
+            return "ใบตรวจรับ-{}".format(self.sudo().wa_id.name or self.name)
         if self.document_type == "integrity_over_100k":
             return "แบบแสดงความบริสุทธิ์ใจ-{}-{}".format(suffix, source)
         if self.document_type == "spec_price_committee":
@@ -1999,6 +2240,17 @@ class OfficialDocument(models.Model):
             order="sequence, id",
         )
 
+    def _vpk_signing_complete(self):
+        """True when every review is approved, i.e. the signing flow is already done.
+
+        Used so a late request_validation (for example from the PR approving itself
+        after the last signature) never opens a second batch of signer reviews.
+        """
+        self.ensure_one()
+        return bool(self.review_ids) and all(
+            review.status == "approved" for review in self.review_ids
+        )
+
     def _vpk_create_reviews_from_signer_lines(self):
         """Create one review per row in the approver table."""
         Review = self.env["tier.review"]
@@ -2006,14 +2258,16 @@ class OfficialDocument(models.Model):
         for doc in self:
             if doc.document_type == "purchase_approval_memo" and not doc.signer_line_ids:
                 doc._seed_purchase_approval_signers()
+            if doc.document_type == "inspection_report" and not doc.signer_line_ids:
+                doc._seed_inspection_signers()
             lines = doc.signer_line_ids.filtered("user_id").sorted(
                 key=lambda line: (line.sequence, line.id)
             )
             if not lines:
-                if doc.document_type == "purchase_approval_memo":
+                if doc.document_type in ("purchase_approval_memo", "inspection_report"):
                     raise UserError(_("กรุณาเพิ่มผู้ลงนามอย่างน้อย 1 คน"))
                 continue
-            if doc.review_ids.filtered(
+            if doc._vpk_signing_complete() or doc.review_ids.filtered(
                 lambda review: review.status in ("waiting", "pending")
             ):
                 continue
@@ -2021,6 +2275,8 @@ class OfficialDocument(models.Model):
             if not definition:
                 raise UserError(_("ยังไม่ได้ตั้งลำดับลงนามของเอกสารนี้"))
             secretary = doc._vpk_director_secretary_user()
+            if doc.document_type == "inspection_report":
+                secretary = False  # ใบตรวจรับลงนามโดยกรรมการเท่านั้น
             ordered_lines = list(lines)
             if secretary and secretary not in lines.user_id:
                 director_at = [
@@ -2129,6 +2385,11 @@ class OfficialDocument(models.Model):
                     self._get_template_bytes(),
                     self._integrity_render_values(),
                 )
+            if self.document_type == "inspection_report":
+                return render_inspection_report_docx(
+                    self._get_template_bytes(),
+                    self._inspection_render_values(),
+                )
             if self.document_type == "specific_method_approval":
                 return render_specific_method_approval_docx(
                     self._get_template_bytes(),
@@ -2173,7 +2434,6 @@ class OfficialDocument(models.Model):
         self.ensure_one()
         from odoo.addons.vpk_purchase_agreement_egp.models.winner_announcement_docx import (
             WinnerAnnouncementRenderError,
-            load_template_bytes,
             render_winner_announcement_docx,
         )
 
@@ -2182,7 +2442,7 @@ class OfficialDocument(models.Model):
             raise UserError(_("ไม่พบเอกสารประกาศผู้ชนะในกระบวนการ e-GP"))
         try:
             return render_winner_announcement_docx(
-                load_template_bytes(),
+                self._get_template_bytes(),
                 egp._winner_announcement_values(),
             )
         except WinnerAnnouncementRenderError as error:
@@ -2386,7 +2646,7 @@ class OfficialDocument(models.Model):
                 {"state": "to_approve", "vpk_secretary_screen_state": False}
             )
             if rec.signer_line_ids.filtered("user_id") or (
-                rec.document_type == "purchase_approval_memo"
+                rec.document_type in ("purchase_approval_memo", "inspection_report")
             ):
                 created = rec._vpk_create_reviews_from_signer_lines()
                 if created:
@@ -2401,6 +2661,8 @@ class OfficialDocument(models.Model):
                 rec._vpk_create_integrity_sign_reviews()
             elif rec.document_type == "winner_announcement":
                 rec._vpk_create_winner_sign_reviews()
+            elif rec.document_type in COMMITTEE_ORDER_TYPES:
+                rec._vpk_create_committee_sign_reviews()
             else:
                 rec._vpk_request_signature_reviews()
         return True
@@ -2624,7 +2886,10 @@ class OfficialDocument(models.Model):
                         "signed_on": rec.signed_on or fields.Datetime.now(),
                     }
                 )
-            if rec.document_type == "award_approval":
+            if (
+                rec.document_type == "award_approval"
+                and rec.validation_status == "validated"
+            ):
                 rec._approve_linked_award_report()
             if rec.document_type in (
                 "wa_committee_order",
@@ -2682,7 +2947,7 @@ class OfficialDocument(models.Model):
     def request_validation(self):
         with_signers = self.filtered(
             lambda doc: doc.signer_line_ids.filtered("user_id")
-            or doc.document_type == "purchase_approval_memo"
+            or doc.document_type in ("purchase_approval_memo", "inspection_report")
         )
         created = with_signers._vpk_create_reviews_from_signer_lines()
         if created:
@@ -2699,7 +2964,10 @@ class OfficialDocument(models.Model):
             lambda doc: doc.document_type == "winner_announcement"
         )
         awards = rest.filtered(lambda doc: doc.document_type == "award_approval")
-        others = rest - approval - integrity - winners - awards
+        committees = rest.filtered(
+            lambda doc: doc.document_type in COMMITTEE_ORDER_TYPES
+        )
+        others = rest - approval - integrity - winners - awards - committees
         if others:
             created |= super(OfficialDocument, others).request_validation()
         if approval:
@@ -2710,11 +2978,13 @@ class OfficialDocument(models.Model):
             created |= winners._vpk_create_winner_sign_reviews()
         if awards:
             created |= awards._vpk_create_sequential_sign_reviews()
+        if committees:
+            created |= committees._vpk_create_committee_sign_reviews()
         return created
 
     def _approve_linked_award_report(self):
-        Report = self.env["purchase.requisition.award.report"]
-        Document = self.env["purchase.requisition.egp.document"]
+        Report = self.env["purchase.requisition.award.report"].sudo()
+        Document = self.env["purchase.requisition.egp.document"].sudo()
         for rec in self:
             egp = Document.search(
                 [("official_document_id", "=", rec.id)],
@@ -2726,7 +2996,7 @@ class OfficialDocument(models.Model):
                     lambda item: item.state != "cancelled"
                 )[:1]
             if report and report.state not in ("approved", "cancelled"):
-                report.action_approve()
+                report.sudo().action_approve()
 
     def action_secretary_mark_checked(self):
         """Secretary marks the document reviewed before it can go to the director."""
@@ -2908,7 +3178,7 @@ class OfficialDocument(models.Model):
                 "award_approval",
             ):
                 continue
-            if doc.review_ids.filtered(
+            if doc._vpk_signing_complete() or doc.review_ids.filtered(
                 lambda review: review.status in ("waiting", "pending")
             ):
                 continue
@@ -3053,7 +3323,7 @@ class OfficialDocument(models.Model):
         for doc in self:
             if doc.document_type != "winner_announcement":
                 continue
-            if doc.review_ids.filtered(
+            if doc._vpk_signing_complete() or doc.review_ids.filtered(
                 lambda review: review.status in ("waiting", "pending")
             ):
                 continue
@@ -3072,6 +3342,61 @@ class OfficialDocument(models.Model):
                     }
                 )
             created |= Review.sudo().create(vals_list)
+        if created:
+            created._compute_reviewer_ids()
+            created._compute_can_review()
+            self._notify_review_requested(created)
+            self._update_counter({"review_created": True})
+        return created
+
+    def _vpk_committee_sign_definition(self):
+        definition = self.env.ref(
+            "vpk_official_document.tier_definition_committee_order_director",
+            raise_if_not_found=False,
+        )
+        if definition and not definition.active:
+            definition.sudo().write({"active": True})
+        return definition
+
+    def _vpk_create_committee_sign_reviews(self):
+        """Committee orders and requests are signed once, by the director.
+
+        Without this the generic path copies the PR amount tiers, so the same
+        director has to approve the document once per tier (>30,000, >100,000).
+        """
+        Review = self.env["tier.review"]
+        created = Review.browse()
+        definition = self._vpk_committee_sign_definition()
+        if not definition:
+            raise UserError(_("ยังไม่ได้ตั้งลำดับลงนามของเอกสารแต่งตั้งคณะกรรมการ"))
+        for doc in self:
+            if doc.document_type not in COMMITTEE_ORDER_TYPES:
+                continue
+            if doc._vpk_signing_complete() or doc.review_ids.filtered(
+                lambda review: review.status in ("waiting", "pending")
+            ):
+                continue
+            if not doc.signer_id:
+                signer = doc._person_user_from_company(
+                    doc.company_id,
+                    "official_doc_signer_id",
+                    "official_doc_signer_name",
+                )
+                if signer:
+                    doc.with_context(skip_validation_check=True).write(
+                        {"signer_id": signer.id}
+                    )
+            if not doc.signer_id:
+                raise UserError(_("กรุณาระบุผู้อำนวยการก่อนส่งเอกสารลงนาม"))
+            created |= Review.sudo().create(
+                {
+                    "model": doc._name,
+                    "res_id": doc.id,
+                    "definition_id": definition.id,
+                    "requested_by": self.env.uid,
+                    "sequence": 1,
+                }
+            )
         if created:
             created._compute_reviewer_ids()
             created._compute_can_review()
@@ -3238,7 +3563,7 @@ class OfficialDocument(models.Model):
         for doc in self:
             if doc.document_type != "integrity_over_100k":
                 continue
-            if doc.review_ids.filtered(
+            if doc._vpk_signing_complete() or doc.review_ids.filtered(
                 lambda review: review.status in ("waiting", "pending")
             ):
                 continue
@@ -3277,9 +3602,12 @@ class OfficialDocument(models.Model):
             "specific_method_approval",
             "purchase_approval_memo",
             "integrity_over_100k",
-        )
+        ) + COMMITTEE_ORDER_TYPES
         committee = self.filtered(
             lambda doc: doc.document_type not in sequential_types
+        )
+        committee_orders = self.filtered(
+            lambda doc: doc.document_type in COMMITTEE_ORDER_TYPES
         )
         approval = self.filtered(
             lambda doc: doc.document_type
@@ -3320,6 +3648,8 @@ class OfficialDocument(models.Model):
             sequential_created |= approval._vpk_create_sequential_sign_reviews()
         if integrity:
             sequential_created |= integrity._vpk_create_integrity_sign_reviews()
+        if committee_orders:
+            sequential_created |= committee_orders._vpk_create_committee_sign_reviews()
         if committee_created:
             committee_created._compute_can_review()
             committee._notify_review_requested(committee_created)

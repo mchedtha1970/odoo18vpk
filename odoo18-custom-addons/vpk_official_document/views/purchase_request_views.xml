@@ -13,6 +13,16 @@
                            string="หนังสือราชการ"/>
                 </button>
             </xpath>
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_vpk_test_reset"
+                    type="object"
+                    string="Reset (ทดสอบ)"
+                    class="btn-secondary"
+                    groups="purchase_request.group_purchase_request_manager,base.group_system"
+                    confirm="รีเซ็ตใบขอซื้อนี้กลับเป็นฉบับร่าง และลบเอกสารที่เกี่ยวข้อง (หนังสือราชการ, e-GP, ใบสั่งซื้อ, ใบตรวจรับ) เพื่อเริ่มต้นใหม่?"
+                />
+            </xpath>
             <xpath expr="//sheet" position="before">
                 <field name="vpk_documents_signed_complete" invisible="1"/>
                 <div class="alert alert-success mb-0" role="alert"
@@ -38,12 +48,12 @@
                         <button name="action_create_purchase_approval_memo" type="object"
                                 string="ออกบันทึกข้อความอนุมัติขอซื้อ"
                                 class="btn-primary me-2"
-                                groups="purchase.group_purchase_user"
+                                groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
                                 invisible="state == 'rejected' or issued_purchase_approval_memo_id"/>
                         <button name="action_create_purchase_approval_memo" type="object"
                                 string="เปิดบันทึกข้อความอนุมัติขอซื้อ"
                                 class="btn-primary me-2"
-                                groups="purchase.group_purchase_user"
+                                groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
                                 invisible="state == 'rejected' or not issued_purchase_approval_memo_id"/>
                     </div>
                     <field name="purchase_approval_memo_ids"
@@ -65,7 +75,7 @@
                             <button name="action_open_send_wizard" type="object"
                                     string="ส่งเพื่อลงนาม"
                                     icon="fa-paper-plane"
-                                    groups="purchase.group_purchase_user"
+                                    groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
                                     invisible="signature_state != 'not_sent' or state == 'cancelled'"/>
                             <field name="state" widget="badge"
                                    decoration-info="state == 'draft'"

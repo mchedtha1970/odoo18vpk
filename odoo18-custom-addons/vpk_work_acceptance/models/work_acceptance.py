@@ -87,6 +87,39 @@ class WorkAcceptance(models.Model):
         string="วันสิ้นสุดประกัน",
     )
 
+    # --- บันทึกผลตรวจรับ (ใช้ออกใบตรวจรับการจัดซื้อ/จัดจ้าง) ---
+    inspection_correct = fields.Boolean(
+        string="ถูกต้อง",
+        compute="_compute_inspection_result",
+        store=True,
+        readonly=False,
+        help="ผลการตรวจรับข้อ ๑ ค่าเริ่มต้นตามช่อง 'ผลการตรวจรับ' แก้เองได้",
+    )
+    inspection_completeness = fields.Selection(
+        selection=[
+            ("complete", "ครบถ้วนตามสัญญา"),
+            ("incomplete", "ไม่ครบถ้วนตามสัญญา"),
+        ],
+        string="ความครบถ้วน",
+        compute="_compute_inspection_result",
+        store=True,
+        readonly=False,
+    )
+    has_penalty = fields.Boolean(
+        string="มีค่าปรับ",
+        compute="_compute_has_penalty",
+        store=True,
+        readonly=False,
+    )
+    payment_amount = fields.Monetary(
+        string="จำนวนเงินที่เบิกจ่าย",
+        compute="_compute_payment_amount",
+        store=True,
+        readonly=False,
+        currency_field="currency_id",
+        help="ค่าเริ่มต้น = มูลค่ารวมรายการตรวจรับ หักค่าปรับ แก้เองได้",
+    )
+
     # --- Computed amounts ---
     amount_total = fields.Monetary(
         string="มูลค่ารวม",
@@ -135,6 +168,29 @@ class WorkAcceptance(models.Model):
         readonly=True,
         copy=False,
     )
+
+    @api.depends("acceptance_type")
+    def _compute_inspection_result(self):
+        for rec in self:
+            rec.inspection_correct = rec.acceptance_type != "reject"
+            rec.inspection_completeness = (
+                "complete" if rec.acceptance_type in (False, "full") else "incomplete"
+            )
+
+    @api.depends("penalty_amount")
+    def _compute_has_penalty(self):
+        for rec in self:
+            rec.has_penalty = (rec.penalty_amount or 0.0) > 0
+
+    @api.depends("amount_total", "penalty_amount")
+    def _compute_payment_amount(self):
+        for rec in self:
+            rec.payment_amount = (rec.amount_total or 0.0) - (rec.penalty_amount or 0.0)
+
+    @api.onchange("has_penalty")
+    def _onchange_has_penalty(self):
+        if not self.has_penalty:
+            self.penalty_amount = 0.0
 
     @api.depends("delivery_date", "due_date_contract")
     def _compute_is_late(self):

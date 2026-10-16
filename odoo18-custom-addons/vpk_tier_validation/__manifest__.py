@@ -1,6 +1,6 @@
 {
     "name": "VPK Sequential Approval Workflow",
-    "version": "18.0.1.5.62",
+    "version": "18.0.1.5.65",
     "category": "Tools",
     "summary": "Multi-level sequential approval for Purchase, Stock, Bills and more",
     "description": """
@@ -71,6 +71,8 @@ Configure at: Settings → กล่องอนุมัติเอกสา�
             "vpk_tier_validation/static/src/dashboard/approval_status_board.xml",
             "vpk_tier_validation/static/src/js/sidebar_menu_badge.js",
             "vpk_tier_validation/static/src/xml/sidebar_menu_badge.xml",
+            "vpk_tier_validation/static/src/xml/purchase_request_create_button.xml",
+            "vpk_tier_validation/static/src/js/purchase_request_create_button.js",
             "vpk_tier_validation/static/src/xml/tier_review_widget_label.xml",
             "vpk_tier_validation/static/src/js/tier_review_widget_expand.js",
             "vpk_tier_validation/static/src/scss/tier_review_widget_theme_font.scss",

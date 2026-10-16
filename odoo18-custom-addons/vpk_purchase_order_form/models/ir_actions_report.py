@@ -20,6 +20,14 @@ class IrActionsReport(models.Model):
     def _vpk_wrap_po_form_for_wkhtmltopdf(self, body, css):
         if not body:
             return body
+        # QWeb bodies are Markup. Markup.replace drops HTML inserted into the
+        # head, so the government font never reaches wkhtmltopdf.
+        body = str(body)
+        css = str(css or "")
+        if "@font-face" in body and "THSarabunNew" in body:
+            return body
+        if "</head>" in body:
+            return body.replace("</head>", f"<style>{css}</style></head>", 1)
         stripped = body.lstrip()
         if stripped.startswith("<!DOCTYPE") or stripped.startswith("<html"):
             return body

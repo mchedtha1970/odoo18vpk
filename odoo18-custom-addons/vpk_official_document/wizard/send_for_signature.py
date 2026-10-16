@@ -25,16 +25,13 @@ class OfficialDocumentSendWizard(models.TransientModel):
         if self.skip_approval:
             document.action_skip_approval_for_test()
             return {"type": "ir.actions.act_window_close"}
-        egp = self.env["purchase.requisition.egp.document"].search(
-            [("official_document_id", "=", document.id)],
-            limit=1,
-        )
-        report = egp.award_report_id if egp else False
-        if (
-            document.document_type == "award_approval"
-            and report
-            and report.state == "draft"
-        ):
-            report.action_submit()
+        if document.document_type == "award_approval":
+            egp = self.env["purchase.requisition.egp.document"].sudo().search(
+                [("official_document_id", "=", document.id)],
+                limit=1,
+            )
+            report = egp.award_report_id if egp else False
+            if report and report.state == "draft":
+                report.sudo().action_submit()
         document.action_send_for_signature()
         return {"type": "ir.actions.act_window_close"}

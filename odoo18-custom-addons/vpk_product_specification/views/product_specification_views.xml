@@ -55,7 +55,7 @@
                                     <field name="attachment_count" string="ไฟล์แนบ"/>
                                     <button name="action_open_line_form" type="object"
                                             string="ดู/แนบไฟล์" icon="fa-paperclip"
-                                            title="เปิดดูรูปสแกนและเอกสารแนบ"/>
+                                            title="เปิดดูและแนบไฟล์ PDF"/>
                                     <button name="action_open_spec_attachments" type="object"
                                             icon="fa-download"
                                             title="เปิด/ดาวน์โหลดไฟล์"
@@ -82,19 +82,15 @@
                                     <group string="รายละเอียดคุณลักษณะ">
                                         <field name="specifications" nolabel="1" colspan="2"/>
                                     </group>
-                                    <group string="รูปสแกนคุณลักษณะ">
-                                        <field name="spec_scan_filename" invisible="1"/>
-                                        <field name="spec_scan_image" widget="image"
-                                               filename="spec_scan_filename"/>
-                                    </group>
-                                    <group string="เอกสารแนบ (คลิกชื่อไฟล์เพื่อเปิด)">
+                                    <group string="เอกสารแนบ PDF (คลิกชื่อไฟล์เพื่อเปิด)">
                                         <field name="spec_attachment_ids" widget="many2many_binary"
-                                               nolabel="1" colspan="2"/>
+                                               string="แนบไฟล์ PDF" nolabel="1" colspan="2"
+                                               options="{'accepted_file_extensions': '.pdf'}"/>
                                     </group>
                                 </form>
                             </field>
                             <p class="text-muted">
-                                กดปุ่ม <strong>ดู/แนบไฟล์</strong> หรือไอคอนดาวน์โหลดในแต่ละรายการเพื่อเปิดดูเอกสาร/รูปสแกน
+                                กดปุ่ม <strong>ดู/แนบไฟล์</strong> หรือไอคอนดาวน์โหลดในแต่ละรายการเพื่อเปิดดูไฟล์ PDF
                             </p>
                         </page>
                         <page string="หมายเหตุ" name="notes">

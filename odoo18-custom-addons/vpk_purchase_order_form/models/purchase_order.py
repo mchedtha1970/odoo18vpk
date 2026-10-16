@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import base64
 from datetime import timedelta
 from pathlib import Path
 
@@ -10,20 +11,43 @@ from odoo.exceptions import UserError
 THAI_DIGITS = str.maketrans("0123456789", "๐๑๒๓๔๕๖๗๘๙")
 PO_FORM_REPORT = "vpk_purchase_order_form.report_purchase_order_vpk_form"
 MIN_LINE_ROWS = 8
+_FONT_CSS_CACHE = None
+
+
+def _po_form_font_css():
+    """Embed TH Sarabun New so wkhtmltopdf does not fall back to a sans font."""
+    global _FONT_CSS_CACHE
+    if _FONT_CSS_CACHE is not None:
+        return _FONT_CSS_CACHE
+    font_dir = (
+        Path(__file__).resolve().parents[2]
+        / "l10n-thailand-18.0/l10n_th_base_utils/static/fonts/thai/THSarabunNew"
+    )
+    faces = []
+    for family, filename in (
+        ("THSarabunNew", "THSarabunNew-Regular.ttf"),
+        ("THSarabunNew-Bold", "THSarabunNew-Bold.ttf"),
+    ):
+        path = font_dir / filename
+        if not path.exists():
+            continue
+        encoded = base64.b64encode(path.read_bytes()).decode()
+        faces.append(
+            "@font-face {"
+            f'font-family: "{family}";'
+            f'src: url("data:font/truetype;base64,{encoded}") format("truetype");'
+            "font-weight: normal;"
+            "font-style: normal;"
+            "}"
+        )
+    _FONT_CSS_CACHE = "\n".join(faces)
+    return _FONT_CSS_CACHE
 
 
 def _load_po_form_inline_css():
     module_static = Path(__file__).resolve().parent.parent / "static/src"
     layout_css = (module_static / "css/po_form_layout.css").read_text(encoding="utf-8")
-    # Reuse embedded Thai fonts from vpk_tier_validation when available.
-    fonts_css = ""
-    tier_fonts = (
-        Path(__file__).resolve().parents[2]
-        / "vpk_tier_validation/static/src/scss/thai_fonts_embedded.scss"
-    )
-    if tier_fonts.exists():
-        fonts_css = tier_fonts.read_text(encoding="utf-8")
-    return f"{fonts_css}\n{layout_css}"
+    return f"{_po_form_font_css()}\n{layout_css}"
 
 
 class PurchaseOrder(models.Model):

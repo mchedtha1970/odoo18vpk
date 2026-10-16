@@ -139,6 +139,7 @@ class PurchaseRequest(models.Model):
             rec.message_post(
                 body=_("พัสดุรับงานแล้ว: %s") % user.display_name
             )
+        self._notify_procurement_inbox_updated()
         return True
 
     def action_unclaim_procurement(self):
@@ -164,6 +165,7 @@ class PurchaseRequest(models.Model):
         )
         for rec in self:
             rec.message_post(body=_("คืนคิวใบขอซื้อให้รอรับใหม่"))
+        self._notify_procurement_inbox_updated()
         return True
 
     def action_open_procurement_work(self):
@@ -192,6 +194,9 @@ class PurchaseRequest(models.Model):
         unassigned = Request.search_count(
             base + [("procurement_owner_id", "=", False)]
         )
+        claimed = Request.search_count(
+            base + [("procurement_owner_id", "!=", False)]
+        )
         mine = Request.search_count(
             base + [("procurement_owner_id", "=", self.env.uid)]
         )
@@ -209,6 +214,7 @@ class PurchaseRequest(models.Model):
         return {
             "total": total,
             "unassigned": unassigned,
+            "claimed": claimed,
             "mine": mine,
             "overdue": overdue,
             "urgent": urgent,
@@ -222,6 +228,8 @@ class PurchaseRequest(models.Model):
         domain = [("state", "=", "sent_to_procurement")]
         if filter_name == "unassigned":
             domain.append(("procurement_owner_id", "=", False))
+        elif filter_name == "claimed":
+            domain.append(("procurement_owner_id", "!=", False))
         elif filter_name == "mine":
             domain.append(("procurement_owner_id", "=", self.env.uid))
         elif filter_name == "overdue":
@@ -257,3 +265,17 @@ class PurchaseRequest(models.Model):
             ]
         )
         recs._compute_days_waiting_procurement()
+
+    def _notify_procurement_inbox_updated(self):
+        """บอก dashboard และ badge ของเจ้าหน้าที่พัสดุให้โหลดตัวเลขใหม่"""
+        users = self.env["res.users"]
+        for xmlid in (
+            "purchase_request.group_purchase_request_manager",
+            "vpk_tier_validation.group_vpk_procurement_officer",
+        ):
+            group = self.env.ref(xmlid, raise_if_not_found=False)
+            if group:
+                users |= group.users
+        bus = self.env["bus.bus"].sudo()
+        for partner in users.partner_id:
+            bus._sendone(partner, "vpk_procurement_inbox/updated", {})

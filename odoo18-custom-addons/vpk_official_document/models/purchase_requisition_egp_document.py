@@ -24,12 +24,14 @@ class PurchaseRequisitionEgpDocument(models.Model):
     )
 
     def action_generate_winner_document(self):
+        """สร้างหนังสือราชการจากเทมเพลต แล้วเปิดฟอร์มเอกสาร เหมือนรายงานผลการพิจารณา."""
         self.ensure_one()
+        if self.document_type_id.code != "winner_announcement":
+            return super().action_generate_winner_document()
         if self.signature_state in ("waiting", "signed"):
             raise UserError(_("เอกสารถูกส่งลงนามแล้ว ไม่สามารถสร้างใหม่ได้"))
-        res = super().action_generate_winner_document()
-        self._ensure_winner_official_document()
-        return res
+        document = self._build_winner_official_document()
+        return document._action_open_form()
 
     def action_send_for_signature_inbox(self):
         """เปิดตัวเลือกส่งลงนาม หรือข้ามการอนุมัติเพื่อทดสอบ."""
@@ -40,8 +42,8 @@ class PurchaseRequisitionEgpDocument(models.Model):
                 raise UserError(_("เอกสารนี้ลงนามแล้ว"))
             if self.signature_state == "waiting":
                 raise UserError(_("เอกสารถูกส่งลงนามแล้ว กำลังรอลงนาม"))
-            if not self.document_file:
-                self.action_generate_winner_document()
+            if not self.official_document_id or not self.official_document_id.pdf_file:
+                self._build_winner_official_document()
             official = self._ensure_winner_official_document()
         elif code == "award_approval":
             if self.signature_state == "signed":
@@ -109,6 +111,8 @@ class PurchaseRequisitionEgpDocument(models.Model):
             document = Official.with_context(skip_validation_check=True).create(vals)
         if self.official_document_id != document:
             self.official_document_id = document.id
+        if report:
+            report._push_signers_to_official_document(document)
         if not self.document_file:
             return document
         basename = "รายงานผลการพิจารณา-%s" % (
@@ -130,13 +134,28 @@ class PurchaseRequisitionEgpDocument(models.Model):
             raise UserError(_("เอกสารนี้ลงนามแล้ว"))
         if self.signature_state == "waiting":
             raise UserError(_("เอกสารถูกส่งลงนามแล้ว กำลังรอลงนาม"))
-        if not self.document_file:
-            self.action_generate_winner_document()
+        if not self.official_document_id or not self.official_document_id.pdf_file:
+            self._build_winner_official_document()
         official = self._ensure_winner_official_document()
         official.action_send_for_signature()
         return True
 
-    def _ensure_winner_official_document(self):
+    def _build_winner_official_document(self):
+        """Fill the winner-announcement template into an official document."""
+        self.ensure_one()
+        document = self._ensure_winner_official_document(copy_file=False)
+        if document.signature_state in ("waiting", "signed"):
+            return document
+        try:
+            document.with_context(skip_validation_check=True).action_generate_pdf()
+        except UserError:
+            if not document.docx_file:
+                raise
+            if not document.pdf_file:
+                document.with_context(skip_validation_check=True).action_generate_docx()
+        return document
+
+    def _ensure_winner_official_document(self, copy_file=True):
         self.ensure_one()
         Official = self.env["vpk.official.document"]
         values = self._winner_announcement_values()
@@ -193,7 +212,7 @@ class PurchaseRequisitionEgpDocument(models.Model):
                 officer_vals["officer_position"] = values["cert_title"]
         if officer_vals:
             document.with_context(skip_validation_check=True).write(officer_vals)
-        if not self.document_file:
+        if not copy_file or not self.document_file:
             return document
         raw_file = base64.b64decode(self.document_file)
         filename = self.document_filename or ("%s.pdf" % basename)
@@ -211,4 +230,36 @@ class PurchaseRequisitionEgpDocument(models.Model):
             mimetype,
             kind,
         )
+        return document
+
+
+class PurchaseRequisitionAwardReport(models.Model):
+    _inherit = "purchase.requisition.award.report"
+
+    def _push_signers_to_official_document(self, document):
+        """Copy the approver table onto the official document before it is sent."""
+        self.ensure_one()
+        if not document or document.signature_state in ("waiting", "signed"):
+            return document
+        lines = self.signer_line_ids.filtered("user_id").sorted(
+            key=lambda line: (line.sequence, line.id)
+        )
+        if not lines:
+            return document
+        Signer = self.env["vpk.official.document.signer"]
+        document.signer_line_ids.with_context(vpk_skip_signer_sync=True).unlink()
+        Signer.with_context(vpk_skip_signer_sync=True).create(
+            [
+                {
+                    "document_id": document.id,
+                    "sequence": line.sequence,
+                    "user_id": line.user_id.id,
+                    "position": line.position,
+                    "is_check": line.is_check,
+                    "is_sign": line.is_sign,
+                }
+                for line in lines
+            ]
+        )
+        document._sync_signers_from_lines()
         return document

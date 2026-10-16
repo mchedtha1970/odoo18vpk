@@ -13,24 +13,6 @@
                     class="btn-primary"
                     invisible="state not in ('draft', 'sent') or not require_vendor_signature or vendor_signed"
                 />
-                <button
-                    name="action_share_vendor_portal"
-                    type="object"
-                    string="แชร์ลิงก์พอร์ทัล"
-                    invisible="not partner_id"
-                />
-                <button
-                    name="action_invite_vendor_portal"
-                    type="object"
-                    string="สร้าง User Portal"
-                    invisible="state not in ('draft', 'sent', 'purchase') or not partner_id"
-                />
-                <button
-                    name="action_preview_vendor_portal"
-                    type="object"
-                    string="เปิดลิงก์พอร์ทัล"
-                    invisible="not id"
-                />
             </xpath>
             <xpath expr="//field[@name='partner_ref']" position="after">
                 <label

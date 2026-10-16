@@ -14,7 +14,6 @@ class VendorPortalUserWizard(models.TransientModel):
         "res.partner",
         string="ผู้จำหน่าย",
         required=True,
-        readonly=True,
     )
     name = fields.Char(related="partner_id.name", string="ชื่อ", readonly=True)
     email = fields.Char(
@@ -55,9 +54,13 @@ class VendorPortalUserWizard(models.TransientModel):
     @api.model
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
-        partner = self.env["res.partner"].browse(
-            self.env.context.get("default_partner_id")
-            or self.env.context.get("active_id")
+        partner_id = self.env.context.get("default_partner_id") or self.env.context.get(
+            "active_id"
+        )
+        partner = (
+            self.env["res.partner"].browse(partner_id)
+            if partner_id
+            else self.env["res.partner"]
         )
         if partner:
             res.setdefault("partner_id", partner.id)

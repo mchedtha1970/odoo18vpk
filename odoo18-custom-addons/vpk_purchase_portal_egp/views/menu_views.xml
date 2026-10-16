@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_vendor_portal_account"
+        name="บัญชีผู้จำหน่าย"
+        parent="purchase.menu_purchase_config"
+        sequence="46"
+        groups="purchase.group_purchase_manager"
+    />
+    <menuitem
+        id="menu_vendor_portal_share"
+        name="แชร์ลิงก์พอร์ทัล"
+        parent="menu_vendor_portal_account"
+        action="action_vendor_portal_share_wizard"
+        sequence="10"
+        groups="purchase.group_purchase_manager"
+    />
+    <menuitem
+        id="menu_vendor_portal_create_user"
+        name="สร้าง User Portal"
+        parent="menu_vendor_portal_account"
+        action="action_vendor_portal_user_wizard_menu"
+        sequence="20"
+        groups="purchase.group_purchase_manager"
+    />
+    <menuitem
+        id="menu_vendor_portal_open"
+        name="เปิดลิงก์พอร์ทัล"
+        parent="menu_vendor_portal_account"
+        action="action_open_vendor_portal"
+        sequence="30"
+        groups="purchase.group_purchase_manager"
+    />
+</odoo>

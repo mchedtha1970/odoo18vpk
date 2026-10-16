@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vendor_portal_share_wizard_form" model="ir.ui.view">
+        <field name="name">vendor.portal.share.wizard.form</field>
+        <field name="model">vendor.portal.share.wizard</field>
+        <field name="arch" type="xml">
+            <form string="แชร์ลิงก์พอร์ทัล">
+                <group>
+                    <label for="portal_url" string="ลิงก์ Login Vendor Portal"/>
+                    <div class="o_row">
+                        <field name="portal_url" widget="CopyClipboardChar" nolabel="1"/>
+                        <field
+                            name="portal_url"
+                            widget="CopyClipboardButton"
+                            string="คัดลอกลิงก์"
+                            nolabel="1"
+                        />
+                    </div>
+                    <field name="partner_id"/>
+                </group>
+                <footer>
+                    <button
+                        name="action_send"
+                        type="object"
+                        string="ส่งอีเมล"
+                        class="btn-primary"
+                    />
+                    <button string="ปิด" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vendor_portal_share_wizard" model="ir.actions.act_window">
+        <field name="name">แชร์ลิงก์พอร์ทัล</field>
+        <field name="res_model">vendor.portal.share.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="action_vendor_portal_user_wizard_menu" model="ir.actions.act_window">
+        <field name="name">สร้าง User Portal</field>
+        <field name="res_model">vendor.portal.user.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <record id="action_open_vendor_portal" model="ir.actions.act_url">
+        <field name="name">เปิดลิงก์พอร์ทัล</field>
+        <field name="url">/vendor</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -5,11 +5,29 @@
         <field name="model">purchase.order</field>
         <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_title')]/span[@class='o_form_label'][1]" position="replace">
+                <span class="o_form_label" invisible="state not in ('draft', 'sent')">ร่างใบสั่งซื้อ</span>
+            </xpath>
+            <xpath expr="//header/button[@name='action_rfq_send'][@invisible=&quot;state != 'draft'&quot;]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//header/button[@name='action_rfq_send'][@invisible=&quot;state != 'sent'&quot;]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//header/button[@name='action_rfq_send'][@invisible=&quot;state != 'purchase'&quot;]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//header/button[@name='print_quotation'][@invisible=&quot;state != 'draft'&quot;]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//header/button[@name='print_quotation'][@invisible=&quot;state != 'sent'&quot;]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
             <xpath expr="//header" position="inside">
                 <button
                     name="action_print_vpk_po_form"
                     type="object"
-                    string="พิมพ์ใบสั่งซื้อ VPK"
+                    string="พิมพ์ใบสั่งซื้อ"
                     class="btn-secondary"
                     invisible="state in ('cancel')"
                 />
@@ -23,7 +41,7 @@
                 />
             </xpath>
             <xpath expr="//notebook" position="inside">
-                <page string="ใบสั่งซื้อ VPK" name="vpk_po_form">
+                <page string="File ใบสั่งซื้อ" name="vpk_po_form">
                     <group>
                         <group string="เงื่อนไขส่งมอบ">
                             <field name="vpk_po_delivery_days"/>

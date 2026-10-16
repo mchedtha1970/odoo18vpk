@@ -2,6 +2,10 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
 
+class BudgetInsufficientError(ValidationError):
+    """งบคงเหลือไม่พอ — ใช้แยกหัวข้อกล่องแจ้งเตือนจากข้อผิดพลาดทั่วไป."""
+
+
 # งบจะถูกจองเมื่อเช็คงบผ่าน หรือเมื่อส่งขออนุมัติ (budget_reservation_active=True)
 # จนกว่าจะยกเลิก/เสร็จสิ้น
 
@@ -52,7 +56,7 @@ class PurchaseRequest(models.Model):
         selection=[
             ("unchecked", "ยังไม่ได้เช็ค"),
             ("enough", "งบเพียงพอ"),
-            ("insufficient", "งบไม่เพียงพอ"),
+            ("insufficient", "ไม่พอ"),
         ],
         string="สถานะเช็คงบ",
         default="unchecked",
@@ -654,6 +658,12 @@ class PurchaseRequest(models.Model):
                     "is_short": allocated <= 1e-6 or remaining < -1e-6,
                 }
             )
+        if not enough:
+            messages = [
+                message
+                for message, row in zip(messages, rows)
+                if row.get("is_short")
+            ]
         return (
             enough,
             messages,
@@ -666,6 +676,7 @@ class PurchaseRequest(models.Model):
         self.ensure_one()
         lines = self._get_active_budget_request_lines()
         messages = []
+        message_is_short = []
         rows = []
         enough = True
         total_remaining = 0.0
@@ -739,6 +750,7 @@ class PurchaseRequest(models.Model):
                         )
                         % {"post": budget_post.display_name}
                     )
+                message_is_short.append(True)
                 continue
             total_remaining += remaining
             if remaining < 0:
@@ -767,6 +779,8 @@ class PurchaseRequest(models.Model):
                     "remaining": self._format_budget_amount(remaining),
                 }
             )
+            is_short = remaining < -1e-6
+            message_is_short.append(is_short)
             rows.append(
                 {
                     "name": budget_post.display_name,
@@ -778,9 +792,16 @@ class PurchaseRequest(models.Model):
                     "available_amount": available,
                     "required_amount": required,
                     "remaining_amount": remaining,
-                    "is_short": remaining < -1e-6,
+                    "is_short": is_short,
                 }
             )
+
+        if not enough:
+            messages = [
+                message
+                for message, is_short in zip(messages, message_is_short)
+                if is_short
+            ]
 
         return enough, "\n".join(messages), total_remaining, line_budget_map, rows
 
@@ -903,11 +924,16 @@ class PurchaseRequest(models.Model):
         for request in self:
             enough, message, available, line_budget_map, rows = request._prepare_budget_check()
             if not enough:
-                raise ValidationError(
-                    _(
-                        "ไม่สามารถจองงบประมาณได้ เนื่องจากงบประมาณไม่เพียงพอหรือข้อมูลงบประมาณไม่ครบ\n\n%s"
-                    )
-                    % message
+                request._apply_budget_check_result(
+                    False,
+                    message,
+                    available,
+                    line_budget_map,
+                    activate_reservation=False,
+                    rows=rows,
+                )
+                raise BudgetInsufficientError(
+                    _("งบประมาณคงเหลือไม่เพียงพอ\n\n%s") % message
                 )
             request._apply_budget_check_result(
                 enough,
@@ -957,15 +983,9 @@ class PurchaseRequest(models.Model):
             request._release_budget_reservation(clear_budget_lines=False)
             try:
                 request._activate_budget_reservation()
-            except ValidationError as err:
-                request.with_context(skip_budget_check_reset=True).write(
-                    {
-                        "budget_check_state": "insufficient",
-                        "budget_check_message": str(err.args[0]) if err.args else str(err),
-                        "budget_available_amount": 0.0,
-                    }
-                )
-                raise
+            except BudgetInsufficientError:
+                # สถานะเช็คงบถูกตั้งเป็นไม่พอแล้วใน _activate_budget_reservation
+                continue
             request.invalidate_recordset(["budget_requested_amount"])
             new_amount = request.budget_requested_amount
             if abs((old_amount or 0.0) - (new_amount or 0.0)) < 1e-6:
@@ -997,6 +1017,13 @@ class PurchaseRequest(models.Model):
                 _("PR นี้ยังไม่ได้จองงบประมาณ — กรุณาเช็คงบ / ส่งอนุมัติก่อน")
             )
         self._refresh_budget_reservation_after_edit()
+        self.invalidate_recordset(["budget_check_state", "budget_check_message"])
+        if self.budget_check_state == "insufficient":
+            return self._budget_insufficient_action(
+                BudgetInsufficientError(
+                    self.budget_check_message or _("งบประมาณคงเหลือไม่เพียงพอ")
+                )
+            )
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
@@ -1038,7 +1065,7 @@ class PurchaseRequest(models.Model):
             "params": {
                 "title": _("จองงบประมาณแล้ว")
                 if enough
-                else _("สถานะงบประมาณ: ไม่เพียงพอ"),
+                else _("งบประมาณคงเหลือไม่เพียงพอ"),
                 "message": message,
                 "type": "success" if enough else "warning",
                 "sticky": True,
@@ -1054,19 +1081,51 @@ class PurchaseRequest(models.Model):
             },
         }
 
+    def _budget_insufficient_action(self, error):
+        self.ensure_one()
+        message = error.args[0] if error.args else _("งบประมาณคงเหลือไม่เพียงพอ")
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("งบประมาณคงเหลือไม่เพียงพอ"),
+                "message": message,
+                "type": "danger",
+                "sticky": True,
+                "next": {
+                    "type": "ir.actions.act_window",
+                    "res_model": self._name,
+                    "res_id": self.id,
+                    "view_mode": "form",
+                    "views": [(False, "form")],
+                    "target": "current",
+                },
+            },
+        }
+
     def _check_budget_available_before_submit(self):
-        self._activate_budget_reservation()
+        try:
+            self._activate_budget_reservation()
+        except BudgetInsufficientError as err:
+            return self[:1]._budget_insufficient_action(err)
+        return None
 
     def button_to_approve(self):
-        self._check_budget_available_before_submit()
+        action = self._check_budget_available_before_submit()
+        if isinstance(action, dict):
+            return action
         return super().button_to_approve()
 
     def button_approved(self):
-        self._check_budget_available_before_submit()
+        action = self._check_budget_available_before_submit()
+        if isinstance(action, dict):
+            return action
         return super().button_approved()
 
     def request_validation(self):
-        self._check_budget_available_before_submit()
+        action = self._check_budget_available_before_submit()
+        if isinstance(action, dict):
+            return action
         return super().request_validation()
 
     def button_rejected(self):

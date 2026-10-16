@@ -123,23 +123,33 @@
 
                     <table class="vpk-po-sign">
                         <tr>
+                            <td>ผู้รับจ้าง</td>
+                            <td>๖. ส่วนราชการ</td>
+                        </tr>
+                        <tr>
+                            <td class="vpk-po-sign-sub">&#160;</td>
+                            <td class="vpk-po-sign-sub" t-esc="o._po_form_agency_name()"/>
+                        </tr>
+                        <tr>
+                            <td class="vpk-po-sign-space">&#160;</td>
+                            <td class="vpk-po-sign-space">&#160;</td>
+                        </tr>
+                        <tr>
+                            <td class="vpk-po-sign-line">ลงชื่อ ................................................</td>
+                            <td class="vpk-po-sign-line">ลงชื่อ ................................................</td>
+                        </tr>
+                        <tr>
                             <td>
-                                <div>ผู้รับจ้าง</div>
-                                <div class="vpk-po-sign-space"/>
-                                <div>ลงนามผู้รับจ้าง</div>
-                                <div t-if="o.partner_id">
-                                    (<span t-esc="o.partner_id.name"/>)
-                                </div>
+                                <t t-if="o.partner_id">(<span t-esc="o.partner_id.name"/>)</t>
                             </td>
                             <td>
-                                <div>๖. ส่วนราชการ</div>
-                                <div t-esc="o._po_form_agency_name()"/>
-                                <div class="vpk-po-sign-space"/>
-                                <div class="vpk-po-sign-line">................................................</div>
-                                <div t-if="o._po_form_signer_name()">
-                                    (<span t-esc="o._po_form_signer_name()"/>)
-                                </div>
-                                <div t-if="o._po_form_signer_position()" t-esc="o._po_form_signer_position()"/>
+                                <t t-if="o._po_form_signer_name()">(<span t-esc="o._po_form_signer_name()"/>)</t>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>&#160;</td>
+                            <td>
+                                <t t-if="o._po_form_signer_position()" t-esc="o._po_form_signer_position()"/>
                             </td>
                         </tr>
                     </table>

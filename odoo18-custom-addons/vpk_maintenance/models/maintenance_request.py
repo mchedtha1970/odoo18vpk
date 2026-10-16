@@ -101,7 +101,7 @@ class MaintenanceRequest(models.Model):
     prelim_finish_days = fields.Integer(string="ประมาณการแล้วเสร็จภายใน (วัน)")
     prelim_dispose = fields.Boolean(string="แทงจำหน่าย")
     prelim_initial_check = fields.Boolean(string="ตรวจเช็คเบื้องต้น")
-    prelim_check_reason = fields.Char(string="เนื่องจาก")
+    prelim_check_reason = fields.Text(string="เนื่องจาก")
     technician_signature = fields.Image(
         string="ลายเซ็นช่างผู้ปฏิบัติงาน",
         copy=False,

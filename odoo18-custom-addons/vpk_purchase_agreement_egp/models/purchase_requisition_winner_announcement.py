@@ -387,8 +387,7 @@ class PurchaseRequisition(models.Model):
             document = existing
         else:
             document = self.env["purchase.requisition.egp.document"].create(vals)
-        document.action_generate_winner_document()
-        return True
+        return document.action_generate_winner_document()
 
     def action_create_winner_announcement(self):
         self.ensure_one()

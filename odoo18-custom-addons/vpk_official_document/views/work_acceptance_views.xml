@@ -5,35 +5,22 @@
         <field name="model">work.acceptance</field>
         <field name="inherit_id" ref="purchase_work_acceptance.view_work_acceptance_form"/>
         <field name="arch" type="xml">
+            <!-- ปุ่มออกคำสั่ง/แบบแสดงความบริสุทธิ์ใจ/หนังสือราชการ ที่หัวฟอร์มถูกซ่อน
+                 ใช้ปุ่มในแท็บคณะกรรมการและปุ่มสถิติหนังสือราชการแทน -->
             <xpath expr="//header" position="inside">
-                <field name="official_document_count" invisible="1"/>
-                <field name="issued_wa_committee_order_id" invisible="1"/>
-                <field name="issued_integrity_document_id" invisible="1"/>
-                <button name="action_create_wa_committee_order" type="object"
-                        string="ออกคำสั่งแต่งตั้งคณะกรรมการตรวจรับ"
-                        class="btn-secondary me-2"
+                <field name="issued_inspection_report_id" invisible="1"/>
+                <button name="action_create_inspection_report" type="object"
+                        string="ออกใบตรวจรับ"
+                        class="btn-secondary"
+                        icon="fa-file-text-o"
                         groups="purchase.group_purchase_user"
-                        invisible="issued_wa_committee_order_id"/>
-                <button name="action_create_wa_committee_order" type="object"
-                        string="เปิดคำสั่งแต่งตั้งคณะกรรมการตรวจรับ"
-                        class="btn-secondary me-2"
+                        invisible="issued_inspection_report_id or not id"/>
+                <button name="action_create_inspection_report" type="object"
+                        string="เปิดใบตรวจรับ"
+                        class="btn-secondary"
+                        icon="fa-file-text-o"
                         groups="purchase.group_purchase_user"
-                        invisible="not issued_wa_committee_order_id"/>
-                <button name="action_create_integrity_over_100k" type="object"
-                        string="ออกแบบแสดงความบริสุทธิ์ใจ"
-                        class="btn-secondary me-2"
-                        groups="purchase.group_purchase_user"
-                        invisible="issued_integrity_document_id"/>
-                <button name="action_create_integrity_over_100k" type="object"
-                        string="เปิดแบบแสดงความบริสุทธิ์ใจ"
-                        class="btn-secondary me-2"
-                        groups="purchase.group_purchase_user"
-                        invisible="not issued_integrity_document_id"/>
-                <button name="action_view_official_documents" type="object"
-                        string="หนังสือราชการ"
-                        class="btn-secondary me-2"
-                        groups="purchase.group_purchase_user"
-                        invisible="official_document_count == 0 and not issued_wa_committee_order_id and not issued_integrity_document_id"/>
+                        invisible="not issued_inspection_report_id"/>
             </xpath>
             <xpath expr="//sheet/div[hasclass('oe_title')]" position="before">
                 <div class="oe_button_box" name="button_box">
@@ -41,7 +28,7 @@
                             class="oe_stat_button" icon="fa-file-word-o"
                             groups="purchase.group_purchase_user">
                         <field name="official_document_count" widget="statinfo"
-                               string="หนังสือราชการ"/>
+                               string="ใบตรวจรับงาน"/>
                     </button>
                 </div>
             </xpath>
@@ -54,7 +41,7 @@
         <field name="inherit_id" ref="vpk_work_acceptance.view_work_acceptance_form_vpk"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='committee']" position="inside">
-                <div class="d-flex flex-wrap gap-2 mt-2">
+                <div class="d-flex flex-wrap gap-2 mt-2" invisible="1">
                     <field name="issued_wa_committee_order_id" invisible="1"/>
                     <field name="issued_integrity_document_id" invisible="1"/>
                     <button name="action_create_wa_committee_order" type="object"
@@ -78,6 +65,55 @@
                             groups="purchase.group_purchase_user"
                             invisible="not issued_integrity_document_id"/>
                 </div>
+            </xpath>
+            <xpath expr="//page[@name='committee']" position="after">
+                <page string="เอกสารราชการที่เกี่ยวข้อง" name="related_official_documents">
+                    <div class="text-muted mb-2">
+                        เลือกเอกสารที่จะสร้าง แล้วกดสร้างเอกสาร
+                        ผู้ลงนามเริ่มต้นดึงจากกรรมการตรวจรับ แก้ไขได้ที่เอกสาร
+                        จากนั้นพิมพ์ PDF และกดส่งเพื่อลงนาม
+                        ถ้าเอกสารชนิดนั้นออกไว้แล้ว ระบบจะเปิดเอกสารเดิม
+                    </div>
+                    <group>
+                        <group>
+                            <field name="official_document_to_create" widget="selection"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                        </group>
+                        <group>
+                            <button name="action_create_selected_official_document" type="object"
+                                    string="สร้างเอกสาร"
+                                    class="btn-primary"
+                                    groups="purchase.group_purchase_user"
+                                    invisible="not official_document_to_create or not id"/>
+                        </group>
+                    </group>
+                    <field name="official_document_ids" readonly="1" create="false" delete="false">
+                        <list>
+                            <field name="document_type"/>
+                            <field name="has_pdf" widget="vpk_pdf_icon" string="ไฟล์"/>
+                            <field name="pdf_filename" column_invisible="1"/>
+                            <field name="pdf_attachment_id" column_invisible="1"/>
+                            <field name="can_review" column_invisible="1"/>
+                            <field name="name" string="เลขที่เอกสาร"/>
+                            <field name="date"/>
+                            <field name="subject"/>
+                            <field name="signature_state" widget="badge"
+                                   decoration-muted="signature_state == 'not_sent'"
+                                   decoration-warning="signature_state == 'waiting'"
+                                   decoration-success="signature_state == 'signed'"/>
+                            <button name="action_open_send_wizard" type="object"
+                                    string="ส่งเพื่อลงนาม"
+                                    icon="fa-paper-plane"
+                                    groups="purchase.group_purchase_user"
+                                    invisible="signature_state != 'not_sent' or state == 'cancelled'"/>
+                            <field name="state" widget="badge"
+                                   decoration-info="state == 'draft'"
+                                   decoration-success="state in ('generated', 'approved')"
+                                   decoration-warning="state == 'to_approve'"
+                                   decoration-muted="state == 'cancelled'"/>
+                        </list>
+                    </field>
+                </page>
             </xpath>
         </field>
     </record>

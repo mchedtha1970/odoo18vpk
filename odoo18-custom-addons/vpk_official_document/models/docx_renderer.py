@@ -1137,3 +1137,59 @@ def render_purchase_approval_memo_docx(template_bytes, values):
     output = io.BytesIO()
     document.save(output)
     return output.getvalue()
+
+
+def render_inspection_report_docx(template_bytes, values):
+    """Fill ใบตรวจรับการจัดซื้อ/จัดจ้าง from the {{placeholder}} template.
+
+    The signature block (the paragraph holding {{sign_role}}, the name line
+    below it and the blank line after it) is repeated once per committee member.
+    """
+    _require_docx()
+    document = Document(io.BytesIO(template_bytes))
+    mapping = {
+        key: (value if value is not None else "")
+        for key, value in values.items()
+        if key != "signers"
+    }
+    paragraphs = list(document.paragraphs)
+    role_para = next(
+        (p for p in paragraphs if "{{sign_role}}" in _paragraph_text(p)), None
+    )
+    if role_para is not None:
+        name_para = Paragraph(role_para._element.getnext(), role_para._parent)
+        spacer_elm = name_para._element.getnext()
+        block = [role_para._element, name_para._element]
+        if spacer_elm is not None and spacer_elm.tag == qn("w:p"):
+            block.append(spacer_elm)
+        signers = values.get("signers") or [
+            {"role": "กรรมการ", "name": ""}
+        ]
+        anchor = block[-1]
+        for signer in signers[1:]:
+            for elm in block:
+                clone = deepcopy(elm)
+                anchor.addnext(clone)
+                anchor = clone
+                paragraph = Paragraph(clone, role_para._parent)
+                text = _paragraph_text(paragraph)
+                text = text.replace("{{sign_role}}", signer.get("role") or "")
+                text = text.replace("{{sign_name}}", signer.get("name") or "")
+                if text != _paragraph_text(paragraph):
+                    _set_paragraph_text(paragraph, text)
+        first = signers[0]
+        mapping["sign_role"] = first.get("role") or ""
+        mapping["sign_name"] = first.get("name") or ""
+    for paragraph in list(_iter_paragraphs(document)):
+        text = _paragraph_text(paragraph)
+        if "{{" not in text:
+            continue
+        new = text
+        for key, value in mapping.items():
+            new = new.replace("{{%s}}" % key, value)
+        if new != text:
+            _set_paragraph_text(paragraph, new)
+    _apply_thai_font(document)
+    output = io.BytesIO()
+    document.save(output)
+    return output.getvalue()

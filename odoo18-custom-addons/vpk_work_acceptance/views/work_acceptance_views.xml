@@ -70,6 +70,33 @@
 
             <!-- Committee tab after existing notebook pages -->
             <xpath expr="//notebook" position="inside">
+                <page string="บันทึกผลตรวจรับ" name="inspection_result">
+                    <div class="text-muted mb-2">
+                        ข้อมูลนี้ใช้ออก <b>ใบตรวจรับการจัดซื้อ/จัดจ้าง</b>
+                        ค่าเริ่มต้นดึงจากผลตรวจรับ ค่าปรับ และมูลค่ารายการตรวจรับ แก้ไขได้
+                    </div>
+                    <group>
+                        <group string="๑. ผลการตรวจรับ">
+                            <field name="inspection_correct"
+                                   readonly="state != 'draft'"/>
+                            <field name="inspection_completeness" widget="radio"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                        <group string="๒. ค่าปรับ">
+                            <field name="has_penalty"
+                                   readonly="state != 'draft'"/>
+                            <field name="penalty_amount"
+                                   invisible="not has_penalty"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="๓. การเบิกจ่ายเงิน">
+                            <field name="payment_amount"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                </page>
                 <page string="คณะกรรมการตรวจรับ" name="committee">
                     <field name="committee_ids" readonly="state != 'draft'">
                         <list editable="bottom">

@@ -35,6 +35,12 @@
               action="action_specific_method_approval"
               groups="purchase.group_purchase_user"
               sequence="17"/>
+    <menuitem id="menu_inspection_report"
+              name="ใบตรวจรับการจัดซื้อ/จัดจ้าง"
+              parent="menu_official_document_root"
+              action="action_inspection_report"
+              groups="purchase.group_purchase_user"
+              sequence="18"/>
     <menuitem id="menu_official_document_type"
               name="ประเภทเอกสาร"
               parent="menu_official_document_root"

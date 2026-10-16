@@ -70,8 +70,8 @@ msgstr "องค์กร"
 #: model:ir.actions.act_window,name:vpk_tier_validation.action_purchase_request_sent_to_procurement
 #: model:ir.ui.menu,name:vpk_tier_validation.menu_purchase_request_sent_to_procurement
 #: model:ir.ui.menu,name:vpk_tier_validation.menu_purchase_request_sent_to_procurement_purchase
-msgid "รอรับจากหน่วยงาน"
-msgstr "รอรับจากหน่วยงาน"
+msgid "ใบขอซื้อจากหน่วยงาน"
+msgstr "ใบขอซื้อจากหน่วยงาน"
 
 #. module: vpk_tier_validation
 #: model_terms:ir.ui.view,arch_db:vpk_tier_validation.view_purchase_request_form_send_to_procurement

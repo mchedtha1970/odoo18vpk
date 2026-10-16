@@ -1,6 +1,6 @@
 {
     "name": "VPK Product Specification - รายละเอียดคุณลักษณะพัสดุ",
-    "version": "18.0.1.3.0",
+    "version": "18.0.1.3.2",
     "category": "Purchases",
     "summary": "คุณลักษณะพัสดุ Auto generate จาก PR ที่มีสัญญา + แนบเอกสาร/รูป Scan แยกรายการสินค้า",
     "depends": [

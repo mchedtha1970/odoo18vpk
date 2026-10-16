@@ -62,4 +62,13 @@
         <field name="datas" type="base64" file="vpk_official_document/static/src/templates/award_approval.docx"/>
         <field name="note">ต้นฉบับบันทึกข้อความรายงานผลการพิจารณา โมดูลกระบวนการ e-GP เรียกใช้แบบฟอร์มนี้ตอนพิมพ์รายงานผล และแทนที่ส่วนราชการ ที่ วันที่ เรื่อง เรียน ตารางรายการ ราคา และผู้ลงนาม</field>
     </record>
+    <record id="template_inspection_report" model="vpk.official.document.template">
+        <field name="name">แบบฟอร์มใบตรวจรับการจัดซื้อ/จัดจ้าง</field>
+        <field name="code">inspection_report</field>
+        <field name="document_type">inspection_report</field>
+        <field name="sequence">80</field>
+        <field name="filename">แบบฟอร์ม_ใบตรวจรับการจัดซื้อจัดจ้าง.docx</field>
+        <field name="datas" type="base64" file="vpk_official_document/static/src/templates/inspection_report.docx"/>
+        <field name="note">ต้นฉบับใบตรวจรับการจัดซื้อ/จัดจ้าง พิมพ์จากหน้าใบรับมอบงาน ระบบแทนที่ตัวแปร {{report_date}} {{intro}} {{inspect_intro}} ช่องเลือกผลตรวจรับ/ค่าปรับ {{pay_amount}} รายชื่อกรรมการ ({{sign_role}} {{sign_name}}) และเลขที่โครงการ/สัญญา/ตรวจรับ</field>
+    </record>
 </odoo>

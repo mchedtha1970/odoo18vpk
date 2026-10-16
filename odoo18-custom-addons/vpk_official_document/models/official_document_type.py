@@ -18,6 +18,7 @@ FALLBACK_DOCUMENT_TYPES = [
     ("winner_announcement", "ประกาศผู้ชนะการเสนอราคา"),
     ("award_approval", "รายงานผลการพิจารณาจัดซื้อจัดจ้าง"),
     ("purchase_approval_memo", "บันทึกข้อความอนุมัติขอซื้อ"),
+    ("inspection_report", "ใบตรวจรับการจัดซื้อ/จัดจ้าง"),
 ]
 
 
@@ -44,6 +45,10 @@ class OfficialDocumentType(models.Model):
     create_from_purchase_request = fields.Boolean(
         string="สร้างจากใบขอซื้อ",
         help="แสดงในช่องเอกสารที่จะสร้างของแท็บเอกสารราชการที่เกี่ยวข้อง",
+    )
+    create_from_work_acceptance = fields.Boolean(
+        string="สร้างจากใบรับมอบงาน",
+        help="แสดงในช่องเอกสารที่จะสร้างของแท็บเอกสารราชการที่เกี่ยวข้องในใบรับมอบงาน",
     )
     note = fields.Text(string="คำอธิบาย")
 

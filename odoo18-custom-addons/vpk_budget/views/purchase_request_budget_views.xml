@@ -10,7 +10,7 @@
                 <button
                     name="action_check_budget_status"
                     type="object"
-                    string="เช็คงบประมาณ"
+                    string="ตรวจสอบงบประมาณ"
                     class="btn-primary"
                     invisible="state not in ('draft', 'sent_to_procurement')"
                 />

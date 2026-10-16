@@ -1,6 +1,6 @@
 {
     "name": "VPK Budget",
-    "version": "18.0.2.99.19",
+    "version": "18.0.2.99.21",
     "category": "Accounting",
     "summary": "งบประมาณ แหล่งเงิน กลุ่มงบประมาณ คำของบ และบัญชีวิเคราะห์",
     "author": "VPK",
@@ -66,6 +66,7 @@
             "vpk_budget/static/src/scss/budget_dashboard.scss",
             "vpk_budget/static/src/scss/budget_overview_dashboard.scss",
             "vpk_budget/static/src/js/material_detail_usage_qty_headers.js",
+            "vpk_budget/static/src/js/budget_insufficient_error.js",
             "vpk_budget/static/src/dashboard/budget_dashboard.js",
             "vpk_budget/static/src/dashboard/budget_dashboard.xml",
             "vpk_budget/static/src/dashboard/budget_overview_dashboard.js",

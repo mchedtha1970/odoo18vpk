@@ -301,21 +301,39 @@ class PurchaseRequisitionEgpDocument(models.Model):
         signer_full = self._company_person_name(
             company, "official_doc_signer_name", "นายวีระศักดิ์ หล่อทองคำ"
         )
-        _signer_name, signer_full = self._split_thai_person_name(signer_full)
+        signer_name, signer_full = self._split_thai_person_name(signer_full)
         signer_title = self._company_person_name(
             company,
             "official_doc_signer_position",
             "ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต",
         )
+        officer_name = self._company_person_name(
+            company, "official_doc_officer_name", self.env.user.name or ""
+        )
+        cert_name, cert_full = self._split_thai_person_name(officer_name)
+        cert_title = self._company_person_name(
+            company, "official_doc_officer_position", self._current_user_job_title()
+        )
+        announce_date_text = self._format_thai_date(
+            announce_date, with_be_prefix=True
+        )
+        body = "  ".join(part for part in (body_intro, body_winner) if part)
         return {
             "province": province,
             "subject": subject,
+            "body": body,
             "body_intro": body_intro,
             "body_winner": body_winner,
-            "announce_date": self._format_thai_date(announce_date, with_be_prefix=True),
+            "announce_date": announce_date_text,
+            "signer_name": signer_name,
             "signer_full": signer_full,
             "signer_title": signer_title,
             "signer_acting": _("ปฏิบัติราชการแทนผู้ว่าราชการ%s") % province,
+            "cert_name": cert_name,
+            "cert_full": cert_full,
+            "cert_title": cert_title,
+            "web_date": announce_date_text,
+            "web_by": self.env.user.name or officer_name,
         }
 
     def _winner_province(self, company):

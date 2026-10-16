@@ -24,14 +24,19 @@
         groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
     />
 
-    <!-- ชี้เมนูเดิมไป action ใหม่ที่มี kanban/รับงาน -->
+    <!-- ชี้เมนูเดิมไป action ใหม่ที่มี kanban/รับงาน
+         แสดงเฉพาะใต้ระบบจัดซื้อจัดจ้าง ไม่แสดงในแอปใบขอซื้อของหน่วยงาน -->
     <record id="vpk_tier_validation.menu_purchase_request_sent_to_procurement" model="ir.ui.menu">
+        <field name="name">ใบขอซื้อจากหน่วยงาน</field>
         <field name="action" ref="action_procurement_inbox"/>
         <field name="sequence">4</field>
+        <field name="active" eval="False"/>
     </record>
     <record id="vpk_tier_validation.menu_purchase_request_sent_to_procurement_purchase" model="ir.ui.menu">
+        <field name="name">ใบขอซื้อจากหน่วยงาน</field>
         <field name="action" ref="action_procurement_inbox"/>
         <field name="sequence">4</field>
+        <field name="active" eval="True"/>
     </record>
 
 </odoo>

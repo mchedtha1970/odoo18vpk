@@ -3,7 +3,7 @@
 
 {
     "name": "VPK e-GP Vendor Portal",
-    "version": "18.0.1.2.1",
+    "version": "18.0.1.3.0",
     "category": "Purchases",
     "summary": "Vendor Portal: login, list own POs, and confirm online",
     "author": "VPK",
@@ -18,6 +18,8 @@
         "security/ir.model.access.csv",
         "data/mail_template_data.xml",
         "wizard/vendor_portal_user_wizard_views.xml",
+        "wizard/vendor_portal_share_wizard_views.xml",
+        "views/menu_views.xml",
         "views/res_partner_views.xml",
         "views/purchase_order_views.xml",
         "views/portal_templates.xml",

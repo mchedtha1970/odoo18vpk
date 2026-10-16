@@ -96,6 +96,23 @@
                             </group>
                         </page>
                     </notebook>
+                    <group string="ผู้อนุมัติ" name="approvers">
+                        <div class="text-muted" colspan="2">
+                            เพิ่มผู้อนุมัติตามลำดับ ถ้าไม่เพิ่ม ระบบใช้ลำดับอนุมัติที่ตั้งไว้
+                        </div>
+                        <field name="signer_line_ids" nolabel="1" colspan="2"
+                               readonly="state != 'draft'">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle"/>
+                                <field name="user_id" string="ผู้อนุมัติ"
+                                       widget="many2one_avatar_user"
+                                       options="{'no_create': True}"/>
+                                <field name="position" string="ตำแหน่ง"/>
+                                <field name="is_check" string="ตรวจสอบ"/>
+                                <field name="is_sign" string="ลงนาม"/>
+                            </list>
+                        </field>
+                    </group>
                 </sheet>
                 <chatter/>
             </form>
@@ -161,4 +178,6 @@
             </button>
         </field>
     </record>
+
+    <function model="purchase.requisition.award.report" name="_seed_missing_award_signers"/>
 </odoo>

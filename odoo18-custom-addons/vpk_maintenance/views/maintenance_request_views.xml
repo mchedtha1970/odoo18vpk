@@ -133,29 +133,8 @@
             <xpath expr="//group[@name='assign_work']" position="inside">
                 <xpath expr="//sheet/group/group[field[@name='maintenance_team_id']]" position="move"/>
             </xpath>
-            <xpath expr="//group[@name='assign_work']/group" position="inside">
-                <field name="chief_signature" widget="signature" options="{'size': [180, 60]}"/>
-                <widget
-                    name="signature"
-                    string="ลงชื่อ"
-                    signature_field="chief_signature"
-                    highlight="1"
-                    invisible="not id"
-                />
-                <field name="chief_signed_on"/>
-            </xpath>
             <xpath expr="//group[@name='acknowledge_work']" position="inside">
                 <xpath expr="//field[@name='user_id']" position="move"/>
-                <field name="assignee_signature" widget="signature" options="{'size': [180, 60]}"/>
-                <widget
-                    name="signature"
-                    string="ลงชื่อ"
-                    signature_field="assignee_signature"
-                    full_name="user_id"
-                    highlight="1"
-                    invisible="not id"
-                />
-                <field name="assignee_signed_on"/>
             </xpath>
             <xpath expr="//page[@name='chief_technician']" position="after">
                 <page string="การตรวจสอบเบื้องต้น" name="preliminary_inspection">
@@ -174,14 +153,14 @@
                             <widget name="signature" string="ลงชื่อ" signature_field="technician_signature" highlight="1" invisible="not id"/>
                             <field name="technician_signed_on"/>
                         </group>
-                        <group string="ความคิดเห็นของหัวหน้าช่าง">
+                        <group string="ความคิดเห็นของหัวหน้าช่าง" name="chief_comment_group" invisible="assessment_result_code != 'not_worth_dispose'">
                             <field name="chief_comment" placeholder="ความคิดเห็นของหัวหน้าช่าง"/>
                             <field name="chief_comment_signature" widget="signature" options="{'size': [180, 60]}"/>
                             <widget name="signature" string="ลงชื่อ" signature_field="chief_comment_signature" highlight="1" invisible="not id"/>
                             <field name="chief_comment_signed_on"/>
                         </group>
                     </group>
-                    <group>
+                    <group name="dispose_approval_group" invisible="assessment_result_code != 'not_worth_dispose'">
                         <group string="ความคิดเห็นของรองผู้อำนวยการฝ่ายบริหาร">
                             <field name="deputy_approved"/>
                             <field name="deputy_acknowledged"/>
@@ -206,7 +185,7 @@
                 <xpath expr="//field[@name='maintenance_type']" position="move"/>
                 <xpath expr="//field[@name='assessment_result_id']" position="move"/>
                 <field name="prelim_initial_check" string="ประเมินเบื้องต้น"/>
-                <field name="prelim_check_reason" placeholder="เนื่องจาก"/>
+                <field name="prelim_check_reason" widget="text" rows="3" placeholder="เนื่องจาก"/>
                 <xpath expr="//field[@name='company_currency_id']" position="move"/>
                 <xpath expr="//field[@name='parts_total_value']" position="move"/>
             </xpath>

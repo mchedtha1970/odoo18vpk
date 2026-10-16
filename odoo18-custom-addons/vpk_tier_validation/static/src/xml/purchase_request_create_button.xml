@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="web.FormView" t-inherit-mode="extension">
+        <xpath expr="(//t[@t-set-slot='control-panel-create-button'])[1]/t/button" position="attributes">
+            <attribute name="t-if">props.resModel !== 'purchase.request'</attribute>
+        </xpath>
+        <xpath expr="(//t[@t-set-slot='control-panel-create-button'])[1]/t/button" position="after">
+            <button t-if="props.resModel === 'purchase.request'" type="button" class="btn btn-secondary o_form_button_create" data-hotkey="c" t-on-click.stop="create">สร้างเอกสารใหม่</button>
+        </xpath>
+        <xpath expr="(//t[@t-set-slot='control-panel-create-button'])[2]/t/button" position="attributes">
+            <attribute name="t-if">props.resModel !== 'purchase.request'</attribute>
+        </xpath>
+        <xpath expr="(//t[@t-set-slot='control-panel-create-button'])[2]/t/button" position="after">
+            <button t-if="props.resModel === 'purchase.request'" type="button" class="btn btn-outline-primary o_form_button_create" data-hotkey="c" t-on-click.stop="create">สร้างเอกสารใหม่</button>
+        </xpath>
+    </t>
+    <t t-inherit="web.ListView" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('o_list_button_add')]" position="attributes">
+            <attribute name="t-if">props.resModel !== 'purchase.request'</attribute>
+        </xpath>
+        <xpath expr="//button[hasclass('o_list_button_add')]" position="after">
+            <button t-if="props.resModel === 'purchase.request'" type="button" class="btn btn-primary o_list_button_add" data-hotkey="c" t-on-click="onClickCreate" data-bounce-button="">สร้างเอกสารใหม่</button>
+        </xpath>
+    </t>
+    <t t-inherit="web.FormView.Buttons" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('o_form_button_create')]" position="attributes">
+            <attribute name="t-if">props.resModel !== 'purchase.request'</attribute>
+        </xpath>
+        <xpath expr="//button[hasclass('o_form_button_create')]" position="after">
+            <button t-if="props.resModel === 'purchase.request'" type="button" class="btn btn-secondary o_form_button_create" data-hotkey="c" t-on-click.stop="create">สร้างเอกสารใหม่</button>
+        </xpath>
+    </t>
+</templates>

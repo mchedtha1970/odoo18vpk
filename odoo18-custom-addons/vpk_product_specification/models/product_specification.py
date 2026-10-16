@@ -245,7 +245,7 @@ class PurchaseProductSpecificationLine(models.Model):
         column1="line_id",
         column2="attachment_id",
         string="เอกสารแนบคุณลักษณะ",
-        help="แนบไฟล์เอกสารหรือรูปภาพคุณลักษณะ (Scan / PDF / รูป) แยกตามรายการสินค้า",
+        help="แนบไฟล์ PDF คุณลักษณะ แยกตามรายการสินค้า",
     )
     attachment_count = fields.Integer(
         string="จำนวนไฟล์แนบ",
@@ -256,24 +256,15 @@ class PurchaseProductSpecificationLine(models.Model):
         store=True,
     )
 
-    @api.depends("spec_attachment_ids", "spec_scan_image")
+    @api.depends("spec_attachment_ids")
     def _compute_attachment_count(self):
         for line in self:
-            count = len(line.spec_attachment_ids)
-            if line.spec_scan_image:
-                count += 1
-            line.attachment_count = count
+            line.attachment_count = len(line.spec_attachment_ids)
 
     def action_open_spec_attachments(self):
         self.ensure_one()
         attachments = self.spec_attachment_ids
-        binary_atts = self.env["ir.attachment"].search([
-            ("res_model", "=", "purchase.product.specification.line"),
-            ("res_id", "=", self.id),
-            ("res_field", "=", "spec_scan_image"),
-        ])
-        attachments |= binary_atts
-        if not attachments and not self.spec_scan_image:
+        if not attachments:
             raise UserError(_("รายการนี้ยังไม่มีไฟล์แนบคุณลักษณะ"))
         return self.env["purchase.spec.attachment.viewer"].action_open_viewer(
             attachments,

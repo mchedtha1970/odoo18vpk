@@ -20,8 +20,8 @@
 .vpk-po-form,
 .vpk-po-form * {
     font-family: "THSarabunNew", "TH Sarabun New", sans-serif !important;
-    font-size: 15pt;
-    line-height: 1.35;
+    font-size: 16pt;
+    line-height: 1.2;
     color: #000;
 }
 
@@ -144,21 +144,27 @@
 
 .vpk-po-sign {
     width: 100%;
-    margin-top: 28px;
+    margin-top: 22px;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
 .vpk-po-sign td {
     width: 50%;
-    vertical-align: top;
+    vertical-align: bottom;
     text-align: center;
-    padding-top: 8px;
+    padding: 0 24px;
+    line-height: 1.25;
+}
+
+.vpk-po-sign-sub {
+    height: 22px;
 }
 
 .vpk-po-sign-space {
-    height: 56px;
+    height: 52px;
 }
 
 .vpk-po-sign-line {
-    margin-top: 4px;
+    white-space: nowrap;
 }

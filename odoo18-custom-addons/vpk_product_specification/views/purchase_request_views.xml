@@ -23,7 +23,7 @@
                 <field name="spec_attachment_count" string="ไฟล์คุณลักษณะ" optional="show"/>
                 <button name="action_open_spec_line_form" type="object"
                         string="ดู/แนบไฟล์" icon="fa-paperclip"
-                        title="เปิดดูเอกสารและรูปสแกนคุณลักษณะของรายการนี้"/>
+                        title="เปิดดูและแนบไฟล์ PDF คุณลักษณะของรายการนี้"/>
                 <button name="action_open_spec_attachments" type="object"
                         icon="fa-download"
                         title="เปิด/ดาวน์โหลดไฟล์แนบ"
@@ -56,18 +56,15 @@
                     <group string="รายละเอียดคุณลักษณะ (ข้อความ)">
                         <field name="specifications" nolabel="1" colspan="2"/>
                     </group>
-                    <group string="รูปสแกนคุณลักษณะ">
-                        <field name="spec_scan_filename" invisible="1"/>
-                        <field name="spec_scan_image" widget="image"
-                               filename="spec_scan_filename"
-                               options="{'size': [400, 300]}"/>
-                    </group>
-                    <group string="เอกสารแนบ (คลิกชื่อไฟล์เพื่อเปิด/ดาวน์โหลด)">
+                    <group string="เอกสารแนบ PDF (คลิกชื่อไฟล์เพื่อเปิด/ดาวน์โหลด)">
                         <field name="spec_attachment_ids" widget="many2many_binary"
-                               nolabel="1" colspan="2"/>
+                               string="แนบไฟล์ PDF" nolabel="1" colspan="2"
+                               options="{'accepted_file_extensions': '.pdf'}"/>
                     </group>
                 </sheet>
                 <footer>
+                    <button name="action_save_spec_line" type="object"
+                            string="บันทึก" class="btn-primary"/>
                     <button string="ปิด" special="cancel" class="btn-secondary"/>
                 </footer>
             </form>
@@ -81,19 +78,16 @@
         <field name="inherit_id" ref="purchase_request.view_purchase_request_line_details"/>
         <field name="arch" type="xml">
             <xpath expr="//group[@name='specifications']" position="after">
-                <group string="เอกสาร/รูปสแกนคุณลักษณะ (แยกรายการ)">
+                <group string="เอกสารแนบ PDF (แยกรายการ)">
                     <div class="o_row" colspan="2">
                         <button name="action_open_spec_attachments" type="object"
                                 string="เปิดไฟล์แนบ" class="btn-primary"
                                 invisible="spec_attachment_count == 0"/>
                         <field name="spec_attachment_count" readonly="1"/>
                     </div>
-                    <field name="spec_scan_filename" invisible="1"/>
-                    <field name="spec_scan_image" widget="image"
-                           filename="spec_scan_filename"
-                           options="{'size': [280, 200]}"/>
                     <field name="spec_attachment_ids" widget="many2many_binary"
-                           string="แนบไฟล์ (Scan / PDF / รูป)"/>
+                           string="แนบไฟล์ PDF"
+                           options="{'accepted_file_extensions': '.pdf'}"/>
                 </group>
             </xpath>
         </field>
@@ -105,16 +99,13 @@
         <field name="inherit_id" ref="purchase_request.purchase_request_line_form"/>
         <field name="arch" type="xml">
             <xpath expr="//group[@name='specifications']" position="after">
-                <group string="เอกสาร/รูปสแกนคุณลักษณะ (แยกรายการ)">
+                <group string="เอกสารแนบ PDF (แยกรายการ)">
                     <button name="action_open_spec_attachments" type="object"
                             string="เปิดไฟล์แนบ" class="btn-secondary"
                             invisible="spec_attachment_count == 0"/>
-                    <field name="spec_scan_filename" invisible="1"/>
-                    <field name="spec_scan_image" widget="image"
-                           filename="spec_scan_filename"
-                           options="{'size': [200, 200]}"/>
                     <field name="spec_attachment_ids" widget="many2many_binary"
-                           string="แนบไฟล์ (Scan / PDF / รูป)"/>
+                           string="แนบไฟล์ PDF"
+                           options="{'accepted_file_extensions': '.pdf'}"/>
                     <field name="spec_attachment_count" readonly="1"/>
                 </group>
             </xpath>

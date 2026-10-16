@@ -53,4 +53,11 @@
         <field name="sequence">60</field>
         <field name="is_system">True</field>
     </record>
+    <record id="document_type_inspection_report" model="vpk.official.document.type">
+        <field name="name">ใบตรวจรับการจัดซื้อ/จัดจ้าง</field>
+        <field name="code">inspection_report</field>
+        <field name="sequence">80</field>
+        <field name="is_system">True</field>
+        <field name="create_from_work_acceptance">True</field>
+    </record>
 </odoo>

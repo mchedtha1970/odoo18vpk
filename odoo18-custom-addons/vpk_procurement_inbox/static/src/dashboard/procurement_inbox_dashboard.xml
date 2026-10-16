@@ -50,6 +50,15 @@
                     </button>
                     <button
                         type="button"
+                        class="o_vpk_inbox_kpi claimed"
+                        t-att-class="state.activeFilter === 'claimed' ? 'active' : ''"
+                        t-on-click="() => this.selectFilter('claimed')"
+                    >
+                        <div class="o_vpk_inbox_kpi_value"><t t-esc="state.stats.claimed"/></div>
+                        <div class="o_vpk_inbox_kpi_label">รับงานแล้ว</div>
+                    </button>
+                    <button
+                        type="button"
                         class="o_vpk_inbox_kpi ok"
                         t-att-class="state.activeFilter === 'mine' ? 'active' : ''"
                         t-on-click="() => this.selectFilter('mine')"
