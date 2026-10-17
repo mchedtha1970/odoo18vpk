@@ -2150,21 +2150,25 @@ class OfficialDocument(models.Model):
             rows = []
             sequence = 1
             seen = set()
+            secretary = rec._vpk_director_secretary_user()
             for user, position, fallback in (
                 (rec.officer_id, rec.officer_position, "เจ้าหน้าที่"),
                 (rec.head_officer_id, rec.head_officer_position, "หัวหน้าเจ้าหน้าที่"),
+                (secretary, "", "เลขาผู้อำนวยการ"),
                 (rec.signer_id, rec.signer_position, "ผู้อำนวยการ"),
             ):
                 if not user or user.id in seen:
                     continue
                 seen.add(user.id)
+                is_check = bool(secretary and user == secretary)
                 rows.append(
                     {
                         "document_id": rec.id,
                         "sequence": sequence,
                         "user_id": user.id,
                         "position": position or fallback,
-                        "is_sign": True,
+                        "is_check": is_check,
+                        "is_sign": not is_check,
                     }
                 )
                 sequence += 1
@@ -2206,6 +2210,8 @@ class OfficialDocument(models.Model):
         for line in self.signer_line_ids.sorted(
             key=lambda item: (item.sequence, item.id)
         ):
+            if line.is_check and not line.is_sign:
+                continue  # screening rows (secretary) are not printed as signers
             name = ""
             auto_position = ""
             if line.user_id:
@@ -2274,18 +2280,8 @@ class OfficialDocument(models.Model):
             definition = doc._vpk_definition_for_added_approvers()
             if not definition:
                 raise UserError(_("ยังไม่ได้ตั้งลำดับลงนามของเอกสารนี้"))
-            secretary = doc._vpk_director_secretary_user()
-            if doc.document_type == "inspection_report":
-                secretary = False  # ใบตรวจรับลงนามโดยกรรมการเท่านั้น
+            # The approver table decides the whole order; no one is added automatically.
             ordered_lines = list(lines)
-            if secretary and secretary not in lines.user_id:
-                director_at = [
-                    index
-                    for index, line in enumerate(ordered_lines)
-                    if line.user_id == doc.signer_id
-                ]
-                insert_at = director_at[-1] if director_at else len(ordered_lines)
-                ordered_lines.insert(insert_at, secretary)
             vals_list = []
             for index, line in enumerate(ordered_lines, start=1):
                 user = line if line._name == "res.users" else line.user_id
@@ -2638,6 +2634,7 @@ class OfficialDocument(models.Model):
                 raise UserError(_("เอกสารนี้ลงนามแล้ว"))
             if rec.signature_state == "waiting":
                 continue
+            rec._vpk_check_signer_table()
             if not rec._get_pdf_attachment():
                 rec.with_context(skip_validation_check=True).action_generate_pdf()
             if not rec._get_pdf_attachment():
@@ -2944,7 +2941,24 @@ class OfficialDocument(models.Model):
                 ).reject_tier()
         return res
 
+    def _vpk_check_signer_table(self):
+        """Every document needs at least one row in the approver table before it is sent."""
+        for rec in self:
+            if rec.document_type == "purchase_approval_memo":
+                rec._seed_purchase_approval_signers()
+            elif rec.document_type == "inspection_report":
+                rec._seed_inspection_signers()
+            if not rec.signer_line_ids.filtered("user_id"):
+                raise UserError(
+                    _(
+                        'กรุณาเพิ่มผู้อนุมัติในตาราง "ผู้อนุมัติ" ของเอกสาร %s '
+                        "อย่างน้อย 1 คนก่อนส่งอนุมัติ"
+                    )
+                    % (rec.name or rec.display_name)
+                )
+
     def request_validation(self):
+        self._vpk_check_signer_table()
         with_signers = self.filtered(
             lambda doc: doc.signer_line_ids.filtered("user_id")
             or doc.document_type in ("purchase_approval_memo", "inspection_report")

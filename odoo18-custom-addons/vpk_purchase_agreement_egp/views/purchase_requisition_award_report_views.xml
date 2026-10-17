@@ -98,7 +98,7 @@
                     </notebook>
                     <group string="ผู้อนุมัติ" name="approvers">
                         <div class="text-muted" colspan="2">
-                            เพิ่มผู้อนุมัติตามลำดับ ถ้าไม่เพิ่ม ระบบใช้ลำดับอนุมัติที่ตั้งไว้
+                            เพิ่มผู้อนุมัติตามลำดับ ต้องมีอย่างน้อย 1 คนจึงจะส่งอนุมัติได้
                         </div>
                         <field name="signer_line_ids" nolabel="1" colspan="2"
                                readonly="state != 'draft'">

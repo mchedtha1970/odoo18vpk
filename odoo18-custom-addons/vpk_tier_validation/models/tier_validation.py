@@ -46,7 +46,30 @@ class TierValidation(models.AbstractModel):
                 )
             )
 
+    def _vpk_requires_approver_table(self):
+        """Documents that must have rows in the approver table before they are sent.
+
+        Purchase requests are approved by signing the related official documents,
+        and official documents check their own signer table.
+        """
+        self.ensure_one()
+        return self._name not in ("purchase.request", "vpk.official.document")
+
+    def _vpk_check_approver_table(self):
+        for rec in self:
+            if not rec._vpk_requires_approver_table():
+                continue
+            if not rec.vpk_approver_line_ids.filtered("user_id"):
+                raise UserError(
+                    _(
+                        'กรุณาเพิ่มผู้อนุมัติในตาราง "ผู้อนุมัติ" ของเอกสาร %s '
+                        "อย่างน้อย 1 คนก่อนส่งอนุมัติ"
+                    )
+                    % rec.display_name
+                )
+
     def request_validation(self):
+        self._vpk_check_approver_table()
         # Purchase requests are approved by signing the related official documents.
         lined = self.filtered(
             lambda rec: rec._name != "purchase.request"
@@ -132,7 +155,7 @@ class TierValidation(models.AbstractModel):
             """
             <group name="vpk_approvers" string="ผู้อนุมัติ">
                 <div class="text-muted" colspan="2">
-                    เพิ่มผู้อนุมัติตามลำดับ ถ้าไม่เพิ่ม ระบบใช้ลำดับอนุมัติที่ตั้งไว้
+                    เพิ่มผู้อนุมัติตามลำดับ ต้องมีอย่างน้อย 1 คนจึงจะส่งอนุมัติได้
                 </div>
                 <field name="vpk_approver_line_ids" nolabel="1" colspan="2"
                        readonly="validation_status not in ('no', False)"

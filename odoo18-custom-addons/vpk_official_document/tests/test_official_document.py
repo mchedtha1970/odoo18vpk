@@ -2,6 +2,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 
 from odoo import fields
+from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged
 
 
@@ -233,6 +234,40 @@ class TestOfficialDocument(TransactionCase):
         )
         self.assertTrue(request.has_approval_attachments)
 
+    def _add_signer_rows(self, document, users):
+        """Fill the approver table; sending needs at least one row."""
+        secretary = self.env.ref("vpk_official_document.user_director_secretary")
+        self.env["vpk.official.document.signer"].with_context(
+            vpk_skip_signer_sync=True
+        ).create(
+            [
+                {
+                    "document_id": document.id,
+                    "sequence": index,
+                    "user_id": user.id,
+                    "is_check": user == secretary,
+                    "is_sign": user != secretary,
+                }
+                for index, user in enumerate(users, start=1)
+            ]
+        )
+
+    def test_signer_table_is_not_extended_with_secretary(self):
+        document = self.env["vpk.official.document"].create(
+            {"document_type": "wa_committee_order", "state": "generated"}
+        )
+        director = self.env["res.users"].create(
+            {
+                "name": "ผู้อำนวยการทดสอบตาราง",
+                "login": "table.director",
+                "groups_id": [(6, 0, [self.env.ref("base.group_user").id])],
+            }
+        )
+        self._add_signer_rows(document, director)
+        document._vpk_create_reviews_from_signer_lines()
+        self.assertEqual(len(document.review_ids), 1)
+        self.assertEqual(document.review_ids.vpk_signer_user_id, director)
+
     def test_send_for_signature_sets_waiting_status(self):
         document = self.env["vpk.official.document"].create(
             {
@@ -262,9 +297,13 @@ class TestOfficialDocument(TransactionCase):
                 "state": "generated",
             }
         )
+        with self.assertRaises(UserError):
+            document.action_send_for_signature()
+        self._add_signer_rows(document, self.env.user)
         document.action_send_for_signature()
         self.assertEqual(document.state, "to_approve")
         self.assertEqual(document.signature_state, "waiting")
+        document.review_ids.write({"status": "approved"})
         document.with_context(skip_validation_check=True).write(
             {
                 "signed_on": fields.Datetime.now(),
@@ -591,6 +630,10 @@ class TestOfficialDocument(TransactionCase):
                 "pdf_attachment_id": attachment.id,
             }
         )
+        self._add_signer_rows(
+            document,
+            officer | head | self.env.ref("vpk_official_document.user_director_secretary") | director,
+        )
         document.with_user(procurement).action_send_for_signature()
         self.assertEqual(document.state, "to_approve")
         self.assertEqual(document.signature_state, "waiting")
@@ -684,6 +727,9 @@ class TestOfficialDocument(TransactionCase):
         director_def = self.env.ref(
             "vpk_official_document.tier_definition_winner_announcement_director"
         )
+        with self.assertRaises(UserError):
+            document.action_send_for_signature()
+        self._add_signer_rows(official, self.env.ref("vpk_official_document.user_director_secretary") | director)
         document.action_send_for_signature()
         self.assertEqual(official.state, "to_approve")
         self.assertEqual(document.signature_state, "waiting")
