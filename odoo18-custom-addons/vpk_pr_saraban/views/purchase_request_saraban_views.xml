@@ -6,14 +6,6 @@
         <field name="inherit_id" ref="vpk_tier_validation.view_purchase_request_form_official_memo"/>
         <field name="priority">50</field>
         <field name="arch" type="xml">
-            <button name="action_print_official_memo" position="after">
-                <button name="action_request_saraban_number"
-                        type="object"
-                        string="ขอเลขสารบรรณ"
-                        class="btn-primary"
-                        icon="fa-bookmark"
-                        invisible="saraban_status == 'registered'"/>
-            </button>
             <div class="oe_button_box" position="inside">
                 <button name="action_view_saraban_documents" type="object"
                         class="oe_stat_button" icon="fa-book"
@@ -36,12 +28,10 @@
                         </group>
                         <group string="คำอธิบาย">
                             <div colspan="2" class="text-muted">
-                                กดปุ่ม <b>ขอเลขสารบรรณ</b> เพื่อออกเลขสำหรับ
-                                <b>เอกสารอนุมัติขอซื้อ</b> (รายงานขออนุมัติจัดซื้อจัดจ้าง)
-                                ระบบนำเลขนี้ใส่ช่อง ที่ ในรายงานนั้น
-                                คำสั่งแต่งตั้ง แบบแสดงความบริสุทธิ์ใจ
-                                และหนังสือราชการอื่นให้กด <b>ขอเลขจากระบบสารบรรณ</b>
-                                ที่เอกสารนั้นแยกกัน
+                                ใบขอซื้อมีเอกสารที่เกี่ยวข้องหลายใบ
+                                ให้เปิดเอกสารแต่ละฉบับแล้วกดปุ่ม
+                                <b>ขอเลขจากระบบสารบรรณ</b> ที่ฟอร์มเอกสารนั้น
+                                เพื่อออกเลขของเอกสารนั้นโดยเฉพาะ
                             </div>
                         </group>
                     </group>

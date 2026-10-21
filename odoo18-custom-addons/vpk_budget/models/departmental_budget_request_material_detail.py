@@ -19,6 +19,12 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
         store=True,
         readonly=True,
     )
+    plan_type = fields.Selection(
+        related="request_id.plan_type",
+        string="ประเภทการตั้งงบประมาณ",
+        store=True,
+        readonly=True,
+    )
     product_categ_id = fields.Many2one(
         comodel_name="product.category",
         string="หมวดสินค้า",

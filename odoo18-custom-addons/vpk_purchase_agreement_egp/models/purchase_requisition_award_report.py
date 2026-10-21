@@ -1017,13 +1017,58 @@ class PurchaseRequisition(models.Model):
         for requisition in self:
             requisition.award_report_count = len(requisition.award_report_ids)
 
-    @api.depends("award_report_ids.state")
+    EGP_AWARD_DOCUMENT_CODES = ("award_approval", "consider_procurement")
+    EGP_WINNER_DOCUMENT_CODES = ("winner_announcement",)
+
+    def _egp_documents_of(self, codes):
+        self.ensure_one()
+        wanted = set(codes)
+        return self.egp_document_ids.filtered(
+            lambda doc: doc.document_type_code in wanted
+        )
+
+    def _egp_document_is_signed(self, document):
+        if getattr(document, "signature_state", False) == "signed":
+            return True
+        official = getattr(document, "official_document_id", False)
+        return bool(official) and official.state == "approved"
+
+    def _egp_document_is_attached(self, document):
+        return bool(
+            document.document_filename
+            or document.attachment_id
+            or getattr(document, "document_file", False)
+        )
+
+    @api.depends(
+        "award_report_ids.state",
+        "egp_document_ids.document_type_code",
+        "egp_document_ids.document_filename",
+        "egp_document_ids.attachment_id",
+    )
     def _compute_egp_award_approved(self):
         for requisition in self:
-            requisition.egp_award_approved = bool(
+            has_approved_report = bool(
                 requisition.award_report_ids.filtered(
                     lambda report: report.state == "approved"
                 )
+            )
+            award_docs = requisition._egp_documents_of(
+                requisition.EGP_AWARD_DOCUMENT_CODES
+            )
+            winner_docs = requisition._egp_documents_of(
+                requisition.EGP_WINNER_DOCUMENT_CODES
+            )
+            has_signed_award = any(
+                requisition._egp_document_is_signed(doc) for doc in award_docs
+            )
+            has_winner_announcement = any(
+                requisition._egp_document_is_attached(doc)
+                or requisition._egp_document_is_signed(doc)
+                for doc in winner_docs
+            )
+            requisition.egp_award_approved = has_approved_report or (
+                has_signed_award and has_winner_announcement
             )
 
     def action_create_award_report(self):

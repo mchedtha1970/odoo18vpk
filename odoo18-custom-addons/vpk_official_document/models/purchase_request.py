@@ -214,11 +214,7 @@ class PurchaseRequest(models.Model):
         "official_document_ids.review_ids.status",
     )
     def _compute_can_send_to_egp(self):
-        if hasattr(super(), "_compute_can_send_to_egp"):
-            return super()._compute_can_send_to_egp()
-        for request in self:
-            if "can_send_to_egp" in request._fields:
-                request.can_send_to_egp = request._vpk_related_documents_all_approved()
+        return super()._compute_can_send_to_egp()
 
     @api.depends(
         "official_document_ids",
@@ -347,28 +343,6 @@ class PurchaseRequest(models.Model):
 
     def _sync_saraban_from_document(self, document):
         super()._sync_saraban_from_document(document)
-        purpose = (
-            document.purpose
-            if "purpose" in document._fields
-            else "pr_approval"
-        )
-        if purpose == "official_document":
-            return
-        number = document.book_no_display or document.book_no
-        approvals = self.official_document_ids.filtered(
-            lambda doc: (
-                doc.document_type == "specific_method_approval"
-                and doc.state != "cancelled"
-            )
-        )
-        for approval in approvals:
-            vals = {}
-            if number:
-                vals["saraban_book_no"] = number
-            if document:
-                vals["saraban_document_id"] = document.id
-            if vals:
-                approval.write(vals)
 
     def action_view_official_documents(self):
         self.ensure_one()
@@ -641,6 +615,12 @@ class PurchaseRequest(models.Model):
             "sent_to_procurement_date",
             "procurement_owner_id",
             "procurement_claimed_date",
+            "procurement_verified",
+            "procurement_verified_by",
+            "procurement_verified_date",
+            "procurement_return_reason",
+            "procurement_returned_by",
+            "procurement_returned_date",
             "approved_by",
             "date_approved",
             "verified_by",

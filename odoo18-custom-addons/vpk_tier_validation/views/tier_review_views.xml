@@ -7,6 +7,7 @@
         <field name="arch" type="xml">
             <kanban
                 class="o_vpk_pending_review_kanban"
+                default_order="status desc, id desc"
                 action="action_open_pdf_viewer"
                 type="object"
                 records_draggable="0"
@@ -19,6 +20,8 @@
                 <field name="display_status"/>
                 <field name="sequence"/>
                 <field name="todo_by"/>
+                <field name="done_by"/>
+                <field name="reviewed_date"/>
                 <field name="requested_by"/>
                 <field name="res_display_name"/>
                 <field name="model_display_name"/>
@@ -32,8 +35,15 @@
                     <t t-name="card">
                         <div class="oe_kanban_global_click o_vpk_review_card">
                             <div class="o_vpk_review_card_header">
-                                <span class="badge text-bg-warning">
-                                    <t t-esc="record.display_status.value"/>
+                                <span
+                                    t-attf-class="badge #{record.status.raw_value === 'approved' ? 'text-bg-success' : (record.status.raw_value === 'rejected' ? 'text-bg-danger' : 'text-bg-warning')}"
+                                >
+                                    <t t-if="record.status.raw_value === 'approved'">
+                                        <i class="fa fa-check-circle me-1" title="อนุมัติแล้ว"/>อนุมัติแล้ว
+                                    </t>
+                                    <t t-else="">
+                                        <t t-esc="record.display_status.value"/>
+                                    </t>
                                 </span>
                                 <span class="o_vpk_review_tier">
                                     ขั้นที่ <t t-esc="record.sequence.value"/>
@@ -53,6 +63,10 @@
                                     เอกสารจากหน่วยงาน
                                     <t t-esc="record.vpk_card_department.value"/>
                                 </div>
+                                <div t-if="record.status.raw_value === 'approved' and record.reviewed_date.value" class="text-success fw-semibold">
+                                    <i class="fa fa-check me-1" title="วันที่อนุมัติ"/>
+                                    อนุมัติเมื่อ <t t-esc="record.reviewed_date.value"/>
+                                </div>
                                 <div t-if="record.requested_by.value">
                                     <i class="fa fa-user me-1" title="Requested by"/>
                                     <field name="requested_by" widget="many2one_avatar_user"/>
@@ -60,9 +74,11 @@
                                 <button
                                     name="action_open_pdf_viewer"
                                     type="object"
-                                    class="btn btn-primary btn-sm o_vpk_open_pdf_btn mt-1"
+                                    t-attf-class="btn #{record.status.raw_value === 'approved' ? 'btn-outline-success' : 'btn-primary'} btn-sm o_vpk_open_pdf_btn mt-1"
                                 >
-                                    <i class="fa fa-file-pdf-o me-1"/>เปิด PDF
+                                    <i class="fa fa-file-pdf-o me-1"/>
+                                    <t t-if="record.status.raw_value === 'approved'">เปิดดู PDF ที่อนุมัติแล้ว</t>
+                                    <t t-else="">เปิด PDF</t>
                                 </button>
                             </div>
                         </div>
@@ -99,21 +115,73 @@
         </field>
     </record>
 
+    <record id="tier_review_view_search_vpk" model="ir.ui.view">
+        <field name="name">tier.review.search.vpk</field>
+        <field name="model">tier.review</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหารายการอนุมัติ">
+                <field name="name" string="ชื่อรายการ"/>
+                <field name="model" string="ประเภทโมเดล"/>
+                <field name="requested_by" string="ผู้ขออนุมัติ"/>
+                <field name="done_by" string="ผู้อนุมัติ"/>
+                <filter
+                    string="รออนุมัติ"
+                    name="filter_status_pending"
+                    domain="[('status', '=', 'pending')]"
+                />
+                <filter
+                    string="อนุมัติแล้ว"
+                    name="filter_status_approved"
+                    domain="[('status', '=', 'approved')]"
+                />
+                <separator/>
+                <group expand="0" string="จัดกลุ่มตาม">
+                    <filter
+                        string="สถานะการอนุมัติ"
+                        name="group_by_status"
+                        context="{'group_by': 'status'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
     <record id="action_vpk_my_pending_reviews" model="ir.actions.act_window">
-        <field name="name">งานรออนุมัติของฉัน</field>
+        <field name="name">งานอนุมัติของฉัน (รออนุมัติ / อนุมัติแล้ว)</field>
         <field name="res_model">tier.review</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="view_id" ref="tier_review_view_kanban_vpk"/>
+        <field name="search_view_id" ref="tier_review_view_search_vpk"/>
         <field
             name="domain"
-        >[('status', '=', 'pending'), ('can_review', '=', True), ('reviewer_ids', 'in', uid), ('vpk_inbox_visible', '=', True)]</field>
+        >['|', '&amp;', '&amp;', ('status', '=', 'pending'), ('can_review', '=', True), '&amp;', ('reviewer_ids', 'in', uid), ('vpk_inbox_visible', '=', True), '&amp;', '&amp;', ('status', '=', 'approved'), ('vpk_inbox_visible', '=', True), '|', ('done_by', '=', uid), ('reviewer_ids', 'in', uid)]</field>
         <field name="context">{'create': False}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                ไม่มีงานรออนุมัติ
+                ไม่มีรายการอนุมัติ
             </p>
             <p>
-                รายการที่ต้องอนุมัติตามลำดับจะแสดงเป็นกล่องที่นี่
+                รายการรออนุมัติและรายการที่อนุมัติแล้วจะแสดงเป็นกล่องที่นี่
+            </p>
+        </field>
+    </record>
+
+    <record id="action_vpk_my_approved_reviews" model="ir.actions.act_window">
+        <field name="name">รายการที่อนุมัติแล้วของฉัน</field>
+        <field name="res_model">tier.review</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="view_id" ref="tier_review_view_kanban_vpk"/>
+        <field name="search_view_id" ref="tier_review_view_search_vpk"/>
+        <field
+            name="domain"
+        >[('status', '=', 'approved'), ('vpk_inbox_visible', '=', True), '|', ('done_by', '=', uid), ('reviewer_ids', 'in', uid)]</field>
+        <field name="context">{'create': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                ยังไม่มีรายการที่อนุมัติแล้ว
+            </p>
+            <p>
+                เอกสารที่คุณได้ตรวจสอบหรือลงนามอนุมัติแล้วจะแสดงที่นี่
             </p>
         </field>
     </record>

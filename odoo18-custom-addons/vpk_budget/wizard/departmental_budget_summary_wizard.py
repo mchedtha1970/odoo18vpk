@@ -54,6 +54,13 @@ class DepartmentalBudgetSummaryWizard(models.TransientModel):
         comodel_name="vpk.budget.fund.source",
         string="แหล่งเงิน",
     )
+    plan_type = fields.Selection(
+        selection=[
+            ("in_plan", "ในแผน"),
+            ("off_plan", "นอกแผน"),
+        ],
+        string="ประเภทการตั้งงบประมาณ",
+    )
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
         string="หน่วยงาน / ศูนย์ต้นทุน",
@@ -195,6 +202,8 @@ class DepartmentalBudgetSummaryWizard(models.TransientModel):
             domain.append(
                 ("request_id.fund_source_id", "=", self.fund_source_id.id)
             )
+        if self.plan_type:
+            domain.append(("request_id.plan_type", "=", self.plan_type))
         if self.analytic_account_id:
             domain.append(
                 ("request_id.analytic_account_id", "=", self.analytic_account_id.id)
@@ -1121,6 +1130,13 @@ class DepartmentalBudgetCoverWizard(models.TransientModel):
         comodel_name="vpk.budget.fund.source",
         string="แหล่งเงิน",
     )
+    plan_type = fields.Selection(
+        selection=[
+            ("in_plan", "ในแผน"),
+            ("off_plan", "นอกแผน"),
+        ],
+        string="ประเภทการตั้งงบประมาณ",
+    )
     analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
         string="หน่วยงาน / ศูนย์ต้นทุน",
@@ -1178,6 +1194,8 @@ class DepartmentalBudgetCoverWizard(models.TransientModel):
         ]
         if self.fund_source_id:
             domain.append(("request_id.fund_source_id", "=", self.fund_source_id.id))
+        if self.plan_type:
+            domain.append(("request_id.plan_type", "=", self.plan_type))
         if self.analytic_account_id:
             domain.append(
                 ("request_id.analytic_account_id", "=", self.analytic_account_id.id)

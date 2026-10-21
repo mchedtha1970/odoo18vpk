@@ -8,7 +8,39 @@
             bodyClass="'o_vpk_sign_pdf_body p-0'"
             withBodyPadding="false"
         >
-            <div class="o_vpk_sign_pdf_container position-relative">
+            <div class="o_vpk_sign_pdf_container position-relative d-flex flex-column">
+                <div t-if="props.canSign and !state.secretaryScreen"
+                     class="bg-dark text-white py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2 border-bottom"
+                     style="z-index: 10;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge text-bg-success">เครื่องมือวางลายเซ็น</span>
+                        <span t-if="state.markingMode" class="text-warning fw-semibold">
+                            <i class="fa fa-crosshairs me-1"/>คลิกลากตีกรอบ (หรือคลิก 1 ครั้ง) บนจุดที่ต้องการวางลายเซ็นในหน้าเอกสาร PDF ด้านล่าง
+                        </span>
+                        <span t-elif="state.markedBox" class="text-info fw-semibold">
+                            <i class="fa fa-check-circle me-1"/>กำหนดกรอบตำแหน่งลายเซ็นแล้ว (หน้า <t t-esc="state.markedBox.pageNumber"/>) — กดปุ่ม “ลงนาม” ด้านล่างเพื่อวาดลายเซ็น
+                        </span>
+                        <span t-else="" class="small text-light">
+                            กดปุ่ม <strong>“กำหนดกรอบลายเซ็น (Mark ตำแหน่ง)”</strong> เพื่อตีกรอบจุดที่ต้องการวางลายเซ็นบนเอกสาร
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button t-att-class="state.markingMode ? 'btn btn-sm btn-warning fw-bold' : 'btn btn-sm btn-primary fw-bold'"
+                                t-on-click="onToggleMarkMode"
+                                t-att-disabled="state.busy">
+                            <i class="fa fa-crop me-1"/>
+                            <t t-if="state.markingMode">กำลังเลือกกรอบ... (คลิกเพื่อยกเลิก)</t>
+                            <t t-elif="state.markedBox">เปลี่ยนกรอบลายเซ็น (Mark ใหม่)</t>
+                            <t t-else="">กำหนดกรอบลายเซ็น (Mark ตำแหน่ง)</t>
+                        </button>
+                        <button t-if="state.markedBox"
+                                class="btn btn-sm btn-outline-light"
+                                t-on-click="onClearMarkedBox"
+                                t-att-disabled="state.busy">
+                            <i class="fa fa-eraser me-1"/>ล้างกรอบ
+                        </button>
+                    </div>
+                </div>
                 <div t-if="state.loading" class="o_vpk_sign_pdf_loading d-flex align-items-center justify-content-center">
                     <div class="text-center text-muted">
                         <i class="fa fa-spinner fa-spin fa-2x mb-2"/>
@@ -21,7 +53,7 @@
                 <iframe
                     t-if="state.viewerUrl"
                     t-ref="pdfFrame"
-                    class="o_vpk_sign_pdf_iframe"
+                    class="o_vpk_sign_pdf_iframe flex-grow-1"
                     t-att-src="state.viewerUrl"
                     t-on-load="onIframeLoad"
                     allowfullscreen="allowfullscreen"
@@ -36,8 +68,18 @@
                             <t t-else="">ตรวจสอบแล้ว กดส่งผู้อำนวยการ</t>
                         </t>
                         <t t-elif="props.canSign">
-                            <t t-if="!state.reachedEnd">เลื่อนเอกสารจนถึงหน้าสุดท้าย จากนั้นกดลงนาม</t>
-                            <t t-else="">ตรวจท้ายเอกสารแล้วกดลงนาม</t>
+                            <t t-if="state.markingMode">
+                                <span class="text-warning-emphasis fw-semibold">
+                                    <i class="fa fa-crosshairs me-1"/>คลิกลากตีกรอบตำแหน่งลายเซ็นบนหน้าเอกสาร...
+                                </span>
+                            </t>
+                            <t t-elif="state.markedBox">
+                                <span class="text-success fw-semibold">
+                                    <i class="fa fa-check-circle me-1"/>กำหนดกรอบตำแหน่งลายเซ็นแล้ว (หน้า <t t-esc="state.markedBox.pageNumber"/>) — กดปุ่ม “ลงนาม” เพื่อวาดลายเซ็น
+                                </span>
+                            </t>
+                            <t t-elif="!state.reachedEnd">เลื่อนเอกสารจนถึงหน้าสุดท้าย หรือกด “กำหนดกรอบลายเซ็น” จากนั้นกดลงนาม</t>
+                            <t t-else="">ตรวจท้ายเอกสารแล้ว กด “กำหนดกรอบลายเซ็น” หรือกดลงนาม</t>
                         </t>
                     </span>
                     <button class="btn btn-secondary" t-on-click="onClose" t-att-disabled="state.busy">
@@ -65,10 +107,25 @@
                         <button class="btn btn-danger" t-on-click="onReject" t-att-disabled="state.busy">
                             ไม่อนุมัติ
                         </button>
+                        <button t-att-class="state.markingMode ? 'btn btn-warning' : (state.markedBox ? 'btn btn-outline-primary' : 'btn btn-primary')"
+                                t-on-click="onToggleMarkMode"
+                                t-att-disabled="state.busy">
+                            <i class="fa fa-crop me-1"/>
+                            <t t-if="state.markingMode">กำลังเลือกกรอบ...</t>
+                            <t t-elif="state.markedBox">เปลี่ยนกรอบลายเซ็น</t>
+                            <t t-else="">กำหนดกรอบลายเซ็น</t>
+                        </button>
+                        <button t-if="state.markedBox"
+                                class="btn btn-outline-secondary"
+                                t-on-click="onClearMarkedBox"
+                                t-att-disabled="state.busy"
+                                title="ล้างกรอบที่เลือก">
+                            <i class="fa fa-eraser"/>
+                        </button>
                         <button class="btn btn-success"
                                 t-on-click="onSign"
                                 t-att-disabled="!signEnabled"
-                                t-att-title="state.reachedEnd ? '' : 'เลื่อนเอกสารจนถึงหน้าสุดท้ายก่อนลงนาม'">
+                                t-att-title="signEnabled ? '' : 'เลื่อนเอกสารจนถึงหน้าสุดท้าย หรือกำหนดกรอบลายเซ็นก่อนลงนาม'">
                             <i class="fa fa-pencil me-1"/>ลงนาม
                         </button>
                     </t>

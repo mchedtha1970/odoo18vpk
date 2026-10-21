@@ -1,6 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data noupdate="0">
+        <record id="egp_document_type_wa_committee_order" model="purchase.requisition.egp.document.type">
+            <field name="name">คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ</field>
+            <field name="code">wa_committee_order</field>
+            <field name="sequence">1</field>
+        </record>
+        <record id="egp_document_type_integrity_over_100k" model="purchase.requisition.egp.document.type">
+            <field name="name">แบบแสดงความบริสุทธิ์ใจ (วงเงินมากกว่า ๑๐๐,๐๐๐ บาท)</field>
+            <field name="code">integrity_over_100k</field>
+            <field name="sequence">2</field>
+        </record>
+        <record id="egp_document_type_spec_price_committee" model="purchase.requisition.egp.document.type">
+            <field name="name">ขออนุมัติแต่งตั้งคณะกรรมการกำหนดรายละเอียดคุณลักษณะ</field>
+            <field name="code">spec_price_committee</field>
+            <field name="sequence">3</field>
+        </record>
+        <record id="egp_document_type_specific_method_approval" model="purchase.requisition.egp.document.type">
+            <field name="name">รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง</field>
+            <field name="code">specific_method_approval</field>
+            <field name="sequence">4</field>
+        </record>
         <record id="egp_document_type_draft_announcement" model="purchase.requisition.egp.document.type">
             <field name="name">ประกาศร่าง</field>
             <field name="code">draft_announcement</field>
@@ -10,6 +30,11 @@
             <field name="name">ประกาศเชิญชวน</field>
             <field name="code">invitation</field>
             <field name="sequence">20</field>
+        </record>
+        <record id="egp_document_type_consider_procurement" model="purchase.requisition.egp.document.type">
+            <field name="name">รายงานผลการพิจารณาจัดซื้อจัดจ้าง</field>
+            <field name="code">consider_procurement</field>
+            <field name="sequence">24</field>
         </record>
         <record id="egp_document_type_award_approval" model="purchase.requisition.egp.document.type">
             <field name="name">รายงานผลการพิจารณา</field>

@@ -22,6 +22,7 @@
                                     <field name="analytic_account_id"/>
                                     <field name="fund_source_id"/>
                                     <field name="budget_group_id"/>
+                                    <field name="plan_type"/>
                                     <field name="request_id" readonly="1"/>
                                     <field name="request_line_id" readonly="1"/>
                                     <field name="planned_amount"/>
@@ -153,6 +154,14 @@
                                     <field name="paid_date" groups="base.group_no_one"/>
                                     <field name="fund_source_id"/>
                                     <field name="budget_group_id"/>
+                                    <field
+                                        name="plan_type"
+                                        string="ในแผน/นอกแผน"
+                                        widget="badge"
+                                        decoration-success="plan_type == 'in_plan'"
+                                        decoration-warning="plan_type == 'off_plan'"
+                                        optional="show"
+                                    />
                                     <field name="planned_amount" sum="Planned Amount"/>
                                     <field name="practical_amount" sum="Practical Amount"/>
                                     <field name="pr_reserved_amount" sum="งบ PR ที่จอง"/>

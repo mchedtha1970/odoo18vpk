@@ -31,6 +31,17 @@ class DepartmentalBudgetRequest(models.Model):
         default=lambda self: str(fields.Date.context_today(self).year + 543),
         tracking=True,
     )
+    plan_type = fields.Selection(
+        selection=[
+            ("in_plan", "ในแผน"),
+            ("off_plan", "นอกแผน"),
+        ],
+        string="ประเภทการตั้งงบประมาณ",
+        default="in_plan",
+        required=True,
+        tracking=True,
+        help="เลือก 'ในแผน' สำหรับการขอตั้งแผนงบประมาณประจำปีตามปกติ หรือเลือก 'นอกแผน' สำหรับการขอตั้งงบประมาณเพิ่มเติมเมื่องบประมาณที่ตั้งไว้ไม่เพียงพอ เพื่อขออนุมัติดำเนินการซื้อต่อไป",
+    )
     company_id = fields.Many2one(
         comodel_name="res.company",
         required=True,
@@ -393,6 +404,7 @@ class DepartmentalBudgetRequest(models.Model):
         gap_allocated = sum(row["allocated"] for row in gap_rows)
 
         recent_requests = []
+        plan_type_labels = dict(self._fields["plan_type"].selection)
         for request in requests.sorted(lambda req: (req.request_date or fields.Date.today(), req.id), reverse=True)[:6]:
             recent_requests.append(
                 {
@@ -400,6 +412,8 @@ class DepartmentalBudgetRequest(models.Model):
                     "name": request.name,
                     "department": request.analytic_account_id.name or "",
                     "form_type": request.form_type_id.name or "",
+                    "plan_type": request.plan_type,
+                    "plan_type_label": plan_type_labels.get(request.plan_type, ""),
                     "amount": request.total_amount,
                     "state": request.state,
                     "state_label": state_labels.get(request.state, request.state),
@@ -2184,6 +2198,35 @@ class DepartmentalBudgetRequest(models.Model):
     def action_start_review(self):
         self.write({"state": "review"})
 
+    def _ensure_material_detail_allocations_on_approve(self):
+        """Ensure material_detail_ids have allocated_amount populated when approved."""
+        self.ensure_one()
+        if not self.show_material_lines or not self.material_detail_ids:
+            return
+        for line in self.material_line_ids:
+            if not line.material_sub_type_id or not line.allocated_budget_amount:
+                continue
+            details = self.material_detail_ids.filtered(
+                lambda d: d.material_sub_type_id == line.material_sub_type_id
+            )
+            if not details:
+                continue
+            detail_allocated_sum = sum(details.mapped("allocated_amount"))
+            if detail_allocated_sum > 1e-6:
+                continue
+            detail_requested_sum = sum(details.mapped("total_amount"))
+            ratio = (
+                (line.allocated_budget_amount / detail_requested_sum)
+                if detail_requested_sum > 1e-6
+                else 1.0
+            )
+            for detail in details:
+                alloc_qty = round((detail.quantity or 0.0) * ratio, 2)
+                detail.with_context(
+                    skip_budget_request_lock=True,
+                    skip_material_amount_sync=True,
+                ).write({"allocated_qty": alloc_qty})
+
     def action_approve(self):
         for rec in self:
             rec.line_ids._validate_for_submission()
@@ -2197,6 +2240,7 @@ class DepartmentalBudgetRequest(models.Model):
                 raise ValidationError(
                     _("กรุณาระบุงบประมาณที่จัดสรรให้ครบทุกรายการก่อนอนุมัติ")
                 )
+            rec._ensure_material_detail_allocations_on_approve()
             rec._sync_budget_lines_to_annual_plan()
             rec.write({"state": "approved", "budget_record_id": budget.id})
 
@@ -2264,6 +2308,7 @@ class DepartmentalBudgetRequest(models.Model):
             "fund_source_id": self.fund_source_id.id,
             "request_id": self.id,
             "request_line_id": line.id,
+            "plan_type": self.plan_type or "in_plan",
             "budget_group_id": line.budget_group_id.id,
             "material_sub_type_id": line.material_sub_type_id.id,
         }
@@ -2347,6 +2392,12 @@ class DepartmentalBudgetRequestLine(models.Model):
         ondelete="cascade",
     )
     company_id = fields.Many2one(related="request_id.company_id", store=True, readonly=True)
+    plan_type = fields.Selection(
+        related="request_id.plan_type",
+        string="ประเภทการตั้งงบประมาณ",
+        store=True,
+        readonly=True,
+    )
     budget_type_id = fields.Many2one(
         comodel_name="vpk.budget.type",
         string="ประเภทงบประมาณ",

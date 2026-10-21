@@ -1,6 +1,6 @@
 {
     "name": "VPK Procurement Inbox Dashboard",
-    "version": "18.0.1.0.3",
+    "version": "18.0.1.1.0",
     "category": "Purchases",
     "summary": "Dashboard ให้พัสดุ monitor และรับงานใบขอซื้อจากหน่วยงาน",
     "description": """
@@ -18,11 +18,14 @@ Procurement Inbox (รอรับจากหน่วยงาน)
         "purchase_request",
         "purchase_request_department",
         "vpk_tier_validation",
+        "vpk_purchase_agreement_egp",
         "vpk_th_purchase_menu",
         "vpk_sidebar_menu",
     ],
     "data": [
+        "security/ir.model.access.csv",
         "data/ir_cron_data.xml",
+        "wizard/purchase_request_return_wizard_views.xml",
         "views/purchase_request_views.xml",
         "views/menu.xml",
     ],

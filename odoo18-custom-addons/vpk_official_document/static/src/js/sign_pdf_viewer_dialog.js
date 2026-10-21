@@ -41,9 +41,12 @@ export class SignPdfViewerDialog extends Component {
             busy: false,
             objectUrl: "",
             viewerUrl: "",
+            markingMode: false,
+            markedBox: null,
         });
         this._fallbackTimer = null;
         this._pdfUnbind = [];
+        this._dragState = null;
 
         onWillStart(async () => {
             await Promise.all([this._prepareViewer(), this._loadScreenState()]);
@@ -114,12 +117,258 @@ export class SignPdfViewerDialog extends Component {
     }
 
     get signEnabled() {
-        return this.props.canSign && this.state.reachedEnd && !this.state.busy;
+        return (
+            this.props.canSign &&
+            (this.state.reachedEnd || Boolean(this.state.markedBox)) &&
+            !this.state.busy
+        );
     }
 
     onIframeLoad() {
         this.state.loading = false;
         this._bindPdfEndDetection();
+        this._bindPdfSignatureMarker();
+    }
+
+    _getIframeDoc() {
+        const iframe = this.iframeRef.el;
+        return iframe && iframe.contentDocument;
+    }
+
+    _injectMarkerStyles(doc) {
+        if (!doc || doc.getElementById("vpk-sig-marker-style")) {
+            return;
+        }
+        const style = doc.createElement("style");
+        style.id = "vpk-sig-marker-style";
+        style.textContent = `
+            body.vpk-sig-marking-mode #viewerContainer .page {
+                cursor: crosshair !important;
+            }
+            body.vpk-sig-marking-mode #viewerContainer .page .textLayer {
+                pointer-events: none !important;
+                user-select: none !important;
+            }
+            .vpk-sig-mark-overlay {
+                position: absolute;
+                border: 2.5px dashed #16a34a;
+                background: rgba(22, 163, 74, 0.16);
+                border-radius: 6px;
+                z-index: 60;
+                pointer-events: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-sizing: border-box;
+                box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+            }
+            .vpk-sig-mark-label {
+                background: #16a34a;
+                color: #ffffff;
+                font-family: sans-serif;
+                font-size: 12px;
+                font-weight: 600;
+                padding: 2px 10px;
+                border-radius: 999px;
+                white-space: nowrap;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+            }
+        `;
+        doc.head.appendChild(style);
+    }
+
+    _syncMarkingModeClass() {
+        const doc = this._getIframeDoc();
+        if (!doc || !doc.body) {
+            return;
+        }
+        this._injectMarkerStyles(doc);
+        doc.body.classList.toggle("vpk-sig-marking-mode", Boolean(this.state.markingMode));
+    }
+
+    _renderMarkedOverlay() {
+        const doc = this._getIframeDoc();
+        if (!doc) {
+            return;
+        }
+        this._injectMarkerStyles(doc);
+        for (const old of doc.querySelectorAll(".vpk-sig-mark-overlay")) {
+            old.remove();
+        }
+        const box = this.state.markedBox;
+        if (!box) {
+            return;
+        }
+        const pageEl = doc.querySelector(`.page[data-page-number="${box.pageNumber}"]`);
+        if (!pageEl) {
+            return;
+        }
+        const overlay = doc.createElement("div");
+        overlay.className = "vpk-sig-mark-overlay";
+        overlay.style.left = `${(box.xRatio * 100).toFixed(2)}%`;
+        overlay.style.top = `${(box.yRatio * 100).toFixed(2)}%`;
+        overlay.style.width = `${(box.wRatio * 100).toFixed(2)}%`;
+        overlay.style.height = `${(box.hRatio * 100).toFixed(2)}%`;
+
+        const label = doc.createElement("span");
+        label.className = "vpk-sig-mark-label";
+        label.textContent = "กรอบตำแหน่งลายเซ็น";
+        overlay.appendChild(label);
+        pageEl.appendChild(overlay);
+    }
+
+    _bindPdfSignatureMarker() {
+        const setupMarker = () => {
+            const doc = this._getIframeDoc();
+            const iframe = this.iframeRef.el;
+            const win = iframe && iframe.contentWindow;
+            if (!doc || !win) {
+                return;
+            }
+            this._injectMarkerStyles(doc);
+            this._syncMarkingModeClass();
+
+            const onMouseDown = (ev) => {
+                if (!this.state.markingMode || ev.button !== 0) {
+                    return;
+                }
+                const pageEl = ev.target && ev.target.closest && ev.target.closest(".page");
+                if (!pageEl) {
+                    return;
+                }
+                const pageNumber = parseInt(pageEl.dataset.pageNumber || "1", 10);
+                const rect = pageEl.getBoundingClientRect();
+                if (!rect.width || !rect.height) {
+                    return;
+                }
+                ev.preventDefault();
+                ev.stopPropagation();
+                const startX = Math.max(0, Math.min(rect.width, ev.clientX - rect.left));
+                const startY = Math.max(0, Math.min(rect.height, ev.clientY - rect.top));
+                this._dragState = {
+                    pageEl,
+                    pageNumber,
+                    rect,
+                    startX,
+                    startY,
+                    curX: startX,
+                    curY: startY,
+                };
+                this._updateDragPreview();
+            };
+
+            const onMouseMove = (ev) => {
+                if (!this._dragState) {
+                    return;
+                }
+                ev.preventDefault();
+                const { rect } = this._dragState;
+                this._dragState.curX = Math.max(0, Math.min(rect.width, ev.clientX - rect.left));
+                this._dragState.curY = Math.max(0, Math.min(rect.height, ev.clientY - rect.top));
+                this._updateDragPreview();
+            };
+
+            const onMouseUp = (ev) => {
+                if (!this._dragState) {
+                    return;
+                }
+                ev.preventDefault();
+                const { pageNumber, rect, startX, startY, curX, curY } = this._dragState;
+                this._dragState = null;
+
+                const dragW = Math.abs(curX - startX);
+                const dragH = Math.abs(curY - startY);
+                let xRatio;
+                let yRatio;
+                let wRatio;
+                let hRatio;
+
+                if (dragW < 18 && dragH < 14) {
+                    // Single click: place standard signature box centered at click point
+                    wRatio = 0.24;
+                    hRatio = 0.065;
+                    xRatio = Math.max(0.02, Math.min(1 - wRatio - 0.02, startX / rect.width - wRatio / 2));
+                    yRatio = Math.max(0.02, Math.min(1 - hRatio - 0.02, startY / rect.height - hRatio / 2));
+                } else {
+                    const left = Math.min(startX, curX);
+                    const top = Math.min(startY, curY);
+                    wRatio = Math.max(0.08, Math.min(0.95, dragW / rect.width));
+                    hRatio = Math.max(0.03, Math.min(0.5, dragH / rect.height));
+                    xRatio = Math.max(0, Math.min(1 - wRatio, left / rect.width));
+                    yRatio = Math.max(0, Math.min(1 - hRatio, top / rect.height));
+                }
+
+                this.state.markedBox = {
+                    pageIndex: Math.max(0, pageNumber - 1),
+                    pageNumber,
+                    xRatio,
+                    yRatio,
+                    wRatio,
+                    hRatio,
+                };
+                this.state.markingMode = false;
+                this.state.reachedEnd = true;
+                this._syncMarkingModeClass();
+                this._renderMarkedOverlay();
+            };
+
+            doc.addEventListener("mousedown", onMouseDown, true);
+            doc.addEventListener("mousemove", onMouseMove, true);
+            doc.addEventListener("mouseup", onMouseUp, true);
+            this._pdfUnbind.push(() => {
+                doc.removeEventListener("mousedown", onMouseDown, true);
+                doc.removeEventListener("mousemove", onMouseMove, true);
+                doc.removeEventListener("mouseup", onMouseUp, true);
+            });
+
+            const app = win.PDFViewerApplication;
+            if (app && app.eventBus) {
+                const onPageRendered = () => this._renderMarkedOverlay();
+                app.eventBus.on("pagerendered", onPageRendered);
+                this._pdfUnbind.push(() => {
+                    app.eventBus.off("pagerendered", onPageRendered);
+                });
+            }
+        };
+        setTimeout(setupMarker, 300);
+    }
+
+    _updateDragPreview() {
+        if (!this._dragState) {
+            return;
+        }
+        const { pageNumber, rect, startX, startY, curX, curY } = this._dragState;
+        const left = Math.min(startX, curX);
+        const top = Math.min(startY, curY);
+        const width = Math.max(24, Math.abs(curX - startX));
+        const height = Math.max(16, Math.abs(curY - startY));
+        this.state.markedBox = {
+            pageIndex: Math.max(0, pageNumber - 1),
+            pageNumber,
+            xRatio: left / rect.width,
+            yRatio: top / rect.height,
+            wRatio: Math.min(1 - left / rect.width, width / rect.width),
+            hRatio: Math.min(1 - top / rect.height, height / rect.height),
+        };
+        this._renderMarkedOverlay();
+    }
+
+    onToggleMarkMode() {
+        this.state.markingMode = !this.state.markingMode;
+        this._syncMarkingModeClass();
+        if (this.state.markingMode) {
+            this.notification.add(
+                _t("คลิกลากตีกรอบ (หรือคลิก 1 ครั้ง) บนจุดที่ต้องการวางลายเซ็นในเอกสาร"),
+                { type: "info" }
+            );
+        }
+    }
+
+    onClearMarkedBox() {
+        this.state.markedBox = null;
+        this.state.markingMode = false;
+        this._syncMarkingModeClass();
+        this._renderMarkedOverlay();
     }
 
     _bindPdfEndDetection() {
@@ -236,7 +485,7 @@ export class SignPdfViewerDialog extends Component {
 
     async onSign() {
         if (!this.signEnabled) {
-            this.notification.add(_t("เลื่อนเอกสารจนถึงหน้าสุดท้ายก่อนลงนาม"), {
+            this.notification.add(_t("เลื่อนเอกสารจนถึงหน้าสุดท้าย หรือกำหนดกรอบลายเซ็นก่อนลงนาม"), {
                 type: "warning",
             });
             return;
@@ -265,11 +514,20 @@ export class SignPdfViewerDialog extends Component {
             return;
         }
         this.state.busy = true;
+        const customBox = this.state.markedBox
+            ? {
+                  page_index: this.state.markedBox.pageIndex,
+                  x_ratio: this.state.markedBox.xRatio,
+                  y_ratio: this.state.markedBox.yRatio,
+                  w_ratio: this.state.markedBox.wRatio,
+                  h_ratio: this.state.markedBox.hRatio,
+              }
+            : null;
         try {
             const result = await this.orm.call(
                 this.props.resModel,
                 "action_apply_signature",
-                [[this.props.resId], encoded]
+                [[this.props.resId], encoded, customBox]
             );
             this.props.close();
             const afterSign = async () => {

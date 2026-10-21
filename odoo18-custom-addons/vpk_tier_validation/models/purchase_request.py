@@ -93,8 +93,15 @@ class PurchaseRequest(models.Model):
             if rec.state == "draft":
                 rec.need_validation = False
 
+    @api.depends("state")
+    def _compute_is_editable(self):
+        super()._compute_is_editable()
+        for rec in self:
+            if rec.state == "sent_to_procurement":
+                rec.is_editable = False
+
     def action_send_to_procurement(self):
-        """หน่วยงานส่งใบขอซื้อให้พัสดุ เปลี่ยนสถานะเป็น ส่งพัสดุแล้ว"""
+        """หน่วยงานส่งใบขอซื้อให้พัสดุ เปลี่ยนสถานะเป็น ส่งพัสดุแล้ว และจองงบประมาณ"""
         for rec in self:
             if rec.state != "draft":
                 raise UserError(_("ส่งพัสดุได้เฉพาะใบขอซื้อสถานะร่าง"))
@@ -108,6 +115,10 @@ class PurchaseRequest(models.Model):
                 and rec.budget_check_state != "enough"
             ):
                 raise UserError(_("กรุณาเช็คงบประมาณให้ผ่านก่อนส่งพัสดุ"))
+            if hasattr(rec, "_check_budget_available_before_submit"):
+                action = rec._check_budget_available_before_submit()
+                if isinstance(action, dict):
+                    return action
         self.write({"state": "sent_to_procurement"})
         for rec in self:
             rec._vpk_subscribe_procurement_users()
@@ -129,3 +140,25 @@ class PurchaseRequest(models.Model):
         partners = users.mapped("partner_id") - self.env.user.partner_id
         if partners:
             self.message_subscribe(partner_ids=partners.ids)
+
+
+class PurchaseRequestLine(models.Model):
+    _inherit = "purchase.request.line"
+
+    @api.depends("purchase_lines", "request_id.state", "requisition_lines")
+    def _compute_is_editable(self):
+        for rec in self:
+            if rec.request_id.state in (
+                "sent_to_procurement",
+                "to_approve",
+                "approved",
+                "rejected",
+                "in_progress",
+                "done",
+            ):
+                rec.is_editable = False
+            elif rec.purchase_lines or getattr(rec, "requisition_lines", False):
+                rec.is_editable = False
+            else:
+                rec.is_editable = True
+

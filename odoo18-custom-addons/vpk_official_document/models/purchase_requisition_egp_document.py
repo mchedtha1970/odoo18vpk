@@ -3,8 +3,104 @@
 
 import base64
 
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+
+
+class PurchaseRequisitionEgpDocumentSigner(models.Model):
+    _name = "purchase.requisition.egp.document.signer"
+    _description = "ผู้อนุมัติเอกสารจากระบบ e-GP"
+    _order = "sequence, id"
+
+    egp_document_id = fields.Many2one(
+        comodel_name="purchase.requisition.egp.document",
+        string="เอกสาร e-GP",
+        required=True,
+        ondelete="cascade",
+        index=True,
+    )
+    sequence = fields.Integer(string="ลำดับอนุมัติ", default=1)
+    user_id = fields.Many2one(
+        comodel_name="res.users",
+        string="ผู้อนุมัติ",
+        required=True,
+        ondelete="restrict",
+        domain=[("share", "=", False)],
+    )
+    position = fields.Char(string="ตำแหน่ง")
+    is_check = fields.Boolean(string="ตรวจสอบ")
+    is_sign = fields.Boolean(string="ลงนาม", default=True)
+    company_id = fields.Many2one(
+        related="egp_document_id.company_id",
+        store=True,
+    )
+
+    def _is_director_secretary(self, user):
+        secretary = self.env.ref(
+            "vpk_official_document.user_director_secretary",
+            raise_if_not_found=False,
+        )
+        return bool(secretary and user == secretary)
+
+    @api.onchange("user_id")
+    def _onchange_user_id(self):
+        if not self.user_id:
+            return
+        _name, position = self.env["vpk.official.document"]._person_from_user(
+            self.user_id
+        )
+        if position:
+            self.position = position
+        if self._is_director_secretary(self.user_id):
+            self.is_check = True
+            self.is_sign = False
+        elif not self.is_check:
+            self.is_sign = True
+
+    @api.onchange("is_check")
+    def _onchange_is_check(self):
+        if self.is_check:
+            self.is_sign = False
+
+    @api.onchange("is_sign")
+    def _onchange_is_sign(self):
+        if self.is_sign:
+            self.is_check = False
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        Document = self.env["vpk.official.document"]
+        for vals in vals_list:
+            if vals.get("user_id") and not vals.get("position"):
+                user = self.env["res.users"].browse(vals["user_id"])
+                _name, position = Document._person_from_user(user)
+                if position:
+                    vals["position"] = position
+            if vals.get("is_check") and vals.get("is_sign"):
+                vals["is_sign"] = False
+            elif "is_check" not in vals and "is_sign" not in vals:
+                user = self.env["res.users"].browse(vals.get("user_id"))
+                if user and self._is_director_secretary(user):
+                    vals["is_check"] = True
+                    vals["is_sign"] = False
+                else:
+                    vals["is_sign"] = True
+            if not vals.get("sequence") and vals.get("egp_document_id"):
+                siblings = self.search(
+                    [("egp_document_id", "=", vals["egp_document_id"])]
+                )
+                vals["sequence"] = max(siblings.mapped("sequence") or [0]) + 1
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if vals.get("user_id") and "position" not in vals:
+            user = self.env["res.users"].browse(vals["user_id"])
+            _name, position = self.env["vpk.official.document"]._person_from_user(
+                user
+            )
+            if position:
+                vals = dict(vals, position=position)
+        return super().write(vals)
 
 
 class PurchaseRequisitionEgpDocument(models.Model):
@@ -22,6 +118,210 @@ class PurchaseRequisitionEgpDocument(models.Model):
         string="สถานะการลงนาม",
         store=True,
     )
+    signer_line_ids = fields.One2many(
+        comodel_name="purchase.requisition.egp.document.signer",
+        inverse_name="egp_document_id",
+        string="รายชื่อผู้อนุมัติ",
+        copy=True,
+    )
+    signer_summary = fields.Char(
+        string="ลงนาม/อนุมัติ",
+        compute="_compute_signer_summary",
+    )
+
+    @api.depends("signer_line_ids.user_id", "signer_line_ids.sequence")
+    def _compute_signer_summary(self):
+        for rec in self:
+            lines = rec.signer_line_ids.filtered("user_id").sorted(
+                key=lambda line: (line.sequence, line.id)
+            )
+            if lines:
+                rec.signer_summary = " → ".join(lines.mapped("user_id.name"))
+            else:
+                rec.signer_summary = False
+
+    def action_open_approver_modal(self):
+        """เปิดหน้าต่างกำหนดรายชื่อผู้อนุมัติของเอกสารที่แนบจาก e-GP และกดส่งเข้ากล่องงานรออนุมัติ."""
+        self.ensure_one()
+        if not self.signer_line_ids:
+            self._seed_default_egp_signers()
+        view = self.env.ref(
+            "vpk_official_document.view_purchase_requisition_egp_document_approver_form"
+        )
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("กำหนดผู้อนุมัติเอกสาร — %s")
+            % (self.document_type_id.name or self.display_name),
+            "res_model": self._name,
+            "res_id": self.id,
+            "view_mode": "form",
+            "views": [(view.id, "form")],
+            "target": "new",
+        }
+
+    def _seed_default_egp_signers(self):
+        self.ensure_one()
+        if self.signer_line_ids:
+            return
+        company = self.company_id or self.env.company
+        Official = self.env["vpk.official.document"]
+        officer = Official._person_user_from_company(
+            company, "official_doc_officer_id", "official_doc_officer_name"
+        )
+        head = Official._person_user_from_company(
+            company, "official_doc_head_officer_id", "official_doc_head_officer_name"
+        )
+        secretary = Official._vpk_director_secretary_user()
+        director = Official._person_user_from_company(
+            company, "official_doc_signer_id", "official_doc_signer_name"
+        )
+        code = self.document_type_id.code
+        candidates = []
+        if code in ("wa_committee_order", "spec_price_committee", "winner_announcement"):
+            candidates = [
+                (secretary, "เลขาผู้อำนวยการ", True),
+                (director, "ผู้อำนวยการ", False),
+            ]
+        elif code in (
+            "specific_method_approval",
+            "award_approval",
+            "consider_procurement",
+        ):
+            candidates = [
+                (officer, "เจ้าหน้าที่", False),
+                (head, "หัวหน้าเจ้าหน้าที่", False),
+                (secretary, "เลขาผู้อำนวยการ", True),
+                (director, "ผู้อำนวยการ", False),
+            ]
+        elif code == "integrity_over_100k":
+            candidates = [
+                (officer, "เจ้าหน้าที่", False),
+                (head, "หัวหน้าเจ้าหน้าที่", False),
+            ]
+        else:
+            candidates = [
+                (director, "ผู้อำนวยการ", False),
+            ]
+        Signer = self.env["purchase.requisition.egp.document.signer"]
+        rows = []
+        seen = set()
+        seq = 1
+        for user, fallback_pos, is_check in candidates:
+            if not user or user.id in seen:
+                continue
+            seen.add(user.id)
+            _name, pos = Official._person_from_user(user)
+            rows.append(
+                {
+                    "egp_document_id": self.id,
+                    "sequence": seq,
+                    "user_id": user.id,
+                    "position": pos or fallback_pos,
+                    "is_check": is_check,
+                    "is_sign": not is_check,
+                }
+            )
+            seq += 1
+        if rows:
+            Signer.create(rows)
+
+    def action_save_approvers_only(self):
+        self.ensure_one()
+        if self.official_document_id and self.signature_state not in ("waiting", "signed"):
+            self._push_egp_signers_to_official_document(self.official_document_id)
+        return {"type": "ir.actions.act_window_close"}
+
+    def action_save_and_send_to_approver_inbox(self):
+        """บันทึกผู้อนุมัติที่กำหนดไว้ และเปิดหน้าต่างส่งเอกสารเข้ากล่องงานรออนุมัติ."""
+        self.ensure_one()
+        if not self.document_file:
+            raise UserError(_("กรุณาแนบไฟล์ PDF ในรายการเอกสารก่อนส่งให้ผู้อนุมัติ"))
+        if not self.signer_line_ids.filtered("user_id"):
+            raise UserError(_("กรุณาเพิ่มผู้อนุมัติอย่างน้อย 1 คนก่อนส่งอนุมัติ"))
+        return self.action_send_for_signature_inbox()
+
+    def _map_official_document_type_code(self):
+        self.ensure_one()
+        code = self.document_type_id.code or ""
+        if code == "consider_procurement":
+            return "award_approval"
+        valid_codes = {
+            key for key, _label in self.env["vpk.official.document"]._selection_document_type()
+        }
+        if code in valid_codes:
+            return code
+        return "specific_method_approval"
+
+    def _ensure_attached_egp_official_document(self):
+        """สร้างหรืออัปเดต vpk.official.document จากไฟล์ที่แนบในรายการเอกสาร e-GP พร้อมผู้อนุมัติที่เลือก."""
+        self.ensure_one()
+        Official = self.env["vpk.official.document"]
+        requisition = self.requisition_id
+        request = requisition.purchase_request_id
+        doc_type = self._map_official_document_type_code()
+        subject = "%s (%s)" % (
+            self.document_type_id.name or _("เอกสาร e-GP"),
+            self.egp_reference or requisition.egp_project_name or requisition.name or "",
+        )
+        vals = {
+            "document_type": doc_type,
+            "requisition_id": requisition.id,
+            "request_id": request.id if request else False,
+            "department_id": request.department_id.id if request and request.department_id else False,
+            "department_name": request.department_id.name if request and request.department_id else False,
+            "subject": subject.strip(),
+            "date": self.document_date or fields.Date.context_today(self),
+            "company_id": requisition.company_id.id,
+        }
+        document = self.official_document_id
+        if document and document.signature_state in ("waiting", "signed"):
+            return document
+        if document:
+            document.with_context(skip_validation_check=True).write(vals)
+        else:
+            document = Official.with_context(skip_validation_check=True).create(vals)
+            self.official_document_id = document.id
+        self._push_egp_signers_to_official_document(document)
+        if self.document_file:
+            basename = "%s-%s" % (
+                self.document_type_id.name or "eGP",
+                self.egp_reference or requisition.name or self.id,
+            )
+            filename = self.document_filename or ("%s.pdf" % basename)
+            document.with_context(skip_validation_check=True)._store_generated_file(
+                base64.b64decode(self.document_file),
+                filename,
+                "application/pdf",
+                "pdf",
+            )
+        return document
+
+    def _push_egp_signers_to_official_document(self, document):
+        self.ensure_one()
+        if not document or document.signature_state in ("waiting", "signed"):
+            return document
+        lines = self.signer_line_ids.filtered("user_id").sorted(
+            key=lambda line: (line.sequence, line.id)
+        )
+        if not lines:
+            return document
+        Signer = self.env["vpk.official.document.signer"]
+        document.signer_line_ids.with_context(vpk_skip_signer_sync=True).unlink()
+        Signer.with_context(vpk_skip_signer_sync=True).create(
+            [
+                {
+                    "document_id": document.id,
+                    "sequence": line.sequence,
+                    "user_id": line.user_id.id,
+                    "position": line.position,
+                    "is_check": line.is_check,
+                    "is_sign": line.is_sign,
+                }
+                for line in lines
+            ]
+        )
+        document._sync_signers_from_lines()
+        return document
 
     def action_generate_winner_document(self):
         """สร้างหนังสือราชการจากเทมเพลต แล้วเปิดฟอร์มเอกสาร เหมือนรายงานผลการพิจารณา."""
@@ -34,27 +334,23 @@ class PurchaseRequisitionEgpDocument(models.Model):
         return document._action_open_form()
 
     def action_send_for_signature_inbox(self):
-        """เปิดตัวเลือกส่งลงนาม หรือข้ามการอนุมัติเพื่อทดสอบ."""
+        """เปิดตัวเลือกส่งลงนาม หรือข้ามการอนุมัติเพื่อทดสอบ สำหรับเอกสารทุกประเภทที่แนบไฟล์แล้ว."""
         self.ensure_one()
+        if self.signature_state == "signed":
+            raise UserError(_("เอกสารนี้ลงนามแล้ว"))
+        if self.signature_state == "waiting":
+            raise UserError(_("เอกสารถูกส่งลงนามแล้ว กำลังรอลงนาม"))
         code = self.document_type_id.code
-        if code == "winner_announcement":
-            if self.signature_state == "signed":
-                raise UserError(_("เอกสารนี้ลงนามแล้ว"))
-            if self.signature_state == "waiting":
-                raise UserError(_("เอกสารถูกส่งลงนามแล้ว กำลังรอลงนาม"))
-            if not self.official_document_id or not self.official_document_id.pdf_file:
-                self._build_winner_official_document()
-            official = self._ensure_winner_official_document()
-        elif code == "award_approval":
-            if self.signature_state == "signed":
-                raise UserError(_("เอกสารนี้ลงนามแล้ว"))
-            if self.signature_state == "waiting":
-                raise UserError(_("เอกสารถูกส่งขออนุมัติแล้ว"))
-            if not self.document_file:
-                raise UserError(_("ยังไม่มีไฟล์รายงาน กรุณาพิมพ์รายงานก่อนขออนุมัติ"))
-            official = self._ensure_award_official_document()
+        if self.signer_line_ids.filtered("user_id"):
+            if not self.document_file and (
+                not self.official_document_id or not self.official_document_id.pdf_file
+            ):
+                raise UserError(_("กรุณาแนบไฟล์ PDF ก่อนส่งเข้ากล่องผู้อนุมัติ"))
+            official = self._ensure_attached_egp_official_document()
         else:
-            raise UserError(_("เอกสารนี้ยังไม่มีขั้นตอนส่งเพื่อลงนาม"))
+            if not self.document_file:
+                raise UserError(_("กรุณาแนบไฟล์ PDF และกดปุ่ม 'เพิ่มผู้อนุมัติ' ก่อนส่งเพื่อลงนาม"))
+            return self.action_open_approver_modal()
         return official.action_open_send_wizard()
 
     def action_request_award_approval(self):
@@ -111,7 +407,9 @@ class PurchaseRequisitionEgpDocument(models.Model):
             document = Official.with_context(skip_validation_check=True).create(vals)
         if self.official_document_id != document:
             self.official_document_id = document.id
-        if report:
+        if self.signer_line_ids.filtered("user_id"):
+            self._push_egp_signers_to_official_document(document)
+        elif report:
             report._push_signers_to_official_document(document)
         if not self.document_file:
             return document
@@ -204,6 +502,8 @@ class PurchaseRequisitionEgpDocument(models.Model):
             document = Official.create(vals)
         if not self.official_document_id:
             self.official_document_id = document.id
+        if self.signer_line_ids.filtered("user_id"):
+            self._push_egp_signers_to_official_document(document)
         officer_vals = {}
         if document.officer_id == self.env.user:
             if values.get("cert_full"):
@@ -231,6 +531,21 @@ class PurchaseRequisitionEgpDocument(models.Model):
             kind,
         )
         return document
+
+
+class PurchaseRequisition(models.Model):
+    _inherit = "purchase.requisition"
+
+    @api.depends(
+        "award_report_ids.state",
+        "egp_document_ids.document_type_code",
+        "egp_document_ids.document_filename",
+        "egp_document_ids.attachment_id",
+        "egp_document_ids.signature_state",
+        "egp_document_ids.official_document_id.state",
+    )
+    def _compute_egp_award_approved(self):
+        return super()._compute_egp_award_approved()
 
 
 class PurchaseRequisitionAwardReport(models.Model):

@@ -103,7 +103,7 @@
         <field name="context">{'search_default_registered': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">ยังไม่มีงานสารบรรณ</p>
-            <p>สร้างจากใบขอซื้อด้วยปุ่ม "ขอเลขสารบรรณ" หรือสร้างที่นี่โดยตรง</p>
+            <p>สร้างจากหนังสือราชการด้วยปุ่ม "ขอเลขจากระบบสารบรรณ" หรือสร้างที่นี่โดยตรง</p>
         </field>
     </record>
 </odoo>

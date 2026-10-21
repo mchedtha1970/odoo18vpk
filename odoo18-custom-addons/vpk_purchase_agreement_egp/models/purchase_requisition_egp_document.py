@@ -49,6 +49,14 @@ class PurchaseRequisitionEgpDocument(models.Model):
         ondelete="cascade",
         index=True,
     )
+    purchase_request_id = fields.Many2one(
+        comodel_name="purchase.request",
+        string="ใบขอซื้อ/จ้าง",
+        related="requisition_id.purchase_request_id",
+        store=True,
+        readonly=True,
+        index=True,
+    )
     sequence = fields.Integer(default=10)
     document_type_id = fields.Many2one(
         comodel_name="purchase.requisition.egp.document.type",

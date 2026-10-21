@@ -98,8 +98,46 @@ def _place_above_name(page_size, name_rect, sig_width, sig_height):
     return x0, y0
 
 
-def stamp_signature_on_pdf(pdf_bytes, signature_bytes, search_texts):
-    """Return PDF bytes with the signature image placed above the last name match."""
+def _place_bottom_right(page_size, sig_width, sig_height, index=0):
+    page_w, page_h = page_size
+    x0 = max(PAGE_MARGIN, page_w - sig_width - PAGE_MARGIN * 3.0)
+    y0 = max(PAGE_MARGIN, PAGE_MARGIN * 4.0 + (index * (sig_height + 10.0)))
+    return x0, y0
+
+
+def _place_in_custom_box(page_size, image, custom_box):
+    page_w, page_h = page_size
+    w_ratio = float(custom_box.get("w_ratio") or 0.24)
+    h_ratio = float(custom_box.get("h_ratio") or 0.065)
+    x_ratio = float(custom_box.get("x_ratio") or 0.5)
+    y_ratio = float(custom_box.get("y_ratio") or 0.5)
+
+    box_w = max(24.0, min(page_w, w_ratio * page_w))
+    box_h = max(14.0, min(page_h, h_ratio * page_h))
+    box_left = max(0.0, min(page_w - box_w, x_ratio * page_w))
+    box_top = max(0.0, min(page_h - box_h, y_ratio * page_h))
+    box_bottom = page_h - (box_top + box_h)
+
+    img_ratio = image.width / float(max(image.height, 1))
+    sig_width = box_w
+    sig_height = sig_width / img_ratio
+    if sig_height > box_h:
+        sig_height = box_h
+        sig_width = sig_height * img_ratio
+
+    x0 = box_left + (box_w - sig_width) / 2.0
+    y0 = box_bottom + (box_h - sig_height) / 2.0
+    return sig_width, sig_height, x0, y0
+
+
+def stamp_signature_on_pdf(
+    pdf_bytes,
+    signature_bytes,
+    search_texts,
+    fallback_bottom_right=False,
+    custom_box=None,
+):
+    """Return PDF bytes with the signature image placed in custom_box or above the last name match."""
     try:
         import pypdfium2 as pdfium
     except ImportError as error:
@@ -110,17 +148,31 @@ def stamp_signature_on_pdf(pdf_bytes, signature_bytes, search_texts):
     image = _decode_image(signature_bytes)
     pdf = pdfium.PdfDocument(pdf_bytes)
     try:
-        hit = find_text_rect(pdf, search_texts)
-        if not hit:
-            raise SignatureStampError(
-                "ไม่พบชื่อผู้อนุมัติในเอกสาร กรุณาตรวจสอบชื่อผู้ลงนาม"
+        if custom_box and isinstance(custom_box, dict):
+            raw_page_idx = int(custom_box.get("page_index", len(pdf) - 1))
+            page_index = max(0, min(len(pdf) - 1, raw_page_idx))
+            page = pdf[page_index]
+            sig_width, sig_height, x0, y0 = _place_in_custom_box(
+                page.get_size(), image, custom_box
             )
-        page_index, name_rect = hit
-        page = pdf[page_index]
-        sig_width, sig_height = _signature_size(
-            image, max(name_rect[2] - name_rect[0], 1)
-        )
-        x0, y0 = _place_above_name(page.get_size(), name_rect, sig_width, sig_height)
+        else:
+            hit = find_text_rect(pdf, search_texts)
+            if not hit:
+                if not fallback_bottom_right:
+                    raise SignatureStampError(
+                        "ไม่พบชื่อผู้อนุมัติในเอกสาร กรุณาตรวจสอบชื่อผู้ลงนาม หรือกดปุ่มกำหนดกรอบลายเซ็นบนหน้าเอกสาร"
+                    )
+                page_index = max(len(pdf) - 1, 0)
+                page = pdf[page_index]
+                sig_width, sig_height = _signature_size(image, 100.0)
+                x0, y0 = _place_bottom_right(page.get_size(), sig_width, sig_height)
+            else:
+                page_index, name_rect = hit
+                page = pdf[page_index]
+                sig_width, sig_height = _signature_size(
+                    image, max(name_rect[2] - name_rect[0], 1)
+                )
+                x0, y0 = _place_above_name(page.get_size(), name_rect, sig_width, sig_height)
         bitmap = pdfium.PdfBitmap.from_pil(image)
         image_obj = pdfium.PdfImage.new(pdf)
         image_obj.set_bitmap(bitmap)

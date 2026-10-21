@@ -49,6 +49,41 @@ class PurchaseRequest(models.Model):
         compute="_compute_days_waiting_procurement",
         store=True,
     )
+    procurement_verified = fields.Boolean(
+        string="พัสดุตรวจสอบแล้ว",
+        tracking=True,
+        copy=False,
+        index=True,
+    )
+    procurement_verified_by = fields.Many2one(
+        "res.users",
+        string="ผู้ตรวจสอบ (พัสดุ)",
+        readonly=True,
+        copy=False,
+        tracking=True,
+    )
+    procurement_verified_date = fields.Datetime(
+        string="วันที่ตรวจสอบ (พัสดุ)",
+        readonly=True,
+        copy=False,
+    )
+    procurement_return_reason = fields.Text(
+        string="เหตุผลที่พัสดุส่งกลับให้แก้ไข",
+        readonly=True,
+        copy=False,
+        tracking=True,
+    )
+    procurement_returned_by = fields.Many2one(
+        "res.users",
+        string="ผู้ส่งกลับให้แก้ไข",
+        readonly=True,
+        copy=False,
+    )
+    procurement_returned_date = fields.Datetime(
+        string="วันที่ส่งกลับให้แก้ไข",
+        readonly=True,
+        copy=False,
+    )
 
     @api.depends("sent_to_procurement_date", "state")
     def _compute_days_waiting_procurement(self):
@@ -73,6 +108,10 @@ class PurchaseRequest(models.Model):
                 rec.procurement_inbox_lane = "mine"
             else:
                 rec.procurement_inbox_lane = "others"
+
+    @api.depends("procurement_verified")
+    def _compute_can_send_to_egp(self):
+        return super()._compute_can_send_to_egp()
 
     def _search_procurement_inbox_lane(self, operator, value):
         if operator not in ("=", "!="):
@@ -100,20 +139,147 @@ class PurchaseRequest(models.Model):
                 "sent_to_procurement_date": fields.Datetime.now(),
                 "procurement_owner_id": False,
                 "procurement_claimed_date": False,
+                "procurement_verified": False,
+                "procurement_verified_by": False,
+                "procurement_verified_date": False,
+                "procurement_return_reason": False,
+                "procurement_returned_by": False,
+                "procurement_returned_date": False,
             }
         )
+        self._notify_procurement_inbox_updated()
         return res
 
     def button_draft(self):
         res = super().button_draft()
-        self.write(
-            {
-                "sent_to_procurement_date": False,
-                "procurement_owner_id": False,
-                "procurement_claimed_date": False,
-            }
-        )
+        vals = {
+            "sent_to_procurement_date": False,
+            "procurement_owner_id": False,
+            "procurement_claimed_date": False,
+            "procurement_verified": False,
+            "procurement_verified_by": False,
+            "procurement_verified_date": False,
+        }
+        if not self.env.context.get("vpk_keep_return_reason"):
+            vals.update(
+                {
+                    "procurement_return_reason": False,
+                    "procurement_returned_by": False,
+                    "procurement_returned_date": False,
+                }
+            )
+        self.write(vals)
+        self._notify_procurement_inbox_updated()
         return res
+
+    def action_verify_procurement(self):
+        """เจ้าหน้าที่พัสดุตรวจสอบความถูกต้องของรายการใบขอซื้อก่อนส่งเข้า e-GP"""
+        user = self.env.user
+        now = fields.Datetime.now()
+        today = fields.Date.context_today(self)
+        for rec in self:
+            if rec.state not in ("sent_to_procurement", "to_approve", "approved"):
+                raise UserError(
+                    _("ยืนยันการตรวจสอบได้เฉพาะใบขอซื้อที่ส่งมาให้พัสดุแล้ว")
+                )
+            active_lines = rec.line_ids.filtered(
+                lambda line: not line.cancelled and line.product_qty
+            )
+            if not active_lines:
+                raise UserError(_("ใบขอซื้อไม่มีรายการสินค้าที่ใช้งานอยู่"))
+            if (
+                "budget_check_state" in rec._fields
+                and rec.budget_check_state != "enough"
+            ):
+                raise UserError(_("ใบขอซื้อต้องผ่านการตรวจสอบงบประมาณก่อน"))
+            vals = {
+                "procurement_verified": True,
+                "procurement_verified_by": user.id,
+                "procurement_verified_date": now,
+                "procurement_return_reason": False,
+                "procurement_returned_by": False,
+                "procurement_returned_date": False,
+            }
+            if not rec.procurement_owner_id:
+                vals["procurement_owner_id"] = user.id
+                vals["procurement_claimed_date"] = now
+            if "verified_by" in rec._fields:
+                vals["verified_by"] = user.id
+            if "date_verified" in rec._fields:
+                vals["date_verified"] = today
+            rec.write(vals)
+            if "can_send_to_egp" in rec._fields:
+                rec.invalidate_recordset(["can_send_to_egp"])
+            rec.message_post(
+                body=_(
+                    "พัสดุตรวจสอบความถูกต้องของรายการใบขอซื้อเรียบร้อยแล้ว โดย %s (พร้อมส่งเข้าระบบ e-GP)"
+                )
+                % user.display_name
+            )
+        self._notify_procurement_inbox_updated()
+        return True
+
+    def action_open_return_for_revision_wizard(self):
+        """เปิดหน้าต่างให้พัสดุระบุเหตุผลในการส่งกลับใบขอซื้อให้หน่วยงานแก้ไข"""
+        self.ensure_one()
+        if self.state not in ("sent_to_procurement", "to_approve"):
+            raise UserError(
+                _("ส่งกลับให้แก้ไขได้เฉพาะใบขอซื้อสถานะ ส่งพัสดุแล้ว")
+            )
+        if hasattr(self, "_get_egp_requisitions") and self._get_egp_requisitions():
+            raise UserError(
+                _("ไม่สามารถส่งกลับได้ เนื่องจากใบขอซื้อนี้ส่งเข้าระบบ e-GP แล้ว")
+            )
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("ส่งกลับให้แก้ไข"),
+            "res_model": "purchase.request.return.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_request_id": self.id,
+            },
+        }
+
+    def _vpk_do_return_for_revision(self, reason):
+        """เปลี่ยนสถานะใบขอซื้อกลับเป็น ร่าง พร้อมบันทึกเหตุผลที่พัสดุส่งกลับให้แก้ไข"""
+        user = self.env.user
+        now = fields.Datetime.now()
+        for rec in self:
+            if rec.state not in ("sent_to_procurement", "to_approve"):
+                raise UserError(
+                    _("ส่งกลับให้แก้ไขได้เฉพาะใบขอซื้อสถานะ ส่งพัสดุแล้ว")
+                )
+            rec.with_context(
+                vpk_keep_return_reason=True,
+                skip_validation_check=True,
+                skip_check_state_condition=True,
+            ).button_draft()
+            returnVals = {
+                "procurement_return_reason": reason,
+                "procurement_returned_by": user.id,
+                "procurement_returned_date": now,
+            }
+            if "verified_by" in rec._fields:
+                returnVals["verified_by"] = False
+            if "date_verified" in rec._fields:
+                returnVals["date_verified"] = False
+            rec.with_context(
+                skip_validation_check=True,
+                skip_check_state_condition=True,
+                skip_budget_check_reset=True,
+            ).write(returnVals)
+            rec.message_post(
+                body=_(
+                    "พัสดุส่งกลับใบขอซื้อให้หน่วยงานแก้ไข โดย %(user)s\nเหตุผล: %(reason)s"
+                )
+                % {
+                    "user": user.display_name,
+                    "reason": reason,
+                }
+            )
+        self._notify_procurement_inbox_updated()
+        return True
 
     def action_claim_procurement(self):
         """พัสดุกดรับงาน เพื่อดึงใบมาเป็นของตน"""

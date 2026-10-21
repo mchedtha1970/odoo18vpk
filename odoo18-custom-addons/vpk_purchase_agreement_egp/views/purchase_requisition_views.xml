@@ -125,27 +125,31 @@
                 >
                     <field name="egp_document_ids" context="{'default_requisition_id': id, 'default_egp_reference': egp_reference}">
                         <list editable="bottom">
+                            <control>
+                                <create name="add_egp_document_control" string="เพิ่มเอกสาร"/>
+                            </control>
                             <field name="sequence" widget="handle"/>
                             <field
                                 name="document_type_id"
-                                string="Title"
+                                string="ประเภทเอกสาร"
+                                width="320px"
                                 options="{'no_create': True, 'no_open': True}"
                             />
-                            <field name="egp_reference"/>
-                            <field name="document_date"/>
+                            <field name="egp_reference" string="เลขอ้างอิง e-GP"/>
+                            <field name="document_date" string="วันที่เอกสาร"/>
                             <field name="document_filename" column_invisible="1"/>
                             <field name="document_type_code" column_invisible="1"/>
-                            <field name="document_file" filename="document_filename" widget="binary"/>
+                            <field name="document_file" filename="document_filename" widget="binary" string="ไฟล์แนบ (PDF)"/>
                             <button
                                 name="action_generate_winner_document"
                                 type="object"
                                 string="Gen"
                                 class="btn-link"
-                                invisible="document_type_code != 'winner_announcement'"
+                                invisible="1"
                                 title="สร้างเอกสารประกาศผู้ชนะจากเทมเพลต Word"
                             />
-                            <button name="action_preview_document" type="object" string="View" icon="fa-eye"/>
-                            <field name="notes" optional="hide"/>
+                            <button name="action_preview_document" type="object" string="ดูเอกสาร" icon="fa-eye"/>
+                            <field name="notes" string="หมายเหตุ" optional="hide"/>
                         </list>
                     </field>
                 </page>

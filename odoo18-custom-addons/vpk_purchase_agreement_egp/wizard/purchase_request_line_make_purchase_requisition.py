@@ -25,12 +25,14 @@ class PurchaseRequestLineMakePurchaseRequisition(models.TransientModel):
                 raise UserError(
                     _("ใบขอซื้อ %s มีกระบวนการ e-GP แล้ว") % request.display_name
                 )
-            if hasattr(request, "_vpk_related_documents_all_approved") and (
-                not request._vpk_related_documents_all_approved()
+            if (
+                "procurement_verified" in request._fields
+                and not request.procurement_verified
+                and request.state != "approved"
             ):
                 raise UserError(
                     _(
-                        "กรุณาอนุมัติเอกสารที่เกี่ยวข้องให้ครบทุกฉบับก่อนส่งใบขอซื้อ %s เข้าระบบ e-GP"
+                        "กรุณากดยืนยันการตรวจสอบรายการใบขอซื้อ %s ก่อนส่งเข้าระบบ e-GP"
                     )
                     % request.display_name
                 )

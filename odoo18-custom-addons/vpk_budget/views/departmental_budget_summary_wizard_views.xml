@@ -45,6 +45,10 @@
                                 placeholder="ไม่เลือก แสดงทุกหน่วยงาน"
                                 options="{'no_create': True, 'no_open': True}"
                             />
+                            <field
+                                name="plan_type"
+                                placeholder="ไม่เลือก แสดงทั้งหมด (ในแผน + นอกแผน)"
+                            />
                             <field name="prior_fiscal_year_ce" string="ปีงบก่อนหน้า (พ.ศ.)"/>
                             <field name="current_fiscal_year_ce" string="ปีงบปัจจุบัน (พ.ศ.)"/>
                         </group>
@@ -153,6 +157,7 @@
                         </group>
                         <group>
                             <field name="analytic_account_id" options="{'no_create': True}"/>
+                            <field name="plan_type" placeholder="ไม่เลือก แสดงทั้งหมด (ในแผน + นอกแผน)"/>
                         </group>
                     </group>
                     <div class="mb-3">

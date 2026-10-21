@@ -71,8 +71,8 @@ class OfficialDocument(models.Model):
     saraban_book_no = fields.Char(
         string="เลขที่จากสารบรรณ",
         tracking=True,
-        help="รายงานขออนุมัติใช้เลขจากใบขอซื้อ (กดขอเลขสารบรรณที่ใบขอซื้อหรือที่เอกสารนี้) "
-        "คำสั่งและหนังสือราชการอื่นให้กดปุ่มขอเลขจากระบบสารบรรณที่เอกสารนั้น "
+        help="กดปุ่มขอเลขจากระบบสารบรรณที่ฟอร์มเอกสารนี้ "
+        "แต่ละหนังสือราชการที่ผูกกับใบขอซื้อต้องขอเลขของตนเอง "
         "เลขนี้แสดงที่ช่อง 'ที่' ในไฟล์ที่พิมพ์",
     )
     saraban_document_id = fields.Many2one(
@@ -493,11 +493,9 @@ class OfficialDocument(models.Model):
         return display
 
     def _uses_pr_saraban_number(self):
+        """เลขสารบรรณออกที่เอกสารแต่ละฉบับ ไม่ใช้เลขร่วมจากใบขอซื้อ."""
         self.ensure_one()
-        return self.document_type in (
-            "specific_method_approval",
-            "purchase_approval_memo",
-        )
+        return False
 
     def _saraban_doc_type(self):
         self.ensure_one()
@@ -517,22 +515,11 @@ class OfficialDocument(models.Model):
 
     def _ensure_saraban_book_no(self):
         for rec in self:
-            if (
-                rec.document_type
-                not in ("specific_method_approval", "purchase_approval_memo")
-                or not rec.request_id
-            ):
+            if rec.saraban_book_no:
                 continue
-            number = rec._saraban_book_no_from_request(rec.request_id)
-            if number and not rec.saraban_book_no:
-                rec.saraban_book_no = number
-            pr_doc = (
-                rec.request_id.saraban_document_id
-                if "saraban_document_id" in rec.request_id._fields
-                else False
-            )
-            if pr_doc and not rec.saraban_document_id:
-                rec.saraban_document_id = pr_doc
+            document = rec.saraban_document_id
+            if document:
+                rec.saraban_book_no = document.book_no_display or document.book_no
 
     def _printed_document_number(self):
         self.ensure_one()
@@ -553,25 +540,15 @@ class OfficialDocument(models.Model):
 
     @api.onchange("request_id", "document_type")
     def _onchange_request_id_saraban(self):
-        if (
-            self.request_id
-            and self.document_type
-            in ("specific_method_approval", "purchase_approval_memo")
-            and not self.saraban_book_no
-        ):
-            self.saraban_book_no = self._saraban_book_no_from_request(self.request_id)
-            if "saraban_document_id" in self.request_id._fields:
-                self.saraban_document_id = self.request_id.saraban_document_id
+        return
 
     def action_request_saraban_number(self):
-        """ขอเลขสารบรรณ: รายงานขออนุมัติใช้เลขใบขอซื้อ เอกสารอื่นขอเลขของตนเอง."""
+        """ขอเลขสารบรรณที่ฟอร์มเอกสารที่เกี่ยวข้องแต่ละฉบับ."""
         self.ensure_one()
         if self.state == "cancelled":
             raise UserError(_("ไม่สามารถขอเลขสารบรรณจากเอกสารที่ยกเลิกแล้ว"))
         if "saraban.document" not in self.env:
             raise UserError(_("ยังไม่ได้ติดตั้งโมดูลเชื่อมระบบสารบรรณ"))
-        if self._uses_pr_saraban_number():
-            return self._request_pr_approval_saraban_number()
         return self._request_own_saraban_number()
 
     def _request_pr_approval_saraban_number(self):
@@ -665,18 +642,6 @@ class OfficialDocument(models.Model):
             vals.get("company_id") or self.env.company.id
         )
         doc_type = vals.get("document_type") or "wa_committee_order"
-        if (
-            doc_type in ("specific_method_approval", "purchase_approval_memo")
-            and vals.get("request_id")
-        ):
-            request = self.env["purchase.request"].browse(vals["request_id"])
-            if not vals.get("saraban_book_no"):
-                number = self._saraban_book_no_from_request(request)
-                if number:
-                    vals["saraban_book_no"] = number
-            if not vals.get("saraban_document_id") and "saraban_document_id" in request._fields:
-                if request.saraban_document_id:
-                    vals["saraban_document_id"] = request.saraban_document_id.id
         signer_user = self._person_user_from_company(
             company, "official_doc_signer_id", "official_doc_signer_name"
         )
@@ -2445,9 +2410,14 @@ class OfficialDocument(models.Model):
             raise UserError(str(error)) from error
 
     def _sync_winner_egp_attachment(self):
-        for rec in self.filtered(lambda doc: doc.document_type == "winner_announcement"):
-            egp = rec._winner_egp_document()
-            if not egp or not rec.pdf_file:
+        Egp = self.env["purchase.requisition.egp.document"].sudo()
+        for rec in self:
+            if not rec.pdf_file:
+                continue
+            egp = Egp.search([("official_document_id", "=", rec.id)], limit=1)
+            if not egp and rec.document_type == "winner_announcement":
+                egp = rec._winner_egp_document()
+            if not egp:
                 continue
             vals = {
                 "document_file": rec.pdf_file,
@@ -2808,7 +2778,7 @@ class OfficialDocument(models.Model):
             return named.vpk_signer_name
         return doc.signer_name
 
-    def _apply_signature_to_pdf(self, signature, signer_user=None):
+    def _apply_signature_to_pdf(self, signature, signer_user=None, signature_box=None):
         self.ensure_one()
         signer_user = signer_user or self.env.user
         raw = signature or ""
@@ -2823,11 +2793,18 @@ class OfficialDocument(models.Model):
         if not attachment:
             raise UserError(_("ยังไม่มีไฟล์ PDF กรุณากดพิมพ์ PDF ก่อน"))
         pdf_bytes = base64.b64decode(attachment.datas)
+        has_egp_link = bool(
+            self.env["purchase.requisition.egp.document"]
+            .sudo()
+            .search_count([("official_document_id", "=", self.id)])
+        )
         try:
             stamped = stamp_signature_on_pdf(
                 pdf_bytes,
                 base64.b64decode(raw),
                 self._signature_search_needles(signer_user),
+                fallback_bottom_right=has_egp_link,
+                custom_box=signature_box,
             )
         except SignatureStampError as error:
             raise UserError(str(error)) from error
@@ -2847,7 +2824,7 @@ class OfficialDocument(models.Model):
         self.write(vals)
         return True
 
-    def action_apply_signature(self, signature):
+    def action_apply_signature(self, signature, signature_box=None):
         self.ensure_one()
         if self.state != "to_approve":
             raise UserError(_("เอกสารถึงขั้นตอนลงนามแล้วเท่านั้น"))
@@ -2855,7 +2832,9 @@ class OfficialDocument(models.Model):
             self._compute_can_review()
         if "can_review" in self._fields and not self.can_review:
             raise UserError(_("คุณไม่มีสิทธิ์ลงนามเอกสารนี้"))
-        self.sudo()._apply_signature_to_pdf(signature, signer_user=self.env.user)
+        self.sudo()._apply_signature_to_pdf(
+            signature, signer_user=self.env.user, signature_box=signature_box
+        )
         return self.validate_tier()
 
     def evaluate_formula_tier(self, tier):
@@ -2883,6 +2862,14 @@ class OfficialDocument(models.Model):
                         "signed_on": rec.signed_on or fields.Datetime.now(),
                     }
                 )
+            if rec.validation_status == "validated":
+                egp_docs = rec.env["purchase.requisition.egp.document"].sudo().search(
+                    [("official_document_id", "=", rec.id)]
+                )
+                if egp_docs:
+                    egp_docs.mapped("requisition_id").invalidate_recordset(
+                        ["egp_award_approved"]
+                    )
             if (
                 rec.document_type == "award_approval"
                 and rec.validation_status == "validated"

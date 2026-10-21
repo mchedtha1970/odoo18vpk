@@ -545,8 +545,8 @@ class PurchaseRequisition(models.Model):
             if not self.egp_award_approved:
                 raise UserError(
                     _(
-                        "ยังไม่สามารถสร้าง RFQ/PO ได้ กรุณาจัดทำและอนุมัติ "
-                        "รายงานผลการพิจารณาและขออนุมัติสั่งซื้อ/สั่งจ้างก่อน"
+                        "ยังไม่สามารถสร้าง PO ได้ กรุณาแนบและลงนาม "
+                        "รายงานผลการพิจารณา และมีประกาศผู้ชนะในแท็บเอกสาร e-GP ก่อน"
                     )
                 )
         elif self.state != "confirmed":

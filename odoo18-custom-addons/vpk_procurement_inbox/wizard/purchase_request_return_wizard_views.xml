@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_return_wizard_form" model="ir.ui.view">
+        <field name="name">purchase.request.return.wizard.form</field>
+        <field name="model">purchase.request.return.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ส่งกลับให้แก้ไข">
+                <group>
+                    <field name="request_id"/>
+                    <field
+                        name="reason"
+                        placeholder="ระบุรายละเอียดหรือเหตุผลที่ต้องการให้หน่วยงานแก้ไขในใบขอซื้อ..."
+                    />
+                </group>
+                <footer>
+                    <button
+                        name="action_confirm_return"
+                        type="object"
+                        string="ยืนยันส่งกลับให้แก้ไข"
+                        class="btn-warning"
+                    />
+                    <button string="ยกเลิก" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

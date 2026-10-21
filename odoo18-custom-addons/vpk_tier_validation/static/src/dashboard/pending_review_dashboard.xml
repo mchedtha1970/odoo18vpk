@@ -6,18 +6,35 @@
             <div class="o_vpk_pending_review_dashboard h-100 d-flex flex-column">
                 <div class="o_vpk_dashboard_header">
                     <div class="o_vpk_dashboard_header_text">
-                        <h2 class="mb-1">งานรออนุมัติของฉัน</h2>
+                        <h2 class="mb-1">กล่องอนุมัติเอกสาร (งานรออนุมัติ และรายการที่อนุมัติแล้ว)</h2>
                         <p class="text-muted mb-0">
-                            คลิกกล่องเพื่อเปิดเอกสารและดำเนินการอนุมัติ
+                            คลิกกล่องเพื่อเปิดเอกสารและดำเนินการอนุมัติ หรือเปิดดูเอกสารที่อนุมัติแล้ว
                         </p>
                     </div>
-                    <div class="o_vpk_dashboard_header_actions">
-                        <span
-                            t-if="state.count"
-                            class="badge rounded-pill text-bg-warning fs-6"
-                        >
-                            <t t-esc="state.count"/> รายการ
-                        </span>
+                    <div class="o_vpk_dashboard_header_actions flex-wrap">
+                        <div class="btn-group btn-group-sm me-2" role="group">
+                            <button
+                                type="button"
+                                t-attf-class="btn #{state.filter === 'all' ? 'btn-primary' : 'btn-outline-secondary'}"
+                                t-on-click="() => this.setFilter('all')"
+                            >
+                                ทั้งหมด (<t t-esc="state.totalCount"/>)
+                            </button>
+                            <button
+                                type="button"
+                                t-attf-class="btn #{state.filter === 'pending' ? 'btn-warning text-dark fw-semibold' : 'btn-outline-secondary'}"
+                                t-on-click="() => this.setFilter('pending')"
+                            >
+                                รออนุมัติ (<t t-esc="state.pendingCount"/>)
+                            </button>
+                            <button
+                                type="button"
+                                t-attf-class="btn #{state.filter === 'approved' ? 'btn-success' : 'btn-outline-secondary'}"
+                                t-on-click="() => this.setFilter('approved')"
+                            >
+                                อนุมัติแล้ว (<t t-esc="state.approvedCount"/>)
+                            </button>
+                        </div>
                         <button
                             type="button"
                             class="btn btn-outline-primary btn-sm"
@@ -28,15 +45,17 @@
                     </div>
                 </div>
 
-                <div class="o_vpk_dashboard_body flex-grow-1" t-if="state.ready and viewProps">
-                    <t t-if="state.count">
-                        <View t-props="viewProps"/>
+                <div class="o_vpk_dashboard_body flex-grow-1" t-if="state.ready and currentViewProps">
+                    <t t-if="currentCount">
+                        <View t-props="currentViewProps" t-key="state.filter"/>
                     </t>
                     <t t-else="">
                         <div class="o_vpk_dashboard_empty text-center text-muted py-5">
                             <i class="fa fa-check-circle fa-3x mb-3 d-block opacity-50"/>
-                            <h4>ไม่มีงานรออนุมัติ</h4>
-                            <p>เมื่อมีเอกสารที่ต้องอนุมัติ จะแสดงเป็นกล่องที่นี่</p>
+                            <h4 t-if="state.filter === 'pending'">ไม่มีงานรออนุมัติ</h4>
+                            <h4 t-elif="state.filter === 'approved'">ยังไม่มีรายการที่อนุมัติแล้ว</h4>
+                            <h4 t-else="">ไม่มีรายการในกล่องอนุมัติเอกสาร</h4>
+                            <p>เมื่อมีเอกสารที่ต้องอนุมัติหรืออนุมัติแล้ว จะแสดงเป็นกล่องที่นี่</p>
                         </div>
                     </t>
                 </div>

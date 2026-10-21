@@ -23,7 +23,11 @@ class VendorApiService(models.AbstractModel):
     def _partner_domain(self):
         user = self._vendor_user()
         commercial = user.partner_id.commercial_partner_id
-        return [("partner_id", "child_of", commercial.id), ("vpk_po_sent_on", "!=", False)]
+        return [
+            ("partner_id", "child_of", commercial.id),
+            ("vpk_po_sent_on", "!=", False),
+            ("state", "!=", "cancel"),
+        ]
 
     def _order_domain(self, status="waiting"):
         status = (status or "waiting").strip().lower()
@@ -295,7 +299,7 @@ class VendorApiService(models.AbstractModel):
             "content_disposition": "inline; filename*=UTF-8''%s" % quote(filename),
         }
 
-    def sign_order(self, order_id, signature=None, name=None):
+    def sign_order(self, order_id, signature=None, name=None, signature_box=None):
         order = self._require_order(order_id).sudo()
         if order.vpk_vendor_confirm_state != "waiting":
             raise UserError(_("ใบสั่งซื้อนี้ไม่ได้อยู่ในสถานะรอผู้ขายยืนยัน"))
@@ -305,7 +309,7 @@ class VendorApiService(models.AbstractModel):
         raw = (signature or "").strip()
         if raw.startswith("data:"):
             raw = raw.split(",", 1)[-1]
-        order._vpk_stamp_vendor_signature(raw)
+        order._vpk_stamp_vendor_signature(raw, signature_box=signature_box)
         order.action_portal_vendor_confirm(name=signer, signature=raw)
         order.invalidate_recordset()
         return {"ok": True, "item": self.serialize_order(order)}

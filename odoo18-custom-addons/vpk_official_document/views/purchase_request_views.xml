@@ -38,98 +38,26 @@
                 <attribute name="string">รายชื่อคณะกรรมการ</attribute>
             </xpath>
             <xpath expr="//page[@name='committee']" position="after">
-                <page string="เอกสารอนุมัติขอซื้อ" name="purchase_approval_memo">
-                    <field name="issued_purchase_approval_memo_id" invisible="1"/>
-                    <div class="text-muted mb-2">
-                        บันทึกข้อความอนุมัติขอซื้อใช้เลขสารบรรณจากปุ่ม <b>ขอเลขสารบรรณ</b> ที่ใบขอซื้อ
-                        ส่งลงนามตามลำดับในตารางผู้ลงนาม
-                    </div>
-                    <div class="d-flex flex-wrap gap-2 mb-3">
-                        <button name="action_create_purchase_approval_memo" type="object"
-                                string="ออกบันทึกข้อความอนุมัติขอซื้อ"
-                                class="btn-primary me-2"
-                                groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
-                                invisible="state == 'rejected' or issued_purchase_approval_memo_id"/>
-                        <button name="action_create_purchase_approval_memo" type="object"
-                                string="เปิดบันทึกข้อความอนุมัติขอซื้อ"
-                                class="btn-primary me-2"
-                                groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
-                                invisible="state == 'rejected' or not issued_purchase_approval_memo_id"/>
-                    </div>
-                    <field name="purchase_approval_memo_ids"
-                           context="{'default_document_type': 'purchase_approval_memo', 'default_request_id': id}"
-                           readonly="1" create="false" delete="false">
-                        <list>
-                            <field name="has_pdf" widget="vpk_pdf_icon" string="ไฟล์"/>
-                            <field name="pdf_filename" column_invisible="1"/>
-                            <field name="pdf_attachment_id" column_invisible="1"/>
-                            <field name="can_review" column_invisible="1"/>
-                            <field name="name" string="เลขที่เอกสาร"/>
-                            <field name="saraban_book_no" string="เลขที่จากสารบรรณ"/>
-                            <field name="date"/>
-                            <field name="subject"/>
-                            <field name="signature_state" widget="badge"
-                                   decoration-muted="signature_state == 'not_sent'"
-                                   decoration-warning="signature_state == 'waiting'"
-                                   decoration-success="signature_state == 'signed'"/>
-                            <button name="action_open_send_wizard" type="object"
-                                    string="ส่งเพื่อลงนาม"
-                                    icon="fa-paper-plane"
-                                    groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
-                                    invisible="signature_state != 'not_sent' or state == 'cancelled'"/>
-                            <field name="state" widget="badge"
-                                   decoration-info="state == 'draft'"
-                                   decoration-success="state in ('generated', 'approved')"
-                                   decoration-warning="state == 'to_approve'"
-                                   decoration-muted="state == 'cancelled'"/>
-                        </list>
-                    </field>
-                </page>
                 <page string="เอกสารราชการที่เกี่ยวข้อง" name="related_official_documents">
                     <div class="text-muted mb-2">
-                        เลือกเอกสารที่จะสร้าง แล้วกดสร้างเอกสาร
-                        ถ้าเอกสารชนิดนั้นออกไว้แล้ว ระบบจะเปิดเอกสารเดิม
+                        รายการเอกสารที่เพิ่มและแนบไฟล์ไว้ใน <b>เอกสารกระบวนการ e-GP</b> (สำหรับเปิดดูเท่านั้น)
                     </div>
-                    <group>
-                        <group>
-                            <field name="official_document_to_create" widget="selection"
-                                   options="{'no_create': True, 'no_open': True}"/>
-                        </group>
-                        <group>
-                            <button name="action_create_selected_official_document" type="object"
-                                    string="สร้างเอกสาร"
-                                    class="btn-primary"
-                                    groups="purchase.group_purchase_user"
-                                    invisible="state == 'rejected' or not official_document_to_create"/>
-                        </group>
-                    </group>
-                    <field name="official_document_ids"
-                           context="{'default_request_id': id}"
+                    <field name="egp_document_ids"
                            readonly="1" create="false" delete="false">
-                        <list>
-                            <field name="document_type"/>
-                            <field name="has_pdf" widget="vpk_pdf_icon" string="ไฟล์"/>
-                            <field name="pdf_filename" column_invisible="1"/>
-                            <field name="pdf_attachment_id" column_invisible="1"/>
-                            <field name="can_review" column_invisible="1"/>
-                            <field name="name" string="เลขที่เอกสาร"/>
-                            <field name="saraban_book_no" string="เลขที่จากสารบรรณ"/>
-                            <field name="date"/>
-                            <field name="subject"/>
-                            <field name="signature_state" widget="badge"
+                        <list create="false" delete="false" edit="false">
+                            <field name="sequence" column_invisible="1"/>
+                            <field name="document_type_id" string="ประเภท"/>
+                            <field name="egp_reference" string="เลขอ้างอิง e-GP"/>
+                            <field name="document_date" string="วันที่เอกสาร"/>
+                            <field name="document_filename" column_invisible="1"/>
+                            <field name="document_file" filename="document_filename" widget="binary" string="ไฟล์"/>
+                            <button name="action_preview_document" type="object" string="ดูเอกสาร" icon="fa-eye"/>
+                            <field name="signer_summary" string="ลงนาม/อนุมัติ" width="180px" optional="show"/>
+                            <field name="signature_state" widget="badge" optional="show"
                                    decoration-muted="signature_state == 'not_sent'"
                                    decoration-warning="signature_state == 'waiting'"
                                    decoration-success="signature_state == 'signed'"/>
-                            <button name="action_open_send_wizard" type="object"
-                                    string="ส่งเพื่อลงนาม"
-                                    icon="fa-paper-plane"
-                                    groups="purchase.group_purchase_user"
-                                    invisible="signature_state != 'not_sent' or state == 'cancelled'"/>
-                            <field name="state" widget="badge"
-                                   decoration-info="state == 'draft'"
-                                   decoration-success="state in ('generated', 'approved')"
-                                   decoration-warning="state == 'to_approve'"
-                                   decoration-muted="state == 'cancelled'"/>
+                            <field name="notes" string="หมายเหตุ" optional="show"/>
                         </list>
                     </field>
                 </page>

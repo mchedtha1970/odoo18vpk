@@ -33,6 +33,15 @@ class BudgetLines(models.Model):
         index=True,
         readonly=True,
     )
+    plan_type = fields.Selection(
+        selection=[
+            ("in_plan", "ในแผน"),
+            ("off_plan", "นอกแผน"),
+        ],
+        string="ประเภทการตั้งงบประมาณ",
+        default="in_plan",
+        index=True,
+    )
     fund_source_id = fields.Many2one(
         comodel_name="vpk.budget.fund.source",
         string="Fund Source",

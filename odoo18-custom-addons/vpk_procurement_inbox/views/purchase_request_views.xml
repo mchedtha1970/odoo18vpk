@@ -26,13 +26,16 @@
                 <field name="is_procurement_overdue"/>
                 <field name="procurement_owner_id"/>
                 <field name="procurement_inbox_lane"/>
+                <field name="procurement_verified"/>
                 <templates>
                     <t t-name="card">
                         <div class="oe_kanban_global_click o_vpk_inbox_card"
                              t-att-class="record.is_procurement_overdue.raw_value ? 'o_vpk_inbox_overdue' : ''">
                             <div class="o_vpk_inbox_card_header">
                                 <strong t-esc="record.name.value"/>
-                                <span t-if="record.is_procurement_overdue.raw_value"
+                                <span t-if="record.procurement_verified.raw_value"
+                                      class="badge text-bg-primary">ตรวจสอบแล้ว</span>
+                                <span t-elif="record.is_procurement_overdue.raw_value"
                                       class="badge text-bg-danger">ค้างนาน</span>
                                 <span t-elif="!record.procurement_owner_id.raw_value"
                                       class="badge text-bg-warning">รอรับ</span>
@@ -118,6 +121,7 @@
                 <field name="estimated_cost" optional="show" sum="รวม"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="procurement_owner_id"/>
+                <field name="procurement_verified" optional="show"/>
                 <field name="is_procurement_overdue" column_invisible="1"/>
                 <field name="state" optional="hide"/>
                 <button
@@ -204,13 +208,33 @@
         <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
+                <field name="procurement_verified" invisible="1"/>
+                <field name="procurement_return_reason" invisible="1"/>
                 <button
                     name="action_claim_procurement"
                     type="object"
                     string="รับงาน"
                     class="btn-primary"
                     invisible="state != 'sent_to_procurement' or procurement_owner_id"
-                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
+                />
+                <button
+                    name="action_verify_procurement"
+                    type="object"
+                    string="ยืนยันการตรวจสอบ"
+                    class="oe_highlight"
+                    icon="fa-check"
+                    invisible="state != 'sent_to_procurement' or procurement_verified"
+                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
+                />
+                <button
+                    name="action_open_return_for_revision_wizard"
+                    type="object"
+                    string="ส่งกลับให้แก้ไข"
+                    class="btn-warning"
+                    icon="fa-reply"
+                    invisible="state != 'sent_to_procurement'"
+                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
                 />
                 <button
                     name="action_unclaim_procurement"
@@ -218,10 +242,23 @@
                     string="คืนคิว"
                     class="btn-secondary"
                     invisible="state != 'sent_to_procurement' or not procurement_owner_id"
-                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
                 />
             </xpath>
             <xpath expr="//div[@name='button_box']" position="after">
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    invisible="state != 'draft' or not procurement_return_reason"
+                >
+                    <i class="fa fa-exclamation-triangle me-1"/>
+                    <strong>พัสดุส่งกลับให้แก้ไข:</strong>
+                    <field name="procurement_return_reason" readonly="1" class="oe_inline ms-1"/>
+                    <span invisible="not procurement_returned_by" class="text-muted ms-2">
+                        (ผู้ส่งกลับ: <field name="procurement_returned_by" readonly="1" class="oe_inline"/>
+                        เมื่อ <field name="procurement_returned_date" readonly="1" class="oe_inline"/>)
+                    </span>
+                </div>
                 <div
                     class="alert alert-info"
                     role="alert"
@@ -232,9 +269,12 @@
                         เมื่อ <field name="sent_to_procurement_date" readonly="1" class="oe_inline"/>
                         (ค้าง <field name="days_waiting_procurement" readonly="1" class="oe_inline"/> วัน)
                     </span>
-                    <span invisible="procurement_owner_id"> — ยังไม่มีผู้รับงาน กด <b>รับงาน</b> เพื่อดึงมาทำ</span>
+                    <span invisible="procurement_owner_id"> — ยังไม่มีผู้รับงาน กด <b>รับงาน</b> หรือ <b>ยืนยันการตรวจสอบ</b> เพื่อดำเนินการ</span>
                     <span invisible="not procurement_owner_id">
                         — ผู้รับงาน: <field name="procurement_owner_id" readonly="1" class="oe_inline"/>
+                    </span>
+                    <span invisible="not procurement_verified" class="ms-2 badge text-bg-success">
+                        <i class="fa fa-check me-1"/>พัสดุตรวจสอบความถูกต้องแล้ว พร้อมส่งเข้าระบบ e-GP
                     </span>
                 </div>
             </xpath>
@@ -242,11 +282,14 @@
                 <field
                     name="procurement_owner_id"
                     readonly="state != 'sent_to_procurement'"
-                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
                 />
                 <field name="sent_to_procurement_date" readonly="1"/>
                 <field name="procurement_claimed_date" readonly="1"/>
                 <field name="days_waiting_procurement" readonly="1"/>
+                <field name="procurement_verified" readonly="1"/>
+                <field name="procurement_verified_by" readonly="1" invisible="not procurement_verified"/>
+                <field name="procurement_verified_date" readonly="1" invisible="not procurement_verified"/>
             </xpath>
         </field>
     </record>

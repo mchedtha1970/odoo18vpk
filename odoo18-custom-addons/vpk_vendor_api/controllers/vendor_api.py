@@ -85,31 +85,37 @@ class VendorApiController(http.Controller):
     def _bind_session(self, sid):
         if not sid or not root.session_store.is_valid_key(sid):
             return False
-        if request.session.sid == sid and request.session.uid:
-            return True
-        session = root.session_store.get(sid)
-        if not session or not session.uid:
+        if request.session.sid != sid:
+            session = root.session_store.get(sid)
+            if not session or not session.uid:
+                return False
+            session.sid = sid
+            request.session = session
+        uid = request.session.uid
+        if not uid:
             return False
-        session.sid = sid
-        request.session = session
-        request.update_env(user=session.uid)
+        public_ids = request.env["ir.http"]._get_public_users()
+        if uid in public_ids:
+            return False
+        if request.env.uid != uid:
+            request.update_env(user=uid)
         return True
 
     def _require_user(self):
         if not request.db:
             return self._error("กรุณาเข้าสู่ระบบ", 401)
-        bound = False
         for sid in self._explicit_session_candidates():
             if self._bind_session(sid):
-                bound = True
                 break
         uid = request.session.uid
         public_ids = request.env["ir.http"]._get_public_users()
-        if not bound:
-            if not uid or uid in public_ids:
-                return self._error("กรุณาเข้าสู่ระบบ", 401)
-            if request.env.uid != uid:
-                request.update_env(user=uid)
+        if not uid or uid in public_ids:
+            return self._error("กรุณาเข้าสู่ระบบ", 401)
+        if request.env.uid != uid:
+            request.update_env(user=uid)
+        user = request.env.user
+        if not user._is_portal():
+            return self._error("บัญชีนี้ไม่ใช่ผู้ขาย", 403)
         return None
 
     def _handle(self, callback, auth=True):
@@ -356,6 +362,7 @@ class VendorApiController(http.Controller):
                 order_id,
                 signature=payload.get("signature"),
                 name=payload.get("name"),
+                signature_box=payload.get("signature_box"),
             )
             return self._json(result)
 

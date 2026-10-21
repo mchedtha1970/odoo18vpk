@@ -366,54 +366,19 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
 
     def test_send_to_egp_button_requires_related_documents(self):
         request = self._vpk_make_egp_purchase_request()
-        request.write({"state": "approved"})
+        request.write({"state": "sent_to_procurement"})
         request.invalidate_recordset()
-        self.assertFalse(request.can_send_to_egp)
-        Document = self.env["vpk.official.document"]
-        order = self._vpk_mark_document_approved(
-            Document.create(
-                {
-                    "document_type": "wa_committee_order",
-                    "request_id": request.id,
-                }
-            )
-        )
-        integrity = self._vpk_mark_document_approved(
-            Document.create(
-                {
-                    "document_type": "integrity_over_100k",
-                    "request_id": request.id,
-                }
-            )
-        )
-        request.invalidate_recordset()
-        self.assertFalse(
-            request.can_send_to_egp,
-            "ต้องมีรายงานขออนุมัติด้วย จึงจะส่ง e-GP ได้",
-        )
-        approval = self._vpk_mark_document_approved(
-            Document.create(
-                {
-                    "document_type": "specific_method_approval",
-                    "request_id": request.id,
-                }
-            )
-        )
-        request.invalidate_recordset()
-        self.assertTrue(request.can_send_to_egp)
-        integrity.with_context(skip_validation_check=True).write({"state": "to_approve"})
-        request.invalidate_recordset()
-        self.assertFalse(request.can_send_to_egp)
-        self._vpk_mark_document_approved(integrity)
-        request.invalidate_recordset()
+        if "procurement_verified" in request._fields:
+            self.assertFalse(request.can_send_to_egp)
+            request.write({"procurement_verified": True})
+            request.invalidate_recordset()
         self.assertTrue(request.can_send_to_egp)
         action = request.action_send_to_egp()
         self.assertEqual(
             action["res_model"],
             "purchase.request.line.make.purchase.requisition",
         )
-        self.assertEqual(order.state, "approved")
-        self.assertEqual(approval.state, "approved")
+        self.assertEqual(request.state, "approved")
 
     def test_invitation_tab_pulls_products_from_referenced_pr(self):
         request = self._vpk_make_egp_purchase_request()
@@ -524,3 +489,75 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
             lambda document: document.document_type_id.code == "award_approval"
         )
         self.assertEqual(len(documents), 1)
+
+    def _egp_document_type(self, code, name):
+        DocumentType = self.env["purchase.requisition.egp.document.type"]
+        doc_type = DocumentType.search([("code", "=", code)], limit=1)
+        if not doc_type:
+            doc_type = DocumentType.create({"name": name, "code": code})
+        return doc_type
+
+    def _attach_signed_egp_document(self, requisition, code, name, filename):
+        doc_type = self._egp_document_type(code, name)
+        document = self.env["purchase.requisition.egp.document"].create(
+            {
+                "requisition_id": requisition.id,
+                "document_type_id": doc_type.id,
+                "document_file": "dGVzdA==",
+                "document_filename": filename,
+            }
+        )
+        Official = self.env["vpk.official.document"]
+        official_type = (
+            "winner_announcement" if code == "winner_announcement" else "award_approval"
+        )
+        official = Official.create(
+            {
+                "document_type": official_type,
+                "subject": name,
+            }
+        )
+        official.with_context(skip_validation_check=True).write({"state": "approved"})
+        document.official_document_id = official
+        return document
+
+    def test_create_po_ready_when_consideration_and_winner_signed(self):
+        if "vpk.official.document" not in self.env:
+            self.skipTest("vpk_official_document is required for signed e-GP documents")
+        self.requisition.action_confirm()
+        self.env["purchase.requisition.egp.bid"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "partner_id": self.partner.id,
+                "amount_total": 1000,
+                "is_winner": True,
+            }
+        )
+        self.assertFalse(self.requisition.egp_award_approved)
+        self._attach_signed_egp_document(
+            self.requisition,
+            "consider_procurement",
+            "รายงานผลการพิจารณาจัดซื้อจัดจ้าง",
+            "consider.pdf",
+        )
+        self.assertFalse(self.requisition.egp_award_approved)
+        self._attach_signed_egp_document(
+            self.requisition,
+            "winner_announcement",
+            "ประกาศผู้ชนะ",
+            "winner.pdf",
+        )
+        self.requisition.invalidate_recordset(["egp_award_approved"])
+        self.assertTrue(self.requisition.egp_has_winner)
+        self.assertTrue(self.requisition.egp_award_approved)
+        action = self.requisition.action_open_create_rfq_wizard()
+        self.assertEqual(action["res_model"], "purchase.requisition.create.rfq")
+        wizard = self.env["purchase.requisition.create.rfq"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "partner_id": self.partner.id,
+            }
+        )
+        po_action = wizard.action_create_rfq()
+        purchase_order = self.env["purchase.order"].browse(po_action["res_id"])
+        self.assertEqual(purchase_order.partner_id, self.partner)

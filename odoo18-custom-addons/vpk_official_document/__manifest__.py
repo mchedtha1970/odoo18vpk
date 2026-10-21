@@ -3,7 +3,7 @@
 
 {
     "name": "VPK Official Document - หนังสือราชการ",
-    "version": "18.0.1.18.4",
+    "version": "18.0.1.18.12",
     "category": "Purchases",
     "summary": "ออกหนังสือราชการจากแบบฟอร์ม Word เช่น คำสั่งแต่งตั้งคณะกรรมการตรวจรับ และบันทึกขออนุมัติแต่งตั้งคณะกรรมการกำหนดคุณลักษณะ",
     "author": "VPK",
@@ -52,7 +52,6 @@
             "vpk_official_document/static/src/scss/sign_pdf_viewer_dialog.scss",
             "vpk_official_document/static/src/js/sign_pdf_viewer_action.js",
             "vpk_official_document/static/src/js/official_document_form.js",
-            "vpk_official_document/static/src/js/purchase_request_approval_tab.js",
             "vpk_official_document/static/src/js/attachment_cards_field.js",
             "vpk_official_document/static/src/xml/attachment_cards_field.xml",
             "vpk_official_document/static/src/scss/attachment_cards_field.scss",

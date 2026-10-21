@@ -265,7 +265,9 @@ class PurchaseRequest(models.Model):
             return self.env["budget.lines"]
         if self._requires_budget_group() and not self.budget_group_id:
             return self.env["budget.lines"]
-        return self.env["budget.lines"].search(self._get_budget_line_domain(budget_post))
+        return self.env["budget.lines"].sudo().search(
+            self._get_budget_line_domain(budget_post)
+        )
 
     def _budget_keys_match_group(self, other_group):
         """Compare budget groups only when this PR is material."""
@@ -724,12 +726,21 @@ class PurchaseRequest(models.Model):
             required = sum(line._get_budget_reserved_amount_company() for line in post_lines)
             budget_lines = self._get_matching_budget_lines(budget_post)
             approved = sum(budget_lines.mapped("planned_amount"))
-            actual = sum(
-                abs(line.practical_amount or 0.0)
-                if line.practical_amount < 0
-                else (line.practical_amount or 0.0)
-                for line in budget_lines
-            )
+            actual_by_key = {}
+            for line in budget_lines:
+                key = (
+                    line.analytic_account_id.id,
+                    line.general_budget_id.id,
+                    line.date_from,
+                    line.date_to,
+                )
+                if key not in actual_by_key:
+                    actual_by_key[key] = (
+                        abs(line.practical_amount or 0.0)
+                        if line.practical_amount < 0
+                        else (line.practical_amount or 0.0)
+                    )
+            actual = sum(actual_by_key.values())
             other_reserved = self._get_other_pr_reserved_amount(budget_post)
             other_committed = self._get_other_po_committed_amount(budget_post)
             available = approved - actual - other_reserved - other_committed

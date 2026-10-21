@@ -37,6 +37,12 @@ class PurchaseRequest(models.Model):
     is_egp_procurement_flow = fields.Boolean(
         compute="_compute_egp_flow_stage",
     )
+    egp_document_ids = fields.One2many(
+        comodel_name="purchase.requisition.egp.document",
+        inverse_name="purchase_request_id",
+        string="เอกสารจากระบบ e-GP",
+        readonly=True,
+    )
     egp_flow_html = fields.Html(
         string="e-GP Workflow",
         compute="_compute_egp_flow_html",
@@ -49,10 +55,11 @@ class PurchaseRequest(models.Model):
 
     def _get_egp_requisitions(self):
         self.ensure_one()
-        from_lines = self.mapped("line_ids.requisition_lines.requisition_id").filtered(
+        sudo_self = self.sudo()
+        from_lines = sudo_self.mapped("line_ids.requisition_lines.requisition_id").filtered(
             lambda record: record.requisition_type == "egp_procurement"
         )
-        from_link = self.env["purchase.requisition"].search(
+        from_link = self.env["purchase.requisition"].sudo().search(
             [
                 ("purchase_request_id", "=", self.id),
                 ("requisition_type", "=", "egp_procurement"),
@@ -76,7 +83,7 @@ class PurchaseRequest(models.Model):
     )
     def _compute_egp_requisition_id(self):
         for request in self:
-            requisition = request._get_egp_requisition_for_rfq()
+            requisition = request.sudo()._get_egp_requisition_for_rfq()
             request.egp_requisition_id = requisition
             request.can_create_egp_rfq = (
                 request.to_create == "purchase_agreement"
@@ -114,9 +121,7 @@ class PurchaseRequest(models.Model):
                 request.egp_flow_stage = False
                 continue
             request.is_egp_procurement_flow = True
-            requisitions = request.mapped("line_ids.requisition_lines.requisition_id").filtered(
-                lambda record: record.requisition_type == "egp_procurement"
-            )
+            requisitions = request._get_egp_requisitions()
             if requisitions:
                 request.egp_flow_stage = requisitions[0].egp_flow_stage
                 continue
@@ -183,16 +188,16 @@ class PurchaseRequest(models.Model):
             return False
         if self._get_egp_requisitions():
             return False
-        if not hasattr(self, "_vpk_related_documents_all_approved"):
-            return self.state == "approved"
-        return self._vpk_related_documents_all_approved()
+        if "procurement_verified" in self._fields:
+            return bool(self.procurement_verified or self.state == "approved")
+        return self.state in ("approved", "sent_to_procurement")
 
     def action_send_to_egp(self):
         self.ensure_one()
         if not self._vpk_can_send_to_egp():
             raise UserError(
                 _(
-                    "ส่งเข้าระบบ e-GP ได้เมื่อเอกสารที่เกี่ยวข้องอนุมัติครบทุกฉบับ "
+                    "ส่งเข้าระบบ e-GP ได้เมื่อพัสดุยืนยันการตรวจสอบรายการใบขอซื้อแล้ว "
                     "และใบขอซื้อยังไม่มีกระบวนการ e-GP"
                 )
             )

@@ -76,6 +76,13 @@
                         <group>
                             <field name="request_date" string="วันที่ขอ" readonly="not can_edit_request_content"/>
                             <field name="fiscal_year" readonly="not can_edit_request_content"/>
+                            <field
+                                name="plan_type"
+                                string="ประเภทการตั้งงบประมาณ"
+                                widget="radio"
+                                options="{'horizontal': true}"
+                                readonly="not can_edit_request_content"
+                            />
                             <field name="requester_id" string="ผู้ขอ" readonly="1"/>
                         </group>
                         <group>
@@ -595,6 +602,13 @@
                 <field name="name" string="เลขที่เอกสาร"/>
                 <field name="request_date" string="วันที่ขอ"/>
                 <field name="fiscal_year"/>
+                <field
+                    name="plan_type"
+                    string="ประเภทการตั้งงบ"
+                    widget="badge"
+                    decoration-success="plan_type == 'in_plan'"
+                    decoration-warning="plan_type == 'off_plan'"
+                />
                 <field name="analytic_account_id" string="หน่วยงาน / ศูนย์ต้นทุน"/>
                 <field name="form_type_id" string="แบบฟอร์มคำของบ"/>
                 <field
@@ -653,6 +667,13 @@
                 <field name="name" string="เลขที่เอกสาร"/>
                 <field name="request_date" string="วันที่ขอ"/>
                 <field name="fiscal_year"/>
+                <field
+                    name="plan_type"
+                    string="ประเภทการตั้งงบ"
+                    widget="badge"
+                    decoration-success="plan_type == 'in_plan'"
+                    decoration-warning="plan_type == 'off_plan'"
+                />
                 <field name="analytic_account_id" string="หน่วยงาน / ศูนย์ต้นทุน"/>
                 <field
                     name="budget_group_ids"
@@ -710,8 +731,12 @@
                 <filter name="my_request" string="คำขอของฉัน" domain="[('requester_id', '=', uid)]"/>
                 <filter name="submitted" string="ส่งหน่วยงบประมาณ" domain="[('state', '=', 'submitted')]"/>
                 <filter name="review" string="อยู่ระหว่างพิจารณา" domain="[('state', 'in', ('received', 'review'))]"/>
+                <separator/>
+                <filter name="plan_type_in_plan" string="ตั้งงบในแผน" domain="[('plan_type', '=', 'in_plan')]"/>
+                <filter name="plan_type_off_plan" string="ตั้งงบนอกแผน" domain="[('plan_type', '=', 'off_plan')]"/>
                 <group expand="0" string="จัดกลุ่มตาม">
                     <filter string="หน่วยงาน / ศูนย์ต้นทุน" name="group_department" context="{'group_by':'analytic_account_id'}"/>
+                    <filter string="ประเภทการตั้งงบ (ในแผน/นอกแผน)" name="group_plan_type" context="{'group_by':'plan_type'}"/>
                     <filter string="แหล่งเงิน" name="group_fund" context="{'group_by':'fund_source_id'}"/>
                     <filter string="แบบฟอร์มคำของบ" name="group_form_type" context="{'group_by':'form_type_id'}"/>
                     <filter string="กลุ่มวัสดุ" name="group_budget_group" context="{'group_by':'budget_group_ids'}"/>

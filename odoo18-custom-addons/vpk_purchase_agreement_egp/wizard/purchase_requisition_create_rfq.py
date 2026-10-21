@@ -42,8 +42,8 @@ class PurchaseRequisitionCreateRfq(models.TransientModel):
             if not requisition.egp_award_approved:
                 raise UserError(
                     _(
-                        "กรุณาอนุมัติรายงานผลการพิจารณาและ "
-                        "ขออนุมัติสั่งซื้อ/สั่งจ้างก่อนสร้าง RFQ/PO"
+                        "กรุณาแนบและลงนามรายงานผลการพิจารณา "
+                        "และมีประกาศผู้ชนะในแท็บเอกสาร e-GP ก่อนสร้าง PO"
                     )
                 )
             if self.partner_id != winner.partner_id:

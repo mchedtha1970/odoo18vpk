@@ -16,6 +16,9 @@ const REFRESH_METHODS = new Set([
     "action_claim_procurement",
     "action_unclaim_procurement",
     "action_open_procurement_work",
+    "action_verify_procurement",
+    "action_open_return_for_revision_wizard",
+    "action_send_to_egp",
 ]);
 
 function notifyInboxChanged(controller, clickParams) {

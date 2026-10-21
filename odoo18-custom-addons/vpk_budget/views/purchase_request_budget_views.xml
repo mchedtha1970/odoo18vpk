@@ -24,7 +24,10 @@
                 />
             </header>
             <button name="button_approved" position="attributes">
-                <attribute name="invisible">state != 'draft' or validation_status in ('pending', 'rejected') or budget_check_state != 'enough'</attribute>
+                <attribute name="invisible">1</attribute>
+            </button>
+            <button name="action_send_to_procurement" position="attributes">
+                <attribute name="invisible">state != 'draft' or budget_check_state != 'enough'</attribute>
             </button>
             <field name="state" position="after">
                 <field name="budget_check_state" invisible="1"/>

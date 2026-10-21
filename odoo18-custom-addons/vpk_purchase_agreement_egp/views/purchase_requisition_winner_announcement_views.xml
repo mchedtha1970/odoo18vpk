@@ -112,7 +112,7 @@
                 <button name="action_view_winner_announcements"
                         type="object" class="oe_stat_button"
                         icon="fa-bullhorn"
-                        invisible="requisition_type != 'egp_procurement'">
+                        invisible="1">
                     <field name="winner_announcement_count"
                            widget="statinfo" string="ประกาศผู้ชนะ"/>
                 </button>
@@ -122,7 +122,7 @@
                     <button name="action_file_winner_announcement"
                             type="object" string="ประกาศผู้ชนะ"
                             class="btn-secondary mb-2"
-                            invisible="not egp_has_winner"/>
+                            invisible="1"/>
                 </div>
             </xpath>
         </field>

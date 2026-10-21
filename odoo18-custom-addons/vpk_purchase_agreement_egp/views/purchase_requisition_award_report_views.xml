@@ -160,7 +160,7 @@
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_view_award_reports" type="object"
                         class="oe_stat_button" icon="fa-gavel"
-                        invisible="requisition_type != 'egp_procurement'">
+                        invisible="1">
                     <field name="award_report_count" widget="statinfo"
                            string="รายงานผล"/>
                 </button>
@@ -170,7 +170,7 @@
                         type="object"
                         string="จัดทำรายงานผลและขออนุมัติ"
                         class="btn-primary"
-                        invisible="not egp_bid_ids"/>
+                        invisible="1"/>
             </xpath>
             <button name="action_open_create_rfq_wizard"
                     position="attributes">

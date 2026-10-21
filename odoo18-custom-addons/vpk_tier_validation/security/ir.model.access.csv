@@ -1,2 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_vpk_approval_line_user,access.vpk.approval.line.user,model_vpk_approval_line,base.group_user,1,1,1,1
+access_vpk_pr_read_base_user,purchase.request.read.base.user,purchase_request.model_purchase_request,base.group_user,1,0,0,0
+access_vpk_pr_line_read_base_user,purchase.request.line.read.base.user,purchase_request.model_purchase_request_line,base.group_user,1,0,0,0
+access_vpk_procurement_committee_read_base_user,procurement.committee.read.base.user,l10n_th_gov_purchase_request.model_procurement_committee,base.group_user,1,0,0,0
+

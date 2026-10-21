@@ -53,6 +53,15 @@
     />
 
     <menuitem
+        id="menu_vpk_my_approved_reviews"
+        name="รายการที่อนุมัติแล้วของฉัน"
+        parent="menu_vpk_tier_validation_root"
+        action="action_vpk_my_approved_reviews"
+        sequence="6"
+        groups="base.group_user"
+    />
+
+    <menuitem
         id="menu_vpk_tier_definition"
         name="กำหนดลำดับการอนุมัติ"
         parent="menu_vpk_tier_validation_root"

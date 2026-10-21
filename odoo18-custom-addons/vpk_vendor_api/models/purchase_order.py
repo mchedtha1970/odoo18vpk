@@ -21,7 +21,7 @@ class PurchaseOrder(models.Model):
     def _compute_vpk_vendor_confirm_state(self):
         return super()._compute_vpk_vendor_confirm_state()
 
-    def _vpk_stamp_vendor_signature(self, signature_b64):
+    def _vpk_stamp_vendor_signature(self, signature_b64, signature_box=None):
         """Replace the stored PO PDF with a copy that includes the vendor signature."""
         self.ensure_one()
         raw = (signature_b64 or "").strip()
@@ -37,9 +37,13 @@ class PurchaseOrder(models.Model):
         if not attachment or not attachment.raw:
             raise UserError(_("ยังไม่มีไฟล์ PDF ของใบสั่งซื้อ"))
         pdf_bytes = bytes(attachment.raw)
+        custom_box = signature_box if isinstance(signature_box, dict) else None
         try:
             stamped = stamp_signature_on_pdf(
-                pdf_bytes, signature_bytes, ["ลงนามผู้รับจ้าง"]
+                pdf_bytes,
+                signature_bytes,
+                ["ลงนามผู้รับจ้าง"],
+                custom_box=custom_box,
             )
         except SignatureStampError:
             stamped = stamp_signature_bottom_left(pdf_bytes, signature_bytes)

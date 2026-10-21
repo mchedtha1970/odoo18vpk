@@ -15,3 +15,6 @@ access_proc_guarantee_user,procurement.guarantee.user,model_procurement_guarante
 access_proc_guarantee_manager,procurement.guarantee.manager,model_procurement_guarantee,purchase.group_purchase_manager,1,1,1,1
 access_proc_vendor_group_user,procurement.vendor.group.user,model_procurement_vendor_group,purchase.group_purchase_user,1,0,0,0
 access_proc_vendor_group_manager,procurement.vendor.group.manager,model_procurement_vendor_group,purchase.group_purchase_manager,1,1,1,1
+access_proc_plan_base_user,procurement.annual.plan.base.user,model_procurement_annual_plan,base.group_user,1,0,0,0
+access_proc_plan_line_base_user,procurement.annual.plan.line.base.user,model_procurement_annual_plan_line,base.group_user,1,0,0,0
+

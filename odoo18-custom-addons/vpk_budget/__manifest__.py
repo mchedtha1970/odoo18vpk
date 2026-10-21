@@ -1,6 +1,6 @@
 {
     "name": "VPK Budget",
-    "version": "18.0.2.99.21",
+    "version": "18.0.2.99.23",
     "category": "Accounting",
     "summary": "งบประมาณ แหล่งเงิน กลุ่มงบประมาณ คำของบ และบัญชีวิเคราะห์",
     "author": "VPK",
@@ -14,6 +14,7 @@
         "uom",
         "purchase_request_department",
         "purchase_request_tier_validation",
+        "vpk_tier_validation",
     ],
     "data": [
         "security/vpk_budget_security.xml",

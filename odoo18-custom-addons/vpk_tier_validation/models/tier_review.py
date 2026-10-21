@@ -88,9 +88,9 @@ class TierReview(models.Model):
     def _compute_res_display_name(self):
         for rec in self:
             name = ""
-            if rec.model and rec.res_id:
+            if rec.model and rec.res_id and rec.model in self.env:
                 try:
-                    doc = self.env[rec.model].browse(rec.res_id)
+                    doc = self.env[rec.model].sudo().browse(rec.res_id)
                     if doc.exists():
                         if rec.model == "vpk.official.document":
                             type_labels = dict(
@@ -121,7 +121,7 @@ class TierReview(models.Model):
             label = ""
             if rec.model == "vpk.official.document" and rec.res_id:
                 try:
-                    doc = self.env[rec.model].browse(rec.res_id)
+                    doc = self.env[rec.model].sudo().browse(rec.res_id)
                     if doc.exists():
                         type_labels = dict(
                             doc._fields["document_type"]._description_selection(
@@ -162,16 +162,20 @@ class TierReview(models.Model):
             return self.action_open_resource()
         if "vpk.official.document" not in self.env:
             return self.action_open_resource()
-        document = self.env["vpk.official.document"].browse(self.res_id).exists()
+        document = self.env["vpk.official.document"].sudo().browse(self.res_id).exists()
         if not document:
             return self.action_open_resource()
         attachment = False
         if hasattr(document, "_get_pdf_attachment"):
-            attachment = document._get_pdf_attachment()
+            attachment = document.sudo()._get_pdf_attachment()
         if not attachment:
             raise UserError(_("ยังไม่มีไฟล์ PDF กรุณากดพิมพ์ PDF ก่อน"))
         title = self.res_display_name or document.display_name
-        secretary_screen = bool(getattr(document, "vpk_secretary_can_screen", False))
+        is_pending = self.status == "pending"
+        user_doc = self.env["vpk.official.document"].browse(self.res_id)
+        secretary_screen = bool(
+            is_pending and getattr(user_doc, "vpk_secretary_can_screen", False)
+        )
         return {
             "type": "ir.actions.client",
             "tag": "vpk_official_document_sign_pdf_viewer",
@@ -181,7 +185,7 @@ class TierReview(models.Model):
                 "res_model": document._name,
                 "res_id": document.id,
                 "title": title,
-                "can_sign": bool(self.can_review) and not secretary_screen,
+                "can_sign": bool(is_pending and self.can_review) and not secretary_screen,
                 "secretary_screen": secretary_screen,
             },
         }
@@ -200,41 +204,82 @@ class TierReview(models.Model):
     @api.model
     def _vpk_hidden_pr_inbox_review_ids(self):
         """Hide PR inbox rows while committee/approval packet documents are pending."""
-        if "vpk.official.document" not in self.env:
-            return []
-        Document = self.env["vpk.official.document"]
-        if "document_type" not in Document._fields:
-            return []
-        pending_docs = Document.search(
-            [
-                (
-                    "document_type",
-                    "in",
-                    ("wa_committee_order", "specific_method_approval"),
-                ),
-                ("state", "=", "to_approve"),
-                ("request_id", "!=", False),
-            ]
-        )
         hidden_ids = []
-        pr_ids = pending_docs.mapped("request_id").ids
-        if pr_ids:
-            hidden_ids = self.search(
-                [
-                    ("model", "=", "purchase.request"),
-                    ("res_id", "in", pr_ids),
-                    ("status", "in", ("pending", "waiting")),
-                ]
-            ).ids
-        leftover_docs = Document.search([("state", "in", ("approved", "cancelled"))])
-        if leftover_docs:
-            hidden_ids += self.search(
-                [
-                    ("model", "=", "vpk.official.document"),
-                    ("res_id", "in", leftover_docs.ids),
-                    ("status", "in", ("pending", "waiting")),
-                ]
-            ).ids
+        if "vpk.official.document" in self.env:
+            Document = self.env["vpk.official.document"].sudo()
+            if "document_type" in Document._fields:
+                pending_docs = Document.search(
+                    [
+                        (
+                            "document_type",
+                            "in",
+                            ("wa_committee_order", "specific_method_approval"),
+                        ),
+                        ("state", "=", "to_approve"),
+                        ("request_id", "!=", False),
+                    ]
+                )
+                pr_ids = pending_docs.mapped("request_id").ids
+                if pr_ids:
+                    hidden_ids += (
+                        self.sudo()
+                        .search(
+                            [
+                                ("model", "=", "purchase.request"),
+                                ("res_id", "in", pr_ids),
+                                ("status", "in", ("pending", "waiting")),
+                            ]
+                        )
+                        .ids
+                    )
+                leftover_docs = Document.search(
+                    [("state", "in", ("approved", "cancelled"))]
+                )
+                if leftover_docs:
+                    hidden_ids += (
+                        self.sudo()
+                        .search(
+                            [
+                                ("model", "=", "vpk.official.document"),
+                                ("res_id", "in", leftover_docs.ids),
+                                ("status", "in", ("pending", "waiting")),
+                            ]
+                        )
+                        .ids
+                    )
+                cancelled_docs = Document.search([("state", "=", "cancelled")])
+                if cancelled_docs:
+                    hidden_ids += (
+                        self.sudo()
+                        .search(
+                            [
+                                ("model", "=", "vpk.official.document"),
+                                ("res_id", "in", cancelled_docs.ids),
+                                ("status", "=", "approved"),
+                            ]
+                        )
+                        .ids
+                    )
+        # Deduplicate approved reviews per (model, res_id, actor_user) so each
+        # approver sees one card per approved document.
+        approved_reviews = self.sudo().search(
+            [("status", "=", "approved")],
+            order="sequence desc, id desc",
+        )
+        seen_approved_keys = set()
+        for rev in approved_reviews:
+            actor_id = (
+                rev.done_by.id
+                or getattr(rev, "vpk_signer_user_id", self.env["res.users"]).id
+                or rev.vpk_approver_user_id.id
+            )
+            if not actor_id:
+                continue
+            key = (rev.model, rev.res_id, actor_id)
+            if key in seen_approved_keys:
+                hidden_ids.append(rev.id)
+            else:
+                seen_approved_keys.add(key)
         return hidden_ids
 
     @api.model
@@ -260,7 +305,30 @@ class TierReview(models.Model):
     def _my_approved_domain(self):
         return [
             ("status", "=", "approved"),
+            ("vpk_inbox_visible", "=", True),
+            "|",
             ("done_by", "=", self.env.uid),
+            ("reviewer_ids", "in", self.env.uid),
+        ]
+
+    @api.model
+    def _my_all_domain(self):
+        return [
+            "|",
+            "&",
+            "&",
+            ("status", "=", "pending"),
+            ("can_review", "=", True),
+            "&",
+            ("reviewer_ids", "in", self.env.uid),
+            ("vpk_inbox_visible", "=", True),
+            "&",
+            "&",
+            ("status", "=", "approved"),
+            ("vpk_inbox_visible", "=", True),
+            "|",
+            ("done_by", "=", self.env.uid),
+            ("reviewer_ids", "in", self.env.uid),
         ]
 
     @api.model
@@ -273,6 +341,22 @@ class TierReview(models.Model):
     @api.model
     def get_my_pending_count(self):
         return self.search_count(self._my_pending_domain())
+
+    @api.model
+    def get_my_review_counts(self):
+        pending_domain = self._my_pending_domain()
+        approved_domain = self._my_approved_domain()
+        all_domain = self._my_all_domain()
+        pending_count = self.search_count(pending_domain)
+        approved_count = self.search_count(approved_domain)
+        return {
+            "pending_count": pending_count,
+            "approved_count": approved_count,
+            "total_count": pending_count + approved_count,
+            "pending_domain": pending_domain,
+            "approved_domain": approved_domain,
+            "all_domain": all_domain,
+        }
 
     _APPROVAL_STATUS_LABEL = {
         "approved": "อนุมัติแล้ว",
