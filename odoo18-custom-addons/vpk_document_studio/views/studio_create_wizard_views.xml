@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_document_studio_create_wizard_form" model="ir.ui.view">
+        <field name="name">vpk.document.studio.create.wizard.form</field>
+        <field name="model">vpk.document.studio.create.wizard</field>
+        <field name="arch" type="xml">
+            <form string="สร้างเอกสารจาก Document Studio">
+                <group>
+                    <field name="source_model" invisible="1"/>
+                    <field name="source_res_id" invisible="1"/>
+                    <field name="source_name"/>
+                    <field name="template_id"
+                           options="{'no_create': True, 'no_open': True}"
+                           placeholder="เลือกแบบฟอร์ม"/>
+                </group>
+                <div class="text-muted small"
+                     invisible="template_id">
+                    แสดงเฉพาะแบบฟอร์มที่กำหนด "โมเดลต้นทาง" ตรงกับเอกสารนี้
+                </div>
+                <footer>
+                    <button name="action_create" type="object"
+                            string="สร้างเอกสาร" class="btn-primary"
+                            data-hotkey="q"/>
+                    <button string="ยกเลิก" class="btn-secondary"
+                            special="cancel" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,4 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_procurement_committee_purchase_user,procurement.committee purchase user,l10n_th_gov_purchase_request.model_procurement_committee,purchase.group_purchase_user,1,1,1,1
 access_purchase_requisition_egp_document_pr_user,purchase.requisition.egp.document pr user,model_purchase_requisition_egp_document,purchase_request.group_purchase_request_user,1,0,0,0
 access_purchase_requisition_egp_document_user,purchase.requisition.egp.document user,model_purchase_requisition_egp_document,purchase.group_purchase_user,1,1,1,1
 access_purchase_requisition_egp_document_manager,purchase.requisition.egp.document manager,model_purchase_requisition_egp_document,purchase.group_purchase_manager,1,1,1,1

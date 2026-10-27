@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_document_studio_template_list" model="ir.ui.view">
+        <field name="name">vpk.document.studio.template.list</field>
+        <field name="model">vpk.document.studio.template</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="field_count"/>
+                <field name="filename"/>
+                <field name="active"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_document_studio_template_form" model="ir.ui.view">
+        <field name="name">vpk.document.studio.template.form</field>
+        <field name="model">vpk.document.studio.template</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_create_document" type="object"
+                            string="สร้างเอกสาร"
+                            class="btn-primary"
+                            icon="fa-file-text-o"/>
+                    <button name="action_sync_fields_from_word" type="object"
+                            string="ดึงฟิลด์จาก Word"
+                            class="btn-secondary"
+                            icon="fa-magic"/>
+                    <button name="action_check_placeholders" type="object"
+                            string="ตรวจ placeholder"
+                            class="btn-secondary"
+                            icon="fa-search"/>
+                    <button name="action_download_placeholder_docx" type="object"
+                            string="ดาวน์โหลด Word ตัวอย่าง"
+                            class="btn-secondary"
+                            icon="fa-download"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="ชื่อแบบฟอร์ม"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code" placeholder="leave_request"/>
+                            <field name="source_model_id"
+                                   context="{'vpk_show_model_name': True}"
+                                   options="{'no_create': True, 'no_open': True}"
+                                   placeholder="เช่น ใบขอซื้อ, ใบสั่งซื้อ"/>
+                            <field name="active"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="filename" invisible="1"/>
+                            <field name="datas" filename="filename"/>
+                            <field name="field_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="ฟิลด์" name="fields">
+                            <field name="field_ids">
+                                <list>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="field_type"/>
+                                    <field name="template_source_model_id" column_invisible="1"/>
+                                    <field name="map_model_id" optional="hide" readonly="template_source_model_id" context="{'vpk_show_model_name': True}"/>
+                                    <field name="map_field_id" optional="hide"/>
+                                    <field name="required" optional="show"/>
+                                </list>
+                                <form>
+                                    <group>
+                                        <group>
+                                            <field name="name"/>
+                                            <field name="code"/>
+                                            <field name="field_type"/>
+                                            <field name="required"/>
+                                        </group>
+                                        <group string="ผูกข้อมูลจากโมเดล (Model / Field Mapping)">
+                                            <field name="template_source_model_id" invisible="1"/>
+                                            <field name="map_model_id"
+                                                   context="{'vpk_show_model_name': True}"
+                                                   readonly="template_source_model_id"
+                                                   options="{'no_create': True, 'no_open': True}"/>
+                                            <field name="map_field_id"
+                                                   options="{'no_create': True, 'no_open': True}"
+                                                   readonly="not map_model_id"/>
+                                            <field name="map_relation_model" invisible="1"/>
+                                            <field name="map_sub_field_id"
+                                                   options="{'no_create': True, 'no_open': True}"
+                                                   invisible="not map_relation_model"/>
+                                            <field name="relation_source"
+                                                   invisible="field_type != 'many2one'"/>
+                                        </group>
+                                    </group>
+                                    <group string="ข้อความเริ่มต้น (เติมให้ตอนสร้างเอกสาร ผู้ใช้แก้ไขได้)">
+                                        <field name="default_value" nolabel="1" colspan="2"
+                                               widget="text"
+                                               style="min-height: 7rem;"
+                                               placeholder="พิมพ์ข้อความเริ่มต้นได้หลายบรรทัด เช่น ด้วย ... มีความประสงค์จะ ..."/>
+                                    </group>
+                                    <group string="ประกอบข้อความจากฟิลด์อื่น (แสดงผลเสมอ แทนค่าที่กรอก)">
+                                        <field name="insert_code_id" colspan="2"
+                                               options="{'no_create': True, 'no_open': True}"
+                                               placeholder="เลือกฟิลด์ เพื่อต่อ {{รหัส}} ท้ายข้อความด้านล่าง"/>
+                                        <field name="display_template" nolabel="1" colspan="2"
+                                               style="min-height: 7rem;"
+                                               placeholder="ด้วย {{agency}} มีความประสงค์จะประกวดราคาซื้อ... จำนวน {{items_count_th}} รายการ"/>
+                                        <field name="placeholder_hint" colspan="2"/>
+                                    </group>
+                                    <group>
+                                        <field name="sequence"/>
+                                        <field name="help"/>
+                                    </group>
+                                    <group string="ตัวเลือก"
+                                           invisible="field_type != 'selection'">
+                                        <field name="selection_options" nolabel="1"
+                                               placeholder="พิมพ์หนึ่งตัวเลือกต่อบรรทัด"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Layout" name="word_layout">
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <button name="action_load_memo_preset" type="object"
+                                        string="ใช้ชุดบันทึกข้อความมาตรฐาน"
+                                        class="btn-secondary"
+                                        icon="fa-magic"
+                                        confirm="แทนที่บล็อกทั้งหมดด้วยชุดบันทึกข้อความมาตรฐาน?"/>
+                                <button name="action_regenerate_layout" type="object"
+                                        string="อัปเดตตัวอย่าง"
+                                        class="btn-secondary"
+                                        icon="fa-refresh"
+                                        invisible="not block_ids"/>
+                            </div>
+                            <div class="text-muted small mb-2">
+                                ประกอบเอกสารจากบล็อก หัวบันทึกข้อความ หัวข้อความทั่วไป ย่อหน้า ตาราง และลงชื่อ
+                                ใส่ <code>{{รหัสฟิลด์}}</code> ในย่อหน้าตรงจุดที่ต้องการให้ระบบแทนค่า
+                                ระบบสร้างฟิลด์ให้อัตโนมัติ และ PDF จะตรงกับตัวอย่างด้านล่างเสมอ
+                            </div>
+                            <field name="block_ids" nolabel="1">
+                                <list>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="block_type"/>
+                                    <field name="summary"/>
+                                </list>
+                                <form>
+                                    <field name="template_id" invisible="1"/>
+                                    <field name="line_model" invisible="1"/>
+                                    <group>
+                                        <group>
+                                            <field name="block_type"/>
+                                            <field name="sequence"/>
+                                        </group>
+                                    </group>
+                                    <group invisible="block_type != 'memo_header'">
+                                        <group string="หัวเรื่อง">
+                                            <field name="title"/>
+                                            <field name="show_recipient"/>
+                                        </group>
+                                        <group string="รหัสฟิลด์ที่แสดงบนเส้น">
+                                            <field name="code_agency"/>
+                                            <field name="code_number"/>
+                                            <field name="code_date"/>
+                                            <field name="code_subject"/>
+                                            <field name="code_recipient"
+                                                   invisible="not show_recipient"/>
+                                        </group>
+                                    </group>
+                                    <group invisible="block_type != 'heading'">
+                                        <group>
+                                            <field name="heading_text"
+                                                   placeholder="เช่น ความเห็นของคณะกรรมการ"/>
+                                            <field name="heading_align"/>
+                                        </group>
+                                        <group>
+                                            <field name="heading_bold"/>
+                                            <field name="heading_underline"/>
+                                            <field name="heading_size"/>
+                                        </group>
+                                    </group>
+                                    <group invisible="block_type != 'paragraph'">
+                                        <group>
+                                            <field name="align"/>
+                                            <field name="first_line_indent"/>
+                                            <field name="bold"/>
+                                        </group>
+                                    </group>
+                                    <group invisible="block_type != 'paragraph'">
+                                        <field name="insert_field_id"
+                                               options="{'no_create': True, 'no_open': True}"
+                                               placeholder="เลือกฟิลด์เพื่อต่อท้ายเนื้อความ หรือพิมพ์ {{รหัส}} เอง"/>
+                                    </group>
+                                    <field name="content" nolabel="1"
+                                           invisible="block_type != 'paragraph'"
+                                           placeholder="พิมพ์ข้อความเริ่มต้นได้เลย ใส่ {{รหัสฟิลด์}} ตรงจุดที่ให้ระบบแทนค่า"/>
+                                    <group invisible="block_type != 'signature'">
+                                        <group string="ลงชื่อ">
+                                            <field name="sig_prefix"/>
+                                            <field name="sig_role"/>
+                                            <field name="sig_align"/>
+                                        </group>
+                                        <group string="รหัสฟิลด์ที่แสดง">
+                                            <field name="code_name"/>
+                                            <field name="code_position"/>
+                                        </group>
+                                    </group>
+                                    <group invisible="block_type != 'table'">
+                                        <group>
+                                            <field name="table_header"/>
+                                            <field name="table_borders"/>
+                                        </group>
+                                        <group>
+                                            <field name="table_repeat_code"
+                                                   placeholder="เช่น items (เว้นว่าง = แถวคงที่)"/>
+                                            <field name="table_rows"
+                                                   invisible="table_repeat_code"/>
+                                            <field name="table_footer_label"/>
+                                            <field name="table_footer_value"
+                                                   invisible="not table_footer_label"
+                                                   placeholder="เช่น {{items_total}}"/>
+                                        </group>
+                                    </group>
+                                    <field name="column_ids" nolabel="1"
+                                           invisible="block_type != 'table'">
+                                        <list editable="bottom">
+                                            <field name="sequence" widget="handle"/>
+                                            <field name="header" placeholder="หัวคอลัมน์"/>
+                                            <field name="width_cm"/>
+                                            <field name="align"/>
+                                            <field name="insert_line_field_id"
+                                                   domain="[('model', '=', parent.line_model), ('ttype', 'not in', ['binary', 'one2many', 'many2many'])]"
+                                                   options="{'no_create': True, 'no_open': True}"
+                                                   placeholder="แทรกฟิลด์ของรายการ"/>
+                                            <field name="content"
+                                                   placeholder="เช่น {{no_th}} {{name}} {{line.product_qty}}"/>
+                                        </list>
+                                    </field>
+                                    <group invisible="block_type != 'spacer'">
+                                        <field name="lines"/>
+                                    </group>
+                                </form>
+                            </field>
+                            <group string="ตั้งค่าหน้ากระดาษ A4">
+                                <group>
+                                    <field name="layout_font"/>
+                                    <field name="layout_font_size"/>
+                                </group>
+                                <group>
+                                    <label for="layout_margin_top" string="ขอบกระดาษ (ซม.)"/>
+                                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                                        <span>บน</span>
+                                        <field name="layout_margin_top" nolabel="1" style="width: 4rem;"/>
+                                        <span>ล่าง</span>
+                                        <field name="layout_margin_bottom" nolabel="1" style="width: 4rem;"/>
+                                        <span>ซ้าย</span>
+                                        <field name="layout_margin_left" nolabel="1" style="width: 4rem;"/>
+                                        <span>ขวา</span>
+                                        <field name="layout_margin_right" nolabel="1" style="width: 4rem;"/>
+                                    </div>
+                                </group>
+                            </group>
+                            <field name="layout_placeholder_hint" invisible="1"/>
+                            <div class="fw-bold small mb-1">
+                                ตัวอย่างเอกสาร (อ่านอย่างเดียว บันทึกแล้วจึงอัปเดต)
+                            </div>
+                            <field name="layout_html" nolabel="1" widget="vpk_word_editor"
+                                   readonly="1"/>
+                        </page>
+                        <page string="คำอธิบาย" name="note">
+                            <field name="note" placeholder="วิธีใช้แบบฟอร์มนี้"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_document_studio_template_search" model="ir.ui.view">
+        <field name="name">vpk.document.studio.template.search</field>
+        <field name="model">vpk.document.studio.template</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <filter string="ปิดใช้งาน" name="inactive" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_document_studio_template" model="ir.actions.act_window">
+        <field name="name">แบบฟอร์ม</field>
+        <field name="res_model">vpk.document.studio.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">สร้างแบบฟอร์มแรก</p>
+            <p>กำหนดฟิลด์ แล้วอัปโหลดไฟล์ Word ที่มี {{รหัสฟิลด์}}</p>
+        </field>
+    </record>
+</odoo>

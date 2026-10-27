@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_official_document.OfficialDocumentDashboard">
+        <div t-att-class="props.className" class="o_vpk_odoc_dash">
+            <div class="o_vpk_odoc_dash_scroll" t-if="state.ready">
+                <header class="o_vpk_odoc_dash_header">
+                    <div>
+                        <div class="o_vpk_odoc_dash_kicker">Official documents</div>
+                        <h1 t-esc="state.data.title"/>
+                        <p class="o_vpk_odoc_dash_subtitle" t-esc="state.data.subtitle"/>
+                    </div>
+                    <button type="button"
+                            class="o_vpk_odoc_dash_all"
+                            t-on-click="openAll">
+                        ดูเอกสารทั้งหมด
+                    </button>
+                </header>
+
+                <section class="o_vpk_odoc_dash_kpis">
+                    <t t-foreach="state.data.kpis" t-as="kpi" t-key="kpi.key">
+                        <button type="button"
+                                t-attf-class="o_vpk_odoc_dash_kpi is-{{ kpi.tone }}"
+                                t-on-click="() => this.openAction(kpi.action)">
+                            <span t-esc="kpi.label"/>
+                            <strong t-esc="kpi.count"/>
+                        </button>
+                    </t>
+                </section>
+
+                <section class="o_vpk_odoc_dash_grid" t-if="state.data.cards.length">
+                    <t t-foreach="state.data.cards" t-as="card" t-key="card.id">
+                        <article t-attf-class="o_vpk_odoc_dash_card is-{{ card.tone }}">
+                            <button type="button"
+                                    class="o_vpk_odoc_dash_card_main"
+                                    t-on-click="() => this.openAction(card.action)">
+                                <span class="o_vpk_odoc_dash_card_icon">
+                                    <i t-attf-class="o_vpk_odoc_icon is-{{ card.icon }}"/>
+                                </span>
+                                <span class="o_vpk_odoc_dash_card_body">
+                                    <span class="o_vpk_odoc_dash_card_name" t-esc="card.name"/>
+                                    <span class="o_vpk_odoc_dash_card_note" t-if="card.note" t-esc="card.note"/>
+                                    <span class="o_vpk_odoc_dash_card_count">
+                                        <strong t-esc="card.total"/>
+                                        <span> ฉบับ</span>
+                                    </span>
+                                </span>
+                            </button>
+                            <div class="o_vpk_odoc_dash_card_stats">
+                                <button type="button"
+                                        t-on-click="() => this.openAction(card.draft_action)">
+                                    <em t-esc="card.draft"/>
+                                    <span>ร่าง</span>
+                                </button>
+                                <button type="button"
+                                        t-on-click="() => this.openAction(card.waiting_action)">
+                                    <em t-esc="card.waiting"/>
+                                    <span>รออนุมัติ</span>
+                                </button>
+                                <button type="button"
+                                        t-on-click="() => this.openAction(card.approved_action)">
+                                    <em t-esc="card.approved"/>
+                                    <span>อนุมัติแล้ว</span>
+                                </button>
+                            </div>
+                        </article>
+                    </t>
+                </section>
+                <div t-else="" class="o_vpk_odoc_dash_empty">
+                    ยังไม่มีประเภทเอกสาร กรุณาเพิ่มที่เมนูประเภทเอกสาร
+                </div>
+            </div>
+            <div t-else="" class="o_vpk_odoc_dash_loading">กำลังโหลดภาพรวมหนังสือราชการ...</div>
+        </div>
+    </t>
+</templates>

@@ -3,7 +3,7 @@ from odoo.exceptions import UserError
 
 
 COMMITTEE_TYPE_SELECTION = [
-    ("price_mid", "คณะกรรมการกำหนดราคากลาง"),
+    ("price_mid", "คณะกรรมการกำหนดคุณลักษณะและราคากลาง"),
     ("procurement", "คณะกรรมการจัดซื้อจัดจ้าง"),
     ("work_acceptance", "คณะกรรมการตรวจรับ"),
 ]

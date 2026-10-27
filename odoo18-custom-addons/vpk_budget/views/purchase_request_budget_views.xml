@@ -52,6 +52,23 @@
                 <field name="budget_check_date" readonly="1"/>
                 <field name="budget_reservation_active" readonly="1"/>
             </field>
+            <xpath expr="//notebook/page[.//field[@name='line_ids']]/field[@name='line_ids']" position="before">
+                <div class="mb-2" invisible="state != 'draft'">
+                    <button
+                        name="action_open_budget_product_wizard"
+                        type="object"
+                        string="เลือกรายการจากแผนงบประมาณ"
+                        class="btn-secondary"
+                    />
+                    <button
+                        name="action_clear_budget_plan_lines"
+                        type="object"
+                        string="ล้างรายการที่โหลด"
+                        class="btn-secondary"
+                        confirm="ต้องการลบรายการสินค้าที่โหลดจากแผนงบประมาณหรือไม่?"
+                    />
+                </div>
+            </xpath>
             <field name="line_ids" position="attributes">
                 <attribute name="context">{'default_budget_post_id': budget_post_id}</attribute>
             </field>

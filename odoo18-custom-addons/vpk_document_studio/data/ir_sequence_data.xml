@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_document_studio_document" model="ir.sequence">
+        <field name="name">เอกสาร Document Studio</field>
+        <field name="code">vpk.document.studio.document</field>
+        <field name="prefix">DST/%(year)s/</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>

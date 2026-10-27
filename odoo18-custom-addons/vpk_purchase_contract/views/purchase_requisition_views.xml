@@ -40,8 +40,7 @@
                 <field name="is_contract_procurement" invisible="1"/>
             </field>
 
-            <!-- Contract reference block after purchase_request_amount_total -->
-            <field name="purchase_request_amount_total" position="after">
+            <xpath expr="//group[@name='egp_general_right']" position="inside">
                 <field
                     name="source_contract_id"
                     invisible="not is_contract_procurement"
@@ -63,7 +62,7 @@
                     invisible="not is_contract_procurement"
                     readonly="1"
                 />
-            </field>
+            </xpath>
 
             <!-- Banner for contract-based procurement -->
             <xpath expr="//sheet" position="inside">

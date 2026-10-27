@@ -90,6 +90,28 @@ class OfficialDocument(models.Model):
         default="wa_committee_order",
         tracking=True,
     )
+    source_mode = fields.Selection(
+        selection=[
+            ("system", "สร้างจากระบบ"),
+            ("studio", "Document Studio"),
+            ("uploaded", "แนบไฟล์ต้นทาง"),
+        ],
+        string="ที่มาเอกสาร",
+        default="system",
+        tracking=True,
+        copy=False,
+    )
+    studio_template_id = fields.Many2one(
+        comodel_name="vpk.document.studio.template",
+        string="แบบฟอร์ม Document Studio",
+        copy=False,
+    )
+    studio_document_id = fields.Many2one(
+        comodel_name="vpk.document.studio.document",
+        string="เอกสาร Document Studio",
+        copy=False,
+        ondelete="set null",
+    )
     template_id = fields.Many2one(
         comodel_name="vpk.official.document.template",
         string="แบบฟอร์ม",
@@ -1421,6 +1443,69 @@ class OfficialDocument(models.Model):
             "wa_committee_order", request=request, acceptance=acceptance
         )
 
+    def action_open_form(self):
+        self.ensure_one()
+        if self.source_mode == "studio" and self.studio_document_id:
+            return self.action_open_studio_document()
+        return self._action_open_form()
+
+    def action_open_studio_document(self):
+        self.ensure_one()
+        if not self.studio_document_id:
+            raise UserError(_("ยังไม่มีเอกสาร Document Studio ที่ผูกกับรายการนี้"))
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("เอกสาร Document Studio"),
+            "res_model": "vpk.document.studio.document",
+            "res_id": self.studio_document_id.id,
+            "view_mode": "form",
+            "target": "current",
+        }
+
+    def action_delete_from_request(self):
+        self.ensure_one()
+        if self.state in ("to_approve", "approved"):
+            raise UserError(
+                _("ไม่สามารถลบเอกสารที่ส่งลงนามหรืออนุมัติแล้ว")
+            )
+        if self.signature_state in ("waiting", "signed"):
+            raise UserError(_("ไม่สามารถลบเอกสารที่อยู่ระหว่างลงนามหรือลงนามแล้ว"))
+        self.sudo().unlink()
+        return True
+
+    def _attach_uploaded_file(self, file_b64, filename):
+        self.ensure_one()
+        if not file_b64:
+            raise UserError(_("กรุณาแนบไฟล์ต้นทาง"))
+        raw = base64.b64decode(file_b64)
+        name = filename or "document.pdf"
+        lower = name.lower()
+        if lower.endswith(".pdf"):
+            self._store_generated_file(raw, name, "application/pdf", "pdf")
+            return
+        if lower.endswith(".docx"):
+            self._store_generated_file(
+                raw,
+                name,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "docx",
+            )
+            return
+        attachment = self.env["ir.attachment"].create(
+            {
+                "name": name,
+                "datas": file_b64,
+                "res_model": self._name,
+                "res_id": self.id,
+                "type": "binary",
+            }
+        )
+        self.message_post(
+            body=_("แนบไฟล์ต้นทาง %s แล้ว") % name,
+            attachment_ids=[attachment.id],
+            subtype_xmlid="mail.mt_note",
+        )
+
     def _action_open_form(self):
         self.ensure_one()
         titles = {
@@ -2105,13 +2190,14 @@ class OfficialDocument(models.Model):
             % (item, method)
         )
 
-    def _seed_purchase_approval_signers(self):
-        """Start from the company officer, head, and director. Rows can then be changed."""
+    def _seed_default_approvers(self, replace=False):
+        """Fill the approver table from officer, head, secretary, and director."""
         Signer = self.env["vpk.official.document.signer"]
-        for rec in self.filtered(
-            lambda doc: doc.document_type == "purchase_approval_memo"
-            and not doc.signer_line_ids
-        ):
+        for rec in self:
+            if rec.signer_line_ids and not replace:
+                continue
+            if replace and rec.signer_line_ids:
+                rec.signer_line_ids.with_context(vpk_skip_signer_sync=True).unlink()
             rows = []
             sequence = 1
             seen = set()
@@ -2140,6 +2226,12 @@ class OfficialDocument(models.Model):
             if rows:
                 Signer.with_context(vpk_skip_signer_sync=True).create(rows)
                 rec._sync_signers_from_lines()
+
+    def _seed_purchase_approval_signers(self):
+        """Start from the company officer, head, and director. Rows can then be changed."""
+        self.filtered(
+            lambda doc: doc.document_type == "purchase_approval_memo"
+        )._seed_default_approvers()
 
     def _sync_signers_from_lines(self):
         for rec in self:

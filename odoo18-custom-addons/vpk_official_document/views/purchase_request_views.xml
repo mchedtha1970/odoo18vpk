@@ -39,9 +39,50 @@
             </xpath>
             <xpath expr="//page[@name='committee']" position="after">
                 <page string="เอกสารราชการที่เกี่ยวข้อง" name="related_official_documents">
-                    <div class="text-muted mb-2">
-                        รายการเอกสารที่เพิ่มและแนบไฟล์ไว้ใน <b>เอกสารกระบวนการ e-GP</b> (สำหรับเปิดดูเท่านั้น)
+                    <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+                        <button
+                            name="action_open_add_official_document_wizard"
+                            type="object"
+                            string="เพิ่มเอกสาร"
+                            class="btn-primary"
+                            groups="purchase_request.group_purchase_request_user"
+                            invisible="state in ('rejected', 'done')"
+                        />
+                        <span class="text-muted">
+                            เลือกดึงจาก Document Studio หรือแนบไฟล์ต้นทางเมื่อหน่วยงานจัดทำใบขออนุมัติขอซื้อมาเอง
+                        </span>
                     </div>
+                    <field name="official_document_ids" readonly="1" create="false" delete="false">
+                        <list create="false" delete="false" edit="false">
+                            <field name="document_type" string="ประเภท"/>
+                            <field name="name" string="เลขที่เอกสาร"/>
+                            <field name="date"/>
+                            <field name="source_mode" string="ที่มา"/>
+                            <field name="studio_document_id" column_invisible="1"/>
+                            <field name="has_pdf" widget="vpk_pdf_icon" string="ไฟล์"/>
+                            <field name="signature_state" widget="badge"
+                                   decoration-muted="signature_state == 'not_sent'"
+                                   decoration-warning="signature_state == 'waiting'"
+                                   decoration-success="signature_state == 'signed'"/>
+                            <field name="state" widget="badge"
+                                   decoration-info="state == 'draft'"
+                                   decoration-success="state in ('generated', 'approved')"
+                                   decoration-warning="state == 'to_approve'"
+                                   decoration-muted="state == 'cancelled'"/>
+                            <button name="action_open_form" type="object" string="เปิด" icon="fa-external-link"/>
+                            <button
+                                name="action_delete_from_request"
+                                type="object"
+                                string="ลบ"
+                                icon="fa-trash-o"
+                                class="text-danger"
+                                confirm="ต้องการลบเอกสารนี้หรือไม่?"
+                                groups="purchase_request.group_purchase_request_user"
+                                invisible="state in ('to_approve', 'approved', 'cancelled')"
+                            />
+                        </list>
+                    </field>
+                    <separator string="เอกสารกระบวนการ e-GP (สำหรับเปิดดูเท่านั้น)"/>
                     <field name="egp_document_ids"
                            readonly="1" create="false" delete="false">
                         <list create="false" delete="false" edit="false">

@@ -1,7 +1,7 @@
 # Copyright 2026 VPK
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 
-from odoo import _, api, fields, models
+from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
 from markupsafe import Markup
 
@@ -65,19 +65,84 @@ class PurchaseRequisition(models.Model):
         ondelete="restrict",
         copy=False,
     )
+    procurement_nature = fields.Selection(
+        selection=[
+            ("buy", "ซื้อ"),
+            ("hire", "จ้าง"),
+            ("lease", "เช่า"),
+        ],
+        string="ประเภทการจัดหา",
+        tracking=True,
+        copy=True,
+        default="buy",
+    )
+    egp_item_kind = fields.Selection(
+        selection=[
+            ("material", "วัสดุ"),
+            ("asset", "ครุภัณฑ์"),
+            ("project", "โครงการ"),
+            ("construction", "ก่อสร้าง"),
+        ],
+        string="พัสดุที่จัดหา",
+        tracking=True,
+        copy=True,
+    )
+    egp_disbursement_type = fields.Selection(
+        selection=[
+            ("gfmis", "ผ่าน GFMIS"),
+            ("non_gfmis", "ไม่ผ่าน GFMIS"),
+        ],
+        string="การเบิกจ่ายเงิน",
+        tracking=True,
+        copy=True,
+    )
+    egp_consideration_type = fields.Selection(
+        selection=[
+            ("total", "ราคารวม"),
+            ("line", "ราคาต่อรายการ"),
+            ("unit", "ราคาต่อหน่วย"),
+        ],
+        string="การพิจารณา",
+        tracking=True,
+        copy=True,
+        default="total",
+    )
     purchase_request_id = fields.Many2one(
         comodel_name="purchase.request",
         string="การอ้างอิง",
         tracking=True,
         index=True,
         copy=False,
-        help="ใบขอซื้อที่เชื่อมกับกระบวนการ e-GP นี้",
+        required=False,
+        help="ใบขอซื้อ (ถ้ามี) กระบวนการ e-bidding จากแผนไม่ต้องมีใบขอซื้อก่อนหาผู้ชนะ",
     )
     purchase_request_amount_total = fields.Monetary(
-        string="วงเงินงบประมาณ",
+        string="งบประมาณโครงการ",
         currency_field="currency_id",
-        related="purchase_request_id.estimated_cost",
+        compute="_compute_purchase_request_amount_total",
+        store=True,
         readonly=True,
+    )
+    price_mid_committee_ids = fields.One2many(
+        comodel_name="procurement.committee",
+        inverse_name="requisition_id",
+        string="คณะกรรมการจัดทำรายละเอียดคุณลักษณะของพัสดุและกำหนดราคากลาง",
+        domain=[("committee_type", "=", "price_mid")],
+        copy=True,
+    )
+    procurement_committee_ids = fields.One2many(
+        comodel_name="procurement.committee",
+        inverse_name="requisition_id",
+        string="คณะกรรมการจัดซื้อจัดจ้าง",
+        domain=[("committee_type", "=", "procurement")],
+        copy=True,
+    )
+    work_acceptance_committee_ids = fields.One2many(
+        comodel_name="procurement.committee",
+        inverse_name="requisition_id",
+        string="คณะกรรมการตรวจรับ",
+        domain=[("committee_type", "=", "work_acceptance")],
+        copy=True,
     )
     is_egp_procurement = fields.Boolean(
         compute="_compute_is_egp_procurement",
@@ -138,6 +203,15 @@ class PurchaseRequisition(models.Model):
     def _compute_is_egp_procurement(self):
         for record in self:
             record.is_egp_procurement = record.requisition_type == "egp_procurement"
+
+    def _egp_project_budget_amount(self):
+        self.ensure_one()
+        return self.purchase_request_id.estimated_cost or 0.0
+
+    @api.depends("purchase_request_id", "purchase_request_id.estimated_cost")
+    def _compute_purchase_request_amount_total(self):
+        for record in self:
+            record.purchase_request_amount_total = record._egp_project_budget_amount()
 
     def _suggested_egp_flow_stage(self):
         self.ensure_one()
@@ -249,6 +323,42 @@ class PurchaseRequisition(models.Model):
         rows.append("</div>")
         return Markup("".join(rows))
 
+    def _committee_commands_from_request(self, request, committee_type, source_field):
+        members = getattr(request, source_field, self.env["procurement.committee"])
+        return [
+            Command.create(
+                {
+                    "employee_id": member.employee_id.id,
+                    "name": member.name,
+                    "approve_role": member.approve_role,
+                    "committee_type": committee_type,
+                    "note": member.note,
+                }
+            )
+            for member in members
+        ]
+
+    def _copy_committees_from_purchase_request(self):
+        for record in self:
+            request = record.purchase_request_id
+            if not request:
+                continue
+            vals = {}
+            if not record.price_mid_committee_ids and "price_mid_committee_ids" in request._fields:
+                vals["price_mid_committee_ids"] = self._committee_commands_from_request(
+                    request, "price_mid", "price_mid_committee_ids"
+                )
+            if not record.procurement_committee_ids:
+                vals["procurement_committee_ids"] = self._committee_commands_from_request(
+                    request, "procurement", "procurement_committee_ids"
+                )
+            if not record.work_acceptance_committee_ids:
+                vals["work_acceptance_committee_ids"] = self._committee_commands_from_request(
+                    request, "work_acceptance", "work_acceptance_committee_ids"
+                )
+            if vals:
+                record.write(vals)
+
     @api.onchange("purchase_request_id")
     def _onchange_purchase_request_id(self):
         for record in self:
@@ -260,6 +370,27 @@ class PurchaseRequisition(models.Model):
                     record.purchase_type_id = record.purchase_request_id.purchase_type_id
                 if record.purchase_request_id.procurement_method_id:
                     record.procurement_method_id = record.purchase_request_id.procurement_method_id
+                if record.purchase_request_id.procurement_nature:
+                    record.procurement_nature = record.purchase_request_id.procurement_nature
+                if (
+                    "budget_section_key" in record.purchase_request_id._fields
+                    and record.purchase_request_id.budget_section_key
+                ):
+                    record.egp_item_kind = record.purchase_request_id.budget_section_key
+                if not record.price_mid_committee_ids:
+                    record.price_mid_committee_ids = self._committee_commands_from_request(
+                        record.purchase_request_id, "price_mid", "price_mid_committee_ids"
+                    )
+                if not record.procurement_committee_ids:
+                    record.procurement_committee_ids = self._committee_commands_from_request(
+                        record.purchase_request_id, "procurement", "procurement_committee_ids"
+                    )
+                if not record.work_acceptance_committee_ids:
+                    record.work_acceptance_committee_ids = self._committee_commands_from_request(
+                        record.purchase_request_id,
+                        "work_acceptance",
+                        "work_acceptance_committee_ids",
+                    )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -280,6 +411,7 @@ class PurchaseRequisition(models.Model):
             record.name = self.env["ir.sequence"].with_company(record.company_id).next_by_code(
                 "purchase.requisition.egp.procurement"
             )
+        records._copy_committees_from_purchase_request()
         return records
 
     def write(self, vals):
@@ -296,6 +428,8 @@ class PurchaseRequisition(models.Model):
                 or record.company_id.id != vals.get("company_id", record.company_id.id)
             )
         res = super().write(vals)
+        if vals.get("purchase_request_id"):
+            self._copy_committees_from_purchase_request()
         for requisition in requisitions_to_rename:
             if requisition.state != "draft":
                 raise UserError(
@@ -613,6 +747,19 @@ class PurchaseRequisitionLine(models.Model):
     product_description_variants = fields.Char(
         string="คำอธิบายรายการซื้อใน e-GP",
     )
+    currency_id = fields.Many2one(
+        related="requisition_id.currency_id",
+        store=True,
+    )
+    budget_amount = fields.Monetary(
+        string="งบประมาณ",
+        currency_field="currency_id",
+    )
+
+    @api.onchange("product_qty", "price_unit")
+    def _onchange_budget_amount_from_price(self):
+        if self.price_unit:
+            self.budget_amount = (self.product_qty or 0.0) * self.price_unit
 
     @api.depends(
         "product_id",

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ebidding_plan_import_wizard_form" model="ir.ui.view">
+        <field name="name">ebidding.plan.import.wizard.form</field>
+        <field name="model">ebidding.plan.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="นำเข้าแผนจัดซื้อจัดจ้างจาก Excel">
+                <group invisible="state == 'done'">
+                    <group string="ชุดแผน">
+                        <field name="plan_id"/>
+                    </group>
+                    <group string="ไฟล์">
+                        <field name="data_file" filename="filename"/>
+                        <field name="filename" invisible="1"/>
+                        <field name="template_file" invisible="1"/>
+                        <field name="template_filename" invisible="1"/>
+                    </group>
+                </group>
+                <div class="alert alert-info" role="alert" invisible="state == 'done'">
+                    <ol class="mb-0">
+                        <li>ดาวน์โหลดเทมเพลต Excel ตามคู่มือกรมบัญชีกลาง ข้อ 5.1</li>
+                        <li>กรอกรายการแผนที่บันทึกในระบบ e-GP แล้ว ลบแถวตัวอย่างสีเหลืองก่อนนำเข้า</li>
+                        <li>อัปโหลดไฟล์ แล้วกดนำเข้า ระบบจะแสดงรายการที่สำเร็จและไม่สำเร็จต่อแถว</li>
+                    </ol>
+                    <p class="mb-0 mt-2">
+                        ถ้าไม่เลือกชุดแผน ระบบจะสร้างชุดแผนใหม่จากปีงบประมาณในไฟล์
+                    </p>
+                </div>
+                <group invisible="state != 'done'">
+                    <group>
+                        <field name="success_count"/>
+                        <field name="fail_count"/>
+                    </group>
+                    <group>
+                        <field name="created_plan_id"/>
+                    </group>
+                </group>
+                <field name="row_ids" invisible="state != 'done'">
+                    <list decoration-danger="status == 'fail'"
+                          decoration-success="status == 'ok'">
+                        <field name="excel_row"/>
+                        <field name="project_name"/>
+                        <field name="status" widget="badge"/>
+                        <field name="message"/>
+                    </list>
+                </field>
+                <field name="state" invisible="1"/>
+                <footer>
+                    <button name="action_download_template"
+                            string="ดาวน์โหลดเทมเพลต"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state == 'done'"/>
+                    <button name="action_import"
+                            string="นำเข้า"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state == 'done'"/>
+                    <button name="action_open_plan"
+                            string="เปิดชุดแผน"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'done' or not created_plan_id"/>
+                    <button string="ปิด" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ebidding_plan_import_wizard" model="ir.actions.act_window">
+        <field name="name">นำเข้าแผนจาก Excel</field>
+        <field name="res_model">ebidding.plan.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

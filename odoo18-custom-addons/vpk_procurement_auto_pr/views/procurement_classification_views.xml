@@ -298,14 +298,10 @@
         <field name="inherit_id"
                ref="vpk_purchase_agreement_egp.view_purchase_requisition_form_egp"/>
         <field name="arch" type="xml">
-            <field name="purchase_type_id" position="after">
-                <field name="procurement_nature"
-                       invisible="requisition_type != 'egp_procurement'"/>
-                <field name="procurement_document"
-                       invisible="requisition_type != 'egp_procurement'"/>
-                <field name="procurement_category"
-                       invisible="requisition_type != 'egp_procurement'"/>
-            </field>
+            <xpath expr="//group[@name='egp_general_right']" position="inside">
+                <field name="procurement_document" readonly="state != 'draft'"/>
+                <field name="procurement_category" readonly="1"/>
+            </xpath>
         </field>
     </record>
 </odoo>

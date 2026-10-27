@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_requisition_form_egp_committee" model="ir.ui.view">
+        <field name="name">purchase.requisition.form.egp.committee</field>
+        <field name="model">purchase.requisition</field>
+        <field name="inherit_id" ref="vpk_purchase_agreement_egp.view_purchase_requisition_form_egp"/>
+        <field name="priority">5</field>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='products']" position="after">
+                <page
+                    string="รายชื่อคณะกรรมการ"
+                    name="egp_committee"
+                    invisible="not is_egp_procurement"
+                >
+                    <div class="text-muted mb-2">
+                        กรอกคณะกรรมการในกระบวนการ e-GP นี้ได้เลย ไม่ต้องมีใบขอซื้อก่อน
+                        ใช้กับ e-bidding เพื่อหาผู้ชนะและทำสัญญาจะซื้อจะขาย
+                    </div>
+                    <group name="price_mid_committee" string="คณะกรรมการจัดทำรายละเอียดคุณลักษณะของพัสดุและกำหนดราคากลาง">
+                        <field
+                            name="price_mid_committee_ids"
+                            nolabel="1"
+                            context="{'default_committee_type': 'price_mid'}"
+                            readonly="state not in ('draft', 'cancel')"
+                        >
+                            <list editable="bottom">
+                                <field name="committee_type" column_invisible="1"/>
+                                <field name="requisition_id" column_invisible="1"/>
+                                <field
+                                    name="employee_id"
+                                    options="{'no_create': True, 'no_open': True}"
+                                />
+                                <field name="name"/>
+                                <field name="approve_role"/>
+                                <field name="department_id"/>
+                                <field name="email"/>
+                                <field name="phone"/>
+                                <field name="note"/>
+                            </list>
+                        </field>
+                    </group>
+                    <group name="procure_committee" string="คณะกรรมการจัดซื้อจัดจ้าง">
+                        <field
+                            name="procurement_committee_ids"
+                            nolabel="1"
+                            context="{'default_committee_type': 'procurement'}"
+                            readonly="state not in ('draft', 'cancel')"
+                        >
+                            <list editable="bottom">
+                                <field name="committee_type" column_invisible="1"/>
+                                <field name="requisition_id" column_invisible="1"/>
+                                <field
+                                    name="employee_id"
+                                    options="{'no_create': True, 'no_open': True}"
+                                />
+                                <field name="name"/>
+                                <field name="approve_role"/>
+                                <field name="department_id"/>
+                                <field name="email"/>
+                                <field name="phone"/>
+                                <field name="note"/>
+                            </list>
+                        </field>
+                    </group>
+                    <group name="wa_committee" string="คณะกรรมการตรวจรับ">
+                        <field
+                            name="work_acceptance_committee_ids"
+                            nolabel="1"
+                            context="{'default_committee_type': 'work_acceptance'}"
+                            readonly="state not in ('draft', 'cancel')"
+                        >
+                            <list editable="bottom">
+                                <field name="committee_type" column_invisible="1"/>
+                                <field name="requisition_id" column_invisible="1"/>
+                                <field
+                                    name="employee_id"
+                                    options="{'no_create': True, 'no_open': True}"
+                                />
+                                <field name="name"/>
+                                <field name="approve_role"/>
+                                <field name="department_id"/>
+                                <field name="email"/>
+                                <field name="phone"/>
+                                <field name="note"/>
+                            </list>
+                        </field>
+                    </group>
+                </page>
+            </xpath>
+            <field name="purchase_request_id" position="attributes">
+                <attribute name="required">0</attribute>
+                <attribute name="help">ใบขอซื้อ (ถ้ามี) กระบวนการ e-bidding จากแผนไม่ต้องมีใบขอซื้อก่อนหาผู้ชนะ</attribute>
+            </field>
+        </field>
+    </record>
+</odoo>

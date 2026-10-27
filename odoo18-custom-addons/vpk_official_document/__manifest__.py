@@ -3,7 +3,7 @@
 
 {
     "name": "VPK Official Document - หนังสือราชการ",
-    "version": "18.0.1.18.12",
+    "version": "18.0.1.22.0",
     "category": "Purchases",
     "summary": "ออกหนังสือราชการจากแบบฟอร์ม Word เช่น คำสั่งแต่งตั้งคณะกรรมการตรวจรับ และบันทึกขออนุมัติแต่งตั้งคณะกรรมการกำหนดคุณลักษณะ",
     "author": "VPK",
@@ -21,6 +21,7 @@
         "base_tier_validation",
         "base_tier_validation_formula",
         "purchase_request_tier_validation",
+        "vpk_document_studio",
     ],
     "external_dependencies": {"python": ["docx", "pypdfium2", "PIL"]},
     "data": [
@@ -31,7 +32,9 @@
         "data/ir_config_parameter.xml",
         "data/tier_definition_data.xml",
         "wizard/send_for_signature_views.xml",
+        "wizard/official_document_add_views.xml",
         "views/official_document_views.xml",
+        "views/official_document_dashboard_views.xml",
         "views/official_document_type_views.xml",
         "views/official_document_template_views.xml",
         "views/purchase_request_views.xml",
@@ -58,6 +61,9 @@
             "vpk_official_document/static/src/js/pdf_icon_field.js",
             "vpk_official_document/static/src/xml/pdf_icon_field.xml",
             "vpk_official_document/static/src/scss/pdf_icon_field.scss",
+            "vpk_official_document/static/src/dashboard/official_document_dashboard.js",
+            "vpk_official_document/static/src/dashboard/official_document_dashboard.xml",
+            "vpk_official_document/static/src/scss/official_document_dashboard.scss",
         ],
     },
     "installable": True,

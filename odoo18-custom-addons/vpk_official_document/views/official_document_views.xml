@@ -7,6 +7,8 @@
             <form js_class="vpk_official_document_form">
                 <header>
                     <field name="vpk_secretary_can_screen" invisible="1"/>
+                    <field name="source_mode" invisible="1"/>
+                    <field name="studio_document_id" invisible="1"/>
                     <button name="action_secretary_mark_checked" type="object"
                             string="ตรวจสอบแล้ว"
                             class="btn-success"
@@ -31,14 +33,19 @@
                     <button name="action_refresh_text" type="object"
                             string="สร้างข้อความจากข้อมูล"
                             invisible="state == 'cancelled' or document_type not in ('wa_committee_order', 'spec_price_committee', 'specific_method_approval')"/>
+                    <button name="action_open_studio_document" type="object"
+                            string="เปิด Document Studio"
+                            class="btn-primary"
+                            icon="fa-file-text-o"
+                            invisible="not studio_document_id"/>
                     <button name="action_generate_docx" type="object"
                             string="สร้างไฟล์ Word"
                             class="btn-primary"
-                            invisible="state == 'cancelled'"/>
+                            invisible="state == 'cancelled' or source_mode in ('studio', 'uploaded')"/>
                     <button name="action_generate_pdf" type="object"
                             string="พิมพ์ PDF"
                             class="btn-primary"
-                            invisible="state == 'cancelled'"/>
+                            invisible="state == 'cancelled' or source_mode in ('studio', 'uploaded')"/>
                     <button name="action_open_send_wizard" type="object"
                             string="ส่งเพื่อลงนาม"
                             class="btn-primary"
@@ -80,7 +87,12 @@
                     <group>
                         <group>
                             <field name="document_type"/>
-                            <field name="template_id"/>
+                            <field name="source_mode" readonly="1"/>
+                            <field name="studio_template_id" readonly="1"
+                                   invisible="source_mode != 'studio'"/>
+                            <field name="studio_document_id" readonly="1"
+                                   invisible="source_mode != 'studio'"/>
+                            <field name="template_id" invisible="source_mode == 'studio'"/>
                             <field name="date"/>
                             <field name="saraban_book_no" placeholder="เช่น ภก ๐๐๓๓.๒๐๑/๒๕๖๙/๐๐๐๓"/>
                             <field name="saraban_document_id" readonly="1"
@@ -227,8 +239,8 @@
                                        widget="many2one_avatar_user"
                                        options="{'no_create': True}"/>
                                 <field name="position" string="ตำแหน่ง"/>
-                                <field name="is_check" string="ตรวจสอบ"/>
-                                <field name="is_sign" string="ลงนาม"/>
+                                <field name="is_check" string="ตรวจสอบ" width="90px"/>
+                                <field name="is_sign" string="ลงนาม" width="80px"/>
                             </list>
                         </field>
                     </group>
@@ -358,5 +370,72 @@
         <field name="view_mode">list,form</field>
         <field name="domain">[('document_type', '=', 'specific_method_approval')]</field>
         <field name="context">{'default_document_type': 'specific_method_approval'}</field>
+    </record>
+
+    <record id="action_winner_announcement" model="ir.actions.act_window">
+        <field name="name">ประกาศผู้ชนะการเสนอราคา</field>
+        <field name="res_model">vpk.official.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'winner_announcement')]</field>
+        <field name="context">{'default_document_type': 'winner_announcement'}</field>
+    </record>
+
+    <record id="action_award_approval" model="ir.actions.act_window">
+        <field name="name">รายงานผลการพิจารณาจัดซื้อจัดจ้าง</field>
+        <field name="res_model">vpk.official.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('document_type', '=', 'award_approval')]</field>
+        <field name="context">{'default_document_type': 'award_approval'}</field>
+    </record>
+
+    <record id="view_document_studio_document_form_pr" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.form.pr</field>
+        <field name="model">vpk.document.studio.document</field>
+        <field name="inherit_id" ref="vpk_document_studio.view_document_studio_document_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="official_state" invisible="1"/>
+                <field name="signature_state" invisible="1"/>
+                <button
+                    name="action_open_send_wizard"
+                    type="object"
+                    string="ส่งเพื่อลงนาม"
+                    class="btn-primary"
+                    icon="fa-paper-plane"
+                    groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
+                    invisible="not official_document_id or official_state in ('to_approve', 'approved', 'cancelled') or signature_state in ('waiting', 'signed')"
+                />
+                <button
+                    name="action_open_purchase_request"
+                    type="object"
+                    string="กลับไปใบขอซื้อ"
+                    class="btn-secondary"
+                    icon="fa-reply"
+                    invisible="not request_id"
+                />
+            </xpath>
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="request_id" readonly="1" invisible="not request_id"/>
+                <field name="official_document_id" readonly="1" invisible="not official_document_id"/>
+            </xpath>
+            <xpath expr="//sheet/notebook" position="after">
+                <group string="ผู้อนุมัติ" name="approvers" invisible="not official_document_id">
+                    <div class="text-muted" colspan="2">
+                        เพิ่มผู้อนุมัติตามลำดับ ต้องมีอย่างน้อย 1 คนจึงจะส่งอนุมัติได้
+                    </div>
+                    <field name="signer_line_ids" nolabel="1" colspan="2">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="user_id" string="ผู้อนุมัติ"
+                                   widget="many2one_avatar_user"
+                                   options="{'no_create': True}"/>
+                            <field name="position" string="ตำแหน่ง"/>
+                            <field name="is_check" string="ตรวจสอบ"/>
+                            <field name="is_sign" string="ลงนาม"/>
+                        </list>
+                    </field>
+                </group>
+            </xpath>
+        </field>
     </record>
 </odoo>

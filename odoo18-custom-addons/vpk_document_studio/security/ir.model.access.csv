@@ -1,0 +1,13 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_studio_template_user,vpk.document.studio.template.user,model_vpk_document_studio_template,group_document_studio_user,1,0,0,0
+access_studio_template_manager,vpk.document.studio.template.manager,model_vpk_document_studio_template,group_document_studio_manager,1,1,1,1
+access_studio_field_user,vpk.document.studio.field.user,model_vpk_document_studio_field,group_document_studio_user,1,0,0,0
+access_studio_field_manager,vpk.document.studio.field.manager,model_vpk_document_studio_field,group_document_studio_manager,1,1,1,1
+access_studio_document_user,vpk.document.studio.document.user,model_vpk_document_studio_document,group_document_studio_user,1,1,1,1
+access_studio_document_manager,vpk.document.studio.document.manager,model_vpk_document_studio_document,group_document_studio_manager,1,1,1,1
+access_ir_model_studio_user,ir.model.studio.user,base.model_ir_model,base.group_user,1,0,0,0
+access_ir_model_fields_studio_user,ir.model.fields.studio.user,base.model_ir_model_fields,base.group_user,1,0,0,0
+access_studio_block_user,vpk.document.studio.block.user,model_vpk_document_studio_block,group_document_studio_user,1,0,0,0
+access_studio_block_manager,vpk.document.studio.block.manager,model_vpk_document_studio_block,group_document_studio_manager,1,1,1,1
+access_studio_block_column_user,vpk.document.studio.block.column.user,model_vpk_document_studio_block_column,group_document_studio_user,1,0,0,0
+access_studio_block_column_manager,vpk.document.studio.block.column.manager,model_vpk_document_studio_block_column,group_document_studio_manager,1,1,1,1

@@ -15,7 +15,7 @@ class PurchaseRequest(models.Model):
     price_mid_committee_ids = fields.One2many(
         comodel_name="procurement.committee",
         inverse_name="request_id",
-        string="คณะกรรมการกำหนดราคากลาง",
+        string="คณะกรรมการกำหนดคุณลักษณะและราคากลาง",
         domain=[("committee_type", "=", "price_mid")],
     )
 

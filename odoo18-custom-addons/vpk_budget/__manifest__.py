@@ -1,6 +1,6 @@
 {
     "name": "VPK Budget",
-    "version": "18.0.2.99.23",
+    "version": "18.0.2.99.25",
     "category": "Accounting",
     "summary": "งบประมาณ แหล่งเงิน กลุ่มงบประมาณ คำของบ และบัญชีวิเคราะห์",
     "author": "VPK",
@@ -36,6 +36,7 @@
         "security/budget_material_detail_import_wizard_access.xml",
         "security/budget_material_allocation_wizard_access.xml",
         "security/budget_request_load_wizard_access.xml",
+        "security/purchase_request_budget_product_wizard_access.xml",
         "data/departmental_budget_request_sequence.xml",
         "views/budget_fund_source_views.xml",
         "views/budget_group_views.xml",
@@ -57,6 +58,7 @@
         "wizard/material_detail_import_wizard_views.xml",
         "wizard/material_allocation_wizard_views.xml",
         "wizard/budget_request_load_wizard_views.xml",
+        "wizard/purchase_request_budget_product_wizard_views.xml",
     ],
     "installable": True,
     "application": True,

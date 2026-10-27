@@ -395,6 +395,7 @@ class PurchaseRequest(models.Model):
             "spec_price_committee": self.action_create_spec_price_committee,
             "integrity_over_100k": self.action_create_integrity_over_100k,
             "specific_method_approval": self.action_create_specific_method_approval,
+            "purchase_approval_memo": self.action_create_purchase_approval_memo,
         }
         document_type = self.official_document_to_create
         creator = creators.get(document_type.code) if document_type else None
@@ -643,6 +644,36 @@ class PurchaseRequest(models.Model):
         self.message_post(
             body=_("รีเซ็ตสำหรับทดสอบ: กลับเป็นฉบับร่าง และลบเอกสารที่เกี่ยวข้อง")
         )
+
+    def action_open_add_official_document_wizard(self):
+        self.ensure_one()
+        default_type = self.env["vpk.official.document.type"].search(
+            [
+                ("create_from_purchase_request", "=", True),
+                ("code", "=", "purchase_approval_memo"),
+            ],
+            limit=1,
+        )
+        if not default_type:
+            default_type = self.env["vpk.official.document.type"].search(
+                [("create_from_purchase_request", "=", True)],
+                limit=1,
+            )
+        wizard = self.env["vpk.official.document.add.wizard"].create(
+            {
+                "request_id": self.id,
+                "document_type_id": default_type.id,
+                "add_mode": "studio",
+            }
+        )
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("เพิ่มเอกสาร"),
+            "res_model": "vpk.official.document.add.wizard",
+            "res_id": wizard.id,
+            "view_mode": "form",
+            "target": "new",
+        }
 
     def action_create_purchase_approval_memo(self):
         self.ensure_one()

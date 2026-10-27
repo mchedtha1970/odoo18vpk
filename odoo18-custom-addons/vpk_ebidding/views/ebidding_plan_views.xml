@@ -1,0 +1,597 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ebidding_plan_form" model="ir.ui.view">
+        <field name="name">ebidding.plan.form</field>
+        <field name="model">ebidding.plan</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_record" type="object"
+                            string="ยืนยันการบันทึก"
+                            class="btn-primary"
+                            invisible="state != 'draft'"
+                            groups="purchase.group_purchase_manager"/>
+                    <button name="action_open_import_wizard" type="object"
+                            string="นำเข้า Excel"
+                            class="btn-secondary"
+                            groups="purchase.group_purchase_manager"/>
+                    <button name="action_open_publish_code_wizard" type="object"
+                            string="บันทึกรหัสเผยแพร่แผน"
+                            class="btn-primary"
+                            invisible="not line_ids"/>
+                    <button name="action_draft" type="object"
+                            string="กลับเป็นร่าง"
+                            invisible="state != 'recorded'"
+                            groups="purchase.group_purchase_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,recorded"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_lines" type="object"
+                                class="oe_stat_button" icon="fa-list">
+                            <field name="line_count" widget="statinfo" string="รายการแผน"/>
+                        </button>
+                        <button name="action_view_documents" type="object"
+                                class="oe_stat_button" icon="fa-paperclip">
+                            <field name="document_count" widget="statinfo" string="เอกสาร e-GP"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name"
+                                   placeholder="แผนการจัดซื้อจัดจ้าง ปีงบประมาณ 2570"
+                                   readonly="state == 'recorded'"/>
+                        </h1>
+                        <field name="code" invisible="1"/>
+                    </div>
+                    <div class="alert alert-info" role="alert">
+                        เป็นการบันทึกแผนการจัดซื้อจัดจ้างของแผนที่ทำจากระบบ e-GP
+                        เพื่อเป็นการอ้างอิงสำหรับรายการอื่นที่เกี่ยวข้องในระบบ ERP
+                    </div>
+                    <group>
+                        <group>
+                            <field name="fiscal_year"
+                                   placeholder="2570"
+                                   readonly="state == 'recorded'"/>
+                            <field name="amount_total"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"
+                                   readonly="state == 'recorded'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="รายการแผน" name="lines">
+                            <field name="line_ids" widget="x2many_selectable">
+                                <list>
+                                    <header>
+                                        <button name="action_open_publish_code_wizard"
+                                                type="object"
+                                                string="บันทึกรหัสเผยแพร่แผน"
+                                                class="btn-primary"/>
+                                    </header>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="fiscal_year"/>
+                                    <field name="plan_code"/>
+                                    <field name="project_name"/>
+                                    <field name="amount_total" sum="รวมวงเงินแผน"/>
+                                    <field name="publish_code"/>
+                                    <field name="line_state" widget="badge"
+                                           decoration-muted="line_state == 'not_published'"
+                                           decoration-warning="line_state == 'submitted'"
+                                           decoration-success="line_state == 'published'"/>
+                                    <field name="expected_announce_month" widget="month_year"
+                                           optional="hide"/>
+                                    <field name="office_code" optional="hide"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="แนบเอกสาร e-GP" name="egp_documents">
+                            <div class="text-muted mb-2">
+                                แนบเอกสารที่จัดทำจากระบบ e-GP แล้วส่งขออนุมัติตามลำดับผู้อนุมัติ
+                                เหมือนเอกสารอื่นในกระบวนการจัดซื้อจัดจ้าง
+                            </div>
+                            <field name="document_ids" context="{'default_plan_id': id}">
+                                <list editable="bottom">
+                                    <control>
+                                        <create name="add_egp_document_control" string="เพิ่มเอกสาร"/>
+                                    </control>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="plan_id" column_invisible="1"/>
+                                    <field name="document_type_id"
+                                           string="ประเภทเอกสาร"
+                                           width="280px"
+                                           options="{'no_create': True, 'no_open': True}"/>
+                                    <field name="plan_line_id" string="รายการแผน"
+                                           optional="show"
+                                           options="{'no_create': True}"/>
+                                    <field name="egp_reference" string="เลขอ้างอิง e-GP"/>
+                                    <field name="document_number" string="เลขที่เอกสาร"
+                                           optional="show"/>
+                                    <field name="document_date" string="วันที่เอกสาร"/>
+                                    <field name="document_filename" column_invisible="1"/>
+                                    <field name="document_file" filename="document_filename"
+                                           widget="binary" string="ไฟล์แนบ (PDF)"/>
+                                    <button name="action_preview_document" type="object"
+                                            string="ดูเอกสาร" icon="fa-eye"/>
+                                    <field name="number_stamped" column_invisible="1"/>
+                                    <field name="date_stamped" column_invisible="1"/>
+                                    <button name="action_open_stamp_number_viewer" type="object"
+                                            string="บันทึกเลขที่/วันที่"
+                                            icon="fa-font"
+                                            class="btn-link"
+                                            invisible="not document_file or signature_state == 'signed'"
+                                            title="กำหนดกรอบบนไฟล์ PDF แล้วประทับเลขที่และวันที่เอกสารลงในไฟล์ที่แนบ"/>
+                                    <button name="action_remove_number_stamp" type="object"
+                                            string="ลบเลขที่"
+                                            icon="fa-eraser"
+                                            class="btn-link"
+                                            invisible="not number_stamped or signature_state == 'signed'"
+                                            title="ลบเลขที่เอกสารที่ประทับออกจากไฟล์"/>
+                                    <button name="action_remove_date_stamp" type="object"
+                                            string="ลบวันที่"
+                                            icon="fa-eraser"
+                                            class="btn-link"
+                                            invisible="not date_stamped or signature_state == 'signed'"
+                                            title="ลบวันที่เอกสารที่ประทับออกจากไฟล์"/>
+                                    <field name="signer_summary" string="ลงนาม/อนุมัติ"
+                                           width="180px" optional="show"/>
+                                    <button name="action_open_approver_modal" type="object"
+                                            string="เพิ่มผู้อนุมัติ"
+                                            icon="fa-user-plus"
+                                            class="btn-link"
+                                            groups="purchase.group_purchase_user"
+                                            title="กำหนดผู้อนุมัติและส่งไฟล์ที่แนบเข้ากล่องงานรออนุมัติ"/>
+                                    <button name="action_send_for_signature_inbox" type="object"
+                                            string="ส่งเพื่อลงนาม"
+                                            icon="fa-paper-plane"
+                                            class="btn-link"
+                                            groups="purchase.group_purchase_user"
+                                            invisible="signature_state in ('waiting', 'signed') or not document_file"
+                                            title="ส่งเข้ากล่องงานรออนุมัติ ตามลำดับผู้อนุมัติที่กำหนด"/>
+                                    <field name="signature_state" widget="badge" optional="show"
+                                           decoration-muted="signature_state == 'not_sent'"
+                                           decoration-warning="signature_state == 'waiting'"
+                                           decoration-success="signature_state == 'signed'"/>
+                                    <field name="notes" string="หมายเหตุ" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="หมายเหตุ" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_ebidding_plan_list" model="ir.ui.view">
+        <field name="name">ebidding.plan.list</field>
+        <field name="model">ebidding.plan</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="fiscal_year"/>
+                <field name="line_count"/>
+                <field name="amount_total"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'recorded'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ebidding_plan_search" model="ir.ui.view">
+        <field name="name">ebidding.plan.search</field>
+        <field name="model">ebidding.plan</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="fiscal_year"/>
+                <field name="name"/>
+                <field name="code"/>
+                <filter name="filter_draft" string="ร่าง"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_recorded" string="บันทึกแล้ว"
+                        domain="[('state', '=', 'recorded')]"/>
+                <separator/>
+                <filter name="group_fiscal_year" string="ปีงบประมาณ"
+                        context="{'group_by': 'fiscal_year'}"/>
+                <filter name="group_state" string="สถานะการบันทึก"
+                        context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_ebidding_plan" model="ir.actions.act_window">
+        <field name="name">แผนจัดซื้อจัดจ้างจาก e-GP</field>
+        <field name="res_model">ebidding.plan</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                บันทึกแผนจัดซื้อจัดจ้างตามปีงบประมาณ
+            </p>
+            <p>
+                สร้างเอกสารตามปีงบประมาณ แล้วเพิ่มแผนได้หลายรายการใน 1 ปี
+                การเผยแพร่แผนบันทึกในรายละเอียดของแต่ละแผน
+            </p>
+        </field>
+    </record>
+
+    <record id="view_ebidding_plan_line_list" model="ir.ui.view">
+        <field name="name">ebidding.plan.line.list</field>
+        <field name="model">ebidding.plan.line</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_open_publish_code_wizard"
+                            type="object"
+                            string="บันทึกรหัสเผยแพร่แผน"
+                            class="btn-primary"
+                            display="always"/>
+                </header>
+                <field name="fiscal_year"/>
+                <field name="plan_code"/>
+                <field name="project_name"/>
+                <field name="amount_total" sum="รวมวงเงิน"/>
+                <field name="publish_code"/>
+                <field name="line_state" widget="badge"
+                       decoration-muted="line_state == 'not_published'"
+                       decoration-warning="line_state == 'submitted'"
+                       decoration-success="line_state == 'published'"/>
+                <field name="expected_announce_month" widget="month_year" optional="hide"/>
+                <field name="plan_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ebidding_plan_line_form" model="ir.ui.view">
+        <field name="name">ebidding.plan.line.form</field>
+        <field name="model">ebidding.plan.line</field>
+        <field name="arch" type="xml">
+            <form class="o_vpk_fullwidth_form">
+                <header>
+                    <field name="egp_requisition_count" invisible="1"/>
+                    <button name="action_create_egp_process" type="object"
+                            string="สร้างกระบวนการ E-GP" class="btn-primary"
+                            icon="fa-sitemap"
+                            invisible="egp_requisition_count"
+                            groups="purchase.group_purchase_user"/>
+                    <button name="action_open_egp_process" type="object"
+                            string="เปิดกระบวนการ E-GP" class="btn-primary"
+                            icon="fa-sitemap"
+                            invisible="not egp_requisition_count"
+                            groups="purchase.group_purchase_user"/>
+                    <button name="action_open_plan" type="object"
+                            string="เปิดแผน" class="btn-secondary"
+                            icon="fa-external-link"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_egp_process" type="object"
+                                class="oe_stat_button" icon="fa-sitemap"
+                                invisible="not egp_requisition_count">
+                            <field name="egp_requisition_count" widget="statinfo"
+                                   string="กระบวนการ E-GP"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group string="ข้อมูลแผน">
+                            <field name="plan_id" invisible="1"/>
+                            <field name="fiscal_year"/>
+                            <field name="office_code"/>
+                            <field name="plan_code"/>
+                            <field name="project_name"/>
+                            <field name="expected_announce_month" widget="month_year"
+                                   placeholder="06/2569"/>
+                            <field name="line_state"/>
+                        </group>
+                        <group>
+                            <label for="amount_total"/>
+                            <div class="o_row">
+                                <field name="amount_total" class="oe_inline"
+                                       widget="monetary"
+                                       options="{'no_symbol': True}"/>
+                                <span>บาท</span>
+                            </div>
+                            <label for="budget_act_amount"/>
+                            <div class="o_row">
+                                <field name="budget_act_amount" class="oe_inline"
+                                       widget="monetary"
+                                       options="{'no_symbol': True}"/>
+                                <span>บาท</span>
+                            </div>
+                            <label for="extra_budget_amount"/>
+                            <div class="o_row">
+                                <field name="extra_budget_amount" class="oe_inline"
+                                       widget="monetary"
+                                       options="{'no_symbol': True}"/>
+                                <span>บาท</span>
+                            </div>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group string="การเผยแพร่แผน">
+                        <group>
+                            <field name="publish_code"/>
+                            <field name="publish_round"/>
+                            <field name="publish_date"/>
+                        </group>
+                        <group>
+                            <field name="approval_letter_number"/>
+                            <field name="approval_letter_date"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_ebidding_plan_line_search" model="ir.ui.view">
+        <field name="name">ebidding.plan.line.search</field>
+        <field name="model">ebidding.plan.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="project_name"/>
+                <field name="plan_code"/>
+                <field name="office_code"/>
+                <field name="publish_code"/>
+                <field name="fiscal_year"/>
+                <field name="plan_id"/>
+                <filter name="filter_not_published" string="ยังไม่เผยแพร่"
+                        domain="[('line_state', '=', 'not_published')]"/>
+                <filter name="filter_published" string="เผยแพร่ขึ้นเว็บไซต์"
+                        domain="[('line_state', '=', 'published')]"/>
+                <separator/>
+                <filter name="group_fiscal_year" string="ปีงบประมาณ"
+                        context="{'group_by': 'fiscal_year'}"/>
+                <filter name="group_line_state" string="สถานะแผน"
+                        context="{'group_by': 'line_state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_ebidding_plan_document_type_list" model="ir.ui.view">
+        <field name="name">ebidding.plan.document.type.list</field>
+        <field name="model">ebidding.plan.document.type</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" decoration-muted="not active">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ebidding_plan_document_type_form" model="ir.ui.view">
+        <field name="name">ebidding.plan.document.type.form</field>
+        <field name="model">ebidding.plan.document.type</field>
+        <field name="arch" type="xml">
+            <form string="ประเภทเอกสาร e-GP ของแผน">
+                <sheet>
+                    <widget name="web_ribbon" title="เก็บถาวร"
+                            bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="เช่น ประกาศเผยแพร่แผนการจัดซื้อจัดจ้าง"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <field name="code"/>
+                        <field name="sequence"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_ebidding_plan_document_type_search" model="ir.ui.view">
+        <field name="name">ebidding.plan.document.type.search</field>
+        <field name="model">ebidding.plan.document.type</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <filter name="inactive" string="เก็บถาวร" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_ebidding_plan_document_type" model="ir.actions.act_window">
+        <field name="name">ประเภทเอกสาร e-GP ของแผน</field>
+        <field name="res_model">ebidding.plan.document.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                เพิ่มประเภทเอกสารที่แนบจากระบบ e-GP
+            </p>
+            <p>
+                ประเภทนี้จะไปแสดงในช่อง ประเภทเอกสาร ของแท็บแนบเอกสาร e-GP
+            </p>
+        </field>
+    </record>
+
+    <record id="action_ebidding_plan_line" model="ir.actions.act_window">
+        <field name="name">รายการแผนจาก e-GP</field>
+        <field name="res_model">ebidding.plan.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'open_plan_form': True}</field>
+    </record>
+
+    <record id="view_ebidding_plan_document_list" model="ir.ui.view">
+        <field name="name">ebidding.plan.document.list</field>
+        <field name="model">ebidding.plan.document</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="plan_id" optional="hide"/>
+                <field name="document_type_id"/>
+                <field name="plan_line_id" optional="show"/>
+                <field name="egp_reference"/>
+                <field name="document_number" optional="show"/>
+                <field name="document_date"/>
+                <field name="document_filename" column_invisible="1"/>
+                <field name="document_file" filename="document_filename" widget="binary"/>
+                <field name="number_stamped" column_invisible="1"/>
+                <field name="date_stamped" column_invisible="1"/>
+                <button name="action_open_stamp_number_viewer" type="object"
+                        string="บันทึกเลขที่/วันที่" icon="fa-font"
+                        class="btn-link"
+                        invisible="not document_file or signature_state == 'signed'"/>
+                <button name="action_remove_number_stamp" type="object"
+                        string="ลบเลขที่" icon="fa-eraser" class="btn-link"
+                        invisible="not number_stamped or signature_state == 'signed'"/>
+                <button name="action_remove_date_stamp" type="object"
+                        string="ลบวันที่" icon="fa-eraser" class="btn-link"
+                        invisible="not date_stamped or signature_state == 'signed'"/>
+                <field name="signer_summary" optional="show"/>
+                <field name="signature_state" widget="badge"
+                       decoration-muted="signature_state == 'not_sent'"
+                       decoration-warning="signature_state == 'waiting'"
+                       decoration-success="signature_state == 'signed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ebidding_plan_document_form" model="ir.ui.view">
+        <field name="name">ebidding.plan.document.form</field>
+        <field name="model">ebidding.plan.document</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="plan_id" invisible="1"/>
+                            <field name="document_type_id" options="{'no_create': True}"/>
+                            <field name="plan_line_id" options="{'no_create': True}"/>
+                            <field name="egp_reference"/>
+                            <field name="document_number"/>
+                            <field name="document_date"/>
+                        </group>
+                        <group>
+                            <field name="document_filename" invisible="1"/>
+                            <field name="document_file" filename="document_filename"/>
+                            <field name="number_stamped" invisible="1"/>
+                            <field name="date_stamped" invisible="1"/>
+                            <button name="action_open_stamp_number_viewer" type="object"
+                                    string="บันทึกเลขที่/วันที่เอกสาร"
+                                    class="btn-primary"
+                                    icon="fa-font"
+                                    invisible="not document_file or signature_state == 'signed'"/>
+                            <button name="action_remove_number_stamp" type="object"
+                                    string="ลบเลขที่"
+                                    class="btn-secondary"
+                                    icon="fa-eraser"
+                                    invisible="not number_stamped or signature_state == 'signed'"/>
+                            <button name="action_remove_date_stamp" type="object"
+                                    string="ลบวันที่"
+                                    class="btn-secondary"
+                                    icon="fa-eraser"
+                                    invisible="not date_stamped or signature_state == 'signed'"/>
+                            <field name="signature_state" widget="badge"
+                                   decoration-muted="signature_state == 'not_sent'"
+                                   decoration-warning="signature_state == 'waiting'"
+                                   decoration-success="signature_state == 'signed'"/>
+                            <field name="official_document_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="notes" placeholder="หมายเหตุ"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_ebidding_plan_document_approver_form" model="ir.ui.view">
+        <field name="name">ebidding.plan.document.approver.form</field>
+        <field name="model">ebidding.plan.document</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <form string="กำหนดผู้อนุมัติเอกสารจากระบบ e-GP">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="document_type_id" string="ประเภทเอกสาร" readonly="1"/>
+                            <field name="egp_reference" string="เลขอ้างอิง e-GP" readonly="1"/>
+                            <field name="plan_line_id" string="รายการแผน" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="document_date" string="วันที่เอกสาร" readonly="1"/>
+                            <field name="document_filename" invisible="1"/>
+                            <field name="document_file" filename="document_filename"
+                                   string="ไฟล์แนบ (PDF)" readonly="1"/>
+                            <field name="signature_state" widget="badge"
+                                   decoration-muted="signature_state == 'not_sent'"
+                                   decoration-warning="signature_state == 'waiting'"
+                                   decoration-success="signature_state == 'signed'"/>
+                        </group>
+                    </group>
+                    <group string="รายชื่อผู้อนุมัติตามลำดับ (ส่งเข้ากล่องงานรออนุมัติ)"
+                           name="egp_approvers">
+                        <div class="text-muted mb-2" colspan="2">
+                            ระบุผู้อนุมัติตามลำดับที่จะให้ไฟล์เอกสารนี้ส่งไปในกล่องงานรออนุมัติ
+                            ของผู้อนุมัติแต่ละท่าน
+                        </div>
+                        <field name="signer_line_ids" nolabel="1" colspan="2"
+                               readonly="signature_state in ('waiting', 'signed')">
+                            <list editable="bottom">
+                                <control>
+                                    <create name="add_egp_signer_control" string="เพิ่มผู้อนุมัติ"/>
+                                </control>
+                                <field name="sequence" widget="handle"/>
+                                <field name="user_id" string="ผู้อนุมัติ"
+                                       widget="many2one_avatar_user"
+                                       options="{'no_create': True}"/>
+                                <field name="position" string="ตำแหน่ง"/>
+                                <field name="is_check" string="ตรวจสอบ"/>
+                                <field name="is_sign" string="ลงนาม"/>
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_save_and_send_to_approver_inbox"
+                            type="object"
+                            string="บันทึกและส่งเข้ากล่องผู้อนุมัติ"
+                            icon="fa-paper-plane"
+                            class="btn-primary"
+                            invisible="signature_state in ('waiting', 'signed')"/>
+                    <button name="action_save_approvers_only"
+                            type="object"
+                            string="บันทึกรายชื่อผู้อนุมัติ"
+                            class="btn-secondary"
+                            invisible="signature_state in ('waiting', 'signed')"/>
+                    <button string="ปิด" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_purchase_requisition_form_ebidding_plan" model="ir.ui.view">
+        <field name="name">purchase.requisition.form.ebidding.plan</field>
+        <field name="model">purchase.requisition</field>
+        <field name="inherit_id" ref="vpk_purchase_agreement_egp.view_purchase_requisition_form_egp"/>
+        <field name="arch" type="xml">
+            <field name="egp_item_kind" position="after">
+                <field name="ebidding_fiscal_year" readonly="1"/>
+                <field name="ebidding_plan_code" readonly="1"/>
+                <field name="ebidding_plan_name" readonly="1"/>
+                <field
+                    name="ebidding_plan_line_id"
+                    readonly="1"
+                    options="{'no_create': True, 'no_open': False}"
+                />
+            </field>
+        </field>
+    </record>
+</odoo>

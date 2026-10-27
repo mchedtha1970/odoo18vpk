@@ -9,6 +9,7 @@ class ProcurementAnnualPlan(models.Model):
     _description = "แผนจัดซื้อจัดจ้างประจำปีงบประมาณ"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "fiscal_year_start desc, id desc"
+    _rec_names_search = ["name", "code", "procurement_plan_code"]
 
     name = fields.Char(
         string="ชื่อแผน",
@@ -16,11 +17,19 @@ class ProcurementAnnualPlan(models.Model):
         tracking=True,
     )
     code = fields.Char(
-        string="รหัสแผน",
+        string="เลขที่เอกสาร",
         required=True,
         copy=False,
         default=lambda self: _("New"),
         tracking=True,
+    )
+    procurement_plan_code = fields.Char(
+        string="รหัสแผนการจัดซื้อจัดจ้าง",
+        tracking=True,
+        copy=False,
+        index=True,
+        help="รหัสอ้างอิงแผนจัดซื้อจัดจ้างที่ประกาศใช้ "
+             "กรอกแยกจากเลขที่เอกสารที่ระบบออกให้อัตโนมัติ",
     )
     fiscal_year_start = fields.Date(
         string="เริ่มปีงบประมาณ",

@@ -5,6 +5,7 @@
 
 import io
 import logging
+import os
 
 _logger = logging.getLogger(__name__)
 
@@ -188,5 +189,110 @@ def stamp_signature_on_pdf(
     except Exception as error:
         _logger.exception("Failed to stamp signature on official document PDF")
         raise SignatureStampError("ไม่สามารถประทับลายเซ็นบนเอกสารได้") from error
+    finally:
+        pdf.close()
+
+
+def _thai_font_path(bold=True):
+    from .pdf_converter import thai_font_dirs
+
+    filenames = (
+        ("THSarabunNew-Bold.ttf", "THSarabunNew-Regular.ttf")
+        if bold
+        else ("THSarabunNew-Regular.ttf", "THSarabunNew-Bold.ttf")
+    )
+    for directory in thai_font_dirs():
+        for filename in filenames:
+            path = os.path.join(directory, filename)
+            if os.path.isfile(path):
+                return path
+    raise SignatureStampError("ไม่พบฟอนต์ภาษาไทยสำหรับประทับเลขที่เอกสาร")
+
+
+def _render_text_image(text, width_px, height_px):
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+    except ImportError as error:
+        raise SignatureStampError(
+            "ไม่สามารถประมวลผลข้อความได้ (ต้องติดตั้ง Pillow)"
+        ) from error
+    width_px = max(24, int(width_px))
+    height_px = max(16, int(height_px))
+    image = Image.new("RGBA", (width_px, height_px), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(image)
+    font_path = _thai_font_path(bold=True)
+    lo, hi = 10, max(height_px, 12)
+    best = None
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        font = ImageFont.truetype(font_path, mid)
+        bbox = draw.textbbox((0, 0), text, font=font)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+        if text_w <= width_px * 0.96 and text_h <= height_px * 0.9:
+            best = (font, bbox)
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    if best:
+        font, bbox = best
+    else:
+        font = ImageFont.truetype(font_path, 12)
+        bbox = draw.textbbox((0, 0), text, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    x = (width_px - text_w) / 2.0 - bbox[0]
+    y = (height_px - text_h) / 2.0 - bbox[1]
+    draw.text((x, y), text, font=font, fill=(20, 20, 20, 255))
+    return image
+
+
+def stamp_text_on_pdf(pdf_bytes, text, custom_box):
+    """Return PDF bytes with ``text`` drawn inside ``custom_box`` ratios."""
+    try:
+        import pypdfium2 as pdfium
+    except ImportError as error:
+        raise SignatureStampError(
+            "ไม่สามารถประทับข้อความบน PDF ได้ (ต้องติดตั้ง pypdfium2)"
+        ) from error
+
+    cleaned = " ".join((text or "").split())
+    if not cleaned:
+        raise SignatureStampError("กรุณาระบุข้อความที่ต้องการประทับบนเอกสาร")
+    if not custom_box or not isinstance(custom_box, dict):
+        raise SignatureStampError("กรุณากำหนดกรอบตำแหน่งบนหน้าเอกสาร")
+
+    pdf = pdfium.PdfDocument(pdf_bytes)
+    try:
+        raw_page_idx = int(custom_box.get("page_index", 0))
+        page_index = max(0, min(len(pdf) - 1, raw_page_idx))
+        page = pdf[page_index]
+        page_w, page_h = page.get_size()
+        w_ratio = float(custom_box.get("w_ratio") or 0.28)
+        h_ratio = float(custom_box.get("h_ratio") or 0.045)
+        x_ratio = float(custom_box.get("x_ratio") or 0.5)
+        y_ratio = float(custom_box.get("y_ratio") or 0.08)
+        box_w = max(36.0, min(page_w, w_ratio * page_w))
+        box_h = max(14.0, min(page_h, h_ratio * page_h))
+        box_left = max(0.0, min(page_w - box_w, x_ratio * page_w))
+        box_top = max(0.0, min(page_h - box_h, y_ratio * page_h))
+        box_bottom = page_h - (box_top + box_h)
+        scale = 3.0
+        image = _render_text_image(cleaned, box_w * scale, box_h * scale)
+        bitmap = pdfium.PdfBitmap.from_pil(image)
+        image_obj = pdfium.PdfImage.new(pdf)
+        image_obj.set_bitmap(bitmap)
+        matrix = pdfium.PdfMatrix().scale(box_w, box_h).translate(box_left, box_bottom)
+        image_obj.set_matrix(matrix)
+        page.insert_obj(image_obj)
+        page.gen_content()
+        output = io.BytesIO()
+        pdf.save(output)
+        return output.getvalue()
+    except SignatureStampError:
+        raise
+    except Exception as error:
+        _logger.exception("Failed to stamp document number on PDF")
+        raise SignatureStampError("ไม่สามารถประทับข้อความบนไฟล์ได้") from error
     finally:
         pdf.close()

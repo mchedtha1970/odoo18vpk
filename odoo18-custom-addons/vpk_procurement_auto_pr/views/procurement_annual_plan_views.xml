@@ -36,10 +36,12 @@
                     <div class="oe_title">
                         <label for="name"/>
                         <h1><field name="name" placeholder="แผนจัดซื้อจัดจ้าง ปีงบประมาณ..."/></h1>
+                        <label for="code"/>
                         <h3><field name="code" readonly="1"/></h3>
                     </div>
                     <group>
                         <group>
+                            <field name="procurement_plan_code" placeholder="ระบุรหัสแผนการจัดซื้อจัดจ้าง"/>
                             <field name="fiscal_year_start"/>
                             <field name="fiscal_year_end"/>
                             <field name="budget_id"/>
@@ -86,6 +88,7 @@
         <field name="arch" type="xml">
             <list>
                 <field name="code"/>
+                <field name="procurement_plan_code"/>
                 <field name="name"/>
                 <field name="fiscal_year_start"/>
                 <field name="fiscal_year_end"/>
@@ -97,6 +100,23 @@
                        decoration-success="state == 'approved'"
                        decoration-muted="state == 'closed'"/>
             </list>
+        </field>
+    </record>
+
+    <record id="view_procurement_annual_plan_search" model="ir.ui.view">
+        <field name="name">procurement.annual.plan.search</field>
+        <field name="model">procurement.annual.plan</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="procurement_plan_code"/>
+                <field name="budget_id"/>
+                <filter name="filter_draft" string="ร่าง" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_approved" string="อนุมัติ" domain="[('state', '=', 'approved')]"/>
+                <separator/>
+                <filter name="group_state" string="สถานะ" context="{'group_by': 'state'}"/>
+            </search>
         </field>
     </record>
 

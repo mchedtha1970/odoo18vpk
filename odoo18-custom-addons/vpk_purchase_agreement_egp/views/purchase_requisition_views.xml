@@ -55,6 +55,7 @@
                 />
                 <field
                     name="purchase_request_amount_total"
+                    string="งบประมาณโครงการ"
                     invisible="requisition_type != 'egp_procurement'"
                     readonly="1"
                 />
@@ -94,11 +95,100 @@
             <xpath expr="//sheet" position="before">
                 <field name="egp_flow_html" invisible="1"/>
             </xpath>
+            <xpath expr="//sheet/group[1]" position="attributes">
+                <attribute name="invisible">requisition_type == 'egp_procurement'</attribute>
+            </xpath>
+            <xpath expr="//sheet/div[contains(@class, 'oe_title')]" position="after">
+                <group name="egp_header_groups" invisible="requisition_type != 'egp_procurement'">
+                    <group name="egp_header_left" col="1">
+                        <group name="egp_agency" string="ข้อมูลหน่วยงาน">
+                            <field
+                                name="company_id"
+                                string="บริษัท"
+                                options="{'no_create': True}"
+                                readonly="state != 'draft'"
+                            />
+                            <field
+                                name="user_id"
+                                string="ผู้ทำรายการ"
+                                readonly="state != 'draft'"
+                                domain="[('share', '=', False)]"
+                            />
+                        </group>
+                        <group name="egp_project_identity" string="ชื่อโครงการ">
+                            <field
+                                name="egp_reference"
+                                string="เลขที่โครงการ"
+                                readonly="state != 'draft'"
+                            />
+                            <field
+                                name="egp_project_name"
+                                string="ชื่อโครงการ"
+                                readonly="state != 'draft'"
+                            />
+                        </group>
+                        <group name="egp_project_budget" string="งบประมาณโครงการ">
+                            <field
+                                name="egp_disbursement_type"
+                                string="การเบิกจ่ายเงิน"
+                                readonly="state != 'draft'"
+                            />
+                            <field
+                                name="currency_id"
+                                string="สกุลเงิน"
+                                options="{'no_create': True}"
+                                readonly="state != 'draft'"
+                            />
+                        </group>
+                    </group>
+                    <group name="egp_header_right" col="1">
+                        <group name="egp_project" string="รายละเอียดโครงการ">
+                            <field
+                                name="procurement_method_id"
+                                string="ซื้อด้วยวิธีการ"
+                                options="{'no_create': True}"
+                                readonly="state != 'draft'"
+                            />
+                            <field
+                                name="procurement_nature"
+                                string="ประเภทการจัดหา"
+                                readonly="state != 'draft'"
+                            />
+                            <field
+                                name="egp_item_kind"
+                                string="พัสดุที่จัดหา"
+                                readonly="state != 'draft'"
+                            />
+                            <field
+                                name="purchase_request_amount_total"
+                                string="วงเงินงบประมาณ"
+                                widget="monetary"
+                                readonly="1"
+                            />
+                        </group>
+                        <group name="egp_consideration" string="การพิจารณา">
+                            <field
+                                name="egp_consideration_type"
+                                string="การพิจารณา"
+                                widget="radio"
+                                options="{'horizontal': true}"
+                                readonly="state != 'draft'"
+                            />
+                        </group>
+                    </group>
+                </group>
+            </xpath>
 
             <field name="product_description_variants" position="attributes">
                 <attribute name="string">คำอธิบายรายการซื้อใน e-GP</attribute>
                 <attribute name="invisible">parent.requisition_type != 'egp_procurement' and product_description_variants == ''</attribute>
             </field>
+            <xpath expr="//field[@name='line_ids']//field[@name='price_unit']" position="after">
+                <field name="currency_id" column_invisible="1"/>
+                <field name="budget_amount" widget="monetary" sum="รวมงบประมาณ"
+                       optional="show"
+                       invisible="parent.requisition_type != 'egp_procurement'"/>
+            </xpath>
 
             <page name="products" position="before">
                 <page
@@ -108,6 +198,9 @@
                 >
                     <field name="egp_flow_html" nolabel="1"/>
                 </page>
+            </page>
+            <page name="products" position="attributes">
+                <attribute name="string">รายการสินค้า/บริการ</attribute>
             </page>
 
             <label for="date_start" position="attributes">
@@ -213,6 +306,47 @@
                             </field>
                         </form>
                     </field>
+                </page>
+                <page
+                    string="ข้อมูลทั่วไป"
+                    name="egp_general"
+                    invisible="requisition_type != 'egp_procurement'"
+                >
+                    <group>
+                        <group name="egp_general_left">
+                            <field
+                                name="requisition_type"
+                                readonly="state != 'draft'"
+                                options="{'no_create': True}"
+                            />
+                            <field
+                                name="vendor_id"
+                                context="{'res_partner_search_mode': 'supplier'}"
+                                readonly="state != 'draft'"
+                            />
+                            <field
+                                name="procurement_type_id"
+                                string="ประเภทการสั่งซื้อ"
+                                readonly="state != 'draft'"
+                            />
+                            <field
+                                name="purchase_type_id"
+                                string="ระเบียบ"
+                                readonly="state != 'draft'"
+                            />
+                        </group>
+                        <group name="egp_general_right">
+                            <field
+                                name="purchase_request_id"
+                                options="{'no_create': True}"
+                            />
+                            <field
+                                name="picking_type_id"
+                                options="{'no_open': True, 'no_create': True}"
+                                readonly="state != 'draft'"
+                            />
+                        </group>
+                    </group>
                 </page>
             </page>
         </field>

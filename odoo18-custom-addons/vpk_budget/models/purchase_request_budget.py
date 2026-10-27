@@ -1057,6 +1057,53 @@ class PurchaseRequest(models.Model):
             },
         }
 
+    def action_open_budget_product_wizard(self):
+        self.ensure_one()
+        if self.state != "draft":
+            raise UserError(_("เลือกรายการจากแผนงบประมาณได้เฉพาะใบขอซื้อสถานะร่าง"))
+        if not self.budget_analytic_account_id or not self.budget_fund_source_id:
+            raise UserError(
+                _("กรุณาระบุหน่วยงานที่ขอซื้อและแหล่งเงินก่อนเลือกรายการจากแผนงบประมาณ")
+            )
+        if self._requires_budget_group() and not self.budget_group_id:
+            raise UserError(
+                _("กรุณาระบุกลุ่มงบประมาณก่อนเลือกรายการจากแผนงบประมาณ")
+            )
+        if self.budget_section_key in ("project", "construction"):
+            raise UserError(
+                _("ประเภทสิ่งที่จะซื้อนี้ไม่มีรายการสินค้าในแผนงบประมาณ กรุณาเลือกวัสดุหรือครุภัณฑ์")
+            )
+        wizard_vals = {"request_id": self.id}
+        if self.budget_post_id:
+            wizard_vals["budget_post_id"] = self.budget_post_id.id
+        wizard = self.env["purchase.request.budget.product.wizard"].create(wizard_vals)
+        if wizard.budget_post_id:
+            wizard._reload_product_lines()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("เลือกรายการจากแผนงบประมาณ"),
+            "res_model": "purchase.request.budget.product.wizard",
+            "res_id": wizard.id,
+            "view_mode": "form",
+            "target": "new",
+            "context": {"dialog_size": "extra-large"},
+        }
+
+    def action_clear_budget_plan_lines(self):
+        self.ensure_one()
+        if self.state != "draft":
+            raise UserError(_("ล้างรายการได้เฉพาะใบขอซื้อสถานะร่าง"))
+        loaded_lines = self.line_ids.filtered(
+            lambda line: not line.cancelled and line.loaded_from_budget_plan
+        )
+        lines = loaded_lines or self.line_ids.filtered(lambda line: not line.cancelled)
+        if not lines:
+            raise UserError(_("ไม่มีรายการสินค้าให้ล้าง"))
+        count = len(lines)
+        lines.unlink()
+        self.message_post(body=_("ล้างรายการสินค้า %s รายการ") % count)
+        return True
+
     def action_check_budget_status(self):
         self.ensure_one()
         enough, message, available, line_budget_map, rows = self._prepare_budget_check()
@@ -1268,6 +1315,11 @@ class PurchaseRequestLine(models.Model):
         domain="[('id', 'in', allowed_budget_line_ids)]",
         copy=False,
         tracking=True,
+    )
+    loaded_from_budget_plan = fields.Boolean(
+        string="โหลดจากแผนงบประมาณ",
+        default=False,
+        copy=False,
     )
     budget_unit_price = fields.Monetary(
         string="ราคาต่อหน่วย",

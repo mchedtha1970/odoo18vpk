@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_ebidding.StampNumberPdfViewerDialog">
+        <Dialog
+            size="'fs'"
+            title="props.title"
+            contentClass="'o_vpk_sign_pdf_dialog'"
+            bodyClass="'o_vpk_sign_pdf_body p-0'"
+            withBodyPadding="false"
+        >
+            <div class="o_vpk_sign_pdf_container position-relative d-flex flex-column">
+                <div class="bg-dark text-white py-2 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2 border-bottom"
+                     style="z-index: 10;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge text-bg-primary">เครื่องมือวางเลขที่ / วันที่เอกสาร</span>
+                        <span t-if="state.markingMode" class="text-warning fw-semibold">
+                            <i class="fa fa-crosshairs me-1"/>
+                            <t t-if="state.markTarget == 'date'">คลิกลากตีกรอบวันที่เอกสารบนหน้า PDF</t>
+                            <t t-else="">คลิกลากตีกรอบเลขที่เอกสารบนหน้า PDF</t>
+                        </span>
+                        <span t-else="" class="small text-light">
+                            กำหนดกรอบเลขที่และวันที่บนไฟล์ แล้วกดบันทึกลงไฟล์แนบ
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button t-att-class="state.markingMode and state.markTarget == 'number' ? 'btn btn-sm btn-warning fw-bold' : 'btn btn-sm btn-primary fw-bold'"
+                                t-on-click="onMarkNumber"
+                                t-att-disabled="state.busy">
+                            <i class="fa fa-crop me-1"/>
+                            <t t-if="state.markingMode and state.markTarget == 'number'">กำลังเลือกกรอบเลขที่...</t>
+                            <t t-elif="state.numberBox">เปลี่ยนกรอบเลขที่</t>
+                            <t t-else="">กำหนดกรอบเลขที่</t>
+                        </button>
+                        <button t-att-class="state.markingMode and state.markTarget == 'date' ? 'btn btn-sm btn-warning fw-bold' : 'btn btn-sm btn-info fw-bold'"
+                                t-on-click="onMarkDate"
+                                t-att-disabled="state.busy">
+                            <i class="fa fa-calendar me-1"/>
+                            <t t-if="state.markingMode and state.markTarget == 'date'">กำลังเลือกกรอบวันที่...</t>
+                            <t t-elif="state.dateBox">เปลี่ยนกรอบวันที่</t>
+                            <t t-else="">กำหนดกรอบวันที่</t>
+                        </button>
+                    </div>
+                </div>
+                <div t-if="state.loading" class="o_vpk_sign_pdf_loading d-flex align-items-center justify-content-center">
+                    <div class="text-center text-muted">
+                        <i class="fa fa-spinner fa-spin fa-2x mb-2"/>
+                        <div>กำลังเปิดไฟล์...</div>
+                    </div>
+                </div>
+                <div t-if="state.error" class="alert alert-danger m-3 mb-0">
+                    ไม่สามารถแสดงไฟล์ PDF ได้ กรุณาปิดแล้วเปิดใหม่
+                </div>
+                <iframe
+                    t-if="state.viewerUrl"
+                    t-ref="pdfFrame"
+                    class="o_vpk_sign_pdf_iframe flex-grow-1"
+                    t-att-src="state.viewerUrl"
+                    t-on-load="onIframeLoad"
+                    allowfullscreen="allowfullscreen"
+                />
+            </div>
+            <t t-set-slot="footer">
+                <div class="o_vpk_sign_pdf_footer d-flex flex-wrap align-items-center gap-2 w-100">
+                    <label class="mb-0 fw-semibold text-nowrap" for="vpk_ebidding_document_number">
+                        เลขที่เอกสาร
+                    </label>
+                    <input type="text"
+                           id="vpk_ebidding_document_number"
+                           class="form-control"
+                           style="max-width: 16rem;"
+                           placeholder="เช่น ภก 0033.201/1234"
+                           t-att-value="state.documentNumber"
+                           t-on-input="onDocumentNumberInput"
+                           t-att-disabled="state.busy"/>
+                    <label class="mb-0 fw-semibold text-nowrap" for="vpk_ebidding_document_date">
+                        วันที่เอกสาร
+                    </label>
+                    <input type="date"
+                           id="vpk_ebidding_document_date"
+                           class="form-control"
+                           style="max-width: 11rem;"
+                           t-att-value="state.documentDate"
+                           t-on-input="onDocumentDateInput"
+                           t-att-disabled="state.busy"/>
+                    <span class="text-muted me-auto small">
+                        วันที่ประทับเป็น พ.ศ. ตัวเลขไทย เช่น ๒๓ ตุลาคม ๒๕๖๙
+                    </span>
+                    <button class="btn btn-outline-danger"
+                            t-on-click="onRemoveNumberStamp"
+                            t-att-disabled="state.busy || !state.hasNumberStamp"
+                            title="ลบเลขที่ที่ประทับออกจากไฟล์ แล้วคืนต้นฉบับ">
+                        <i class="fa fa-eraser me-1"/>ลบเลขที่
+                    </button>
+                    <button class="btn btn-outline-danger"
+                            t-on-click="onRemoveDateStamp"
+                            t-att-disabled="state.busy || !state.hasDateStamp"
+                            title="ลบวันที่ที่ประทับออกจากไฟล์ แล้วคืนต้นฉบับ">
+                        <i class="fa fa-eraser me-1"/>ลบวันที่
+                    </button>
+                    <button class="btn btn-secondary" t-on-click="onClose" t-att-disabled="state.busy">
+                        ปิด
+                    </button>
+                    <button class="btn btn-success"
+                            t-on-click="onStampNumber"
+                            t-att-disabled="!stampEnabled"
+                            t-att-title="stampEnabled ? '' : 'กำหนดกรอบและใส่เลขที่หรือวันที่ก่อนบันทึก'">
+                        <i class="fa fa-font me-1"/>บันทึกลงไฟล์
+                    </button>
+                </div>
+            </t>
+        </Dialog>
+    </t>
+</templates>

@@ -198,10 +198,11 @@ class PurchaseRequisition(models.Model):
     _inherit = "purchase.requisition"
 
     procurement_nature = fields.Selection(
-        related="purchase_request_id.procurement_nature",
-        string="ลักษณะการจัดหา",
-        store=True,
-        readonly=True,
+        selection=PROCUREMENT_NATURE,
+        string="ประเภทการจัดหา",
+        tracking=True,
+        copy=True,
+        default="buy",
     )
     procurement_document = fields.Selection(
         related="purchase_request_id.procurement_document",

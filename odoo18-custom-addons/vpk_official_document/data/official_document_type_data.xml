@@ -46,6 +46,7 @@
         <field name="code">purchase_approval_memo</field>
         <field name="sequence">70</field>
         <field name="is_system">True</field>
+        <field name="create_from_purchase_request">True</field>
     </record>
     <record id="document_type_award_approval" model="vpk.official.document.type">
         <field name="name">รายงานผลการพิจารณาจัดซื้อจัดจ้าง</field>

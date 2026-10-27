@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_ebidding.MonthYearField">
+        <span t-if="props.readonly" t-esc="formattedValue"/>
+        <DateTimeInput t-else=""
+            type="'date'"
+            value="value"
+            format="'MM/yyyy'"
+            minPrecision="'months'"
+            maxPrecision="'years'"
+            placeholder="placeholder"
+            id="props.id"
+            onApply.bind="onApply"/>
+    </t>
+</templates>

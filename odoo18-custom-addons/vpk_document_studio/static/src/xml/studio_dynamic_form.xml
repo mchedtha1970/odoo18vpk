@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_document_studio.StudioDynamicForm">
+        <div class="o_vpk_studio_dynamic_form">
+            <div t-if="!schema.length" class="text-muted">
+                เลือกแบบฟอร์มที่มีฟิลด์ หรือเพิ่มฟิลด์ในแบบฟอร์มก่อน
+            </div>
+            <div t-foreach="schema" t-as="field" t-key="field.code"
+                 class="o_vpk_studio_field mb-3">
+                <label class="o_form_label"
+                       t-att-class="{ 'fw-bold': field.required }"
+                       t-att-for="'studio_' + field.code">
+                    <t t-esc="field.name"/>
+                    <span t-if="field.required" class="text-danger"> *</span>
+                </label>
+                <div t-if="field.help" class="text-muted small mb-1" t-esc="field.help"/>
+                <div t-if="field.display_template" class="text-muted small mb-1">
+                    รูปแบบแสดงผล: <code t-esc="field.display_template"/>
+                </div>
+                <div t-elif="showRefHint(field)" class="text-muted small mb-1"
+                     t-esc="refHintText()"/>
+
+                <span t-if="props.readonly" class="o_field_widget" t-esc="displayValue(field)"/>
+
+                <t t-elif="isType(field, 'text')">
+                    <textarea class="form-control"
+                              t-att-id="'studio_' + field.code"
+                              t-att-placeholder="fieldPlaceholder(field)"
+                              t-att-value="charValue(field)"
+                              t-on-change="(ev) => this.onChar(field, ev)"/>
+                </t>
+                <t t-elif="isType(field, 'date')">
+                    <DateTimeInput type="'date'"
+                                   value="dateValue(field)"
+                                   id="'studio_' + field.code"
+                                   onApply="(value) => this.onDate(field, value)"/>
+                </t>
+                <t t-elif="isNumber(field)">
+                    <input class="form-control"
+                           type="number"
+                           t-att-id="'studio_' + field.code"
+                           t-att-step="numberStep(field)"
+                           t-att-value="numberValue(field)"
+                           t-on-change="(ev) => this.onNumber(field, ev)"/>
+                </t>
+                <t t-elif="isType(field, 'boolean')">
+                    <div class="form-check">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               t-att-id="'studio_' + field.code"
+                               t-att-checked="isChecked(field)"
+                               t-on-change="(ev) => this.onBoolean(field, ev)"/>
+                    </div>
+                </t>
+                <t t-elif="isType(field, 'many2one')">
+                    <div class="mb-1">
+                        <select class="form-select mb-1"
+                                t-att-id="'studio_' + field.code"
+                                t-on-change="(ev) => this.onMany2oneSelect(field, ev)">
+                            <option value="">— เลือกใบขอซื้อ (PR) เพื่อดึงรายการสินค้า —</option>
+                            <option t-foreach="m2oChoices(field)" t-as="ch" t-key="ch.id"
+                                    t-att-value="ch.id"
+                                    t-att-selected="isM2oSelected(field, ch.id)"
+                                    t-esc="ch.label"/>
+                        </select>
+                        <textarea class="form-control"
+                                  rows="4"
+                                  placeholder="รายการสินค้าที่ดึงจากใบขอซื้อ (สามารถแก้ไขข้อความเพิ่มเติมได้)"
+                                  t-att-value="m2oTextValue(field)"
+                                  t-on-change="(ev) => this.onMany2oneText(field, ev)"/>
+                    </div>
+                </t>
+                <t t-elif="isType(field, 'selection')">
+                    <select class="form-select"
+                            t-att-id="'studio_' + field.code"
+                            t-on-change="(ev) => this.onChar(field, ev)">
+                        <option value="">— เลือก —</option>
+                        <option t-foreach="options(field)" t-as="option" t-key="option"
+                                t-att-value="option"
+                                t-att-selected="isSelected(field, option)"
+                                t-esc="option"/>
+                    </select>
+                </t>
+                <t t-else="">
+                    <input class="form-control"
+                           type="text"
+                           t-att-id="'studio_' + field.code"
+                           t-att-placeholder="fieldPlaceholder(field)"
+                           t-att-value="charValue(field)"
+                           t-on-change="(ev) => this.onChar(field, ev)"/>
+                </t>
+                <div t-if="previewDisplay(field)"
+                     class="o_vpk_studio_field_preview text-muted small mt-1">
+                    ผลที่พิมพ์: <t t-esc="previewDisplay(field)"/>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

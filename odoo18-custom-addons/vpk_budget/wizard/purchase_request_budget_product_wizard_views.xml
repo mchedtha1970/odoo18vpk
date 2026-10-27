@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_budget_product_wizard" model="ir.ui.view">
+        <field name="name">purchase.request.budget.product.wizard.form</field>
+        <field name="model">purchase.request.budget.product.wizard</field>
+        <field name="arch" type="xml">
+            <form string="เลือกรายการจากแผนงบประมาณ">
+                <group>
+                    <field name="request_id" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="budget_section_key" invisible="1"/>
+                    <field name="allowed_budget_post_ids" invisible="1"/>
+                    <field
+                        name="budget_post_id"
+                        options="{'no_create': True, 'no_open': True}"
+                        placeholder="เลือกหมวดงบ"
+                    />
+                </group>
+                <p class="text-muted">
+                    แสดงเฉพาะสินค้าที่ได้รับอนุมัติและยังมีงบคงเหลือ ของหน่วยงาน แหล่งเงิน และปีงบของใบขอซื้อ
+                    รายการที่งบหมดแล้วจะไม่ถูกดึงมาโหลดเข้าใบขอซื้อ
+                </p>
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    invisible="line_ids or not budget_post_id"
+                >
+                    ไม่พบสินค้าที่ได้รับอนุมัติในหมวดงบนี้ สำหรับหน่วยงาน/แหล่งเงิน/ปีงบของใบขอซื้อ
+                </div>
+                <field name="line_ids" nolabel="1">
+                    <list
+                        create="false"
+                        delete="false"
+                        editable="bottom"
+                        decoration-muted="already_on_pr"
+                    >
+                        <field name="selected" widget="boolean_toggle"/>
+                        <field name="product_id"/>
+                        <field name="product_uom_id" optional="show"/>
+                        <field name="allocated_qty"/>
+                        <field name="unit_price"/>
+                        <field name="allocated_amount"/>
+                        <field name="remaining_amount"/>
+                        <field name="product_qty"/>
+                        <field name="already_on_pr" optional="show"/>
+                        <field name="currency_id" column_invisible="1"/>
+                    </list>
+                </field>
+                <footer>
+                    <button
+                        name="action_load"
+                        type="object"
+                        string="โหลดรายการที่เลือก"
+                        class="btn-primary"
+                    />
+                    <button
+                        name="action_select_all"
+                        type="object"
+                        string="เลือกทั้งหมด"
+                        class="btn-secondary"
+                    />
+                    <button
+                        name="action_unselect_all"
+                        type="object"
+                        string="ไม่เลือกทั้งหมด"
+                        class="btn-secondary"
+                    />
+                    <button string="ยกเลิก" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

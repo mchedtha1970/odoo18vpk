@@ -749,3 +749,78 @@ class TestOfficialDocument(TransactionCase):
         self.assertFalse(official.with_user(self.env.user).can_review)
         self.assertTrue(official.with_user(secretary).can_review)
         self.assertFalse(official.with_user(director).can_review)
+
+    def test_studio_document_uses_official_approver_table(self):
+        template = self.env["vpk.document.studio.template"].create(
+            {
+                "name": "แบบทดสอบผู้อนุมัติ",
+                "code": "test_studio_approvers",
+            }
+        )
+        official = self.env["vpk.official.document"].create(
+            {
+                "document_type": "specific_method_approval",
+                "source_mode": "studio",
+            }
+        )
+        studio = self.env["vpk.document.studio.document"].create(
+            {
+                "template_id": template.id,
+                "official_document_id": official.id,
+                "value_json": {"subject": "ทดสอบ"},
+            }
+        )
+        official.studio_document_id = studio.id
+        director = self.env["res.users"].create(
+            {
+                "name": "ผู้อนุมัติ Studio",
+                "login": "studio.approver",
+                "groups_id": [(6, 0, [self.env.ref("base.group_user").id])],
+            }
+        )
+        self._add_signer_rows(official, director)
+        self.assertEqual(studio.signer_line_ids, official.signer_line_ids)
+        self.assertEqual(studio.signer_line_ids.user_id, director)
+        action = studio.action_open_send_wizard()
+        self.assertEqual(action["res_model"], "vpk.official.document.send.wizard")
+        self.assertEqual(
+            action["context"]["default_document_id"], official.id
+        )
+
+    def test_seed_default_approvers_for_studio_document(self):
+        officer = self.env["res.users"].create(
+            {
+                "name": "เจ้าหน้าที่ Studio",
+                "login": "studio.officer",
+                "groups_id": [(6, 0, [self.env.ref("base.group_user").id])],
+            }
+        )
+        head = self.env["res.users"].create(
+            {
+                "name": "หัวหน้า Studio",
+                "login": "studio.head",
+                "groups_id": [(6, 0, [self.env.ref("base.group_user").id])],
+            }
+        )
+        director = self.env["res.users"].create(
+            {
+                "name": "ผู้อำนวยการ Studio",
+                "login": "studio.director",
+                "groups_id": [(6, 0, [self.env.ref("base.group_user").id])],
+            }
+        )
+        official = self.env["vpk.official.document"].create(
+            {
+                "document_type": "wa_committee_order",
+                "source_mode": "studio",
+                "officer_id": officer.id,
+                "head_officer_id": head.id,
+                "signer_id": director.id,
+            }
+        )
+        self.assertFalse(official.signer_line_ids)
+        official._seed_default_approvers()
+        users = official.signer_line_ids.sorted("sequence").mapped("user_id")
+        self.assertIn(officer, users)
+        self.assertIn(head, users)
+        self.assertIn(director, users)

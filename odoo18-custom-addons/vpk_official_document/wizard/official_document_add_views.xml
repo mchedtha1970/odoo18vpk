@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_official_document_add_wizard" model="ir.ui.view">
+        <field name="name">vpk.official.document.add.wizard.form</field>
+        <field name="model">vpk.official.document.add.wizard</field>
+        <field name="arch" type="xml">
+            <form string="เพิ่มเอกสาร">
+                <group>
+                    <field name="request_id" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <field
+                        name="document_type_id"
+                        options="{'no_create': True, 'no_open': True}"
+                    />
+                    <field name="add_mode" widget="radio"/>
+                    <field
+                        name="studio_template_id"
+                        options="{'no_create': True, 'no_open': True}"
+                        invisible="add_mode != 'studio'"
+                        required="add_mode == 'studio'"
+                        placeholder="เลือกแบบฟอร์มจาก Document Studio"
+                    />
+                    <field
+                        name="file"
+                        filename="filename"
+                        invisible="add_mode != 'attach'"
+                        required="add_mode == 'attach'"
+                    />
+                    <field name="filename" invisible="1"/>
+                    <field name="notes" placeholder="ระบุเพิ่มได้ถ้าหน่วยงานจัดทำเอกสารมาจากต้นทางเอง"/>
+                </group>
+                <p class="text-muted">
+                    เลือก <b>ดึงจาก Document Studio</b> เพื่อใช้แบบฟอร์มที่ตั้งไว้ใน Document Studio
+                    หรือ <b>แนบไฟล์ต้นทาง</b> เมื่อหน่วยงานจัดทำเอกสารมาเองแล้วต้องการแนบไฟล์เข้าใบขอซื้อ
+                </p>
+                <footer>
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="เพิ่มเอกสาร"
+                        class="btn-primary"
+                    />
+                    <button string="ยกเลิก" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

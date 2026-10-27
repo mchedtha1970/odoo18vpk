@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_document_studio_root"
+              name="Document Studio"
+              sequence="47"
+              groups="vpk_document_studio.group_document_studio_user"/>
+
+    <menuitem id="menu_document_studio_document"
+              name="เอกสาร"
+              parent="menu_document_studio_root"
+              action="action_document_studio_document"
+              groups="vpk_document_studio.group_document_studio_user"
+              sequence="10"/>
+
+    <menuitem id="menu_document_studio_template"
+              name="แบบฟอร์ม"
+              parent="menu_document_studio_root"
+              action="action_document_studio_template"
+              groups="vpk_document_studio.group_document_studio_manager"
+              sequence="20"/>
+</odoo>

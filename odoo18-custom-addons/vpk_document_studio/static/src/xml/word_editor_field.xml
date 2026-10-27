@@ -1,0 +1,522 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_document_studio.WordEditorField">
+        <div class="o_vpk_word_editor" t-att-class="{ 'o_vpk_we_readonly': props.readonly }">
+            <div class="o_vpk_we_palette" t-if="!props.readonly and placeholderFields.length">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-1 mb-1">
+                    <span class="fw-bold small">ฟิลด์ที่ใช้ได้</span>
+                    <span class="text-muted small">
+                        <i class="fa fa-hand-rock-o me-1"/>ลากฟิลด์ไปวางบนฟอร์ม แล้วลากย้ายตำแหน่งได้ หรือคลิกเพื่อแทรกที่เคอร์เซอร์
+                    </span>
+                </div>
+                <div class="o_vpk_we_chips">
+                    <t t-foreach="placeholderFields" t-as="field" t-key="field.code">
+                        <span class="o_vpk_we_chip"
+                              draggable="true"
+                              t-att-title="'ลากไปวางบนฟอร์มแล้วย้ายตำแหน่งได้ หรือคลิกเพื่อแทรก {{' + field.code + '}}'"
+                              t-on-dragstart="(ev) => this.onFieldDragStart(ev, field.code)"
+                              t-on-mousedown="(ev) => ev.stopPropagation()"
+                              t-on-click="() => this.insertPlaceholder(field.code)">
+                            <i class="fa fa-arrows o_vpk_we_chip_grip me-1"/>
+                            <code t-esc="'{{' + field.code + '}}'"/>
+                            <span class="ms-1" t-esc="field.name"/>
+                        </span>
+                    </t>
+                </div>
+            </div>
+            <div class="o_vpk_we_toolbar" t-ref="toolbar" t-if="!props.readonly">
+                <t t-set="off" t-value="state.sourceMode"/>
+                <div class="o_vpk_we_row">
+                    <div class="o_vpk_we_group" t-if="showSave">
+                        <button type="button" class="btn btn-primary o_vpk_we_btn px-2" title="บันทึกเนื้อหา"
+                                t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="saveRecord">
+                            <i class="fa fa-save me-1"/>บันทึก
+                        </button>
+                    </div>
+                    <div class="o_vpk_we_group">
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="ดูตัวอย่าง"
+                                t-on-mousedown.prevent="" t-on-click="() => this.openPreview(false)">
+                            <i class="fa fa-search-plus"/>
+                        </button>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="พิมพ์"
+                                t-on-mousedown.prevent="" t-on-click="() => this.openPreview(true)">
+                            <i class="fa fa-print"/>
+                        </button>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="ตัด" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="cut">
+                            <i class="fa fa-scissors"/>
+                        </button>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="คัดลอก" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="copy">
+                            <i class="fa fa-files-o"/>
+                        </button>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="วาง" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="paste">
+                            <i class="fa fa-clipboard"/>
+                        </button>
+                    </div>
+                    <div class="o_vpk_we_group">
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="เลิกทำ (Ctrl+Z)"
+                                t-att-disabled="off or !state.canUndo"
+                                t-on-mousedown.prevent="" t-on-click="undoAction">
+                            <i class="fa fa-undo"/>
+                        </button>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="ทำซ้ำ (Ctrl+Y)"
+                                t-att-disabled="off or !state.canRedo"
+                                t-on-mousedown.prevent="" t-on-click="redoAction">
+                            <i class="fa fa-repeat"/>
+                        </button>
+                    </div>
+                    <div class="o_vpk_we_group">
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="ค้นหาและแทนที่"
+                                t-att-class="{ 'active': state.findBar }" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="toggleFind">
+                            <i class="fa fa-search"/>
+                        </button>
+                    </div>
+                    <div class="o_vpk_we_group">
+                        <t t-foreach="[['justifyLeft', 'fa-align-left', 'ชิดซ้าย'], ['justifyCenter', 'fa-align-center', 'กึ่งกลาง'], ['justifyRight', 'fa-align-right', 'ชิดขวา'], ['justifyFull', 'fa-align-justify', 'กระจายเต็มบรรทัด']]"
+                           t-as="cmd" t-key="cmd[0]">
+                            <button type="button" class="btn btn-light o_vpk_we_btn" t-att-title="cmd[2]"
+                                    t-att-class="{ 'active': state.active[cmd[0]] }" t-att-disabled="off"
+                                    t-on-mousedown.prevent="" t-on-click="() => this.exec(cmd[0])">
+                                <i t-attf-class="fa {{ cmd[1] }}"/>
+                            </button>
+                        </t>
+                    </div>
+                    <div class="o_vpk_we_group">
+                        <t t-foreach="[['bold', 'fa-bold', 'ตัวหนา (Ctrl+B)'], ['italic', 'fa-italic', 'ตัวเอียง (Ctrl+I)'], ['underline', 'fa-underline', 'ขีดเส้นใต้ (Ctrl+U)'], ['strikeThrough', 'fa-strikethrough', 'ขีดฆ่า']]"
+                           t-as="cmd" t-key="cmd[0]">
+                            <button type="button" class="btn btn-light o_vpk_we_btn" t-att-title="cmd[2]"
+                                    t-att-class="{ 'active': state.active[cmd[0]] }" t-att-disabled="off"
+                                    t-on-mousedown.prevent="" t-on-click="() => this.exec(cmd[0])">
+                                <i t-attf-class="fa {{ cmd[1] }}"/>
+                            </button>
+                        </t>
+                    </div>
+                    <div class="o_vpk_we_group">
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="ลำดับตัวเลข"
+                                t-att-class="{ 'active': state.active.insertOrderedList }" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="() => this.exec('insertOrderedList')">
+                            <i class="fa fa-list-ol"/>
+                        </button>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="สัญลักษณ์แสดงหัวข้อย่อย"
+                                t-att-class="{ 'active': state.active.insertUnorderedList }" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="() => this.exec('insertUnorderedList')">
+                            <i class="fa fa-list-ul"/>
+                        </button>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="ลดการเยื้อง" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="() => this.exec('outdent')">
+                            <i class="fa fa-outdent"/>
+                        </button>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="เพิ่มการเยื้อง" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="() => this.exec('indent')">
+                            <i class="fa fa-indent"/>
+                        </button>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="ย่อหน้าอ้างอิง" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="() => this.exec('formatBlock', 'blockquote')">
+                            <i class="fa fa-quote-right"/>
+                        </button>
+                    </div>
+                    <div class="o_vpk_we_group">
+                        <div class="o_vpk_we_dropdown">
+                            <button type="button" class="btn btn-light o_vpk_we_btn" title="ตาราง (แทรก / ลบช่อง / ลบตาราง)"
+                                    t-att-class="{ 'active': state.inTable }"
+                                    t-att-disabled="off"
+                                    t-on-mousedown.prevent="" t-on-click="() => this.toggleMenu('table')">
+                                <i class="fa fa-table"/>
+                            </button>
+                            <div class="o_vpk_we_menu o_vpk_we_table_menu" t-if="state.menu === 'table'">
+                                <div class="fw-bold small px-1 mb-1">แทรกตารางใหม่</div>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span>แถว</span>
+                                    <input type="number" min="1" max="50" class="form-control form-control-sm"
+                                           t-model="state.tableRows"/>
+                                    <span>คอลัมน์</span>
+                                    <input type="number" min="1" max="20" class="form-control form-control-sm"
+                                           t-model="state.tableCols"/>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm w-100 mb-2"
+                                        t-on-mousedown.prevent=""
+                                        t-on-click="insertTable">แทรกตาราง</button>
+                                <hr class="my-1"/>
+                                <div class="fw-bold small px-1 mb-1">จัดการตารางที่คลิกอยู่</div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 text-start"
+                                        t-att-disabled="!state.inTable"
+                                        t-on-mousedown.prevent=""
+                                        t-on-click="deleteCurrentColumn">
+                                    <i class="fa fa-columns me-1"/>ลบคอลัมน์ที่เคอร์เซอร์อยู่
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 text-start"
+                                        t-att-disabled="!state.inTable"
+                                        t-on-mousedown.prevent=""
+                                        t-on-click="deleteCurrentRow">
+                                    <i class="fa fa-bars me-1"/>ลบแถวที่เคอร์เซอร์อยู่
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm w-100 mb-1 text-start"
+                                        t-att-disabled="!state.inTable"
+                                        t-on-mousedown.prevent=""
+                                        t-on-click="unwrapCurrentTable">
+                                    <i class="fa fa-chain-broken me-1"/>เอาตารางออก (เก็บข้อความไว้)
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100 mb-2 text-start"
+                                        t-att-disabled="!state.inTable"
+                                        t-on-mousedown.prevent=""
+                                        t-on-click="deleteCurrentTable">
+                                    <i class="fa fa-trash me-1"/>ลบตารางทั้งตาราง
+                                </button>
+                                <hr class="my-1"/>
+                                <button type="button" class="btn btn-light btn-sm w-100 text-start"
+                                        t-on-mousedown.prevent=""
+                                        t-on-click="toggleTableGrid">
+                                    <i t-attf-class="fa {{ state.showTableGrid ? 'fa-eye-slash' : 'fa-eye' }} me-1"/>
+                                    <t t-esc="state.showTableGrid ? 'ซ่อนเส้นประช่วยมองตาราง' : 'แสดงเส้นประช่วยมองตาราง'"/>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="แบ่งหน้า" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="insertPageBreak">
+                            <i class="fa fa-file-o"/>
+                        </button>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="แทรกรูปภาพ" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="pickImage">
+                            <i class="fa fa-picture-o"/>
+                        </button>
+                        <button type="button" class="btn btn-light o_vpk_we_btn text-danger"
+                                t-if="state.imgBox"
+                                title="ลบรูป/เส้นที่เลือก (Delete)"
+                                t-on-mousedown.prevent="" t-on-click="deleteSelectedImage">
+                            <i class="fa fa-trash"/>
+                        </button>
+                        <input type="file" accept="image/*" class="d-none" t-ref="imageInput"
+                               t-on-change="onImageSelected"/>
+                    </div>
+                </div>
+                <div class="o_vpk_we_row">
+                    <div class="o_vpk_we_group">
+                        <div class="o_vpk_we_dropdown">
+                            <button type="button" class="btn btn-light o_vpk_we_select o_vpk_we_font" title="ฟอนต์"
+                                    t-att-disabled="off"
+                                    t-on-mousedown.prevent="" t-on-click="() => this.toggleMenu('font')">
+                                <span t-esc="state.currentFont || 'Font'"/>
+                                <span class="o_vpk_we_caret"/>
+                            </button>
+                            <div class="o_vpk_we_menu" t-if="state.menu === 'font'">
+                                <t t-foreach="fonts" t-as="font" t-key="font">
+                                    <div class="o_vpk_we_item" t-att-style="'font-family: &quot;' + font + '&quot;'"
+                                         t-on-mousedown.prevent="" t-on-click="() => this.setFont(font)"
+                                         t-esc="font"/>
+                                </t>
+                            </div>
+                        </div>
+                        <div class="o_vpk_we_dropdown">
+                            <button type="button" class="btn btn-light o_vpk_we_select o_vpk_we_size" title="ขนาด"
+                                    t-att-disabled="off"
+                                    t-on-mousedown.prevent="" t-on-click="() => this.toggleMenu('size')">
+                                <span t-esc="state.currentSize || 'Size'"/>
+                                <span class="o_vpk_we_caret"/>
+                            </button>
+                            <div class="o_vpk_we_menu o_vpk_we_size_menu" t-if="state.menu === 'size'">
+                                <t t-foreach="sizes" t-as="size" t-key="size">
+                                    <div class="o_vpk_we_item"
+                                         t-on-mousedown.prevent="" t-on-click="() => this.setFontSize(size)"
+                                         t-esc="size"/>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="o_vpk_we_group">
+                        <div class="o_vpk_we_dropdown">
+                            <button type="button" class="btn btn-light o_vpk_we_btn o_vpk_we_color_btn" title="สีตัวอักษร"
+                                    t-att-disabled="off"
+                                    t-on-mousedown.prevent="" t-on-click="() => this.toggleMenu('fore')">
+                                <span class="o_vpk_we_letter">A</span><span class="o_vpk_we_caret"/>
+                            </button>
+                            <div class="o_vpk_we_menu o_vpk_we_colors" t-if="state.menu === 'fore'">
+                                <t t-foreach="colors" t-as="color" t-key="color">
+                                    <span class="o_vpk_we_swatch" t-att-style="'background:' + color" t-att-title="color"
+                                          t-on-mousedown.prevent="" t-on-click="() => this.exec('foreColor', color)"/>
+                                </t>
+                            </div>
+                        </div>
+                        <div class="o_vpk_we_dropdown">
+                            <button type="button" class="btn btn-light o_vpk_we_btn o_vpk_we_color_btn" title="สีพื้นหลังตัวอักษร"
+                                    t-att-disabled="off"
+                                    t-on-mousedown.prevent="" t-on-click="() => this.toggleMenu('back')">
+                                <span class="o_vpk_we_letter o_vpk_we_letter_bg">A</span><span class="o_vpk_we_caret"/>
+                            </button>
+                            <div class="o_vpk_we_menu o_vpk_we_colors" t-if="state.menu === 'back'">
+                                <span class="o_vpk_we_swatch o_vpk_we_swatch_none" title="ไม่มีสี"
+                                      t-on-mousedown.prevent="" t-on-click="() => this.exec('hiliteColor', 'transparent')"/>
+                                <t t-foreach="colors" t-as="color" t-key="color">
+                                    <span class="o_vpk_we_swatch" t-att-style="'background:' + color" t-att-title="color"
+                                          t-on-mousedown.prevent="" t-on-click="() => this.exec('hiliteColor', color)"/>
+                                </t>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="ล้างรูปแบบ" t-att-disabled="off"
+                                t-on-mousedown.prevent="" t-on-click="() => this.exec('removeFormat')">
+                            <i class="fa fa-eraser"/>
+                        </button>
+                    </div>
+                    <div class="o_vpk_we_group">
+                        <div class="o_vpk_we_dropdown">
+                            <button type="button" class="btn btn-light o_vpk_we_select" title="เพิ่มเส้นกรอกข้อมูล (วางฟิลด์บนเส้นได้)"
+                                    t-att-class="{ 'active': state.inFillLine }"
+                                    t-att-disabled="off"
+                                    t-on-mousedown.prevent="" t-on-click="() => this.toggleMenu('fillLine')">
+                                <i class="fa fa-ellipsis-h me-1"/>เพิ่มเส้น <span class="o_vpk_we_caret"/>
+                            </button>
+                            <div class="o_vpk_we_menu o_vpk_we_line_menu" t-if="state.menu === 'fillLine'">
+                                <div class="fw-bold small px-1 mb-1">เพิ่มเส้นสำหรับวางข้อมูล/ฟิลด์</div>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <span class="small">ความยาว (ซม.)</span>
+                                    <input type="number" min="1" max="18" step="0.5"
+                                           class="form-control form-control-sm"
+                                           style="width: 72px;"
+                                           t-model="state.lineCm"/>
+                                    <select class="form-select form-select-sm" t-model="state.lineStyle">
+                                        <option value="dotted">เส้นประ (....)</option>
+                                        <option value="solid">เส้นทึบ (___)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <div class="small text-muted mb-1">วางฟิลด์บนเส้นทันที (หรือเว้นว่างแล้วลากฟิลด์มาวางทีหลัง)</div>
+                                    <select class="form-select form-select-sm" t-model="state.lineFieldCode">
+                                        <option value="">-- เส้นเปล่า (พิมพ์หรือลากฟิลด์วางเอง) --</option>
+                                        <t t-foreach="placeholderFields" t-as="field" t-key="field.code">
+                                            <option t-att-value="field.code"
+                                                    t-esc="'{{' + field.code + '}} ' + (field.name || '')"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="d-flex gap-1 mb-2">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm flex-fill"
+                                            t-on-mousedown.prevent=""
+                                            t-on-click="() => this.insertFillLine(4)">สั้น 4 ซม.</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm flex-fill"
+                                            t-on-mousedown.prevent=""
+                                            t-on-click="() => this.insertFillLine(8)">กลาง 8 ซม.</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm flex-fill"
+                                            t-on-mousedown.prevent=""
+                                            t-on-click="() => this.insertFillLine(15)">เต็มบรรทัด 15 ซม.</button>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm w-100 mb-2"
+                                        t-on-mousedown.prevent=""
+                                        t-on-click="() => this.insertFillLine(null)">
+                                    <i class="fa fa-plus me-1"/>แทรกเส้นตรงเคอร์เซอร์
+                                </button>
+                                <hr class="my-1"/>
+                                <div class="fw-bold small px-1 mb-1">แก้ไขเส้นที่คลิกอยู่</div>
+                                <div class="d-flex gap-1">
+                                    <button type="button" class="btn btn-outline-primary btn-sm flex-fill"
+                                            t-att-disabled="!state.inFillLine"
+                                            t-on-mousedown.prevent=""
+                                            t-on-click="updateCurrentFillLine">
+                                        ปรับความยาว/ชนิดเส้น
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            t-att-disabled="!state.inFillLine"
+                                            t-on-mousedown.prevent=""
+                                            t-on-click="unwrapCurrentFillLine">
+                                        เอาเส้นออก
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="o_vpk_we_dropdown">
+                            <button type="button" class="btn btn-light o_vpk_we_select" title="แทรกฟิลด์ {{รหัสฟิลด์}}"
+                                    t-att-disabled="off"
+                                    t-on-mousedown.prevent="" t-on-click="() => this.toggleMenu('field')">
+                                <i class="fa fa-tag me-1"/>แทรกฟิลด์ <span class="o_vpk_we_caret"/>
+                            </button>
+                            <div class="o_vpk_we_menu o_vpk_we_field_menu" t-if="state.menu === 'field'">
+                                <t t-if="placeholderFields.length">
+                                    <t t-foreach="placeholderFields" t-as="field" t-key="field.code">
+                                        <div class="o_vpk_we_item"
+                                             t-on-mousedown.prevent="" t-on-click="() => this.insertPlaceholder(field.code)">
+                                            <code t-esc="'{{' + field.code + '}}'"/>
+                                            <span class="text-muted ms-2" t-esc="field.name"/>
+                                        </div>
+                                    </t>
+                                </t>
+                                <div t-else="" class="text-muted p-2">
+                                    ยังไม่มีฟิลด์ พิมพ์ {{รหัสฟิลด์}} ในเอกสารได้เลย
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="o_vpk_we_group">
+                        <button type="button" class="btn btn-light o_vpk_we_btn" title="แก้ไข HTML"
+                                t-att-class="{ 'active': state.sourceMode }"
+                                t-on-mousedown.prevent="" t-on-click="toggleSource">
+                            <i class="fa fa-code"/>
+                        </button>
+                    </div>
+                </div>
+                <div class="o_vpk_we_findbar" t-if="state.findBar">
+                    <input type="text" class="form-control form-control-sm" placeholder="ค้นหา"
+                           t-model="state.findText"
+                           t-on-keydown="onFindKeydown"/>
+                    <button type="button" class="btn btn-sm btn-secondary" t-on-click="findNext">ถัดไป</button>
+                    <input type="text" class="form-control form-control-sm" placeholder="แทนที่ด้วย"
+                           t-model="state.replaceText"/>
+                    <button type="button" class="btn btn-sm btn-secondary" t-on-click="replaceOne">แทนที่</button>
+                    <button type="button" class="btn btn-sm btn-secondary" t-on-click="replaceAll">แทนที่ทั้งหมด</button>
+                    <span class="text-muted small" t-esc="state.findMessage"/>
+                    <button type="button" class="btn btn-sm btn-link ms-auto" title="ปิด" t-on-click="toggleFind">
+                        <i class="fa fa-times"/>
+                    </button>
+                </div>
+            </div>
+            <div class="o_vpk_we_canvas" t-on-wheel="onCanvasWheel">
+                <t t-set="rm" t-value="rulerMetrics"/>
+                <div class="o_vpk_we_zoombar" t-if="!state.sourceMode">
+                    <button type="button" class="btn btn-light btn-sm" title="ย่อ (Ctrl + ล้อเมาส์)"
+                            t-att-disabled="state.zoom lte 50"
+                            t-on-click="zoomOut">
+                        <i class="fa fa-search-minus"/>
+                    </button>
+                    <select class="form-select form-select-sm o_vpk_we_zoom_select" t-key="state.zoom"
+                            t-on-change="onZoomSelect">
+                        <t t-foreach="[50, 75, 90, 100, 125, 150, 200, 250]" t-as="zv" t-key="zv">
+                            <option t-att-value="zv" t-att-selected="state.zoom === zv">
+                                <t t-esc="zv"/>%
+                            </option>
+                        </t>
+                        <option t-if="![50, 75, 90, 100, 125, 150, 200, 250].includes(state.zoom)"
+                                t-att-value="state.zoom" selected="selected">
+                            <t t-esc="state.zoom"/>%
+                        </option>
+                        <option value="fit">พอดีความกว้าง</option>
+                    </select>
+                    <button type="button" class="btn btn-light btn-sm" title="ขยาย (Ctrl + ล้อเมาส์)"
+                            t-att-disabled="state.zoom gte 250"
+                            t-on-click="zoomIn">
+                        <i class="fa fa-search-plus"/>
+                    </button>
+                    <button type="button" class="btn btn-light btn-sm" title="กลับไป 100%"
+                            t-on-click="zoomReset">100%</button>
+                </div>
+                <div class="o_vpk_we_ruler_wrap" t-if="!state.sourceMode"
+                     t-att-style="zoomedWidthStyle">
+                    <div class="o_vpk_we_ruler" t-ref="ruler">
+                        <div class="o_vpk_we_ruler_margin o_vpk_we_ruler_margin_left"
+                             t-att-style="'width:' + rm.leftMarginPct + '%'"/>
+                        <div class="o_vpk_we_ruler_margin o_vpk_we_ruler_margin_right"
+                             t-att-style="'width:' + rm.rightMarginPct + '%'"/>
+                        <t t-foreach="rm.ticks" t-as="tk" t-key="tk.key">
+                            <span t-attf-class="o_vpk_we_tick o_vpk_we_tick_{{ tk.kind }}"
+                                  t-att-style="'left:' + tk.pct + '%'"/>
+                            <span t-if="tk.label"
+                                  class="o_vpk_we_tick_num"
+                                  t-att-style="'left:' + tk.pct + '%'"
+                                  t-esc="tk.label"/>
+                        </t>
+                        <div class="o_vpk_we_margin_handle"
+                             t-if="!props.readonly"
+                             title="ลากเพื่อปรับขอบกระดาษด้านซ้าย"
+                             t-att-style="'left:' + rm.leftMarginPct + '%'"
+                             t-on-mousedown="(ev) => this.startRulerDrag('leftMargin', ev)"/>
+                        <div class="o_vpk_we_margin_handle"
+                             t-if="!props.readonly"
+                             title="ลากเพื่อปรับขอบกระดาษด้านขวา"
+                             t-att-style="'left:' + rm.rightEdgePct + '%'"
+                             t-on-mousedown="(ev) => this.startRulerDrag('rightMargin', ev)"/>
+                        <div class="o_vpk_we_marker o_vpk_we_marker_first"
+                             t-if="!props.readonly"
+                             title="ย่อหน้าบรรทัดแรก (First Line Indent)"
+                             t-att-style="'left:' + rm.firstLinePct + '%'"
+                             t-on-mousedown="(ev) => this.startRulerDrag('first', ev)"/>
+                        <div class="o_vpk_we_marker o_vpk_we_marker_hanging"
+                             t-if="!props.readonly"
+                             title="ย่อหน้าบรรทัดถัดไป (Hanging Indent)"
+                             t-att-style="'left:' + rm.leftIndentPct + '%'"
+                             t-on-mousedown="(ev) => this.startRulerDrag('hanging', ev)"/>
+                        <div class="o_vpk_we_marker o_vpk_we_marker_left_box"
+                             t-if="!props.readonly"
+                             title="เยื้องซ้ายทั้งย่อหน้า (Left Indent)"
+                             t-att-style="'left:' + rm.leftIndentPct + '%'"
+                             t-on-mousedown="(ev) => this.startRulerDrag('leftAll', ev)"/>
+                        <div class="o_vpk_we_marker o_vpk_we_marker_right"
+                             t-if="!props.readonly"
+                             title="เยื้องขวา (Right Indent)"
+                             t-att-style="'left:' + rm.rightIndentPct + '%'"
+                             t-on-mousedown="(ev) => this.startRulerDrag('rightIndent', ev)"/>
+                    </div>
+                </div>
+                <div class="o_vpk_we_page_wrap" t-ref="pageWrap">
+                    <div class="o_vpk_we_guide_line"
+                         t-if="rm.guidePct !== null"
+                         t-att-style="'left:' + rm.guidePct + '%'"/>
+                    <t t-set="ib" t-value="state.imgBox"/>
+                    <div class="o_vpk_we_img_frame"
+                         t-if="ib and !props.readonly and !state.sourceMode"
+                         t-att-style="'left:' + ib.left + 'px; top:' + ib.top + 'px; width:' + ib.width + 'px; height:' + ib.height + 'px; transform: rotate(' + (ib.rotate || 0) + 'deg);'">
+                        <div class="o_vpk_we_img_rot_stem"/>
+                        <div class="o_vpk_we_img_rot_handle"
+                             title="ลากเพื่อหมุนรูปภาพ (กด Shift เพื่อหมุนทีละ 15°)"
+                             t-on-mousedown="startImageRotate">
+                            <i class="fa fa-repeat"/>
+                        </div>
+                        <t t-foreach="['nw','n','ne','e','se','s','sw','w']" t-as="hd" t-key="hd">
+                            <span t-attf-class="o_vpk_we_img_handle o_vpk_we_img_h_{{ hd }}"
+                                  t-on-mousedown="(ev) => this.startImageResize(hd, ev)"/>
+                        </t>
+                    </div>
+                    <t t-set="lb" t-value="state.lineBox"/>
+                    <div class="o_vpk_we_line_frame"
+                         t-if="lb and !props.readonly and !state.sourceMode"
+                         t-att-class="{ 'o_vpk_we_line_dragging': state.lineDragging, 'o_vpk_we_field_frame': lb.kind === 'field' }"
+                         t-att-style="'left:' + lb.left + 'px; top:' + lb.top + 'px; width:' + lb.width + 'px; height:' + lb.height + 'px;'">
+                        <span class="o_vpk_we_line_move"
+                              t-att-title="lb.kind === 'field' ? 'ลากเพื่อย้ายฟิลด์' : 'ลากเพื่อย้ายกล่องเส้นไปวางตำแหน่งใหม่'"
+                              t-on-mousedown="startLineMove">
+                            <i class="fa fa-arrows"/>
+                        </span>
+                        <span class="o_vpk_we_line_badge" t-esc="lb.label || (lb.cm + ' ซม.')"/>
+                        <t t-if="lb.kind === 'field'">
+                            <span class="o_vpk_we_line_handle o_vpk_we_line_h_n"
+                                  title="ลากขึ้น-ลงให้ข้อความนั่งบนเส้น (ลูกศรเลื่อนทีละนิด, Alt = ไม่ดูดติดเส้น)"
+                                  t-on-mousedown="startFieldVerticalMove"/>
+                            <span class="o_vpk_we_line_handle o_vpk_we_line_h_s"
+                                  title="ลากขึ้น-ลงให้ข้อความนั่งบนเส้น (ลูกศรเลื่อนทีละนิด, Alt = ไม่ดูดติดเส้น)"
+                                  t-on-mousedown="startFieldVerticalMove"/>
+                        </t>
+                        <t t-if="lb.kind !== 'field'">
+                            <span class="o_vpk_we_line_handle o_vpk_we_line_h_w"
+                                  title="ลากเพื่อปรับจุดเริ่มเส้น / ความยาวเส้น"
+                                  t-on-mousedown="(ev) => this.startLineResize('w', ev)"/>
+                            <span class="o_vpk_we_line_handle o_vpk_we_line_h_e"
+                                  title="ลากเพื่อยืด/หดความยาวเส้น"
+                                  t-on-mousedown="(ev) => this.startLineResize('e', ev)"/>
+                        </t>
+                    </div>
+                    <div class="o_vpk_we_page"
+                         t-att-class="{ 'd-none': state.sourceMode, 'o_vpk_we_show_grid': state.showTableGrid, 'o_vpk_we_drag_over': state.dragOver }"
+                         t-att-style="pageStyle"
+                         t-ref="editable"
+                         t-att-contenteditable="props.readonly ? 'false' : 'true'"
+                         spellcheck="false"
+                         t-on-mousedown="onEditorMouseDown"
+                         t-on-click="onEditorClick"
+                         t-on-keydown="onEditorKeydown"
+                         t-on-dragover="onEditorDragOver"
+                         t-on-dragleave="onEditorDragLeave"
+                         t-on-drop="onEditorDrop"
+                         t-on-input="onInput"
+                         t-on-blur="commitChanges"/>
+                </div>
+                <textarea class="o_vpk_we_source form-control"
+                          t-att-class="{ 'd-none': !state.sourceMode }"
+                          t-ref="source"
+                          spellcheck="false"
+                          t-on-dragover="onEditorDragOver"
+                          t-on-drop="onEditorDrop"
+                          t-on-input="onInput"
+                          t-on-blur="commitChanges"/>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_ebidding.SelectableX2ManyField">
+        <div t-att-class="className">
+            <div class="o_x2m_control_panel d-flex flex-wrap align-items-center gap-2 mt-1 mb-2">
+                <t t-foreach="archInfo.headerButtons or []" t-as="button" t-key="button.id">
+                    <MultiRecordViewButton
+                        list="list"
+                        className="button.className"
+                        clickParams="button.clickParams"
+                        defaultRank="'btn-primary'"
+                        domain="[]"
+                        icon="button.icon"
+                        string="button.string"
+                        title="button.title"
+                    />
+                </t>
+                <div t-if="props.record.data[props.name].count > props.record.data[props.name].limit"
+                     class="o_cp_pager ms-auto" role="search">
+                    <Pager t-props="pagerProps"/>
+                </div>
+            </div>
+            <ListRenderer t-if="props.viewMode === 'list'" t-props="this.rendererProps"/>
+            <KanbanRenderer t-elif="props.viewMode" t-props="this.rendererProps"/>
+        </div>
+    </t>
+</templates>

@@ -62,4 +62,5 @@ class PurchaseRequestLineMakePurchaseRequisition(models.TransientModel):
                         "reference": purchase_request.name,
                     }
                 )
+                requisition._copy_committees_from_purchase_request()
         return result

@@ -1,0 +1,17 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_ebidding_plan_user,ebidding.plan.user,model_ebidding_plan,purchase.group_purchase_user,1,0,0,0
+access_ebidding_plan_mgr,ebidding.plan.manager,model_ebidding_plan,purchase.group_purchase_manager,1,1,1,1
+access_ebidding_plan_line_user,ebidding.plan.line.user,model_ebidding_plan_line,purchase.group_purchase_user,1,0,0,0
+access_ebidding_plan_line_mgr,ebidding.plan.line.manager,model_ebidding_plan_line,purchase.group_purchase_manager,1,1,1,1
+access_ebidding_plan_import_wizard_mgr,ebidding.plan.import.wizard.manager,model_ebidding_plan_import_wizard,purchase.group_purchase_manager,1,1,1,1
+access_ebidding_plan_publish_code_wizard_mgr,ebidding.plan.publish.code.wizard.manager,model_ebidding_plan_publish_code_wizard,purchase.group_purchase_manager,1,1,1,1
+access_ebidding_plan_publish_code_wizard_item_mgr,ebidding.plan.publish.code.wizard.item.manager,model_ebidding_plan_publish_code_wizard_item,purchase.group_purchase_manager,1,1,1,1
+access_ebidding_plan_publish_code_wizard_user,ebidding.plan.publish.code.wizard.user,model_ebidding_plan_publish_code_wizard,purchase.group_purchase_user,1,1,1,1
+access_ebidding_plan_publish_code_wizard_item_user,ebidding.plan.publish.code.wizard.item.user,model_ebidding_plan_publish_code_wizard_item,purchase.group_purchase_user,1,1,1,1
+access_ebidding_plan_import_row_mgr,ebidding.plan.import.row.manager,model_ebidding_plan_import_row,purchase.group_purchase_manager,1,1,1,1
+access_ebidding_plan_document_type_user,ebidding.plan.document.type.user,model_ebidding_plan_document_type,purchase.group_purchase_user,1,0,0,0
+access_ebidding_plan_document_type_mgr,ebidding.plan.document.type.manager,model_ebidding_plan_document_type,purchase.group_purchase_manager,1,1,1,1
+access_ebidding_plan_document_user,ebidding.plan.document.user,model_ebidding_plan_document,purchase.group_purchase_user,1,1,1,0
+access_ebidding_plan_document_mgr,ebidding.plan.document.manager,model_ebidding_plan_document,purchase.group_purchase_manager,1,1,1,1
+access_ebidding_plan_document_signer_user,ebidding.plan.document.signer.user,model_ebidding_plan_document_signer,purchase.group_purchase_user,1,1,1,1
+access_ebidding_plan_document_signer_mgr,ebidding.plan.document.signer.manager,model_ebidding_plan_document_signer,purchase.group_purchase_manager,1,1,1,1

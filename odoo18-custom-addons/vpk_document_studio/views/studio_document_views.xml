@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_document_studio_document_list" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.list</field>
+        <field name="model">vpk.document.studio.document</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="template_id"/>
+                <field name="date"/>
+                <field name="state"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'generated'"
+                       widget="badge"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_document_studio_document_form" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.form</field>
+        <field name="model">vpk.document.studio.document</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_generate_docx" type="object"
+                            string="สร้างไฟล์ Word"
+                            class="btn-primary"
+                            icon="fa-file-word-o"/>
+                    <button name="action_generate_pdf" type="object"
+                            string="พิมพ์ PDF"
+                            class="btn-primary"
+                            icon="fa-file-pdf-o"/>
+                    <button name="action_open_pdf" type="object"
+                            string="เปิด PDF"
+                            class="btn-secondary"
+                            icon="fa-eye"
+                            invisible="not pdf_filename"/>
+                    <button name="action_open_source_record" type="object"
+                            string="เปิดเอกสารต้นทาง"
+                            class="btn-secondary"
+                            icon="fa-external-link"
+                            invisible="not source_ref"/>
+                    <button name="action_draft" type="object"
+                            string="กลับเป็นร่าง"
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,generated"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="template_id"/>
+                            <field name="source_model_id" invisible="1"/>
+                            <field name="source_ref"
+                                   invisible="not source_model_id and not source_ref"/>
+                            <field name="date"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="docx_filename" invisible="1"/>
+                            <field name="docx_file" filename="docx_filename"/>
+                            <field name="pdf_filename" invisible="1"/>
+                            <field name="pdf_file" filename="pdf_filename"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="กรอกข้อมูล" name="values">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <label for="body" class="o_form_label mb-0">เนื้อหาเอกสาร</label>
+                                <div class="d-flex gap-1">
+                                    <button name="action_save_body" type="object"
+                                            string="บันทึกเนื้อหา"
+                                            class="btn-primary btn-sm"
+                                            icon="fa-save"
+                                            invisible="not template_id"/>
+                                    <button name="action_reload_body_from_template" type="object"
+                                            string="ดึงผลลัพธ์จากแบบฟอร์ม"
+                                            class="btn-secondary btn-sm"
+                                            icon="fa-refresh"
+                                            invisible="not template_id"
+                                            confirm="ดึงผลลัพธ์จากแบบฟอร์มใหม่ จะแทนที่เนื้อหาที่แก้ไขไว้ในเอกสารนี้?"/>
+                                </div>
+                            </div>
+                            <field name="layout_font" invisible="1"/>
+                            <field name="layout_font_size" invisible="1"/>
+                            <field name="layout_margin_top" invisible="1"/>
+                            <field name="layout_margin_bottom" invisible="1"/>
+                            <field name="layout_margin_left" invisible="1"/>
+                            <field name="layout_margin_right" invisible="1"/>
+                            <field name="body" nolabel="1" widget="vpk_word_editor"
+                                   force_save="1"
+                                   options="{'showSave': true}"/>
+                        </page>
+                        <page string="หมายเหตุ" name="note">
+                            <field name="note" placeholder="บันทึกเพิ่มเติม"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_document_studio_document_search" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.search</field>
+        <field name="model">vpk.document.studio.document</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="template_id"/>
+                <filter string="ร่าง" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="สร้างไฟล์แล้ว" name="generated" domain="[('state', '=', 'generated')]"/>
+                <separator/>
+                <filter string="ของฉัน" name="my_documents" domain="[('user_id', '=', uid)]"/>
+                <group>
+                    <filter string="แบบฟอร์ม" name="group_template" context="{'group_by': 'template_id'}"/>
+                    <filter string="สถานะ" name="group_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_document_studio_document" model="ir.actions.act_window">
+        <field name="name">เอกสาร</field>
+        <field name="res_model">vpk.document.studio.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_my_documents': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">ยังไม่มีเอกสาร</p>
+            <p>เลือกแบบฟอร์ม แล้วกรอกข้อมูลเพื่อพิมพ์ Word หรือ PDF</p>
+        </field>
+    </record>
+</odoo>

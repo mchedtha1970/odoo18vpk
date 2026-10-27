@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="document_type_plan_publish_approval" model="ebidding.plan.document.type">
+            <field name="name">ขออนุมัติประกาศเผยแพร่แผนการจัดซื้อจัดจ้าง</field>
+            <field name="code">plan_publish_approval</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="document_type_plan_announcement" model="ebidding.plan.document.type">
+            <field name="name">ประกาศเผยแพร่แผนการจัดซื้อจัดจ้าง</field>
+            <field name="code">plan_announcement</field>
+            <field name="sequence">20</field>
+        </record>
+        <record id="document_type_plan_approval_letter" model="ebidding.plan.document.type">
+            <field name="name">หนังสือขอความเห็นชอบแผน</field>
+            <field name="code">plan_approval_letter</field>
+            <field name="sequence">30</field>
+        </record>
+        <record id="official_document_type_egp_plan_approval" model="vpk.official.document.type">
+            <field name="name">เอกสารแผนจัดซื้อจัดจ้างจาก e-GP</field>
+            <field name="code">egp_plan_approval</field>
+            <field name="sequence">15</field>
+            <field name="is_system">True</field>
+            <field name="note">ใช้กับเอกสารที่แนบจากแท็บแนบเอกสาร e-GP ของชุดแผน</field>
+        </record>
+    </data>
+</odoo>

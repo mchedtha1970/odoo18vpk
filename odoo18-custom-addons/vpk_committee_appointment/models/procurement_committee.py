@@ -6,7 +6,7 @@ class ProcurementCommittee(models.Model):
 
     committee_type = fields.Selection(
         selection_add=[
-            ("price_mid", "คณะกรรมการกำหนดราคากลาง"),
+            ("price_mid", "คณะกรรมการกำหนดคุณลักษณะและราคากลาง"),
         ],
         ondelete={
             "price_mid": lambda recs: recs.write({"committee_type": "procurement"}),
