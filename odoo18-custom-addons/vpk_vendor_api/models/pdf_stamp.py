@@ -14,7 +14,7 @@ def stamp_signature_bottom_left(pdf_bytes, signature_bytes):
     try:
         import pypdfium2 as pdfium
     except ImportError as error:
-        from odoo.addons.vpk_official_document.models.pdf_stamp import (
+        from odoo.addons.vpk_document_studio_sign.models.pdf_stamp import (
             SignatureStampError,
         )
 
@@ -22,7 +22,7 @@ def stamp_signature_bottom_left(pdf_bytes, signature_bytes):
             "ไม่สามารถประทับลายเซ็นบน PDF ได้ (ต้องติดตั้ง pypdfium2)"
         ) from error
 
-    from odoo.addons.vpk_official_document.models.pdf_stamp import (
+    from odoo.addons.vpk_document_studio_sign.models.pdf_stamp import (
         SignatureStampError,
         _decode_image,
     )

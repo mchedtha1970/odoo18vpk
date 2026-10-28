@@ -3,8 +3,10 @@
 
 """Edit a template's Word file as HTML and rebuild the Word file from it."""
 
+import ast
 import io
 import copy
+import operator
 import re
 
 from lxml import etree
@@ -458,9 +460,45 @@ _FIELD_BOX_XPATH = (
 EMPTY_FIELD_LABEL = "ว่าง"
 
 
+LIVE_FIELD_ATTR = "data-vpk-live-field"
+# Keeps an empty live span from being dropped by the editor.
+_LIVE_EMPTY = "\u200b"
+
+
+def live_field_span(code, text):
+    value = _escape_text(text) if text else _LIVE_EMPTY
+    return '<span %s="%s">%s</span>' % (LIVE_FIELD_ATTR, code, value)
+
+
+def _escape_text(text):
+    return (
+        text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>")
+    )
+
+
+def refresh_live_fields_html(body_html, mapping):
+    if not body_html or LIVE_FIELD_ATTR not in body_html:
+        return body_html
+    try:
+        root = lxml_html.fromstring("<div>%s</div>" % body_html)
+    except Exception:
+        return body_html
+    for span in root.xpath(".//*[@%s]" % LIVE_FIELD_ATTR):
+        value = mapping.get(span.get(LIVE_FIELD_ATTR))
+        text = "" if value is None or value is False else str(value).strip()
+        for child in list(span):
+            span.remove(child)
+        span.text = text or _LIVE_EMPTY
+    parts = [root.text or ""]
+    parts += [etree.tostring(child, encoding="unicode", method="html") for child in root]
+    return "".join(parts)
+
+
 def _fill_empty_field_boxes(root):
     """Put the default label in field boxes that have no value."""
     for span in list(root.xpath(_FIELD_BOX_XPATH)):
+        if span.xpath(".//*[@%s]" % LIVE_FIELD_ATTR):
+            continue
         text = re.sub(r"[\xa0\u200b\s]", "", "".join(span.itertext()) or "")
         if text:
             continue
@@ -499,11 +537,17 @@ def _replace_row_tokens(row, tokens):
     def sub(text):
         if not text or "{{" not in text:
             return text
+        formula = text.strip().startswith("=")
+
         def pick(match):
             key = match.group(1)
             if key in tokens:
-                return tokens[key]
-            return "" if key.startswith("line.") else match.group(0)
+                value = tokens[key]
+            elif key.startswith("line."):
+                value = ""
+            else:
+                return match.group(0)
+            return (value.strip() or "0") if formula else value
 
         return _ROW_TOKEN_RE.sub(pick, text)
 
@@ -511,6 +555,57 @@ def _replace_row_tokens(row, tokens):
     for node in row.iterdescendants():
         node.text = sub(node.text)
         node.tail = sub(node.tail)
+    _apply_cell_formulas(row)
+
+
+_FORMULA_OPS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+}
+_FORMULA_ALLOWED_RE = re.compile(r"^[0-9.\s+\-*/()]*$")
+_ARABIC_DIGITS = str.maketrans("๐๑๒๓๔๕๖๗๘๙", "0123456789")
+
+
+def _eval_formula_node(node):
+    if isinstance(node, ast.Expression):
+        return _eval_formula_node(node.body)
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+        return float(node.value)
+    if isinstance(node, ast.BinOp) and type(node.op) in _FORMULA_OPS:
+        left, right = _eval_formula_node(node.left), _eval_formula_node(node.right)
+        if isinstance(node.op, ast.Div) and not right:
+            return 0.0
+        return _FORMULA_OPS[type(node.op)](left, right)
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+        value = _eval_formula_node(node.operand)
+        return -value if isinstance(node.op, ast.USub) else value
+    raise ValueError("unsupported formula")
+
+
+def eval_cell_formula(text):
+    """`=11*699.00` -> "7,689.00"; None when `text` is not a valid formula.
+
+    Only numbers, + - * / and brackets are allowed.
+    """
+    if not text or not text.strip().startswith("="):
+        return None
+    expr = text.strip()[1:].translate(_ARABIC_DIGITS).replace(",", "")
+    if not _FORMULA_ALLOWED_RE.match(expr):
+        return None
+    try:
+        value = _eval_formula_node(ast.parse(expr, mode="eval"))
+    except (SyntaxError, ValueError, TypeError, ZeroDivisionError, RecursionError):
+        return None
+    return "{:,.2f}".format(value)
+
+
+def _apply_cell_formulas(row):
+    for node in row.iter():
+        result = eval_cell_formula(node.text)
+        if result is not None:
+            node.text = result
 
 
 def expand_repeat_rows_html(body_html, mapping, rows=None):

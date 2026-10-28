@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_work_acceptance_form_studio_document" model="ir.ui.view">
+        <field name="name">work.acceptance.form.studio.document</field>
+        <field name="model">work.acceptance</field>
+        <field name="inherit_id" ref="vpk_work_acceptance.view_work_acceptance_form_vpk"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="issued_inspection_document_id" invisible="1"/>
+                <button name="action_create_inspection_report" type="object"
+                        string="ออกใบตรวจรับ" class="btn-secondary" icon="fa-file-text-o"
+                        groups="purchase.group_purchase_user"
+                        invisible="issued_inspection_document_id or not id"/>
+                <button name="action_create_inspection_report" type="object"
+                        string="เปิดใบตรวจรับ" class="btn-secondary" icon="fa-file-text-o"
+                        groups="purchase.group_purchase_user"
+                        invisible="not issued_inspection_document_id"/>
+            </xpath>
+            <xpath expr="//page[@name='committee']" position="after">
+                <page string="เอกสารที่เกี่ยวข้อง" name="related_studio_documents">
+                    <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+                        <button name="action_view_studio_documents" type="object"
+                                class="btn-link" icon="fa-file-word-o"
+                                groups="purchase.group_purchase_user">
+                            <field name="studio_document_count" class="me-1"/> เอกสาร
+                        </button>
+                        <button name="action_open_add_studio_document_wizard" type="object"
+                                string="เพิ่มเอกสาร" class="btn-primary"
+                                groups="purchase.group_purchase_user"
+                                invisible="not id"/>
+                        <span class="text-muted">
+                            ผู้ลงนามเริ่มต้นดึงจากกรรมการตรวจรับ แก้ไขได้ที่เอกสาร แล้วกดส่งเพื่อลงนาม
+                        </span>
+                    </div>
+                    <field name="studio_document_ids" readonly="1"
+                           context="{'list_view_ref': 'vpk_document_studio_procurement.view_document_studio_document_list_procurement'}"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

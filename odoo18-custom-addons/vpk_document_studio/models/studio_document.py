@@ -8,9 +8,9 @@ from html import escape
 from urllib.parse import quote
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
-from .docx_merge import DocxMergeError, merge_docx_bytes
+from .docx_merge import DocxMergeError, extract_repeat_tokens, merge_docx_bytes
 from .pdf_converter import (
     PdfConversionError,
     convert_docx_bytes_to_html,
@@ -27,9 +27,12 @@ from .word_layout import (
     apply_page_setup,
     build_layout_document,
     build_print_html,
+    LIVE_FIELD_ATTR,
     expand_repeat_rows_html,
     fill_empty_field_boxes_html,
+    live_field_span,
     parse_layout_html,
+    refresh_live_fields_html,
 )
 
 _logger = logging.getLogger(__name__)
@@ -53,13 +56,37 @@ class DocumentStudioDocument(models.Model):
         default=lambda self: _("New"),
         tracking=True,
     )
+    document_type_id = fields.Many2one(
+        comodel_name="vpk.document.studio.document.type",
+        string="ประเภทเอกสาร",
+        compute="_compute_document_type_id",
+        store=True,
+        readonly=False,
+        precompute=True,
+        index=True,
+        tracking=True,
+        ondelete="restrict",
+    )
     template_id = fields.Many2one(
         comodel_name="vpk.document.studio.template",
         string="แบบฟอร์ม",
-        required=True,
         tracking=True,
         ondelete="restrict",
         index=True,
+    )
+    template_document_type_id = fields.Many2one(
+        related="template_id.document_type_id",
+        string="ประเภทเอกสารของแบบฟอร์ม",
+    )
+    source_mode = fields.Selection(
+        selection=[
+            ("studio", "สร้างจากแบบฟอร์ม"),
+            ("uploaded", "แนบไฟล์ต้นทาง"),
+        ],
+        string="ที่มา",
+        default="studio",
+        required=True,
+        copy=False,
     )
     date = fields.Date(
         string="วันที่",
@@ -143,6 +170,20 @@ class DocumentStudioDocument(models.Model):
     )
     note = fields.Text(string="หมายเหตุ")
 
+    @api.depends("template_id")
+    def _compute_document_type_id(self):
+        for rec in self:
+            if rec.template_id.document_type_id:
+                rec.document_type_id = rec.template_id.document_type_id
+            elif not rec.document_type_id:
+                rec.document_type_id = False
+
+    @api.constrains("template_id", "source_mode")
+    def _check_template_or_upload(self):
+        for rec in self:
+            if rec.source_mode == "studio" and not rec.template_id:
+                raise ValidationError(_("กรุณาเลือกแบบฟอร์ม"))
+
     @api.depends(
         "template_id",
         "template_id.field_ids",
@@ -157,13 +198,19 @@ class DocumentStudioDocument(models.Model):
             )
 
     @api.model
+    def _extra_source_models(self):
+        """Models allowed as source_ref even when no template uses them."""
+        return ["purchase.request"]
+
+    @api.model
     def _selection_source_models(self):
         templates = self.env["vpk.document.studio.template"].sudo().search(
             [("source_model_id", "!=", False)]
         )
         names = {model.model: model.name for model in templates.mapped("source_model_id")}
-        if "purchase.request" in self.env:
-            names.setdefault("purchase.request", self.env["ir.model"]._get("purchase.request").name)
+        for model_name in self._extra_source_models():
+            if model_name in self.env:
+                names.setdefault(model_name, self.env["ir.model"]._get(model_name).name)
         result = {model: "%s (%s)" % (name, model) for model, name in names.items()}
         return sorted(result.items(), key=lambda item: item[1])
 
@@ -244,21 +291,36 @@ class DocumentStudioDocument(models.Model):
         return False
 
     @api.model
+    def _live_body_codes(self):
+        """Codes whose value may arrive after the body is filled; see _refresh_live_body_fields."""
+        return set()
+
     def _interpolate_body_html(self, html, mapping, rows=None):
         if not html:
             return html
         html = expand_repeat_rows_html(html, mapping, rows)
+        live_codes = self._live_body_codes()
 
         def replacer(match):
-            value = mapping.get(match.group(1))
-            if value is None or value is False:
-                return ""
-            text = str(value).strip()
+            code = match.group(1)
+            value = mapping.get(code)
+            text = "" if value is None or value is False else str(value).strip()
+            if code in live_codes:
+                return live_field_span(code, text)
             if not text:
                 return ""
             return escape(text, quote=False).replace("\n", "<br/>")
 
         return fill_empty_field_boxes_html(PLACEHOLDER_RE.sub(replacer, html))
+
+    def _refresh_live_body_fields(self):
+        """Rewrite only the live-field spans of the stored body with current values."""
+        for rec in self:
+            if not rec.body or LIVE_FIELD_ATTR not in rec.body:
+                continue
+            body = refresh_live_fields_html(rec.body, rec._merge_mapping())
+            if body != rec.body:
+                rec.with_context(vpk_live_field_refresh=True).write({"body": body})
 
     def _filled_body_html(self, convert_word=False):
         self.ensure_one()
@@ -368,10 +430,17 @@ class DocumentStudioDocument(models.Model):
         return missing
 
     def _line_tokens_used(self):
-        """Names used as {{line.<field>}} in the layout/body."""
+        """Names used as {{line.<field>}} / {{items.<field>}} in layout and Word."""
         self.ensure_one()
         text = "%s %s" % (self.body or "", self.template_id.layout_html or "")
-        return sorted(set(LINE_TOKEN_RE.findall(text)))
+        tokens = set(LINE_TOKEN_RE.findall(text))
+        if self.template_id.datas:
+            try:
+                for fields in extract_repeat_tokens(self.template_id._template_bytes()).values():
+                    tokens.update(fields)
+            except DocxMergeError:
+                pass
+        return sorted(tokens)
 
     def _repeat_rows_data(self):
         """Structured rows (lines of the chosen record) per field code."""
@@ -382,9 +451,7 @@ class DocumentStudioDocument(models.Model):
         for field in self.template_id.field_ids:
             if field.field_type != "many2one":
                 continue
-            rows = field._relation_rows(values.get(field.code), wanted)
-            if rows:
-                data[field.code] = rows
+            data[field.code] = field._relation_rows(values.get(field.code), wanted)
         return data
 
     def _merge_mapping(self):
@@ -450,23 +517,28 @@ class DocumentStudioDocument(models.Model):
             docx_bytes,
             self._merge_mapping(),
             known_codes=template._known_codes(),
+            rows=self._repeat_rows_data(),
         )
+
+    def _uses_word_template(self):
+        self.ensure_one()
+        return bool(self.template_id and self.template_id.datas)
 
     def _render_docx_bytes(self):
         self.ensure_one()
         if not self.template_id:
             raise UserError(_("กรุณาเลือกแบบฟอร์ม"))
-        html = (self.body or "").strip()
-        if html:
-            try:
-                return self._docx_bytes_from_body()
-            except (PdfConversionError, DocxMergeError, UserError, Exception) as error:
-                _logger.warning(
-                    "Could not convert document %s body to Word, falling back to template file",
-                    self.display_name,
-                    exc_info=True,
-                )
-                if not self.template_id.datas:
+        if not self._uses_word_template():
+            html = (self.body or "").strip()
+            if html:
+                try:
+                    return self._docx_bytes_from_body()
+                except (PdfConversionError, DocxMergeError, UserError, Exception) as error:
+                    _logger.warning(
+                        "Could not convert document %s body to Word, falling back to template file",
+                        self.display_name,
+                        exc_info=True,
+                    )
                     raise UserError(str(error)) from error
         missing = self._missing_required()
         if missing:
@@ -479,6 +551,7 @@ class DocumentStudioDocument(models.Model):
                 self.template_id._template_bytes(),
                 self._merge_mapping(),
                 known_codes=self.template_id._known_codes(),
+                rows=self._repeat_rows_data(),
             )
         except DocxMergeError as error:
             raise UserError(str(error)) from error
@@ -509,6 +582,7 @@ class DocumentStudioDocument(models.Model):
 
     def action_generate_docx(self):
         self.ensure_one()
+        self._check_generated_from_template()
         content = self._render_docx_bytes()
         self._store_file(
             content,
@@ -543,7 +617,7 @@ class DocumentStudioDocument(models.Model):
 
     def _render_pdf_bytes(self):
         self.ensure_one()
-        if (self.body or "").strip():
+        if not self._uses_word_template() and (self.body or "").strip():
             try:
                 return convert_html_to_pdf_bytes(
                     self._print_html(),
@@ -561,8 +635,43 @@ class DocumentStudioDocument(models.Model):
             soffice_path=self._soffice_path(),
         )
 
+    def _check_generated_from_template(self):
+        for rec in self:
+            if rec.source_mode == "uploaded":
+                raise UserError(
+                    _("เอกสาร %s แนบไฟล์ต้นทางมา ไม่ได้สร้างจากแบบฟอร์ม") % rec.display_name
+                )
+
+    def attach_uploaded_file(self, file_b64, filename):
+        """Store a user-supplied PDF or Word file as this document's file."""
+        self.ensure_one()
+        if not file_b64:
+            raise UserError(_("กรุณาแนบไฟล์ต้นทาง"))
+        name = filename or "document.pdf"
+        lower = name.lower()
+        if lower.endswith(".pdf"):
+            kind = "pdf"
+        elif lower.endswith(".docx"):
+            kind = "docx"
+        else:
+            raise UserError(_("รองรับเฉพาะไฟล์ PDF หรือ Word (.docx)"))
+        content = base64.b64decode(file_b64)
+        self._store_file(content, name, PDF_MIME if kind == "pdf" else DOCX_MIME, kind)
+        if kind == "docx" and not self.pdf_file:
+            try:
+                pdf_content = convert_docx_bytes_to_pdf(
+                    content, soffice_path=self._soffice_path()
+                )
+            except Exception:
+                _logger.info("Could not convert uploaded Word %s to PDF", name, exc_info=True)
+            else:
+                stem = name[:-5]
+                self._store_file(pdf_content, "%s.pdf" % stem, PDF_MIME, "pdf")
+        return True
+
     def action_generate_pdf(self):
         self.ensure_one()
+        self._check_generated_from_template()
         try:
             docx_content = self._render_docx_bytes()
             self._store_file(

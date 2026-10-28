@@ -28,6 +28,29 @@ services:
       - ./docker/odoo.conf:/etc/odoo/odoo.conf:ro
       - ./VPK_S1:/mnt/backup
 
+  onlyoffice:
+    image: onlyoffice/documentserver:8.3
+    platform: linux/amd64
+    restart: unless-stopped
+    ports:
+      - "${ONLYOFFICE_PORT:-8080}:80"
+    environment:
+      JWT_ENABLED: "true"
+      JWT_SECRET: ${ONLYOFFICE_JWT_SECRET:-vpk-onlyoffice-local-secret}
+      JWT_HEADER: AuthorizationJwt
+      JWT_IN_BODY: "true"
+      ALLOW_PRIVATE_IP_ADDRESS: "true"
+      ALLOW_META_IP_ADDRESS: "true"
+    volumes:
+      - onlyoffice-data:/var/www/onlyoffice/Data
+      - onlyoffice-lib:/var/lib/onlyoffice
+      - onlyoffice-logs:/var/log/onlyoffice
+      - ./odoo18-custom-addons/l10n-thailand-18.0/l10n_th_base_utils/static/fonts/thai/THSarabunNew:/usr/share/fonts/truetype/thsarabun:ro
+    shm_size: "1gb"
+
 volumes:
   odoo-db-data:
   odoo-web-data:
+  onlyoffice-data:
+  onlyoffice-lib:
+  onlyoffice-logs:

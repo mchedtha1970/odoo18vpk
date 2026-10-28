@@ -26,14 +26,21 @@ class DocumentStudioDocument(models.Model):
         string="ผู้อนุมัติ",
         readonly=False,
     )
-    signature_state = fields.Selection(
-        related="official_document_id.signature_state",
-        string="สถานะการลงนาม",
-    )
     official_state = fields.Selection(
         related="official_document_id.state",
         string="สถานะหนังสือราชการ",
     )
+
+    @api.depends("state", "official_document_id.signature_state")
+    def _compute_signature_state(self):
+        linked = self.filtered("official_document_id")
+        for rec in linked:
+            rec.signature_state = rec.official_document_id.signature_state or "not_sent"
+        return super(DocumentStudioDocument, self - linked)._compute_signature_state()
+
+    def _vpk_signing_enabled(self):
+        self.ensure_one()
+        return not self.official_document_id and super()._vpk_signing_enabled()
 
     def action_open_purchase_request(self):
         self.ensure_one()
@@ -84,6 +91,19 @@ class DocumentStudioDocument(models.Model):
                     "application/pdf",
                     "pdf",
                 )
+                egp_documents = self.env["purchase.requisition.egp.document"].search(
+                    [
+                        ("official_document_id", "=", official.id),
+                        ("signature_state", "not in", ("waiting", "signed")),
+                    ]
+                )
+                if egp_documents:
+                    egp_documents.write(
+                        {
+                            "document_file": rec.pdf_file,
+                            "document_filename": rec.pdf_filename or "document.pdf",
+                        }
+                    )
 
     @api.model
     def _values_from_record(self, template, record):

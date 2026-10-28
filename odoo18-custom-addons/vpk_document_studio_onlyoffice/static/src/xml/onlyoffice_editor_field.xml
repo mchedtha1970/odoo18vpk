@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_document_studio_onlyoffice.OnlyOfficeEditorField">
+        <div class="o_vpk_oo_editor" t-ref="wrap">
+            <div class="o_vpk_oo_editor_hint text-muted small">
+                กดไอคอนบันทึกใน OnlyOffice หรือ Ctrl+S เพื่อบันทึกลงไฟล์ Word ของแบบฟอร์มนี้
+            </div>
+            <div t-if="state.loading" class="o_vpk_oo_editor_status text-muted">
+                <i class="fa fa-spinner fa-spin fa-2x mb-2"/>
+                <div>กำลังเปิด OnlyOffice...</div>
+            </div>
+            <div t-if="state.error" class="alert alert-warning m-3">
+                <t t-esc="state.error"/>
+            </div>
+            <div t-ref="editor" t-att-id="editorId" class="o_vpk_oo_editor_host"/>
+        </div>
+    </t>
+</templates>

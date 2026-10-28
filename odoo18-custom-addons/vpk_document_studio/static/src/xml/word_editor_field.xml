@@ -454,6 +454,25 @@
                     <div class="o_vpk_we_img_frame"
                          t-if="ib and !props.readonly and !state.sourceMode"
                          t-att-style="'left:' + ib.left + 'px; top:' + ib.top + 'px; width:' + ib.width + 'px; height:' + ib.height + 'px; transform: rotate(' + (ib.rotate || 0) + 'deg);'">
+                        <div class="o_vpk_we_img_move"
+                             t-if="ib.floating"
+                             title="ลากเพื่อย้ายรูป (รูปอยู่หน้าข้อความ และเลื่อนตามย่อหน้า)"
+                             t-on-mousedown="startImageMove"/>
+                        <div class="o_vpk_we_img_wrap_bar" t-on-mousedown.stop="() => {}"
+                             t-att-style="'transform: rotate(' + (-(ib.rotate || 0)) + 'deg);'">
+                            <button type="button" class="btn btn-sm"
+                                    t-att-class="ib.floating ? 'btn-light' : 'btn-primary'"
+                                    title="อยู่ในบรรทัดข้อความ (In Line with Text)"
+                                    t-on-click="() => this.setImageWrap('inline')">
+                                <i class="fa fa-align-left"/> ในบรรทัด
+                            </button>
+                            <button type="button" class="btn btn-sm"
+                                    t-att-class="ib.floating ? 'btn-primary' : 'btn-light'"
+                                    title="อยู่หน้าข้อความ และเลื่อนตามข้อความ (In Front of Text, Move with Text)"
+                                    t-on-click="() => this.setImageWrap('front')">
+                                <i class="fa fa-clone"/> หน้าข้อความ
+                            </button>
+                        </div>
                         <div class="o_vpk_we_img_rot_stem"/>
                         <div class="o_vpk_we_img_rot_handle"
                              title="ลากเพื่อหมุนรูปภาพ (กด Shift เพื่อหมุนทีละ 15°)"

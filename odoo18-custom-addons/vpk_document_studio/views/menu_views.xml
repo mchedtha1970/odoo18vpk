@@ -18,4 +18,17 @@
               action="action_document_studio_template"
               groups="vpk_document_studio.group_document_studio_manager"
               sequence="20"/>
+
+    <menuitem id="menu_document_studio_config"
+              name="ตั้งค่า"
+              parent="menu_document_studio_root"
+              groups="vpk_document_studio.group_document_studio_manager"
+              sequence="90"/>
+
+    <menuitem id="menu_document_studio_document_type"
+              name="ประเภทเอกสาร"
+              parent="menu_document_studio_config"
+              action="action_document_studio_document_type"
+              groups="vpk_document_studio.group_document_studio_manager"
+              sequence="10"/>
 </odoo>

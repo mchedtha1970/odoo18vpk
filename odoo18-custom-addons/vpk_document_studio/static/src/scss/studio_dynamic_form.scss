@@ -19,6 +19,28 @@
     }
 }
 
+.o_vpk_pdf_viewer {
+    width: 100%;
+    min-height: 75vh;
+    background: #525659;
+    border: 1px solid #d8dadd;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.o_vpk_pdf_viewer_status,
+.o_vpk_pdf_viewer_empty {
+    min-height: 75vh;
+    background: #f8f9fa;
+}
+
+.o_vpk_pdf_viewer_frame {
+    display: block;
+    width: 100%;
+    height: 75vh;
+    border: 0;
+}
+
 .o_vpk_studio_dynamic_form {
     width: 100%;
 
@@ -450,6 +472,32 @@ html body.o_web_client .o_vpk_word_editor .o_vpk_we_img_frame .fa.fa::before {
         pointer-events: none;
         z-index: 8;
         box-sizing: border-box;
+
+        .o_vpk_we_img_move {
+            position: absolute;
+            inset: 0;
+            cursor: move;
+            pointer-events: auto;
+        }
+
+        .o_vpk_we_img_wrap_bar {
+            position: absolute;
+            left: 50%;
+            top: 100%;
+            margin-top: 8px;
+            display: flex;
+            gap: 4px;
+            white-space: nowrap;
+            translate: -50% 0;
+            pointer-events: auto;
+
+            .btn {
+                padding: 1px 8px;
+                font-size: 12px;
+                border: 1px solid #bbb;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+            }
+        }
 
         .o_vpk_we_img_rot_stem {
             position: absolute;

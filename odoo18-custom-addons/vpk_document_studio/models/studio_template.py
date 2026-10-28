@@ -8,6 +8,7 @@ from html import escape
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
+from .docx_html import docx_bytes_to_html
 from .docx_merge import (
     DocxMergeError,
     build_placeholder_guide_docx,
@@ -88,6 +89,14 @@ class DocumentStudioTemplate(models.Model):
         prefetch=False,
         copy=True,
     )
+    layout_custom = fields.Boolean(
+        string="แก้ไขตัวอย่างเอง",
+        copy=True,
+        help=(
+            "เปิดเพื่อแก้ตัวอย่างเอกสารได้โดยตรง ระหว่างเปิด การแก้บล็อกจะไม่อัปเดตตัวอย่างอัตโนมัติ "
+            "กด 'อัปเดตตัวอย่าง' เพื่อสร้างใหม่จากบล็อก (สิ่งที่แก้เองจะหายไป)"
+        ),
+    )
     source_model_id = fields.Many2one(
         comodel_name="ir.model",
         string="โมเดลต้นทาง",
@@ -100,6 +109,12 @@ class DocumentStudioTemplate(models.Model):
         ),
     )
     source_model_name = fields.Char(related="source_model_id.model", string="ชื่อโมเดลต้นทาง")
+    document_type_id = fields.Many2one(
+        comodel_name="vpk.document.studio.document.type",
+        string="ประเภทเอกสาร",
+        ondelete="restrict",
+        index=True,
+    )
     block_ids = fields.One2many(
         comodel_name="vpk.document.studio.block",
         inverse_name="template_id",
@@ -192,6 +207,12 @@ class DocumentStudioTemplate(models.Model):
         result = super().write(vals)
         if "datas" in vals:
             self._sync_fields_from_word()
+        if "layout_html" in vals and not self.env.context.get("skip_layout_regen"):
+            for rec in self:
+                html = rec.layout_html or ""
+                codes = [code for code in dict.fromkeys(PLACEHOLDER_RE.findall(html))
+                         if code not in ROW_TOKENS]
+                rec._ensure_fields_for_codes(codes)
         if "source_model_id" in vals or "active" in vals:
             self._sync_source_binding_actions()
         if not self.env.context.get("skip_layout_regen") and (
@@ -255,7 +276,9 @@ class DocumentStudioTemplate(models.Model):
     def _regenerate_layout_from_blocks_if_blocks(self):
         if self.env.context.get("skip_layout_regen"):
             return
-        self.filtered("block_ids")._regenerate_layout_from_blocks()
+        self.filtered(
+            lambda rec: rec.block_ids and not rec.layout_custom
+        )._regenerate_layout_from_blocks()
 
     def _regenerate_layout_from_blocks(self):
         for rec in self:
@@ -308,6 +331,8 @@ class DocumentStudioTemplate(models.Model):
 
     def action_regenerate_layout(self):
         self.ensure_one()
+        if self.layout_custom:
+            self.with_context(skip_layout_regen=True).write({"layout_custom": False})
         self._regenerate_layout_from_blocks()
         return True
 
@@ -361,6 +386,7 @@ class DocumentStudioTemplate(models.Model):
                 for index, vals in enumerate(presets)
             ]
         )
+        self.with_context(skip_layout_regen=True).write({"layout_custom": False})
         self._regenerate_layout_from_blocks()
         return True
 
@@ -470,6 +496,53 @@ class DocumentStudioTemplate(models.Model):
                 known.add(code)
                 created.append(code)
         return created
+
+    def _import_word_layout(self):
+        """Convert the uploaded Word file into an editable layout (preview)."""
+        self.ensure_one()
+        soffice = self.env["vpk.document.studio.document"]._soffice_path()
+        source = self._template_bytes()
+        try:
+            if soffice:
+                html_text = convert_docx_bytes_to_html(source, soffice_path=soffice)
+            else:
+                html_text = docx_bytes_to_html(source)
+        except PdfConversionError as error:
+            raise UserError(str(error)) from error
+        except Exception as error:
+            raise UserError(_("อ่านไฟล์ Word ไม่สำเร็จ: %s") % error) from error
+        body, settings = parse_layout_html(html_text)
+        if not (body or "").strip():
+            raise UserError(_("แปลงไฟล์ Word แล้วไม่พบเนื้อหา"))
+        vals = {"layout_html": body, "layout_custom": True}
+        if settings.get("font"):
+            vals["layout_font"] = self._layout_font_from_word(settings["font"])
+        if settings.get("font_size"):
+            vals["layout_font_size"] = settings["font_size"]
+        for side in ("top", "bottom", "left", "right"):
+            if settings.get("margin_%s" % side):
+                vals["layout_margin_%s" % side] = settings["margin_%s" % side]
+        self.with_context(skip_layout_regen=True).write(vals)
+        codes = [code for code in dict.fromkeys(PLACEHOLDER_RE.findall(body))
+                 if code not in ROW_TOKENS]
+        return self._ensure_fields_for_codes(codes)
+
+    def action_import_word_layout(self):
+        self.ensure_one()
+        created = self._import_word_layout()
+        message = _("นำเนื้อหาจาก Word มาเป็นตัวอย่างแล้ว แก้ไขและแทรก {{รหัสฟิลด์}} ได้ในแท็บ Layout")
+        if created:
+            message += _(" (เพิ่มฟิลด์ %s รายการ)") % len(created)
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("นำเข้า Word"),
+                "message": message,
+                "type": "success",
+                "next": {"type": "ir.actions.client", "tag": "soft_reload"},
+            },
+        }
 
     def action_sync_fields_from_word(self):
         self.ensure_one()

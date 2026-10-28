@@ -22,6 +22,10 @@ docker compose up -d --build
 
 เปิด http://localhost:8069 — master password คือ `admin`
 
+OnlyOffice Docs (แก้ไข Word ในเบราว์เซอร์) อยู่ที่ http://localhost:8080
+ใน Odoo ไปที่ Settings → ONLYOFFICE หรือเปิดแบบฟอร์ม Document Studio แล้วกด **แก้ไขด้วย OnlyOffice**
+JWT ของเครื่อง local คือ `ONLYOFFICE_JWT_SECRET` ใน `.env` ต้องตรงกับค่าใน Settings
+
 ไม่ต้อง clone `odoo/odoo` ใช้ image `odoo:18.0`
 
 ## คำสั่งที่ใช้บ่อย

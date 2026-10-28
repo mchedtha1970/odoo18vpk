@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_studio_document_add_wizard_form" model="ir.ui.view">
+        <field name="name">vpk.studio.document.add.wizard.form</field>
+        <field name="model">vpk.studio.document.add.wizard</field>
+        <field name="arch" type="xml">
+            <form string="เพิ่มเอกสาร">
+                <field name="res_model" invisible="1"/>
+                <field name="res_id" invisible="1"/>
+                <field name="company_id" invisible="1"/>
+                <field name="source_model_id" invisible="1"/>
+                <group>
+                    <field name="document_type_id" options="{'no_create': True}" required="1"/>
+                    <field name="add_mode" widget="radio"/>
+                    <field name="studio_template_id" options="{'no_create': True}"
+                           invisible="add_mode != 'studio'" required="add_mode == 'studio'"/>
+                    <field name="file" filename="filename"
+                           invisible="add_mode != 'attach'" required="add_mode == 'attach'"/>
+                    <field name="filename" invisible="1"/>
+                    <field name="notes"/>
+                </group>
+                <div class="text-muted" invisible="add_mode != 'attach'">
+                    รองรับไฟล์ PDF หรือ Word (.docx) ไฟล์ Word จะถูกแปลงเป็น PDF เพื่อใช้ลงนาม
+                </div>
+                <footer>
+                    <button name="action_confirm" type="object" string="เพิ่มเอกสาร" class="btn-primary"/>
+                    <button special="cancel" string="ยกเลิก"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

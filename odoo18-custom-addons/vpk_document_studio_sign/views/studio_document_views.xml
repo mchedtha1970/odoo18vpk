@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_document_studio_document_form_sign" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.form.sign</field>
+        <field name="model">vpk.document.studio.document</field>
+        <field name="inherit_id" ref="vpk_document_studio.view_document_studio_document_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_generate_docx']" position="attributes">
+                <attribute name="invisible">state in ('to_approve', 'approved', 'cancelled')</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_generate_pdf']" position="attributes">
+                <attribute name="invisible">state in ('to_approve', 'approved', 'cancelled')</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_draft']" position="attributes">
+                <attribute name="invisible">state in ('draft', 'approved')</attribute>
+            </xpath>
+            <xpath expr="//field[@name='value_json']" position="attributes">
+                <attribute name="readonly">state in ('to_approve', 'approved', 'cancelled')</attribute>
+            </xpath>
+            <xpath expr="//page[@name='values']/field[@name='pdf_file']" position="before">
+                <div class="alert alert-warning py-2 mb-2" role="status"
+                     invisible="state != 'to_approve'">
+                    เอกสารอยู่ระหว่างลงนาม หากต้องการแก้ ให้กด
+                    <b>กลับเป็นร่าง</b> แล้วพิมพ์ PDF และส่งลงนามใหม่
+                </div>
+                <div class="alert alert-info py-2 mb-2" role="status"
+                     invisible="state != 'approved'">
+                    เอกสารลงนามครบแล้ว
+                </div>
+            </xpath>
+            <xpath expr="//header/field[@name='state']" position="attributes">
+                <attribute name="statusbar_visible">draft,generated,to_approve,approved</attribute>
+            </xpath>
+            <xpath expr="//header/field[@name='state']" position="before">
+                <field name="signature_state" invisible="1"/>
+                <field name="can_review" invisible="1"/>
+                <field name="vpk_signing_enabled" invisible="1"/>
+                <button name="action_request_saraban_number" type="object"
+                        string="ขอเลขสารบรรณ"
+                        class="btn-secondary"
+                        icon="fa-hashtag"
+                        invisible="saraban_book_no or state == 'cancelled'"/>
+                <button name="action_send_for_signature" type="object"
+                        string="ส่งเพื่อลงนาม"
+                        class="btn-primary"
+                        icon="fa-paper-plane"
+                        invisible="not vpk_signing_enabled or state not in ('draft', 'generated')"/>
+                <button name="action_open_sign_viewer" type="object"
+                        string="เปิด PDF เพื่อลงนาม"
+                        class="btn-success"
+                        icon="fa-pencil"
+                        invisible="state != 'to_approve' or not can_review"/>
+                <button name="action_cancel" type="object"
+                        string="ยกเลิก"
+                        invisible="state in ('approved', 'cancelled')"
+                        confirm="ยกเลิกเอกสารนี้?"/>
+            </xpath>
+            <xpath expr="//field[@name='date']" position="after">
+                <label for="saraban_book_no"/>
+                <div class="o_row">
+                    <field name="saraban_book_no" readonly="saraban_document_id"/>
+                    <button name="action_open_saraban_document" type="object"
+                            class="btn-link p-0"
+                            icon="fa-external-link"
+                            title="เปิดงานสารบรรณ"
+                            invisible="not saraban_document_id"/>
+                </div>
+                <field name="saraban_document_id" invisible="1"/>
+                <field name="signature_state" readonly="1"
+                       invisible="signature_state == 'not_sent'"/>
+                <field name="signed_on" invisible="not signed_on"/>
+            </xpath>
+            <xpath expr="//sheet/notebook" position="after">
+                <group string="ผู้อนุมัติ / ผู้ลงนาม" name="vpk_approvers"
+                       invisible="not vpk_signing_enabled">
+                    <div class="text-muted" colspan="2">
+                        เพิ่มผู้อนุมัติตามลำดับ ต้องมีอย่างน้อย 1 คนจึงจะส่งลงนามได้
+                        (ติ๊ก "ตรวจสอบ" สำหรับผู้ตรวจก่อนส่งผู้ลงนาม)
+                    </div>
+                    <field name="vpk_approver_line_ids" nolabel="1" colspan="2"
+                           readonly="state not in ('draft', 'generated')"
+                           context="{'default_res_model': 'vpk.document.studio.document'}">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="res_model" column_invisible="1"/>
+                            <field name="user_id" string="ผู้อนุมัติ"
+                                   widget="many2one_avatar_user"
+                                   options="{'no_create': True}"/>
+                            <field name="position" string="ตำแหน่ง"/>
+                            <field name="is_check" string="ตรวจสอบ"/>
+                            <field name="is_sign" string="ลงนาม"/>
+                        </list>
+                    </field>
+                </group>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="ประวัติการลงนาม" name="sign_history" invisible="not review_ids">
+                    <field name="review_ids" readonly="1">
+                        <list>
+                            <field name="sequence"/>
+                            <field name="reviewer_ids" widget="many2many_avatar_user" string="ผู้อนุมัติ"/>
+                            <field name="vpk_approval_role" string="บทบาท"/>
+                            <field name="status" widget="badge"
+                                   decoration-success="status == 'approved'"
+                                   decoration-danger="status == 'rejected'"
+                                   decoration-warning="status == 'pending'"/>
+                            <field name="done_by" string="ดำเนินการโดย"/>
+                            <field name="reviewed_date" string="เมื่อ"/>
+                            <field name="comment" string="ความเห็น"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_document_studio_document_list_sign" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.list.sign</field>
+        <field name="model">vpk.document.studio.document</field>
+        <field name="inherit_id" ref="vpk_document_studio.view_document_studio_document_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state']" position="before">
+                <field name="saraban_book_no" optional="show"/>
+                <field name="signature_state" optional="show" widget="badge"
+                       decoration-warning="signature_state == 'waiting'"
+                       decoration-success="signature_state == 'signed'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_document_studio_document_search_sign" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.search.sign</field>
+        <field name="model">vpk.document.studio.document</field>
+        <field name="inherit_id" ref="vpk_document_studio.view_document_studio_document_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='generated']" position="after">
+                <filter string="รอลงนาม" name="to_approve" domain="[('state', '=', 'to_approve')]"/>
+                <filter string="ลงนามแล้ว" name="approved" domain="[('state', '=', 'approved')]"/>
+            </xpath>
+            <xpath expr="//field[@name='document_type_id']" position="after">
+                <field name="saraban_book_no"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

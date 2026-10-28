@@ -1361,6 +1361,9 @@ export class WordEditorField extends Component {
         if (!img || !this.isInEditor(img)) {
             return false;
         }
+        if (this.isFloatingImage(img)) {
+            this.setImageWrap("inline");
+        }
         this.pushHistorySnapshot();
         let block = this.imageBlockParent(img);
         if (block.tagName === "CENTER") {
@@ -1396,6 +1399,84 @@ export class WordEditorField extends Component {
         return true;
     }
 
+    isFloatingImage(img) {
+        return img?.dataset?.wrap === "front";
+    }
+
+    /** "front" = in front of text, anchored to its paragraph (moves with text). */
+    setImageWrap(mode) {
+        const img = this.selectedImage;
+        if (!img || this.props.readonly || !this.isInEditor(img)) {
+            return;
+        }
+        if ((mode === "front") === this.isFloatingImage(img)) {
+            return;
+        }
+        this.pushHistorySnapshot();
+        const block = this.imageBlockParent(img);
+        if (mode === "front") {
+            const blockRect = block.getBoundingClientRect();
+            const rect = img.getBoundingClientRect();
+            const left = this.pxToCm((rect.left - blockRect.left) / this.zoomFactor);
+            const top = this.pxToCm((rect.top - blockRect.top) / this.zoomFactor);
+            block.style.position = "relative";
+            img.dataset.wrap = "front";
+            img.style.position = "absolute";
+            img.style.left = `${left.toFixed(2)}cm`;
+            img.style.top = `${top.toFixed(2)}cm`;
+            img.style.zIndex = "3";
+            img.style.float = "";
+            img.removeAttribute("align");
+        } else {
+            delete img.dataset.wrap;
+            img.style.position = "";
+            img.style.left = "";
+            img.style.top = "";
+            img.style.zIndex = "";
+            if (!block.querySelector('img[data-wrap="front"]')) {
+                block.style.position = "";
+            }
+        }
+        this.state.imgBox = null;
+        requestAnimationFrame(() => this.updateImageOverlay());
+        this.pushHistorySnapshot();
+        this.onInput();
+    }
+
+    startImageMove(ev) {
+        const img = this.selectedImage;
+        if (!img || this.props.readonly || !this.isFloatingImage(img)) {
+            return;
+        }
+        ev.preventDefault();
+        ev.stopPropagation();
+        this.pushHistorySnapshot();
+        const startX = ev.clientX;
+        const startY = ev.clientY;
+        const startLeft = parseFloat(img.style.left) || 0;
+        const startTop = parseFloat(img.style.top) || 0;
+        document.body.style.userSelect = "none";
+
+        const onMove = (moveEv) => {
+            const dx = this.pxToCm((moveEv.clientX - startX) / this.zoomFactor);
+            const dy = this.pxToCm((moveEv.clientY - startY) / this.zoomFactor);
+            img.style.left = `${(startLeft + dx).toFixed(2)}cm`;
+            img.style.top = `${(startTop + dy).toFixed(2)}cm`;
+            this.updateImageOverlay();
+        };
+
+        const onUp = () => {
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("mouseup", onUp);
+            document.body.style.userSelect = "";
+            this.pushHistorySnapshot();
+            this.onInput();
+        };
+
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+    }
+
     getImageRotation(img) {
         const deg = parseFloat(img?.dataset?.rotate || "0");
         return Number.isFinite(deg) ? deg : 0;
@@ -1420,6 +1501,7 @@ export class WordEditorField extends Component {
             width,
             height,
             rotate: this.getImageRotation(img),
+            floating: this.isFloatingImage(img),
         };
     }
 

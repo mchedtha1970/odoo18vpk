@@ -11,3 +11,6 @@ access_studio_block_user,vpk.document.studio.block.user,model_vpk_document_studi
 access_studio_block_manager,vpk.document.studio.block.manager,model_vpk_document_studio_block,group_document_studio_manager,1,1,1,1
 access_studio_block_column_user,vpk.document.studio.block.column.user,model_vpk_document_studio_block_column,group_document_studio_user,1,0,0,0
 access_studio_block_column_manager,vpk.document.studio.block.column.manager,model_vpk_document_studio_block_column,group_document_studio_manager,1,1,1,1
+access_studio_create_wizard_user,vpk.document.studio.create.wizard.user,model_vpk_document_studio_create_wizard,group_document_studio_user,1,1,1,1
+access_studio_document_type_user,vpk.document.studio.document.type.user,model_vpk_document_studio_document_type,group_document_studio_user,1,0,0,0
+access_studio_document_type_manager,vpk.document.studio.document.type.manager,model_vpk_document_studio_document_type,group_document_studio_manager,1,1,1,1

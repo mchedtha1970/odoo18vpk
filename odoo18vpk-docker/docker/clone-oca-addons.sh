@@ -31,5 +31,6 @@ clone_repo reporting-engine-18.0 https://github.com/OCA/reporting-engine.git
 clone_repo server-tools-18.0 https://github.com/OCA/server-tools.git
 clone_repo server-ux-18.0 https://github.com/OCA/server-ux.git
 clone_repo stock-logistics-workflow-18.0 https://github.com/OCA/stock-logistics-workflow.git
+clone_repo onlyoffice-odoo-18.0 https://github.com/ONLYOFFICE/onlyoffice_odoo.git
 
 echo "done. Next: cp .env.example .env && docker compose up -d --build"

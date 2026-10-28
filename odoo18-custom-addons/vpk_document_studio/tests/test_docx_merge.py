@@ -8,6 +8,7 @@ from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.vpk_document_studio.models.docx_merge import (
     extract_placeholders,
+    extract_repeat_tokens,
     merge_docx_bytes,
 )
 
@@ -69,6 +70,58 @@ class TestDocxMerge(TransactionCase):
             extract_placeholders(template),
             ["subject", "doc_date", "qty"],
         )
+
+    def test_extract_dotted_placeholder_uses_parent_code(self):
+        document = Document()
+        table = document.add_table(rows=2, cols=2)
+        table.cell(0, 0).text = "รายการ"
+        table.cell(1, 0).text = "{{items.product_id}}"
+        table.cell(1, 1).text = "{{items.product_qty}}"
+        buf = io.BytesIO()
+        document.save(buf)
+        content = buf.getvalue()
+        self.assertEqual(extract_placeholders(content), ["items"])
+        self.assertEqual(
+            extract_repeat_tokens(content)["items"],
+            ["product_id", "product_qty"],
+        )
+
+    def test_merge_repeats_item_table_rows(self):
+        document = Document()
+        table = document.add_table(rows=2, cols=3)
+        table.cell(0, 0).text = "ลำดับ"
+        table.cell(0, 1).text = "รายการ"
+        table.cell(0, 2).text = "จำนวน"
+        table.cell(1, 0).text = "{{no}}"
+        table.cell(1, 1).text = "{{items.product_id}}"
+        table.cell(1, 2).text = "{{items.product_qty}}"
+        buf = io.BytesIO()
+        document.save(buf)
+        content = merge_docx_bytes(
+            buf.getvalue(),
+            {"subject": "ทดสอบ"},
+            rows={
+                "items": [
+                    {
+                        "no": "1",
+                        "items.product_id": "ยา A",
+                        "items.product_qty": "10",
+                    },
+                    {
+                        "no": "2",
+                        "items.product_id": "ยา B",
+                        "items.product_qty": "5",
+                    },
+                ]
+            },
+        )
+        text = docx_text(content)
+        self.assertIn("ยา A", text)
+        self.assertIn("ยา B", text)
+        self.assertIn("10", text)
+        self.assertNotIn("{{", text)
+        filled = Document(io.BytesIO(content))
+        self.assertGreaterEqual(len(filled.tables[0].rows), 3)
 
     def test_unknown_placeholder_is_cleared(self):
         template = make_docx(["หัวข้อ {{missing}}", "{{empty_only}}"])

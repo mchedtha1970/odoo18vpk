@@ -6,6 +6,7 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
+                <field name="document_type_id" optional="show"/>
                 <field name="template_id"/>
                 <field name="date"/>
                 <field name="state"
@@ -24,14 +25,17 @@
         <field name="arch" type="xml">
             <form>
                 <header>
+                    <field name="source_mode" invisible="1"/>
                     <button name="action_generate_docx" type="object"
                             string="สร้างไฟล์ Word"
                             class="btn-primary"
-                            icon="fa-file-word-o"/>
+                            icon="fa-file-word-o"
+                            invisible="source_mode == 'uploaded'"/>
                     <button name="action_generate_pdf" type="object"
                             string="พิมพ์ PDF"
                             class="btn-primary"
-                            icon="fa-file-pdf-o"/>
+                            icon="fa-file-pdf-o"
+                            invisible="source_mode == 'uploaded'"/>
                     <button name="action_open_pdf" type="object"
                             string="เปิด PDF"
                             class="btn-secondary"
@@ -54,7 +58,14 @@
                     </div>
                     <group>
                         <group>
-                            <field name="template_id"/>
+                            <field name="source_mode" invisible="source_mode == 'studio'" readonly="1"/>
+                            <field name="template_id"
+                                   required="source_mode == 'studio'"
+                                   invisible="source_mode == 'uploaded' and not template_id"/>
+                            <field name="template_document_type_id" invisible="1"/>
+                            <field name="document_type_id"
+                                   readonly="template_document_type_id"
+                                   options="{'no_create': True}"/>
                             <field name="source_model_id" invisible="1"/>
                             <field name="source_ref"
                                    invisible="not source_model_id and not source_ref"/>
@@ -65,37 +76,15 @@
                             <field name="company_id" groups="base.group_multi_company"/>
                             <field name="docx_filename" invisible="1"/>
                             <field name="docx_file" filename="docx_filename"/>
-                            <field name="pdf_filename" invisible="1"/>
-                            <field name="pdf_file" filename="pdf_filename"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="กรอกข้อมูล" name="values">
-                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                <label for="body" class="o_form_label mb-0">เนื้อหาเอกสาร</label>
-                                <div class="d-flex gap-1">
-                                    <button name="action_save_body" type="object"
-                                            string="บันทึกเนื้อหา"
-                                            class="btn-primary btn-sm"
-                                            icon="fa-save"
-                                            invisible="not template_id"/>
-                                    <button name="action_reload_body_from_template" type="object"
-                                            string="ดึงผลลัพธ์จากแบบฟอร์ม"
-                                            class="btn-secondary btn-sm"
-                                            icon="fa-refresh"
-                                            invisible="not template_id"
-                                            confirm="ดึงผลลัพธ์จากแบบฟอร์มใหม่ จะแทนที่เนื้อหาที่แก้ไขไว้ในเอกสารนี้?"/>
-                                </div>
-                            </div>
-                            <field name="layout_font" invisible="1"/>
-                            <field name="layout_font_size" invisible="1"/>
-                            <field name="layout_margin_top" invisible="1"/>
-                            <field name="layout_margin_bottom" invisible="1"/>
-                            <field name="layout_margin_left" invisible="1"/>
-                            <field name="layout_margin_right" invisible="1"/>
-                            <field name="body" nolabel="1" widget="vpk_word_editor"
-                                   force_save="1"
-                                   options="{'showSave': true}"/>
+                        <page string="เอกสาร" name="values">
+                            <field name="field_schema_json" invisible="1"/>
+                            <field name="body" invisible="1"/>
+                            <field name="value_json" invisible="1"/>
+                            <field name="pdf_file" nolabel="1" widget="vpk_pdf_viewer"
+                                   filename="pdf_filename"/>
                         </page>
                         <page string="หมายเหตุ" name="note">
                             <field name="note" placeholder="บันทึกเพิ่มเติม"/>
@@ -114,11 +103,13 @@
             <search>
                 <field name="name"/>
                 <field name="template_id"/>
+                <field name="document_type_id"/>
                 <filter string="ร่าง" name="draft" domain="[('state', '=', 'draft')]"/>
                 <filter string="สร้างไฟล์แล้ว" name="generated" domain="[('state', '=', 'generated')]"/>
                 <separator/>
                 <filter string="ของฉัน" name="my_documents" domain="[('user_id', '=', uid)]"/>
                 <group>
+                    <filter string="ประเภทเอกสาร" name="group_document_type" context="{'group_by': 'document_type_id'}"/>
                     <filter string="แบบฟอร์ม" name="group_template" context="{'group_by': 'template_id'}"/>
                     <filter string="สถานะ" name="group_state" context="{'group_by': 'state'}"/>
                 </group>

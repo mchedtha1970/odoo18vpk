@@ -24,6 +24,13 @@ RELATION_SOURCES = [
     ("pr_lines_arabic", "รายการสินค้าจากใบขอซื้อ (PR) — เลขอารบิก 1. 2. 3."),
     ("pr_lines_name_qty", "รายการสินค้าจากใบขอซื้อ (PR) — ชื่อและจำนวน"),
 ]
+NUMBER_FORMATS = [
+    ("plain", "ตามค่าเดิม เช่น 12500"),
+    ("comma", "มีจุลภาค เช่น 12,500.00"),
+    ("comma_thai", "เลขไทยมีจุลภาค เช่น ๑๒,๕๐๐.๐๐"),
+    ("thai_text", "ตัวหนังสือ เช่น หนึ่งหมื่นสองพันห้าร้อย"),
+    ("baht_text", "ตัวหนังสือจำนวนเงิน เช่น หนึ่งหมื่นสองพันห้าร้อยบาทถ้วน"),
+]
 _THAI_DIGITS_MAP = str.maketrans("0123456789", "๐๑๒๓๔๕๖๗๘๙")
 THAI_MONTHS = (
     "",
@@ -69,6 +76,12 @@ class DocumentStudioField(models.Model):
         default="char",
     )
     required = fields.Boolean(string="จำเป็น")
+    number_format = fields.Selection(
+        selection=NUMBER_FORMATS,
+        string="รูปแบบการแสดงผล",
+        default="plain",
+        help="ใช้กับชนิดตัวเลข/ทศนิยม เช่น แสดง 12500 เป็น ๑๒,๕๐๐ หรือ หนึ่งหมื่นสองพันห้าร้อยบาทถ้วน",
+    )
     selection_options = fields.Text(
         string="ตัวเลือก",
         help="พิมพ์หนึ่งตัวเลือกต่อบรรทัด สำหรับชนิดตัวเลือก",
@@ -185,8 +198,15 @@ class DocumentStudioField(models.Model):
 
     @api.onchange("map_field_id")
     def _onchange_map_field_id(self):
-        if self.map_field_id and self.map_field_id.ttype in ("one2many", "many2many"):
+        if (
+            self.map_field_id
+            and self.map_field_id.ttype in ("one2many", "many2many")
+            and self.field_type not in ("integer", "float")
+        ):
             self.field_type = "many2one"
+        if self.field_type in ("integer", "float"):
+            self.map_sub_field_id = False
+            return
         if not self.map_field_id or not self.map_field_id.relation:
             self.map_sub_field_id = False
             return
@@ -222,6 +242,8 @@ class DocumentStudioField(models.Model):
             recs = raw_val
             if "cancelled" in recs._fields:
                 recs = recs.filtered(lambda r: not r.cancelled)
+            if self.field_type in ("integer", "float"):
+                return len(recs)
             lines = []
             for idx, item in enumerate(recs, start=1):
                 txt = self._extract_single_sub_value(item, sub_fname)
@@ -258,6 +280,11 @@ class DocumentStudioField(models.Model):
         if sub_fname and sub_fname in item._fields:
             sub_val = item[sub_fname]
             if isinstance(sub_val, models.BaseModel):
+                if len(sub_val) > 1:
+                    return "\n".join(
+                        "%s. %s" % (idx, self._extract_single_sub_value(line))
+                        for idx, line in enumerate(sub_val, start=1)
+                    )
                 return self._clean_record_display(sub_val)
             if sub_val is False or sub_val is None:
                 return ""
@@ -394,19 +421,34 @@ class DocumentStudioField(models.Model):
             return _("ใช่") if value else _("ไม่ใช่")
         if self.field_type == "date":
             return self._format_thai_date(value)
-        if self.field_type == "integer":
+        if self.field_type in ("integer", "float"):
             try:
-                return str(int(value))
+                number = float(str(value).replace(",", "").strip())
             except (TypeError, ValueError):
                 return str(value)
-        if self.field_type == "float":
-            try:
-                number = float(value)
-            except (TypeError, ValueError):
-                return str(value)
+            if self.number_format and self.number_format != "plain":
+                return self._format_number(number)
+            if self.field_type == "integer":
+                return str(int(number))
             text = ("%.10f" % number).rstrip("0").rstrip(".")
             return text or "0"
         return str(value)
+
+    def _format_number(self, number):
+        self.ensure_one()
+        decimals = 2 if self.field_type == "float" else 0
+        if self.number_format == "comma":
+            return "{:,.{}f}".format(number, decimals)
+        if self.number_format == "comma_thai":
+            return self._thai_digits("{:,.{}f}".format(number, decimals))
+        currency = self.env.ref("base.THB", raise_if_not_found=False) or self.env.company.currency_id
+        baht = currency.with_context(lang="th_TH").amount_to_text(number)
+        if self.number_format == "baht_text":
+            return baht
+        # thai_text: the number in words, without the currency unit
+        if baht.endswith("บาทถ้วน"):
+            return baht[: -len("บาทถ้วน")]
+        return baht
 
     @api.model
     def _clean_product_line_name(self, line):
@@ -481,27 +523,58 @@ class DocumentStudioField(models.Model):
         record = self.env[target_model].sudo().browse(int(rec_id)).exists()
         return record or None
 
+    def _row_line_path(self):
+        """(field names from the source record to its lines, line model)."""
+        self.ensure_one()
+        multi = ("one2many", "many2many")
+        main, sub = self.map_field_id, self.map_sub_field_id
+        if main and main.ttype in multi:
+            return [main.name], main.relation or ""
+        if main and main.ttype == "many2one" and sub and sub.ttype in multi:
+            return [main.name, sub.name], sub.relation or ""
+        if not self.map_model_id or self.map_model_id.model == "purchase.request":
+            return ["line_ids"], "purchase.request.line"
+        return [], ""
+
     def _row_source_records(self, record):
         """Sub records (lines) that become table rows for this field."""
         self.ensure_one()
-        if self.map_field_id and self.map_field_id.ttype in ("one2many", "many2many"):
-            fname = self.map_field_id.name
-            lines = record[fname] if fname in record._fields else record.browse()
-        elif record._name == "purchase.request":
-            lines = record.line_ids
-        else:
+        path, _line_model = self._row_line_path()
+        if not path:
             return record.browse()
+        lines = record
+        for fname in path:
+            if fname not in lines._fields:
+                return record.browse()
+            lines = lines[fname]
         if "cancelled" in lines._fields:
             lines = lines.filtered(lambda line: not line.cancelled)
         return lines
 
     _ROW_ALIASES = {
-        "qty": ("product_qty", "product_uom_qty", "quantity", "qty"),
+        "qty": ("product_qty", "product_uom_qty", "quantity", "qty", "base_uom_qty"),
         "uom": ("product_uom_id", "product_uom", "uom_id"),
-        "unit_price": ("price_unit", "unit_price"),
+        "unit_price": (
+            "base_uom_unit_price",
+            "budget_unit_price",
+            "price_unit",
+            "unit_price",
+        ),
         "amount": ("price_subtotal", "estimated_cost", "amount", "amount_total", "price_total"),
         "spec": ("specifications", "description"),
     }
+    _DEFAULT_LINE_FIELDS = (
+        "product_id",
+        "name",
+        "product_qty",
+        "product_uom_id",
+        "price_unit",
+        "estimated_cost",
+        "base_uom_unit_price",
+        "base_uom_qty",
+        "budget_unit_price",
+        "specifications",
+    )
 
     def _first_field(self, record, candidates):
         for fname in candidates:
@@ -539,7 +612,7 @@ class DocumentStudioField(models.Model):
         return self._clean_record_display(sub)
 
     def _row_dict(self, sub, index, wanted=()):
-        """Values for one table row: friendly aliases plus `line.<field>` tokens."""
+        """Values for one table row: aliases, {{line.field}} and {{items.field}}."""
         name = self._row_name(sub)
         row = {"no": str(index), "name": name, "line": name}
         amount_value = 0.0
@@ -555,9 +628,23 @@ class DocumentStudioField(models.Model):
         if not row["unit_price"] and qty_value:
             row["unit_price"] = self._fmt_money(amount_value / qty_value)
         row["amount_value"] = amount_value
-        for fname in wanted:
-            if fname in sub._fields:
-                row["line.%s" % fname] = self._format_row_value(sub, fname)
+        field_names = []
+        for fname in list(self._DEFAULT_LINE_FIELDS) + list(wanted or ()):
+            if fname not in field_names:
+                field_names.append(fname)
+        parent = self.code
+        skip_types = ("one2many", "many2many", "binary")
+        for fname in field_names:
+            if fname not in sub._fields or sub._fields[fname].type in skip_types:
+                continue
+            formatted = self._format_row_value(sub, fname)
+            row[fname] = formatted
+            row["line.%s" % fname] = formatted
+            if parent:
+                row["%s.%s" % (parent, fname)] = formatted
+        if parent:
+            row["%s.name" % parent] = name
+            row["%s.no" % parent] = str(index)
         return row
 
     def _relation_rows(self, value, wanted=()):

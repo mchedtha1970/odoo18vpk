@@ -4,6 +4,7 @@
 from . import docx_merge
 from . import ir_model
 from . import pdf_converter
+from . import studio_document_type
 from . import studio_field
 from . import studio_block
 from . import studio_template

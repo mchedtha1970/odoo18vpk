@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="onlyoffice_doc_server_public_url" model="ir.config_parameter">
+        <field name="key">onlyoffice_connector.doc_server_public_url</field>
+        <field name="value">http://localhost:8080/</field>
+    </record>
+    <record id="onlyoffice_doc_server_inner_url" model="ir.config_parameter">
+        <field name="key">onlyoffice_connector.doc_server_inner_url</field>
+        <field name="value">http://onlyoffice/</field>
+    </record>
+    <record id="onlyoffice_doc_server_odoo_url" model="ir.config_parameter">
+        <field name="key">onlyoffice_connector.doc_server_odoo_url</field>
+        <field name="value">http://odoo:8069/</field>
+    </record>
+    <record id="onlyoffice_doc_server_jwt_secret" model="ir.config_parameter">
+        <field name="key">onlyoffice_connector.doc_server_jwt_secret</field>
+        <field name="value">vpk-onlyoffice-local-secret</field>
+    </record>
+    <record id="onlyoffice_doc_server_jwt_header" model="ir.config_parameter">
+        <field name="key">onlyoffice_connector.doc_server_jwt_header</field>
+        <field name="value">AuthorizationJwt</field>
+    </record>
+    <record id="onlyoffice_same_tab" model="ir.config_parameter">
+        <field name="key">onlyoffice_connector.same_tab</field>
+        <field name="value">False</field>
+    </record>
+</odoo>

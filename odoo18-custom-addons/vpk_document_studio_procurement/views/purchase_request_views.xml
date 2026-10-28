@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_request_form_studio_document" model="ir.ui.view">
+        <field name="name">purchase.request.form.studio.document</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="l10n_th_gov_purchase_request.view_purchase_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_studio_documents" type="object"
+                        class="oe_stat_button" icon="fa-file-word-o"
+                        groups="purchase.group_purchase_user">
+                    <field name="studio_document_count" widget="statinfo" string="เอกสาร"/>
+                </button>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button name="action_vpk_test_reset" type="object"
+                        string="Reset (ทดสอบ)" class="btn-secondary"
+                        groups="purchase_request.group_purchase_request_manager,base.group_system"
+                        confirm="รีเซ็ตใบขอซื้อนี้กลับเป็นฉบับร่าง และลบเอกสารที่เกี่ยวข้อง (เอกสาร Studio, ใบสั่งซื้อ, ใบตรวจรับ) เพื่อเริ่มต้นใหม่?"/>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <field name="vpk_studio_signed_complete" invisible="1"/>
+                <div class="alert alert-success mb-0" role="alert"
+                     invisible="not vpk_studio_signed_complete">
+                    <i class="fa fa-check-circle me-1"/>
+                    <strong>ลงนามครบแล้ว</strong>
+                </div>
+            </xpath>
+            <xpath expr="//page[@name='committee']" position="after">
+                <page string="เอกสารที่เกี่ยวข้อง" name="related_studio_documents">
+                    <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+                        <button name="action_open_add_studio_document_wizard" type="object"
+                                string="เพิ่มเอกสาร" class="btn-primary"
+                                groups="purchase_request.group_purchase_request_user"
+                                invisible="state in ('rejected', 'done')"/>
+                        <span class="text-muted">
+                            สร้างจากแบบฟอร์ม Document Studio หรือแนบไฟล์ต้นทางเมื่อหน่วยงานจัดทำเอกสารมาเอง
+                        </span>
+                    </div>
+                    <field name="studio_document_ids" readonly="1"
+                           context="{'list_view_ref': 'vpk_document_studio_procurement.view_document_studio_document_list_procurement'}"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

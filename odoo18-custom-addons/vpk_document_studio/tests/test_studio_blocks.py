@@ -13,6 +13,131 @@ class TestStudioBlocks(TransactionCase):
             {"name": "บันทึกข้อความทดสอบ", "code": "memo_blocks_test"}
         )
 
+    def test_number_display_formats(self):
+        template = self._template()
+        field = self.env["vpk.document.studio.field"].create(
+            {"template_id": template.id, "code": "budget", "name": "งบ", "field_type": "float"}
+        )
+        expected = {
+            "plain": "12500",
+            "comma": "12,500.00",
+            "comma_thai": "๑๒,๕๐๐.๐๐",
+            "thai_text": "หนึ่งหมื่นสองพันห้าร้อย",
+            "baht_text": "หนึ่งหมื่นสองพันห้าร้อยบาทถ้วน",
+        }
+        for number_format, text in expected.items():
+            field.number_format = number_format
+            self.assertEqual(field.format_value(12500), text, number_format)
+        field.write({"field_type": "integer", "number_format": "comma"})
+        self.assertEqual(field.format_value("12,500"), "12,500")
+
+    def test_number_field_counts_mapped_lines(self):
+        template = self._template()
+        partner = self.env["res.partner"].create(
+            {"name": "แม่", "child_ids": [(0, 0, {"name": "ลูก 1"}), (0, 0, {"name": "ลูก 2"})]}
+        )
+        field = self.env["vpk.document.studio.field"].create(
+            {
+                "template_id": template.id,
+                "code": "items_count",
+                "name": "จำนวนรายการ",
+                "field_type": "integer",
+                "number_format": "thai_text",
+                "map_model_id": self.env["ir.model"]._get_id("res.partner"),
+                "map_field_id": self.env["ir.model.fields"]._get("res.partner", "child_ids").id,
+            }
+        )
+        value = field.extract_mapped_record_value(partner)
+        self.assertEqual(value, 2)
+        self.assertEqual(field.format_value(value), "สอง")
+
+    def test_table_rows_from_many2one_sub_lines(self):
+        template = self._template()
+        parent = self.env["res.partner"].create(
+            {"name": "แม่", "child_ids": [(0, 0, {"name": "ลูก 1"}), (0, 0, {"name": "ลูก 2"})]}
+        )
+        child = parent.child_ids[:1]
+        fields_model = self.env["ir.model.fields"]
+        field = self.env["vpk.document.studio.field"].create(
+            {
+                "template_id": template.id,
+                "code": "items",
+                "name": "รายการ",
+                "field_type": "many2one",
+                "map_model_id": self.env["ir.model"]._get_id("res.partner"),
+                "map_field_id": fields_model._get("res.partner", "parent_id").id,
+                "map_sub_field_id": fields_model._get("res.partner", "child_ids").id,
+            }
+        )
+        block = self.env["vpk.document.studio.block"].create(
+            {"template_id": template.id, "block_type": "table", "table_repeat_code": "items"}
+        )
+        self.assertEqual(block.line_model, "res.partner")
+        rows = field._relation_rows({"res_id": child.id}, ("name",))
+        self.assertEqual([row["line.name"] for row in rows], ["ลูก 1", "ลูก 2"])
+        self.assertEqual(field.extract_mapped_record_value(child), "1. ลูก 1\n2. ลูก 2")
+
+    def test_table_cell_formula(self):
+        html = expand_repeat_rows_html(
+            '<table><tr data-vpk-repeat="items"><td>={{qty}}*{{unit_price}}</td>'
+            "<td>=({{line.a}}+{{line.missing}})/2</td><td>=__import__('os')</td></tr></table>",
+            {},
+            {"items": [{"no": "1", "qty": "1,000", "unit_price": "699.50", "line.a": "5"}]},
+        )
+        self.assertIn("<td>699,500.00</td>", html)
+        self.assertIn("<td>2.50</td>", html)
+        self.assertIn("<td>=__import__('os')</td>", html)
+
+    def test_custom_layout_survives_block_edits(self):
+        template = self._template()
+        template.action_load_memo_preset()
+        template.write({"layout_custom": True, "layout_html": "<p>แก้เอง {{extra_note}}</p>"})
+        self.assertIn("extra_note", template.field_ids.mapped("code"))
+        template.block_ids[:1].write({"title": "บันทึกข้อความใหม่"})
+        template.write({"layout_margin_top": 3.0})
+        self.assertIn("แก้เอง", template.layout_html)
+        template.action_regenerate_layout()
+        self.assertFalse(template.layout_custom)
+        self.assertNotIn("แก้เอง", template.layout_html)
+
+    def test_import_word_as_editable_layout(self):
+        import base64
+        import io
+
+        import docx
+
+        doc = docx.Document()
+        doc.add_paragraph("บันทึกข้อความ")
+        doc.add_paragraph("เรื่อง {{subject}}")
+        table = doc.add_table(rows=2, cols=2)
+        table.style = "Table Grid"
+        table.cell(0, 0).text = "ลำดับ"
+        table.cell(0, 1).text = "รายการ"
+        buf = io.BytesIO()
+        doc.save(buf)
+        template = self._template()
+        template.write({"datas": base64.b64encode(buf.getvalue()), "filename": "memo.docx"})
+        template.action_import_word_layout()
+        self.assertTrue(template.layout_custom)
+        self.assertIn("บันทึกข้อความ", template.layout_html)
+        self.assertIn("{{subject}}", template.layout_html)
+        self.assertIn("<table", template.layout_html)
+        self.assertIn("รายการ", template.layout_html)
+        self.assertIn("subject", template.field_ids.mapped("code"))
+
+    def test_insert_field_into_heading(self):
+        template = self._template()
+        field = self.env["vpk.document.studio.field"].create(
+            {"template_id": template.id, "code": "subject", "name": "เรื่อง"}
+        )
+        block = self.env["vpk.document.studio.block"].new(
+            {"template_id": template.id, "block_type": "heading", "heading_text": "เรื่อง"}
+        )
+        block.insert_field_id = field
+        block._onchange_insert_field_id()
+        self.assertEqual(block.heading_text, "เรื่อง {{subject}}")
+        self.assertFalse(block.insert_field_id)
+
     def test_memo_preset_builds_layout_and_fields(self):
         template = self._template()
         template.action_load_memo_preset()
@@ -21,14 +146,15 @@ class TestStudioBlocks(TransactionCase):
             ["memo_header", "paragraph", "table", "paragraph", "signature"],
         )
         html = template.layout_html or ""
-        for code in ("agency", "memo_number", "memo_date", "subject", "recipient"):
+        number_code = template.block_ids[:1].code_number
+        for code in ("agency", number_code, "memo_date", "subject", "recipient"):
             self.assertIn("{{%s}}" % code, html)
         self.assertIn("บันทึกข้อความ", html)
         self.assertIn("o_vpk_we_fill_line", html)
         self.assertNotIn("position: absolute", html)
         codes = set(template.field_ids.mapped("code"))
         self.assertTrue(
-            {"agency", "memo_number", "memo_date", "subject", "items"} <= codes
+            {"agency", number_code, "memo_date", "subject", "items"} <= codes
         )
         self.assertNotIn("items_count_th", codes)
         self.assertIn("{{items_count_th}}", html)

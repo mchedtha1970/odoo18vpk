@@ -237,20 +237,16 @@ class DocumentStudioBlock(models.Model):
     # spacer
     lines = fields.Integer(string="จำนวนบรรทัด", default=1)
 
-    @api.depends("table_repeat_code", "template_id.field_ids.map_field_id")
+    @api.depends(
+        "table_repeat_code",
+        "template_id.field_ids.map_field_id",
+        "template_id.field_ids.map_sub_field_id",
+    )
     def _compute_line_model(self):
         for rec in self:
             code = (rec.table_repeat_code or "").strip()
             field = rec.template_id.field_ids.filtered(lambda f: f.code == code)[:1]
-            model = ""
-            if field and field.map_field_id and field.map_field_id.ttype in (
-                "one2many",
-                "many2many",
-            ):
-                model = field.map_field_id.relation or ""
-            elif field and (field.map_model_id.model == "purchase.request" or not field.map_model_id):
-                model = "purchase.request.line"
-            rec.line_model = model
+            rec.line_model = field._row_line_path()[1] if field else ""
 
     @api.depends(
         "block_type", "title", "heading_text", "content", "sig_role", "lines", "column_ids"
@@ -308,6 +304,10 @@ class DocumentStudioBlock(models.Model):
             if not code:
                 continue
             token = "{{%s}}" % code
+            if rec.block_type == "heading":
+                rec.heading_text = ("%s %s" % (rec.heading_text or "", token)).strip()
+                rec.insert_field_id = False
+                continue
             content = (rec.content or "").strip()
             end = content.rfind("</p>")
             if end >= 0:
@@ -518,7 +518,7 @@ class DocumentStudioBlock(models.Model):
         templates = self.mapped("template_id")
         result = super().unlink()
         if not self.env.context.get("skip_layout_regen"):
-            templates._regenerate_layout_from_blocks()
+            templates.filtered(lambda t: not t.layout_custom)._regenerate_layout_from_blocks()
         return result
 
 
@@ -550,7 +550,9 @@ class DocumentStudioBlockColumn(models.Model):
         string="ข้อความในช่อง",
         help=(
             "ใส่ {{รหัสฟิลด์}} ได้ ในตารางแตกแถวใช้ {{no}} {{no_th}} {{name}} {{qty}} "
-            "{{uom}} {{amount}} หรือ {{line.ชื่อฟิลด์}} ของรายการย่อย"
+            "{{uom}} {{amount}} หรือ {{line.ชื่อฟิลด์}} ของรายการย่อย "
+            "ขึ้นต้นด้วย = เพื่อคำนวณ เช่น ={{qty}}*{{unit_price}} "
+            "(ใช้ได้ + - * / และวงเล็บ ผลลัพธ์แสดงทศนิยม 2 ตำแหน่ง)"
         ),
     )
     line_model = fields.Char(related="block_id.line_model")

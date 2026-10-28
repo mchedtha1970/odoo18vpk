@@ -1,0 +1,50 @@
+.o_dialog .modal-content.o_vpk_sign_pdf_dialog {
+    height: 92vh;
+    max-height: 1080px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.o_dialog .modal-content.o_vpk_sign_pdf_dialog .modal-body.o_vpk_sign_pdf_body {
+    flex: 1 1 auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 0 !important;
+}
+
+.o_dialog .modal-dialog.modal-fs .modal-content.o_vpk_sign_pdf_dialog {
+    width: 96vw;
+    max-width: 1280px;
+}
+
+.o_vpk_sign_pdf_container {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    background: #323639;
+}
+
+.o_vpk_sign_pdf_iframe {
+    width: 100%;
+    height: 100%;
+    min-height: 68vh;
+    border: 0;
+    background: #323639;
+}
+
+.o_vpk_sign_pdf_loading {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.o_vpk_sign_pdf_footer .btn-success {
+    min-width: 7.5rem;
+}

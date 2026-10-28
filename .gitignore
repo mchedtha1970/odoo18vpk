@@ -44,6 +44,7 @@ odoo18-custom-addons/reporting-engine-18.0/
 odoo18-custom-addons/server-tools-18.0/
 odoo18-custom-addons/server-ux-18.0/
 odoo18-custom-addons/stock-logistics-workflow-18.0/
+odoo18-custom-addons/onlyoffice-odoo-18.0/
 
 # Nested git metadata if any remain
 odoo18-custom-addons/*/.git/

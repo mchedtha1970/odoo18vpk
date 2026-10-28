@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_document_studio_document_form_procurement" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.form.procurement</field>
+        <field name="model">vpk.document.studio.document</field>
+        <field name="inherit_id" ref="vpk_document_studio_sign.view_document_studio_document_form_sign"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/field[@name='state']" position="before">
+                <button name="action_reload_values_from_source" type="object"
+                        string="ดึงข้อมูลจากต้นทาง" icon="fa-refresh"
+                        invisible="source_mode == 'uploaded' or state not in ('draft', 'generated') or not source_ref"/>
+                <button name="action_reset_default_approvers" type="object"
+                        string="ผู้ลงนามเริ่มต้น" icon="fa-users"
+                        invisible="not vpk_signing_enabled or state not in ('draft', 'generated')"/>
+            </xpath>
+            <xpath expr="//field[@name='source_ref']" position="after">
+                <field name="document_type_code" invisible="1"/>
+                <field name="request_id" invisible="not request_id" readonly="1"/>
+                <field name="wa_id" invisible="not wa_id" readonly="1"/>
+                <field name="purchase_id" invisible="not purchase_id" readonly="1"/>
+                <field name="requisition_id" invisible="not requisition_id" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_document_studio_document_list_procurement" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.list.procurement</field>
+        <field name="model">vpk.document.studio.document</field>
+        <field name="priority">30</field>
+        <field name="arch" type="xml">
+            <list create="false" delete="false" edit="false">
+                <field name="document_type_id" string="ประเภท"/>
+                <field name="name" string="เลขที่เอกสาร"/>
+                <field name="date"/>
+                <field name="source_mode" string="ที่มา"/>
+                <field name="pdf_filename" widget="vpk_pdf_icon" string="ไฟล์"/>
+                <field name="vpk_signing_enabled" column_invisible="1"/>
+                <field name="signature_state" widget="badge"
+                       decoration-muted="signature_state == 'not_sent'"
+                       decoration-warning="signature_state == 'waiting'"
+                       decoration-success="signature_state == 'signed'"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state in ('generated', 'approved')"
+                       decoration-warning="state == 'to_approve'"
+                       decoration-muted="state == 'cancelled'"/>
+                <button name="action_send_for_signature" type="object"
+                        string="ส่งลงนาม" icon="fa-paper-plane"
+                        title="ส่งลงนาม"
+                        invisible="not vpk_signing_enabled or signature_state != 'not_sent' or state == 'cancelled'"/>
+                <button name="action_open_form" type="object" string="เปิด" icon="fa-external-link"/>
+                <button name="action_delete_from_source" type="object" string="ลบ"
+                        icon="fa-trash-o" class="text-danger"
+                        confirm="ต้องการลบเอกสารนี้หรือไม่?"
+                        invisible="state in ('to_approve', 'approved', 'cancelled')"/>
+            </list>
+        </field>
+    </record>
+</odoo>

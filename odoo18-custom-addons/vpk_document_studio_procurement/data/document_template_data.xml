@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <function model="vpk.document.studio.template" name="_vpk_install_procurement_templates"/>
+</odoo>

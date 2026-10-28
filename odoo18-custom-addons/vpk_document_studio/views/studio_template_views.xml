@@ -7,6 +7,7 @@
             <list>
                 <field name="name"/>
                 <field name="code"/>
+                <field name="document_type_id" optional="show"/>
                 <field name="field_count"/>
                 <field name="filename"/>
                 <field name="active"/>
@@ -28,15 +29,8 @@
                     <button name="action_sync_fields_from_word" type="object"
                             string="ดึงฟิลด์จาก Word"
                             class="btn-secondary"
-                            icon="fa-magic"/>
-                    <button name="action_check_placeholders" type="object"
-                            string="ตรวจ placeholder"
-                            class="btn-secondary"
-                            icon="fa-search"/>
-                    <button name="action_download_placeholder_docx" type="object"
-                            string="ดาวน์โหลด Word ตัวอย่าง"
-                            class="btn-secondary"
-                            icon="fa-download"/>
+                            icon="fa-magic"
+                            invisible="not datas"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
@@ -46,6 +40,9 @@
                     <group>
                         <group>
                             <field name="code" placeholder="leave_request"/>
+                            <field name="document_type_id"
+                                   options="{'no_quick_create': True}"
+                                   placeholder="เลือกประเภทเอกสาร (master)"/>
                             <field name="source_model_id"
                                    context="{'vpk_show_model_name': True}"
                                    options="{'no_create': True, 'no_open': True}"
@@ -78,6 +75,8 @@
                                             <field name="name"/>
                                             <field name="code"/>
                                             <field name="field_type"/>
+                                            <field name="number_format"
+                                                   invisible="field_type not in ('integer', 'float')"/>
                                             <field name="required"/>
                                         </group>
                                         <group string="ผูกข้อมูลจากโมเดล (Model / Field Mapping)">
@@ -92,7 +91,7 @@
                                             <field name="map_relation_model" invisible="1"/>
                                             <field name="map_sub_field_id"
                                                    options="{'no_create': True, 'no_open': True}"
-                                                   invisible="not map_relation_model"/>
+                                                   invisible="not map_relation_model or field_type in ('integer', 'float')"/>
                                             <field name="relation_source"
                                                    invisible="field_type != 'many2one'"/>
                                         </group>
@@ -124,23 +123,16 @@
                                 </form>
                             </field>
                         </page>
-                        <page string="Layout" name="word_layout">
+                        <page string="บล็อก" name="word_layout" invisible="datas">
                             <div class="d-flex flex-wrap gap-2 mb-2">
                                 <button name="action_load_memo_preset" type="object"
                                         string="ใช้ชุดบันทึกข้อความมาตรฐาน"
                                         class="btn-secondary"
                                         icon="fa-magic"
                                         confirm="แทนที่บล็อกทั้งหมดด้วยชุดบันทึกข้อความมาตรฐาน?"/>
-                                <button name="action_regenerate_layout" type="object"
-                                        string="อัปเดตตัวอย่าง"
-                                        class="btn-secondary"
-                                        icon="fa-refresh"
-                                        invisible="not block_ids"/>
                             </div>
                             <div class="text-muted small mb-2">
-                                ประกอบเอกสารจากบล็อก หัวบันทึกข้อความ หัวข้อความทั่วไป ย่อหน้า ตาราง และลงชื่อ
-                                ใส่ <code>{{รหัสฟิลด์}}</code> ในย่อหน้าตรงจุดที่ต้องการให้ระบบแทนค่า
-                                ระบบสร้างฟิลด์ให้อัตโนมัติ และ PDF จะตรงกับตัวอย่างด้านล่างเสมอ
+                                ประกอบเอกสารจากบล็อกเมื่อยังไม่มีไฟล์ Word ใส่ <code>{{รหัสฟิลด์}}</code> ในย่อหน้า
                             </div>
                             <field name="block_ids" nolabel="1">
                                 <list>
@@ -182,6 +174,11 @@
                                             <field name="heading_underline"/>
                                             <field name="heading_size"/>
                                         </group>
+                                    </group>
+                                    <group invisible="block_type != 'heading'">
+                                        <field name="insert_field_id"
+                                               options="{'no_create': True, 'no_open': True}"
+                                               placeholder="เลือกฟิลด์เพื่อต่อท้ายหัวข้อ หรือพิมพ์ {{รหัส}} เอง"/>
                                     </group>
                                     <group invisible="block_type != 'paragraph'">
                                         <group>
@@ -264,12 +261,9 @@
                                     </div>
                                 </group>
                             </group>
+                            <field name="layout_html" invisible="1"/>
+                            <field name="layout_custom" invisible="1"/>
                             <field name="layout_placeholder_hint" invisible="1"/>
-                            <div class="fw-bold small mb-1">
-                                ตัวอย่างเอกสาร (อ่านอย่างเดียว บันทึกแล้วจึงอัปเดต)
-                            </div>
-                            <field name="layout_html" nolabel="1" widget="vpk_word_editor"
-                                   readonly="1"/>
                         </page>
                         <page string="คำอธิบาย" name="note">
                             <field name="note" placeholder="วิธีใช้แบบฟอร์มนี้"/>
@@ -287,7 +281,11 @@
             <search>
                 <field name="name"/>
                 <field name="code"/>
+                <field name="document_type_id"/>
                 <filter string="ปิดใช้งาน" name="inactive" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="ประเภทเอกสาร" name="group_document_type" context="{'group_by': 'document_type_id'}"/>
+                </group>
             </search>
         </field>
     </record>
