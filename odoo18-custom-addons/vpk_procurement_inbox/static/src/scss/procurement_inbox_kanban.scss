@@ -1,3 +1,11 @@
+.o_vpk_procurement_inbox_dashboard_view .o_kanban_renderer.o_kanban_grouped {
+    .o_kanban_group {
+        min-width: 280px;
+        background: #f8fafc;
+        border-radius: 12px;
+    }
+}
+
 .o_vpk_procurement_inbox_kanban {
     .o_vpk_inbox_card {
         min-height: 170px;

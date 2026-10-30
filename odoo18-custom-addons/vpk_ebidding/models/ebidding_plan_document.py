@@ -4,7 +4,7 @@ import mimetypes
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
-from odoo.addons.vpk_official_document.models.pdf_stamp import (
+from odoo.addons.vpk_document_studio_sign.models.pdf_stamp import (
     SignatureStampError,
     stamp_text_on_pdf,
 )
@@ -72,18 +72,19 @@ class EbiddingPlanDocumentSigner(models.Model):
 
     def _is_director_secretary(self, user):
         secretary = self.env.ref(
-            "vpk_official_document.user_director_secretary",
+            "vpk_tier_validation.user_director_secretary",
             raise_if_not_found=False,
         )
         return bool(secretary and user == secretary)
+
+    def _position_for(self, user):
+        return self.env["vpk.procurement.document.values"].person_from_user(user)[1]
 
     @api.onchange("user_id")
     def _onchange_user_id(self):
         if not self.user_id:
             return
-        _name, position = self.env["vpk.official.document"]._person_from_user(
-            self.user_id
-        )
+        position = self._position_for(self.user_id)
         if position:
             self.position = position
         if self._is_director_secretary(self.user_id):
@@ -104,11 +105,10 @@ class EbiddingPlanDocumentSigner(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        Document = self.env["vpk.official.document"]
         for vals in vals_list:
             if vals.get("user_id") and not vals.get("position"):
                 user = self.env["res.users"].browse(vals["user_id"])
-                _name, position = Document._person_from_user(user)
+                position = self._position_for(user)
                 if position:
                     vals["position"] = position
             if vals.get("is_check") and vals.get("is_sign"):
@@ -127,10 +127,7 @@ class EbiddingPlanDocumentSigner(models.Model):
 
     def write(self, vals):
         if vals.get("user_id") and "position" not in vals:
-            user = self.env["res.users"].browse(vals["user_id"])
-            _name, position = self.env["vpk.official.document"]._person_from_user(
-                user
-            )
+            position = self._position_for(self.env["res.users"].browse(vals["user_id"]))
             if position:
                 vals = dict(vals, position=position)
         return super().write(vals)
@@ -188,15 +185,15 @@ class EbiddingPlanDocument(models.Model):
         readonly=True,
         copy=False,
     )
-    official_document_id = fields.Many2one(
-        comodel_name="vpk.official.document",
-        string="หนังสือลงนาม",
+    studio_document_id = fields.Many2one(
+        comodel_name="vpk.document.studio.document",
+        string="เอกสารลงนาม",
         copy=False,
         ondelete="set null",
         index=True,
     )
     signature_state = fields.Selection(
-        related="official_document_id.signature_state",
+        related="studio_document_id.signature_state",
         string="สถานะการลงนาม",
         store=True,
     )
@@ -224,6 +221,13 @@ class EbiddingPlanDocument(models.Model):
             rec.signer_summary = (
                 " → ".join(lines.mapped("user_id.name")) if lines else False
             )
+
+    def unlink(self):
+        studio_documents = self.mapped("studio_document_id")
+        res = super().unlink()
+        still_used = self.search([("studio_document_id", "in", studio_documents.ids)])
+        (studio_documents - still_used.mapped("studio_document_id")).sudo().unlink()
+        return res
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -365,14 +369,9 @@ class EbiddingPlanDocument(models.Model):
             }
         )
         self._sync_attachment()
-        official = self.official_document_id
-        if official and official.signature_state not in ("waiting", "signed"):
-            official.with_context(skip_validation_check=True)._store_generated_file(
-                pdf_bytes,
-                filename,
-                "application/pdf",
-                "pdf",
-            )
+        document = self.studio_document_id
+        if document and document.signature_state == "not_sent":
+            document.attach_uploaded_file(base64.b64encode(pdf_bytes), filename)
 
     def _rebuild_stamped_pdf(self):
         self.ensure_one()
@@ -540,17 +539,11 @@ class EbiddingPlanDocument(models.Model):
         if self.signer_line_ids:
             return
         company = self.company_id or self.env.company
-        Official = self.env["vpk.official.document"]
-        officer = Official._person_user_from_company(
-            company, "official_doc_officer_id", "official_doc_officer_name"
-        )
-        head = Official._person_user_from_company(
-            company, "official_doc_head_officer_id", "official_doc_head_officer_name"
-        )
-        secretary = Official._vpk_director_secretary_user()
-        director = Official._person_user_from_company(
-            company, "official_doc_signer_id", "official_doc_signer_name"
-        )
+        Values = self.env["vpk.procurement.document.values"]
+        officer = Values.company_person(company, "officer")[0]
+        head = Values.company_person(company, "head_officer")[0]
+        secretary = Values.director_secretary()
+        director = Values.company_person(company, "signer")[0]
         candidates = [
             (officer, "เจ้าหน้าที่", False),
             (head, "หัวหน้าเจ้าหน้าที่", False),
@@ -565,7 +558,7 @@ class EbiddingPlanDocument(models.Model):
             if not user or user.id in seen:
                 continue
             seen.add(user.id)
-            _name, pos = Official._person_from_user(user)
+            pos = Values.person_from_user(user)[1]
             rows.append(
                 {
                     "document_id": self.id,
@@ -582,11 +575,8 @@ class EbiddingPlanDocument(models.Model):
 
     def action_save_approvers_only(self):
         self.ensure_one()
-        if self.official_document_id and self.signature_state not in (
-            "waiting",
-            "signed",
-        ):
-            self._push_signers_to_official_document(self.official_document_id)
+        if self.studio_document_id and self.signature_state == "not_sent":
+            self._push_signers_to_studio_document(self.studio_document_id)
         return {"type": "ir.actions.act_window_close"}
 
     def action_save_and_send_to_approver_inbox(self):
@@ -597,82 +587,69 @@ class EbiddingPlanDocument(models.Model):
             raise UserError(_("กรุณาเพิ่มผู้อนุมัติอย่างน้อย 1 คนก่อนส่งอนุมัติ"))
         return self.action_send_for_signature_inbox()
 
-    def _map_official_document_type_code(self):
+    def _studio_document_type(self):
         self.ensure_one()
-        valid_codes = {
-            key
-            for key, _label in self.env["vpk.official.document"]._selection_document_type()
-        }
-        if "egp_plan_approval" in valid_codes:
-            return "egp_plan_approval"
-        return "specific_method_approval"
-
-    def _ensure_official_document(self):
-        self.ensure_one()
-        Official = self.env["vpk.official.document"]
-        plan = self.plan_id
-        line = self.plan_line_id
-        subject = "%s (%s)" % (
-            self.document_type_id.name or _("เอกสาร e-GP"),
-            line.plan_code
-            or self.egp_reference
-            or plan.name
-            or "",
+        company = self.company_id or self.env.company
+        return self.env["vpk.document.studio.document.type"].search(
+            [("code", "=", "egp_plan_approval"), ("company_id", "in", [False, company.id])],
+            limit=1,
         )
-        vals = {
-            "document_type": self._map_official_document_type_code(),
-            "subject": subject.strip(),
-            "date": self.document_date or fields.Date.context_today(self),
-            "company_id": plan.company_id.id,
-        }
-        document = self.official_document_id
-        if document and document.signature_state in ("waiting", "signed"):
+
+    def _ensure_studio_document(self):
+        self.ensure_one()
+        document = self.studio_document_id
+        if document and document.signature_state != "not_sent":
             return document
-        if document:
-            document.with_context(skip_validation_check=True).write(vals)
-        else:
-            document = Official.with_context(skip_validation_check=True).create(vals)
-            self.official_document_id = document.id
-        self._push_signers_to_official_document(document)
+        plan = self.plan_id
+        if not document:
+            document_type = self._studio_document_type()
+            if not document_type:
+                raise UserError(_("ยังไม่ได้ตั้งค่าประเภทเอกสาร egp_plan_approval ใน Document Studio"))
+            document = self.env["vpk.document.studio.document"].create(
+                {
+                    "source_mode": "uploaded",
+                    "document_type_id": document_type.id,
+                    "source_ref": "%s,%d" % (self._name, self.id),
+                    "date": self.document_date or fields.Date.context_today(self),
+                    "company_id": plan.company_id.id,
+                }
+            )
+            self.studio_document_id = document.id
         if self.document_file:
             basename = "%s-%s" % (
                 self.document_type_id.name or "eGP",
                 self.egp_reference or plan.code or self.id,
             )
-            filename = self.document_filename or ("%s.pdf" % basename)
-            document.with_context(skip_validation_check=True)._store_generated_file(
-                base64.b64decode(self.document_file),
-                filename,
-                "application/pdf",
-                "pdf",
+            document.attach_uploaded_file(
+                self.document_file, self.document_filename or ("%s.pdf" % basename)
             )
+        self._push_signers_to_studio_document(document)
         return document
 
-    def _push_signers_to_official_document(self, document):
+    def _push_signers_to_studio_document(self, document):
         self.ensure_one()
-        if not document or document.signature_state in ("waiting", "signed"):
+        if not document or document.signature_state != "not_sent":
             return document
         lines = self.signer_line_ids.filtered("user_id").sorted(
             key=lambda line: (line.sequence, line.id)
         )
         if not lines:
             return document
-        Signer = self.env["vpk.official.document.signer"]
-        document.signer_line_ids.with_context(vpk_skip_signer_sync=True).unlink()
-        Signer.with_context(vpk_skip_signer_sync=True).create(
+        document.vpk_approver_line_ids.sudo().unlink()
+        self.env["vpk.approval.line"].sudo().create(
             [
                 {
-                    "document_id": document.id,
-                    "sequence": line.sequence,
+                    "res_model": document._name,
+                    "res_id": document.id,
+                    "sequence": index,
                     "user_id": line.user_id.id,
-                    "position": line.position,
+                    "position": line.position or "",
                     "is_check": line.is_check,
                     "is_sign": line.is_sign,
                 }
-                for line in lines
+                for index, line in enumerate(lines, start=1)
             ]
         )
-        document._sync_signers_from_lines()
         return document
 
     def action_send_for_signature_inbox(self):
@@ -681,17 +658,13 @@ class EbiddingPlanDocument(models.Model):
             raise UserError(_("เอกสารนี้ลงนามแล้ว"))
         if self.signature_state == "waiting":
             raise UserError(_("เอกสารถูกส่งลงนามแล้ว กำลังรอลงนาม"))
-        if self.signer_line_ids.filtered("user_id"):
-            if not self.document_file and (
-                not self.official_document_id
-                or not self.official_document_id.pdf_file
-            ):
-                raise UserError(_("กรุณาแนบไฟล์ PDF ก่อนส่งเข้ากล่องผู้อนุมัติ"))
-            official = self._ensure_official_document()
-        else:
+        if not self.signer_line_ids.filtered("user_id"):
             if not self.document_file:
                 raise UserError(
                     _("กรุณาแนบไฟล์ PDF และกดปุ่ม 'เพิ่มผู้อนุมัติ' ก่อนส่งเพื่อลงนาม")
                 )
             return self.action_open_approver_modal()
-        return official.action_open_send_wizard()
+        if not self.document_file and not self.studio_document_id.pdf_file:
+            raise UserError(_("กรุณาแนบไฟล์ PDF ก่อนส่งเข้ากล่องผู้อนุมัติ"))
+        self._ensure_studio_document().action_send_for_signature()
+        return {"type": "ir.actions.act_window_close"}

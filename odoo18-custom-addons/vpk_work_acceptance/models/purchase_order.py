@@ -21,58 +21,11 @@ class PurchaseOrder(models.Model):
     def _wa_role(self, role):
         return _WA_ROLE.get(role, "member")
 
-    def _appointed_committee_lines(self):
-        """รายชื่อในคำสั่งแต่งตั้งคณะกรรมการตรวจรับของใบสั่งซื้อนี้.
-
-        ใช้สิทธิ์ระบบอ่านคำสั่งและใบขอซื้อที่ผูกกับใบสั่งซื้อนี้เท่านั้น
-        เพราะผู้ตรวจรับเปิดใบตรวจรับได้ แต่กฎสิทธิ์ไม่ให้เปิดใบขอซื้อ
-        """
-        self.ensure_one()
-        if "vpk.official.document" not in self.env:
-            return []
-        order = self.sudo()
-        Document = self.env["vpk.official.document"].sudo()
-        requests = order.order_line.mapped("purchase_request_lines.request_id")
-        domain = [
-            ("document_type", "=", "wa_committee_order"),
-            ("state", "!=", "cancelled"),
-        ]
-        docs = Document.browse()
-        if "purchase_id" in Document._fields:
-            docs = Document.search(
-                domain + [("purchase_id", "=", self.id)], order="id desc"
-            )
-        if requests:
-            docs |= Document.search(
-                domain + [("request_id", "in", requests.ids)], order="id desc"
-            )
-        approved = docs.filtered(lambda document: document.state == "approved")
-        chosen = (approved or docs)[:1]
-        return chosen.line_ids.sorted(lambda line: (line.sequence, line.id))
-
     def _get_wa_committee_from_pr(self):
-        """ดึงชื่อกรรมการที่แต่งตั้งไว้ ถ้ายังไม่มีคำสั่งใช้รายชื่อบนใบขอซื้อ."""
+        """ดึงรายชื่อคณะกรรมการตรวจรับจากใบขอซื้อ."""
         self.ensure_one()
         committee_vals = []
         seen = set()
-        for member in self._appointed_committee_lines():
-            key = member.user_id.id or member.name
-            if not key or key in seen:
-                continue
-            seen.add(key)
-            committee_vals.append(
-                Command.create(
-                    {
-                        "name": member.name,
-                        "position": member.position or "",
-                        "role": self._wa_role(member.role),
-                        "employee_id": member.user_id.id or False,
-                        "note": member.note or "",
-                    }
-                )
-            )
-        if committee_vals:
-            return committee_vals
         requests = self.sudo().order_line.mapped("purchase_request_lines.request_id")
         for request in requests:
             if "work_acceptance_committee_ids" not in request._fields:

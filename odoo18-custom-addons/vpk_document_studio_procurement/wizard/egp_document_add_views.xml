@@ -25,6 +25,22 @@
                     <field name="document_date"/>
                     <field name="notes"/>
                 </group>
+                <group string="ลำดับผู้อนุมัติ" invisible="add_mode != 'studio'">
+                    <div class="text-muted" colspan="2">
+                        ดึงจากแบบฟอร์มได้ และปรับลำดับก่อนเพิ่มเอกสาร
+                    </div>
+                    <field name="approver_ids" nolabel="1" colspan="2">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="user_id" string="ผู้อนุมัติ"
+                                   widget="many2one_avatar_user"
+                                   options="{'no_create': True}"/>
+                            <field name="position" string="ตำแหน่ง"/>
+                            <field name="is_check" string="ตรวจสอบ"/>
+                            <field name="is_sign" string="ลงนาม"/>
+                        </list>
+                    </field>
+                </group>
                 <p class="text-muted">
                     เลือก <b>ดึงจาก Document Studio</b> เพื่อสร้างหนังสือจากแบบฟอร์มที่ตั้งไว้ (ดึงข้อมูลจากใบขอซื้อ/กระบวนการ e-GP ให้อัตโนมัติ)
                     หรือ <b>แนบไฟล์ต้นทาง</b> เมื่อมีไฟล์ PDF จากระบบ e-GP อยู่แล้ว

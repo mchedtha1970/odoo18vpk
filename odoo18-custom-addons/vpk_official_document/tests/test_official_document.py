@@ -236,7 +236,7 @@ class TestOfficialDocument(TransactionCase):
 
     def _add_signer_rows(self, document, users):
         """Fill the approver table; sending needs at least one row."""
-        secretary = self.env.ref("vpk_official_document.user_director_secretary")
+        secretary = self.env.ref("vpk_tier_validation.user_director_secretary")
         self.env["vpk.official.document.signer"].with_context(
             vpk_skip_signer_sync=True
         ).create(
@@ -350,7 +350,7 @@ class TestOfficialDocument(TransactionCase):
             }
         )
         document._vpk_create_sequential_sign_reviews()
-        secretary = self.env.ref("vpk_official_document.user_director_secretary")
+        secretary = self.env.ref("vpk_tier_validation.user_director_secretary")
         reviews = document.review_ids.sorted("sequence")
         self.assertEqual(len(reviews), 4)
         self.assertEqual(reviews[0].status, "pending")
@@ -410,7 +410,7 @@ class TestOfficialDocument(TransactionCase):
                 "groups_id": [Command.set([group_user])],
             }
         )
-        secretary = self.env.ref("vpk_official_document.user_director_secretary")
+        secretary = self.env.ref("vpk_tier_validation.user_director_secretary")
         document = self.env["vpk.official.document"].create(
             {
                 "document_type": "specific_method_approval",
@@ -632,7 +632,7 @@ class TestOfficialDocument(TransactionCase):
         )
         self._add_signer_rows(
             document,
-            officer | head | self.env.ref("vpk_official_document.user_director_secretary") | director,
+            officer | head | self.env.ref("vpk_tier_validation.user_director_secretary") | director,
         )
         document.with_user(procurement).action_send_for_signature()
         self.assertEqual(document.state, "to_approve")
@@ -640,7 +640,7 @@ class TestOfficialDocument(TransactionCase):
         reviews = document.review_ids.sorted("sequence")
         self.assertEqual(len(reviews), 4)
         self.assertIn(officer, reviews[0].reviewer_ids)
-        secretary = self.env.ref("vpk_official_document.user_director_secretary")
+        secretary = self.env.ref("vpk_tier_validation.user_director_secretary")
         self.assertIn(secretary, reviews[2].reviewer_ids)
         self.assertIn(director, reviews[3].reviewer_ids)
 
@@ -729,7 +729,7 @@ class TestOfficialDocument(TransactionCase):
         )
         with self.assertRaises(UserError):
             document.action_send_for_signature()
-        self._add_signer_rows(official, self.env.ref("vpk_official_document.user_director_secretary") | director)
+        self._add_signer_rows(official, self.env.ref("vpk_tier_validation.user_director_secretary") | director)
         document.action_send_for_signature()
         self.assertEqual(official.state, "to_approve")
         self.assertEqual(document.signature_state, "waiting")
@@ -739,7 +739,7 @@ class TestOfficialDocument(TransactionCase):
             "vpk_official_document.tier_definition_winner_announcement_generator"
         )
         self.assertFalse(generator_def.active)
-        secretary = self.env.ref("vpk_official_document.user_director_secretary")
+        secretary = self.env.ref("vpk_tier_validation.user_director_secretary")
         reviews = official.review_ids.sorted("sequence")
         self.assertEqual(len(reviews), 2)
         self.assertEqual(reviews[0].status, "pending")

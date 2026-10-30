@@ -95,6 +95,34 @@ class ProcurementDocumentValues(models.AbstractModel):
         return self.env["res.users"]
 
     @api.model
+    def people_from_approver_lines(self, lines):
+        """Map sequential template/document approvers to Word people placeholders."""
+        lines = lines.filtered("user_id").sorted(key=lambda line: (line.sequence, line.id))
+        if not lines:
+            return {}
+        values = {}
+        non_check = lines.filtered(lambda line: not line.is_check)
+        if non_check[:1]:
+            name, position = self.person_from_user(non_check[0].user_id)
+            values["officer_name"] = name
+            values["officer_position"] = (
+                non_check[0].position or position or "เจ้าหน้าที่"
+            )
+        if len(non_check) >= 2:
+            name, position = self.person_from_user(non_check[1].user_id)
+            values["head_officer_name"] = name
+            values["head_officer_position"] = (
+                non_check[1].position or position or "หัวหน้าเจ้าหน้าที่"
+            )
+        signers = lines.filtered("is_sign")
+        if signers:
+            last = signers[-1]
+            name, position = self.person_from_user(last.user_id)
+            values["signer_name"] = name
+            values["signer_position"] = last.position or position or ""
+        return values
+
+    @api.model
     def company_person(self, company, role):
         """Return (user, name, position) for officer / head_officer / signer."""
         user_field = "official_doc_%s_id" % role

@@ -139,10 +139,25 @@ class EbiddingPlanLine(models.Model):
         string="กระบวนการ E-GP",
         copy=False,
     )
+    egp_internal_ref = fields.Char(
+        string="เลขที่อ้างอิง e-GP ภายใน",
+        compute="_compute_egp_internal_ref",
+        help="เลขที่เอกสารกระบวนการ e-GP ในระบบ ERP ที่เชื่อมกับแผนนี้",
+    )
     egp_requisition_count = fields.Integer(
         string="จำนวนกระบวนการ E-GP",
         compute="_compute_egp_requisition_count",
     )
+
+    @api.depends("egp_requisition_ids", "egp_requisition_ids.name")
+    @api.depends_context("ebidding_link_requisition_id")
+    def _compute_egp_internal_ref(self):
+        pending = self.env["purchase.requisition"].browse(
+            self.env.context.get("ebidding_link_requisition_id") or []
+        ).exists()
+        for line in self:
+            requisitions = line.egp_requisition_ids or pending
+            line.egp_internal_ref = ", ".join(requisitions.mapped("name")) or False
 
     def _compute_egp_requisition_count(self):
         for line in self:
@@ -234,7 +249,16 @@ class EbiddingPlanLine(models.Model):
                 vals["expected_announce_month"] = self._normalize_announce_date(
                     vals["expected_announce_month"]
                 )
-        return super().create(vals_list)
+        lines = super().create(vals_list)
+        requisition_id = self.env.context.get("ebidding_link_requisition_id")
+        if requisition_id and len(lines) == 1:
+            requisition = self.env["purchase.requisition"].browse(requisition_id).exists()
+            if requisition and not requisition.ebidding_plan_line_id:
+                requisition.ebidding_plan_line_id = lines
+                requisition.message_post(
+                    body=_("สร้างและเชื่อมเอกสารแผน %s แล้ว") % lines.display_name
+                )
+        return lines
 
     def write(self, vals):
         if "plan_code" in vals:

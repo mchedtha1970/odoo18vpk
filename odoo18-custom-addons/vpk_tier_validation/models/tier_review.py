@@ -60,14 +60,12 @@ class TierReview(models.Model):
             number = ""
             department = ""
             document = rec._vpk_card_document()
-            if document and rec.model == "vpk.official.document":
-                subject = (document.subject or "").strip()
+            info = rec._vpk_document_card_info(document)
+            if info:
+                subject = (info.get("subject") or "").strip()
                 title = ("%s %s" % (prefix, subject)).strip() if subject else prefix
-                if document.name and document.name != "New":
-                    number = document.name
-                department = document.department_name or (
-                    document.department_id.name if document.department_id else ""
-                )
+                number = info.get("number") or ""
+                department = info.get("department") or ""
             elif document:
                 title = document.display_name or ""
                 number = document.name if "name" in document._fields else ""
@@ -84,53 +82,39 @@ class TierReview(models.Model):
             return self.env["tier.review"]
         return self.env[self.model].sudo().browse(self.res_id).exists()
 
+    @api.model
+    def _vpk_document_card_info(self, document):
+        """Card texts from documents implementing ``_vpk_review_card_info``."""
+        if document and hasattr(document, "_vpk_review_card_info"):
+            return document._vpk_review_card_info()
+        return {}
+
     @api.depends("model", "res_id")
     def _compute_res_display_name(self):
         for rec in self:
             name = ""
-            if rec.model and rec.res_id and rec.model in self.env:
-                try:
-                    doc = self.env[rec.model].sudo().browse(rec.res_id)
-                    if doc.exists():
-                        if rec.model == "vpk.official.document":
-                            type_labels = dict(
-                                doc._fields["document_type"]._description_selection(
-                                    doc.env
-                                )
-                            )
-                            name = type_labels.get(
-                                doc.document_type, doc.display_name
-                            )
-                            if doc.request_id:
-                                name = "{} · {}".format(
-                                    doc.request_id.display_name, name
-                                )
-                            elif doc.requisition_id:
-                                name = "{} · {}".format(
-                                    doc.requisition_id.display_name, name
-                                )
-                        else:
-                            name = doc.display_name
-                except Exception:
-                    name = ""
+            try:
+                document = rec._vpk_card_document()
+                info = rec._vpk_document_card_info(document)
+                if info:
+                    name = info.get("type_label") or document.display_name
+                    if info.get("context"):
+                        name = "{} · {}".format(info["context"], name)
+                elif document:
+                    name = document.display_name
+            except Exception:
+                name = ""
             rec.res_display_name = name
 
     @api.depends("model", "res_id")
     def _compute_model_display_name(self):
         for rec in self:
             label = ""
-            if rec.model == "vpk.official.document" and rec.res_id:
-                try:
-                    doc = self.env[rec.model].sudo().browse(rec.res_id)
-                    if doc.exists():
-                        type_labels = dict(
-                            doc._fields["document_type"]._description_selection(
-                                doc.env
-                            )
-                        )
-                        label = type_labels.get(doc.document_type, doc._description)
-                except Exception:
-                    label = ""
+            try:
+                info = rec._vpk_document_card_info(rec._vpk_card_document())
+                label = info.get("type_label") or ""
+            except Exception:
+                label = ""
             if not label and rec.model and rec.model in self.env:
                 try:
                     label = self.env[rec.model]._description
@@ -143,7 +127,8 @@ class TierReview(models.Model):
     def action_open_resource(self):
         self.ensure_one()
         context = {}
-        if self.model == "vpk.official.document":
+        document = self._vpk_card_document()
+        if document and hasattr(document, "_sign_viewer_action"):
             context["vpk_auto_open_sign_viewer"] = True
         return {
             "type": "ir.actions.act_window",
@@ -156,39 +141,9 @@ class TierReview(models.Model):
         }
 
     def action_open_pdf_viewer(self):
-        """Open the official-document PDF in the sign viewer without the form."""
+        """Overridden by modules whose documents are signed in the PDF viewer."""
         self.ensure_one()
-        if self.model != "vpk.official.document" or not self.res_id:
-            return self.action_open_resource()
-        if "vpk.official.document" not in self.env:
-            return self.action_open_resource()
-        document = self.env["vpk.official.document"].sudo().browse(self.res_id).exists()
-        if not document:
-            return self.action_open_resource()
-        attachment = False
-        if hasattr(document, "_get_pdf_attachment"):
-            attachment = document.sudo()._get_pdf_attachment()
-        if not attachment:
-            raise UserError(_("ยังไม่มีไฟล์ PDF กรุณากดพิมพ์ PDF ก่อน"))
-        title = self.res_display_name or document.display_name
-        is_pending = self.status == "pending"
-        user_doc = self.env["vpk.official.document"].browse(self.res_id)
-        secretary_screen = bool(
-            is_pending and getattr(user_doc, "vpk_secretary_can_screen", False)
-        )
-        return {
-            "type": "ir.actions.client",
-            "tag": "vpk_official_document_sign_pdf_viewer",
-            "name": title,
-            "params": {
-                "attachment_id": attachment.id,
-                "res_model": document._name,
-                "res_id": document.id,
-                "title": title,
-                "can_sign": bool(is_pending and self.can_review) and not secretary_screen,
-                "secretary_screen": secretary_screen,
-            },
-        }
+        return self.action_open_resource()
 
     vpk_inbox_visible = fields.Boolean(
         string="Show in My Approvals",
@@ -203,63 +158,8 @@ class TierReview(models.Model):
 
     @api.model
     def _vpk_hidden_pr_inbox_review_ids(self):
-        """Hide PR inbox rows while committee/approval packet documents are pending."""
+        """Reviews hidden from the inbox; extended by document modules."""
         hidden_ids = []
-        if "vpk.official.document" in self.env:
-            Document = self.env["vpk.official.document"].sudo()
-            if "document_type" in Document._fields:
-                pending_docs = Document.search(
-                    [
-                        (
-                            "document_type",
-                            "in",
-                            ("wa_committee_order", "specific_method_approval"),
-                        ),
-                        ("state", "=", "to_approve"),
-                        ("request_id", "!=", False),
-                    ]
-                )
-                pr_ids = pending_docs.mapped("request_id").ids
-                if pr_ids:
-                    hidden_ids += (
-                        self.sudo()
-                        .search(
-                            [
-                                ("model", "=", "purchase.request"),
-                                ("res_id", "in", pr_ids),
-                                ("status", "in", ("pending", "waiting")),
-                            ]
-                        )
-                        .ids
-                    )
-                leftover_docs = Document.search(
-                    [("state", "in", ("approved", "cancelled"))]
-                )
-                if leftover_docs:
-                    hidden_ids += (
-                        self.sudo()
-                        .search(
-                            [
-                                ("model", "=", "vpk.official.document"),
-                                ("res_id", "in", leftover_docs.ids),
-                                ("status", "in", ("pending", "waiting")),
-                            ]
-                        )
-                        .ids
-                    )
-                cancelled_docs = Document.search([("state", "=", "cancelled")])
-                if cancelled_docs:
-                    hidden_ids += (
-                        self.sudo()
-                        .search(
-                            [
-                                ("model", "=", "vpk.official.document"),
-                                ("res_id", "in", cancelled_docs.ids),
-                                ("status", "=", "approved"),
-                            ]
-                        )
-                        .ids
-                    )
         # Deduplicate approved reviews per (model, res_id, actor_user) so each
         # approver sees one card per approved document.
         approved_reviews = self.sudo().search(
@@ -461,29 +361,13 @@ class TierReview(models.Model):
             return False
         if not document:
             return False
-        if model == "vpk.official.document" and document.state not in (
-            "to_approve",
-            "approved",
-        ):
+        info = self._vpk_document_card_info(document)
+        if info.get("hide_on_board"):
             return False
-        type_label = document._description or model
-        type_key = model
-        subtitle_parts = []
-        if model == "vpk.official.document" and "document_type" in document._fields:
-            labels = dict(
-                document._fields["document_type"]._description_selection(document.env)
-            )
-            type_key = "%s:%s" % (model, document.document_type or "")
-            type_label = labels.get(document.document_type) or type_label
-            if document.request_id:
-                subtitle_parts.append(document.request_id.display_name)
-            elif document.requisition_id:
-                subtitle_parts.append(document.requisition_id.display_name)
-            if document.subject:
-                subtitle_parts.append(document.subject)
-        signer_id = False
-        if model == "vpk.official.document" and document.signer_id:
-            signer_id = document.signer_id.id
+        type_label = info.get("type_label") or document._description or model
+        type_key = info.get("type_key") or model
+        subtitle_parts = [info.get("context"), info.get("subject")] if info else []
+        signer_id = info.get("signer_id") or False
         return {
             "type_key": type_key,
             "type_label": type_label,
@@ -491,13 +375,14 @@ class TierReview(models.Model):
             "subtitle": " · ".join(part for part in subtitle_parts if part),
             "model": model,
             "signer_id": signer_id,
+            "signed_document": bool(info),
             "secretary_id": self._approval_board_secretary_id(),
         }
 
     @api.model
     def _approval_board_secretary_id(self):
         secretary = self.env.ref(
-            "vpk_official_document.user_director_secretary",
+            "vpk_tier_validation.user_director_secretary",
             raise_if_not_found=False,
         )
         return secretary.id if secretary else False
@@ -526,7 +411,7 @@ class TierReview(models.Model):
     def _approval_board_status_label(self, review, document, status):
         if status == "approved" and getattr(review, "vpk_approval_role", False) == "check":
             return "ตรวจสอบแล้ว"
-        if status == "approved" and document.get("model") == "vpk.official.document":
+        if status == "approved" and document.get("signed_document"):
             user_ids = set()
             signer_user = getattr(review, "vpk_signer_user_id", False)
             if signer_user:

@@ -113,10 +113,10 @@ class OfficialDocumentType(models.Model):
                 raise UserError(_("ไม่สามารถเปลี่ยนรหัสประเภทเอกสารของระบบ"))
         return super().write(vals)
 
-    def unlink(self):
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_system(self):
         if any(self.mapped("is_system")):
             raise UserError(_("ไม่สามารถลบประเภทเอกสารของระบบ ปิดการใช้งานแทนได้"))
-        return super().unlink()
 
     def _dashboard_icon(self):
         self.ensure_one()

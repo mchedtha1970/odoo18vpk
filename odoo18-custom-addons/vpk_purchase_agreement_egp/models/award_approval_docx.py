@@ -135,12 +135,9 @@ def _fill_items(document, items):
 
 
 def template_path():
-    """Filesystem copy owned by vpk_official_document. Installed prints use the template record."""
     return os.path.normpath(
         os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "..",
-            "vpk_official_document",
             "static",
             "src",
             "templates",

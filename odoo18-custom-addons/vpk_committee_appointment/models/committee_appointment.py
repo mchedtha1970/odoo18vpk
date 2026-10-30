@@ -1,6 +1,8 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+from .procurement_committee import html_notify_body
+
 
 COMMITTEE_TYPE_SELECTION = [
     ("price_mid", "คณะกรรมการกำหนดคุณลักษณะและราคากลาง"),
@@ -256,21 +258,22 @@ class CommitteeAppointment(models.Model):
                 )
                 continue
             rec.message_subscribe(partner_ids=partners.ids)
-            body = _(
-                "<p><b>อนุมัติแต่งตั้งคณะกรรมการซื้อจ้างแล้ว</b></p>"
-                "<ul>"
-                "<li>เลขที่เอกสาร: %(name)s</li>"
-                "<li>เรื่อง: %(subject)s</li>"
-                "<li>ใบขอซื้ออ้างอิง: %(pr)s</li>"
-                "<li>วันที่อนุมัติ: %(date)s</li>"
-                "</ul>"
-                "<p>กรุณาตรวจสอบรายละเอียดและปฏิบัติหน้าที่ตามที่ได้รับแต่งตั้ง</p>"
-            ) % {
-                "name": rec.name,
-                "subject": rec.subject or "-",
-                "pr": rec.request_id.display_name if rec.request_id else "-",
-                "date": rec.approved_date or "-",
-            }
+            body = html_notify_body(
+                _(
+                    "<p><b>อนุมัติแต่งตั้งคณะกรรมการซื้อจ้างแล้ว</b></p>"
+                    "<ul>"
+                    "<li>เลขที่เอกสาร: %(name)s</li>"
+                    "<li>เรื่อง: %(subject)s</li>"
+                    "<li>ใบขอซื้ออ้างอิง: %(pr)s</li>"
+                    "<li>วันที่อนุมัติ: %(date)s</li>"
+                    "</ul>"
+                    "<p>กรุณาตรวจสอบรายละเอียดและปฏิบัติหน้าที่ตามที่ได้รับแต่งตั้ง</p>"
+                ),
+                name=rec.name,
+                subject=rec.subject or "-",
+                pr=rec.request_id.display_name if rec.request_id else "-",
+                date=rec.approved_date or "-",
+            )
             subject = _("แจ้งแต่งตั้งคณะกรรมการ — %s") % rec.name
             rec.message_notify(
                 partner_ids=partners.ids,

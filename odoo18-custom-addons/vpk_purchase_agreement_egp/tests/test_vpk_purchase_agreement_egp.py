@@ -355,15 +355,6 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
             }
         )
 
-    def _vpk_mark_document_approved(self, document):
-        document.review_ids.unlink()
-        self.env.cr.execute(
-            "UPDATE vpk_official_document SET state = 'approved' WHERE id = %s",
-            [document.id],
-        )
-        document.invalidate_recordset()
-        return document
-
     def test_send_to_egp_button_requires_related_documents(self):
         request = self._vpk_make_egp_purchase_request()
         request.write({"state": "sent_to_procurement"})
@@ -507,23 +498,13 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
                 "document_filename": filename,
             }
         )
-        Official = self.env["vpk.official.document"]
-        official_type = (
-            "winner_announcement" if code == "winner_announcement" else "award_approval"
-        )
-        official = Official.create(
-            {
-                "document_type": official_type,
-                "subject": name,
-            }
-        )
-        official.with_context(skip_validation_check=True).write({"state": "approved"})
-        document.official_document_id = official
+        signing = document._ensure_attached_egp_studio_document()
+        signing.with_context(skip_validation_check=True).write({"state": "approved"})
         return document
 
     def test_create_po_ready_when_consideration_and_winner_signed(self):
-        if "vpk.official.document" not in self.env:
-            self.skipTest("vpk_official_document is required for signed e-GP documents")
+        if "studio_document_id" not in self.env["purchase.requisition.egp.document"]._fields:
+            self.skipTest("vpk_document_studio_procurement is required for signed e-GP documents")
         self.requisition.action_confirm()
         self.env["purchase.requisition.egp.bid"].create(
             {
@@ -561,3 +542,271 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
         po_action = wizard.action_create_rfq()
         purchase_order = self.env["purchase.order"].browse(po_action["res_id"])
         self.assertEqual(purchase_order.partner_id, self.partner)
+
+    def test_egp_committee_shows_pr_confirm_state(self):
+        employee = self.env["hr.employee"].create({"name": "กรรมการ e-GP ยินยอม"})
+        request = self._vpk_make_egp_purchase_request()
+        member = self.env["procurement.committee"].create(
+            {
+                "request_id": request.id,
+                "employee_id": employee.id,
+                "name": employee.name,
+                "committee_type": "work_acceptance",
+                "approve_role": "chairman",
+                "confirm_state": "accepted",
+                "confirm_note": False,
+            }
+        )
+        self.requisition.write({"purchase_request_id": request.id})
+        self.requisition._copy_committees_from_purchase_request()
+        egp_member = self.requisition.work_acceptance_committee_ids.filtered(
+            lambda line: line.employee_id == employee
+        )
+        self.assertTrue(egp_member)
+        self.assertEqual(egp_member.source_confirm_state, "accepted")
+        member.write({"confirm_state": "declined", "confirm_note": "ติดราชการ"})
+        egp_member.invalidate_recordset(
+            ["source_confirm_state", "source_confirm_note", "confirm_state"]
+        )
+        self.assertEqual(egp_member.source_confirm_state, "declined")
+        self.assertEqual(egp_member.source_confirm_note, "ติดราชการ")
+
+    @tagged("post_install", "-at_install", "egp_bid_line_entry")
+    def test_line_consideration_adds_vendor_product(self):
+        self.requisition.egp_consideration_type = "line"
+        empty_bid = self.env["purchase.requisition.egp.bid"].create(
+            {
+                "requisition_id": self.requisition.id,
+                "partner_id": self.partner.id,
+            }
+        )
+        self.assertFalse(empty_bid.line_ids)
+        BidLine = self.env["purchase.requisition.egp.bid.line"].with_context(
+            default_requisition_id=self.requisition.id
+        )
+        line = BidLine.create(
+            {
+                "partner_id": self.partner.id,
+                "product_id": self.product.id,
+                "product_qty": 2.0,
+                "price_unit": 150.0,
+            }
+        )
+        self.assertEqual(line.requisition_id, self.requisition)
+        self.assertEqual(line.bid_id, empty_bid)
+        self.assertEqual(line.bid_id.partner_id, self.partner)
+        self.assertEqual(line.bid_id.amount_total, 300.0)
+        self.assertEqual(self.requisition.egp_bid_ids, line.bid_id)
+        self.assertEqual(self.requisition.egp_bid_line_ids, line)
+
+        product_b = self.env["product.product"].create(
+            {
+                "name": "Second Supply",
+                "purchase_ok": True,
+                "type": "consu",
+            }
+        )
+        line_b = BidLine.create(
+            {
+                "partner_id": self.partner.id,
+                "product_id": product_b.id,
+                "product_qty": 1.0,
+                "price_unit": 50.0,
+            }
+        )
+        self.assertEqual(line_b.bid_id, line.bid_id)
+        self.assertEqual(line.bid_id.amount_total, 350.0)
+
+        line_c = BidLine.create(
+            {
+                "partner_id": self.partner_b.id,
+                "product_id": self.product.id,
+                "product_qty": 2.0,
+                "price_unit": 140.0,
+            }
+        )
+        self.assertEqual(len(self.requisition.egp_bid_ids), 2)
+        self.assertEqual(line_c.bid_id.amount_total, 280.0)
+
+        total_req = self.env["purchase.requisition"].create(
+            {
+                "requisition_type": "egp_procurement",
+                "egp_consideration_type": "total",
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "product_qty": 5.0,
+                        },
+                    )
+                ],
+            }
+        )
+        total_bid = self.env["purchase.requisition.egp.bid"].create(
+            {
+                "requisition_id": total_req.id,
+                "partner_id": self.partner.id,
+                "amount_total": 1000.0,
+            }
+        )
+        self.assertEqual(len(total_bid.line_ids), 1)
+        self.assertEqual(total_bid.amount_total, 1000.0)
+
+        from_total = BidLine.create(
+            {
+                "partner_id": self.partner_b.id,
+                "product_id": product_b.id,
+                "product_qty": 5.0,
+                "price_subtotal": 1000.0,
+            }
+        )
+        self.assertAlmostEqual(from_total.price_unit, 200.0)
+        self.assertAlmostEqual(from_total.price_subtotal, 1000.0)
+        self.assertAlmostEqual(from_total.bid_id.amount_total, 1280.0)
+        from_total.write({"price_subtotal": 250.0})
+        self.assertAlmostEqual(from_total.price_unit, 50.0)
+        self.assertAlmostEqual(from_total.price_subtotal, 250.0)
+
+    @tagged("post_install", "-at_install", "egp_bid_line_entry")
+    def test_bid_line_pulls_budget_from_purchase_request(self):
+        request = self._vpk_make_egp_purchase_request()
+        request.line_ids.write({"estimated_cost": 1000.0, "product_qty": 5.0})
+        if "budget_unit_price" in request.line_ids._fields:
+            request.line_ids.write({"budget_unit_price": 200.0})
+        self.requisition.write(
+            {
+                "egp_consideration_type": "line",
+                "purchase_request_id": request.id,
+            }
+        )
+        self.requisition.line_ids.write(
+            {
+                "product_qty": 5.0,
+                "purchase_request_lines": [(6, 0, request.line_ids.ids)],
+            }
+        )
+        BidLine = self.env["purchase.requisition.egp.bid.line"].with_context(
+            default_requisition_id=self.requisition.id
+        )
+        line = BidLine.create(
+            {
+                "partner_id": self.partner.id,
+                "product_id": self.product.id,
+            }
+        )
+        self.assertEqual(line.requisition_line_id, self.requisition.line_ids[:1])
+        self.assertAlmostEqual(line.budget_amount, 1000.0)
+        self.assertAlmostEqual(line.budget_unit_price, 200.0)
+        self.assertEqual(line.product_qty, 5.0)
+
+    @tagged("post_install", "-at_install", "egp_bid_line_entry")
+    def test_summarize_offered_totals_from_product_lines(self):
+        self.requisition.egp_consideration_type = "line"
+        BidLine = self.env["purchase.requisition.egp.bid.line"].with_context(
+            default_requisition_id=self.requisition.id
+        )
+        line_a = BidLine.create(
+            {
+                "partner_id": self.partner.id,
+                "product_id": self.product.id,
+                "product_qty": 2.0,
+                "price_unit": 150.0,
+            }
+        )
+        product_b = self.env["product.product"].create(
+            {
+                "name": "Budget Item B",
+                "purchase_ok": True,
+                "type": "consu",
+            }
+        )
+        BidLine.create(
+            {
+                "partner_id": self.partner.id,
+                "product_id": product_b.id,
+                "product_qty": 1.0,
+                "price_unit": 50.0,
+            }
+        )
+        BidLine.create(
+            {
+                "partner_id": self.partner_b.id,
+                "product_id": self.product.id,
+                "product_qty": 2.0,
+                "price_unit": 140.0,
+            }
+        )
+        line_a.bid_id.amount_total = 9999.0
+        action = self.requisition.action_summarize_offered_totals()
+        self.assertEqual(action["tag"], "display_notification")
+        self.assertAlmostEqual(line_a.bid_id.amount_total, 350.0)
+        other_bid = self.requisition.egp_bid_ids.filtered(
+            lambda bid: bid.partner_id == self.partner_b
+        )
+        self.assertAlmostEqual(other_bid.amount_total, 280.0)
+
+    @tagged("post_install", "-at_install", "egp_bid_line_entry")
+    def test_line_winner_is_exclusive_per_product(self):
+        self.requisition.egp_consideration_type = "line"
+        BidLine = self.env["purchase.requisition.egp.bid.line"].with_context(
+            default_requisition_id=self.requisition.id
+        )
+        line_a = BidLine.create(
+            {
+                "partner_id": self.partner.id,
+                "product_id": self.product.id,
+                "product_qty": 2.0,
+                "price_unit": 150.0,
+            }
+        )
+        line_b = BidLine.create(
+            {
+                "partner_id": self.partner_b.id,
+                "product_id": self.product.id,
+                "product_qty": 2.0,
+                "price_unit": 140.0,
+            }
+        )
+        line_a.write({"is_winner": True})
+        self.assertTrue(line_a.is_winner)
+        self.assertFalse(line_b.is_winner)
+        line_b.write({"is_winner": True})
+        self.assertTrue(line_b.is_winner)
+        self.assertFalse(line_a.is_winner)
+        self.assertAlmostEqual(line_a.bid_id.budget_amount_total, line_a.budget_amount)
+
+    @tagged("post_install", "-at_install", "egp_bid_line_entry")
+    def test_contract_essence_values_from_line_winners(self):
+        self.requisition.write(
+            {
+                "egp_consideration_type": "line",
+                "egp_reference": "68124983449",
+                "egp_project_name": "ประกวดราคาซื้อยา",
+            }
+        )
+        BidLine = self.env["purchase.requisition.egp.bid.line"].with_context(
+            default_requisition_id=self.requisition.id
+        )
+        BidLine.create(
+            {
+                "partner_id": self.partner.id,
+                "product_id": self.product.id,
+                "name": "Medical Supply",
+                "product_qty": 2.0,
+                "price_unit": 150.0,
+                "is_winner": True,
+            }
+        )
+        values = self.requisition._get_contract_essence_values()
+        self.assertEqual(values["project_no"], "68124983449")
+        self.assertEqual(len(values["offer_rows"]), 1)
+        self.assertEqual(values["offer_rows"][0]["vendor"], "Vendor A")
+        self.assertEqual(values["offer_rows"][0]["amount"], "300.00")
+        self.assertEqual(len(values["winner_rows"]), 1)
+        self.assertEqual(values["winner_rows"][0]["vendor"], "Vendor A")
+        self.assertEqual(values["winner_rows"][0]["egp_control"], "-")
+        action = self.requisition.action_print_contract_essence()
+        self.assertEqual(action["type"], "ir.actions.report")
+        self.assertIn("contract_essence", action["report_name"])

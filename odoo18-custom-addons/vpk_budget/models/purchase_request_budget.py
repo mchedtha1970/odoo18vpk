@@ -13,6 +13,18 @@ class BudgetInsufficientError(ValidationError):
 class PurchaseRequest(models.Model):
     _inherit = "purchase.request"
 
+    budget_plan_request_id = fields.Many2one(
+        comodel_name="departmental.budget.request",
+        string="แผนงบประมาณที่อนุมัติ",
+        tracking=True,
+        copy=False,
+        domain="[('state', '=', 'approved'), ('company_id', '=', company_id)]",
+        help=(
+            "เลือกคำขอตั้งงบประมาณที่ได้รับอนุมัติแล้ว ระบบจะดึงหน่วยงาน แหล่งเงิน "
+            "ประเภทสิ่งที่จะซื้อ กลุ่มงบ และหมวดงบมาใส่ให้ และปุ่มเลือกรายการ "
+            "จะแสดงเฉพาะสินค้าในแผนนี้"
+        ),
+    )
     budget_analytic_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
         string="หน่วยงานที่ขอซื้อ",
@@ -156,6 +168,35 @@ class PurchaseRequest(models.Model):
                 if vals:
                     line.with_context(skip_budget_line_sync=True).write(vals)
 
+    @api.model
+    def _budget_header_vals_from_plan(self, plan):
+        """Header budget values taken from an approved departmental budget request."""
+        vals = {
+            "budget_analytic_account_id": plan.analytic_account_id.id,
+            "budget_fund_source_id": plan.fund_source_id.id,
+        }
+        sections = dict(self._fields["budget_section_key"].selection)
+        section = plan.form_section_key
+        if section in sections:
+            vals["budget_section_key"] = section
+        details = plan.material_detail_ids.filtered(lambda d: d.allocated_amount > 0)
+        lines = plan.line_ids.filtered(lambda line: line.allocated_budget_amount > 0)
+        posts = details.mapped("budget_post_id") | lines.mapped("budget_post_id")
+        groups = details.mapped("budget_group_id") | lines.mapped("budget_group_id")
+        if len(posts) == 1:
+            vals["budget_post_id"] = posts.id
+        if section == "material" and len(groups) == 1:
+            vals["budget_group_id"] = groups.id
+        return vals
+
+    @api.onchange("budget_plan_request_id")
+    def _onchange_budget_plan_request_id(self):
+        plan = self.budget_plan_request_id
+        if not plan:
+            return
+        for name, value in self._budget_header_vals_from_plan(plan).items():
+            self[name] = value
+
     @api.onchange("budget_post_id")
     def _onchange_budget_post_header_sync_lines(self):
         """Set budget_post_id on every active PR line when header budget post changes."""
@@ -190,6 +231,7 @@ class PurchaseRequest(models.Model):
 
     def write(self, vals):
         reset_fields = {
+            "budget_plan_request_id",
             "budget_analytic_account_id",
             "budget_fund_source_id",
             "budget_group_id",
@@ -374,6 +416,23 @@ class PurchaseRequest(models.Model):
         self.ensure_one()
         return self.date_start or fields.Date.context_today(self)
 
+    def _budget_plan_allocation_domain(self):
+        """Approved budget requests that fund this PR: only the chosen plan when set."""
+        self.ensure_one()
+        if self.budget_plan_request_id:
+            return [
+                ("request_id", "=", self.budget_plan_request_id.id),
+                ("request_id.state", "=", "approved"),
+            ]
+        check_date = self._allocation_check_date()
+        return [
+            ("request_id.state", "=", "approved"),
+            ("request_id.analytic_account_id", "=", self.budget_analytic_account_id.id),
+            ("request_id.fund_source_id", "=", self.budget_fund_source_id.id),
+            ("request_id.annual_budget_id.date_from", "<=", check_date),
+            ("request_id.annual_budget_id.date_to", ">=", check_date),
+        ]
+
     def _get_product_allocated_amount(self, product):
         """ยอดที่จัดสรรให้สินค้านี้ในคำของบที่อนุมัติแล้ว ของหน่วยงาน/แหล่งเงิน/ปีเดียวกัน."""
         self.ensure_one()
@@ -383,14 +442,7 @@ class PurchaseRequest(models.Model):
             or not self.budget_fund_source_id
         ):
             return 0.0
-        check_date = self._allocation_check_date()
-        request_domain = [
-            ("request_id.state", "=", "approved"),
-            ("request_id.analytic_account_id", "=", self.budget_analytic_account_id.id),
-            ("request_id.fund_source_id", "=", self.budget_fund_source_id.id),
-            ("request_id.annual_budget_id.date_from", "<=", check_date),
-            ("request_id.annual_budget_id.date_to", ">=", check_date),
-        ]
+        request_domain = self._budget_plan_allocation_domain()
         if self.budget_section_key == "asset":
             lines = self.env["departmental.budget.request.line"].sudo().search(
                 request_domain
@@ -420,6 +472,10 @@ class PurchaseRequest(models.Model):
         ]
         if self._requires_budget_group():
             domain.append(("budget_group_id", "=", self.budget_group_id.id))
+        if self.budget_plan_request_id:
+            domain.append(
+                ("request_id.budget_plan_request_id", "=", self.budget_plan_request_id.id)
+            )
         amount = 0.0
         for line in self.env["purchase.request.line"].sudo().search(domain):
             amount += line._get_budget_effective_reserved_amount_company()
@@ -427,6 +483,12 @@ class PurchaseRequest(models.Model):
 
     def _po_line_matches_request_budget(self, po_line):
         self.ensure_one()
+        plan = self.budget_plan_request_id
+        if plan:
+            return any(
+                prl.request_id.budget_plan_request_id == plan
+                for prl in po_line.purchase_request_lines
+            )
         budget_line = po_line.budget_line_id
         if budget_line:
             return (
@@ -464,6 +526,20 @@ class PurchaseRequest(models.Model):
         self.ensure_one()
         if not product:
             return 0.0
+        plan = self.budget_plan_request_id
+        if plan:
+            if self.budget_section_key != "asset":
+                detail = plan.sudo().material_detail_ids.filtered(
+                    lambda d: d.product_id == product and d.unit_price > 0
+                )[:1]
+                if detail:
+                    return detail.unit_price
+            if self.budget_section_key != "material":
+                asset_line = plan.sudo().line_ids.filtered(
+                    lambda l: l.asset_product_id == product.product_tmpl_id and l.unit_price > 0
+                )[:1]
+                if asset_line:
+                    return asset_line.unit_price
         check_date = self.date_start or fields.Date.context_today(self)
         if self.budget_section_key != "asset":
             domain = [
@@ -1327,6 +1403,38 @@ class PurchaseRequestLine(models.Model):
         copy=True,
         tracking=True,
     )
+    product_purchase_uom_id = fields.Many2one(
+        comodel_name="uom.uom",
+        string="หน่วยซื้อ",
+        related="product_id.uom_po_id",
+    )
+    product_base_uom_id = fields.Many2one(
+        comodel_name="uom.uom",
+        string="หน่วยนับ (เล็กสุด)",
+        related="product_id.uom_id",
+    )
+    base_uom_qty = fields.Float(
+        string="จำนวนหน่วยนับ",
+        digits="Product Unit of Measure",
+        compute="_compute_base_uom_values",
+    )
+    base_uom_unit_price = fields.Monetary(
+        string="ราคาต่อหน่วยนับ",
+        currency_field="currency_id",
+        compute="_compute_base_uom_values",
+    )
+
+    @api.depends("product_qty", "budget_unit_price", "product_uom_id", "product_id.uom_id")
+    def _compute_base_uom_values(self):
+        for line in self:
+            qty = line.product_qty or 0.0
+            price = line.budget_unit_price or 0.0
+            uom, base_uom = line.product_uom_id, line.product_base_uom_id
+            if uom and base_uom and uom != base_uom and uom.category_id == base_uom.category_id:
+                qty = uom._compute_quantity(qty, base_uom, round=False)
+                price = uom._compute_price(price, base_uom)
+            line.base_uom_qty = qty
+            line.base_uom_unit_price = price
     budget_reserved_amount = fields.Monetary(
         string="งบประมาณที่จอง",
         currency_field="currency_id",

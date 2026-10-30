@@ -314,6 +314,12 @@
                                         options="{'no_create': True, 'no_open': True}"
                                         readonly="not parent.can_edit_request_content"
                                     />
+                                    <field
+                                        name="product_purchase_uom_id"
+                                        options="{'no_create': True, 'no_open': True}"
+                                        readonly="1"
+                                        optional="show"
+                                    />
                                     <field name="usage_qty_y3" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
                                     <field name="usage_qty_y2" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
                                     <field name="usage_qty_y1" class="o_vpk_usage_qty_col" readonly="not parent.can_edit_request_content"/>
@@ -551,6 +557,7 @@
                                     <field name="budget_group_id" string="กลุ่มวัสดุ"/>
                                     <field name="quantity" string="จำนวนที่ขอ"/>
                                     <field name="product_uom_id"/>
+                                    <field name="product_purchase_uom_id" optional="show"/>
                                     <field name="usage_qty_y3" string="จำนวน 3 ปีก่อน" sum="รวมจำนวน 3 ปีก่อน"/>
                                     <field name="usage_amount_y3" string="มูลค่า 3 ปีก่อน" sum="รวมมูลค่า 3 ปีก่อน"/>
                                     <field name="usage_qty_y2" string="จำนวน 2 ปีก่อน" sum="รวมจำนวน 2 ปีก่อน"/>

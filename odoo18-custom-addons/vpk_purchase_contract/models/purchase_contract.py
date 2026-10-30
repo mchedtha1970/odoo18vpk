@@ -86,6 +86,18 @@ class PurchaseContract(models.Model):
         store=True,
         readonly=True,
     )
+    egp_contract_control_no = fields.Char(
+        string="เลขคุมสัญญาในระบบ e-GP",
+        tracking=True,
+        copy=False,
+        help="เลขคุมสัญญาที่ออกจากระบบจัดซื้อจัดจ้างภาครัฐ (e-GP)",
+    )
+    contract_po_number = fields.Char(
+        string="เลขที่สัญญา / ใบสั่งซื้อ",
+        tracking=True,
+        copy=False,
+        help="เลขที่สัญญาของโรงพยาบาล หรือเลขที่ใบสั่งซื้อ",
+    )
     state = fields.Selection(
         selection=[
             ("draft", "แบบร่าง"),
@@ -103,6 +115,12 @@ class PurchaseContract(models.Model):
         comodel_name="purchase.contract.installment",
         inverse_name="contract_id",
         string="งวดจ่ายเงิน",
+        copy=True,
+    )
+    line_ids = fields.One2many(
+        comodel_name="purchase.contract.line",
+        inverse_name="contract_id",
+        string="รายการสินค้าที่ชนะ",
         copy=True,
     )
     purchase_request_ids = fields.One2many(
@@ -308,6 +326,8 @@ class PurchaseContract(models.Model):
                 vals["name"] = (
                     self.env["ir.sequence"].next_by_code("purchase.contract") or _("New")
                 )
+            if not vals.get("contract_po_number"):
+                vals["contract_po_number"] = vals.get("name")
         return super().create(vals_list)
 
     @api.constrains("amount_total")
@@ -433,6 +453,61 @@ class PurchaseContract(models.Model):
             "views": [(False, "form")],
             "target": "current",
         }
+
+
+class PurchaseContractLine(models.Model):
+    _name = "purchase.contract.line"
+    _description = "รายการสินค้าที่ชนะในสัญญา"
+    _order = "id"
+
+    contract_id = fields.Many2one(
+        comodel_name="purchase.contract",
+        string="สัญญา",
+        required=True,
+        ondelete="cascade",
+        index=True,
+    )
+    product_id = fields.Many2one(
+        comodel_name="product.product",
+        string="สินค้า",
+        required=True,
+    )
+    name = fields.Text(string="คำอธิบายรายการ")
+    product_qty = fields.Float(
+        string="ปริมาณ",
+        digits="Product Unit of Measure",
+        default=1.0,
+    )
+    product_uom_id = fields.Many2one(
+        comodel_name="uom.uom",
+        string="หน่วยวัด",
+    )
+    currency_id = fields.Many2one(
+        related="contract_id.currency_id",
+        store=True,
+        readonly=True,
+    )
+    price_unit = fields.Monetary(
+        string="ราคาต่อหน่วยที่เสนอ",
+        currency_field="currency_id",
+    )
+    price_subtotal = fields.Monetary(
+        string="ราคารวมที่เสนอ",
+        currency_field="currency_id",
+        compute="_compute_price_subtotal",
+        store=True,
+    )
+    egp_bid_line_id = fields.Many2one(
+        comodel_name="purchase.requisition.egp.bid.line",
+        string="รายการเปรียบเทียบราคา",
+        ondelete="set null",
+        copy=False,
+    )
+
+    @api.depends("product_qty", "price_unit")
+    def _compute_price_subtotal(self):
+        for line in self:
+            line.price_subtotal = (line.product_qty or 0.0) * (line.price_unit or 0.0)
 
 
 class PurchaseContractInstallment(models.Model):

@@ -4,6 +4,9 @@ from datetime import timedelta
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+PROCUREMENT_IN_PROGRESS_STATES = ("to_approve", "approved", "in_progress")
+PROCUREMENT_INBOX_STATES = ("sent_to_procurement",) + PROCUREMENT_IN_PROGRESS_STATES
+
 
 class PurchaseRequest(models.Model):
     _inherit = "purchase.request"
@@ -43,6 +46,18 @@ class PurchaseRequest(models.Model):
         string="คิวรับงาน",
         compute="_compute_procurement_inbox_lane",
         search="_search_procurement_inbox_lane",
+    )
+    procurement_inbox_stage = fields.Selection(
+        [
+            ("waiting", "รอรับงาน"),
+            ("claimed", "รับงานแล้ว"),
+            ("progress", "กำลังดำเนินการ"),
+        ],
+        string="สถานะคิวพัสดุ",
+        compute="_compute_procurement_inbox_stage",
+        store=True,
+        index=True,
+        group_expand=True,
     )
     is_procurement_overdue = fields.Boolean(
         string="ค้างเกิน 3 วัน",
@@ -108,6 +123,18 @@ class PurchaseRequest(models.Model):
                 rec.procurement_inbox_lane = "mine"
             else:
                 rec.procurement_inbox_lane = "others"
+
+    @api.depends("procurement_owner_id", "state")
+    def _compute_procurement_inbox_stage(self):
+        for rec in self:
+            if rec.state in PROCUREMENT_IN_PROGRESS_STATES:
+                rec.procurement_inbox_stage = "progress"
+            elif rec.state == "sent_to_procurement":
+                rec.procurement_inbox_stage = (
+                    "claimed" if rec.procurement_owner_id else "waiting"
+                )
+            else:
+                rec.procurement_inbox_stage = False
 
     @api.depends("procurement_verified")
     def _compute_can_send_to_egp(self):
@@ -352,11 +379,36 @@ class PurchaseRequest(models.Model):
         }
 
     @api.model
+    def _inbox_grouped_rows(self, domain, field_name, empty_label="ไม่ระบุ"):
+        rows = self.read_group(
+            domain, [field_name, "estimated_cost:sum"], [field_name], lazy=False
+        )
+        result = []
+        for row in rows:
+            rec = row.get(field_name)
+            rec_id = rec[0] if rec else False
+            name = rec[1] if rec else empty_label
+            amount = row.get("estimated_cost_sum") or row.get("estimated_cost") or 0.0
+            result.append(
+                {
+                    "id": rec_id,
+                    "name": name,
+                    "count": row.get("__count", 0),
+                    "amount": amount,
+                }
+            )
+        result.sort(key=lambda item: (-item["count"], item["name"] or ""))
+        return result[:8]
+
+    @api.model
     def get_procurement_inbox_stats(self):
-        """KPI สำหรับ dashboard พัสดุ"""
-        base = [("state", "=", "sent_to_procurement")]
+        """KPI และสรุปมุมมองสำหรับ dashboard พัสดุ"""
+        base = [("state", "in", PROCUREMENT_INBOX_STATES)]
         Request = self.env["purchase.request"]
         total = Request.search_count(base)
+        in_progress = Request.search_count(
+            [("state", "in", PROCUREMENT_IN_PROGRESS_STATES)]
+        )
         unassigned = Request.search_count(
             base + [("procurement_owner_id", "=", False)]
         )
@@ -377,22 +429,103 @@ class PurchaseRequest(models.Model):
             )
         elif "is_urgency" in self._fields:
             urgent = Request.search_count(base + [("is_urgency", "=", True)])
+
+        amount_rows = Request.read_group(base, ["estimated_cost:sum"], [])
+        amount_total = 0.0
+        if amount_rows:
+            amount_total = (
+                amount_rows[0].get("estimated_cost_sum")
+                or amount_rows[0].get("estimated_cost")
+                or 0.0
+            )
+
+        by_owner = self._inbox_grouped_rows(
+            base, "procurement_owner_id", empty_label="ยังไม่มีผู้รับ"
+        )
+        aging = []
+        aging_specs = [
+            (
+                "fresh",
+                "ไม่เกิน 2 วัน",
+                base
+                + [
+                    ("state", "=", "sent_to_procurement"),
+                    ("days_waiting_procurement", "<", 3),
+                ],
+            ),
+            (
+                "warn",
+                "ค้าง 3-7 วัน",
+                base
+                + [
+                    ("state", "=", "sent_to_procurement"),
+                    ("days_waiting_procurement", ">=", 3),
+                    ("days_waiting_procurement", "<=", 7),
+                ],
+            ),
+            (
+                "stale",
+                "ค้างเกิน 7 วัน",
+                base
+                + [
+                    ("state", "=", "sent_to_procurement"),
+                    ("days_waiting_procurement", ">", 7),
+                ],
+            ),
+            (
+                "progress",
+                "กำลังดำเนินการ",
+                [("state", "in", PROCUREMENT_IN_PROGRESS_STATES)],
+            ),
+        ]
+        for key, label, aging_domain in aging_specs:
+            aging_rows = Request.read_group(
+                aging_domain, ["estimated_cost:sum"], []
+            )
+            aging_amount = 0.0
+            if aging_rows:
+                aging_amount = (
+                    aging_rows[0].get("estimated_cost_sum")
+                    or aging_rows[0].get("estimated_cost")
+                    or 0.0
+                )
+            aging.append(
+                {
+                    "id": key,
+                    "name": label,
+                    "count": Request.search_count(aging_domain),
+                    "amount": aging_amount,
+                }
+            )
+
         return {
             "total": total,
+            "in_progress": in_progress,
             "unassigned": unassigned,
             "claimed": claimed,
             "mine": mine,
             "overdue": overdue,
             "urgent": urgent,
+            "amount_total": amount_total,
             "has_urgency": bool(
                 "urgency_level" in self._fields or "is_urgency" in self._fields
             ),
+            "by_department": self._inbox_grouped_rows(
+                base, "department_id", empty_label="ไม่ระบุหน่วยงาน"
+            ),
+            "by_method": self._inbox_grouped_rows(
+                base, "procurement_method_id", empty_label="ไม่ระบุวิธี"
+            ),
+            "by_owner": by_owner,
+            "by_aging": aging,
         }
 
     @api.model
-    def get_procurement_inbox_domain(self, filter_name="total"):
-        domain = [("state", "=", "sent_to_procurement")]
-        if filter_name == "unassigned":
+    def get_procurement_inbox_domain(self, filter_name="total", extra=None):
+        domain = [("state", "in", PROCUREMENT_INBOX_STATES)]
+        if filter_name == "in_progress":
+            domain = [("state", "in", PROCUREMENT_IN_PROGRESS_STATES)]
+        elif filter_name == "unassigned":
             domain.append(("procurement_owner_id", "=", False))
         elif filter_name == "claimed":
             domain.append(("procurement_owner_id", "!=", False))
@@ -405,6 +538,35 @@ class PurchaseRequest(models.Model):
                 domain.append(("urgency_level", "in", ("urgent", "emergency")))
             elif "is_urgency" in self._fields:
                 domain.append(("is_urgency", "=", True))
+
+        extra = extra or {}
+        kind = extra.get("kind")
+        value = extra.get("id")
+        if kind == "department":
+            domain.append(("department_id", "=", value or False))
+        elif kind == "method":
+            domain.append(("procurement_method_id", "=", value or False))
+        elif kind == "owner":
+            domain.append(("procurement_owner_id", "=", value or False))
+        elif kind == "aging":
+            if value == "fresh":
+                domain += [
+                    ("state", "=", "sent_to_procurement"),
+                    ("days_waiting_procurement", "<", 3),
+                ]
+            elif value == "warn":
+                domain += [
+                    ("state", "=", "sent_to_procurement"),
+                    ("days_waiting_procurement", ">=", 3),
+                    ("days_waiting_procurement", "<=", 7),
+                ]
+            elif value == "stale":
+                domain += [
+                    ("state", "=", "sent_to_procurement"),
+                    ("days_waiting_procurement", ">", 7),
+                ]
+            elif value == "progress":
+                domain.append(("state", "in", PROCUREMENT_IN_PROGRESS_STATES))
         return domain
 
     @api.model

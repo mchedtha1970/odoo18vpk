@@ -1,6 +1,6 @@
 import base64
 
-from odoo.tests import TransactionCase, tagged
+from odoo.tests import TransactionCase, new_test_user, tagged
 
 from ..models.template_installer import DOCUMENT_TYPES, TEMPLATES
 
@@ -59,7 +59,6 @@ class TestStudioProcurement(TransactionCase):
         values = document.value_json or {}
         self.assertTrue(values.get("committee_lines"))
         self.assertTrue(values.get("subject"))
-        self.assertTrue(document.vpk_approver_line_ids)
 
     def test_custom_type_gets_no_default_wording(self):
         request = self._request_with_committee()
@@ -152,6 +151,101 @@ class TestStudioProcurement(TransactionCase):
         )
         self.assertTrue(egp_document.document_file)
         self.assertEqual(egp_document._studio_document_type(), studio_type)
+
+    def test_template_default_approvers_copy_to_document(self):
+        request = self._request_with_committee()
+        doc_type = self._type("wa_committee_order")
+        template = self.Template.create(
+            {
+                "name": "ทดสอบผู้อนุมัติคำสั่ง",
+                "code": "test_wa_committee_order_approvers",
+                "document_type_id": doc_type.id,
+            }
+        )
+        officer = new_test_user(
+            self.env, login="tmpl_approver_officer", groups="base.group_user"
+        )
+        director = new_test_user(
+            self.env, login="tmpl_approver_director", groups="base.group_user"
+        )
+        self.env["vpk.document.studio.template.approver"].create(
+            [
+                {
+                    "template_id": template.id,
+                    "sequence": 10,
+                    "user_id": officer.id,
+                    "position": "เจ้าหน้าที่",
+                    "is_sign": True,
+                },
+                {
+                    "template_id": template.id,
+                    "sequence": 20,
+                    "user_id": director.id,
+                    "position": "ผู้อำนวยการ",
+                    "is_sign": True,
+                },
+            ]
+        )
+        document = self.Document._vpk_create_for_record(request, doc_type, template=template)
+        self.assertEqual(
+            document.vpk_approver_line_ids.mapped("user_id").ids, [officer.id, director.id]
+        )
+
+    def test_wizard_can_override_template_approvers(self):
+        request = self._request_with_committee()
+        doc_type = self._type("purchase_approval_memo")
+        template = self.Template.create(
+            {
+                "name": "ทดสอบผู้อนุมัติบันทึก",
+                "code": "test_purchase_approval_memo_approvers",
+                "document_type_id": doc_type.id,
+            }
+        )
+        template_user = new_test_user(
+            self.env, login="tmpl_signer_default", groups="base.group_user"
+        )
+        wizard_user = new_test_user(
+            self.env, login="wiz_signer_override", groups="base.group_user"
+        )
+        self.env["vpk.document.studio.template.approver"].create(
+            {
+                "template_id": template.id,
+                "sequence": 10,
+                "user_id": template_user.id,
+                "is_sign": True,
+            }
+        )
+        action = request.action_open_add_studio_document_wizard()
+        wizard = self.env["vpk.studio.document.add.wizard"].browse(action["res_id"])
+        wizard.write(
+            {
+                "document_type_id": doc_type.id,
+                "add_mode": "studio",
+                "studio_template_id": template.id,
+            }
+        )
+        wizard._onchange_document_type_id()
+        self.assertEqual(wizard.approver_ids.user_id, template_user)
+        wizard.write(
+            {
+                "approver_ids": [
+                    (5, 0, 0),
+                    (
+                        0,
+                        0,
+                        {
+                            "sequence": 1,
+                            "user_id": wizard_user.id,
+                            "position": "ผู้อำนวยการ",
+                            "is_sign": True,
+                        },
+                    ),
+                ]
+            }
+        )
+        result = wizard.action_confirm()
+        document = self.Document.browse(result["res_id"])
+        self.assertEqual(document.vpk_approver_line_ids.user_id, wizard_user)
 
     def test_generate_committee_order_pdf(self):
         request = self._request_with_committee()

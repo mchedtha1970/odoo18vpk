@@ -80,6 +80,16 @@
             <page name="egp_rfqs" position="attributes">
                 <attribute name="invisible">requisition_type != 'egp_procurement' or is_contract_procurement</attribute>
             </page>
+            <xpath expr="//div[@name='egp_compare_actions']" position="inside">
+                <button
+                    name="action_create_purchase_contract"
+                    type="object"
+                    string="สร้างสัญญา"
+                    class="btn-primary"
+                    icon="fa-file-text-o"
+                    invisible="requisition_type != 'egp_procurement' or is_contract_procurement"
+                />
+            </xpath>
         </field>
     </record>
 </odoo>

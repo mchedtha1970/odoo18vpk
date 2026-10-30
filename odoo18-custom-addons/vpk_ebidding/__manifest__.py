@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "VPK e-Bidding",
-    "version": "18.0.1.22.5",
+    "version": "18.0.1.24.0",
     "category": "Purchases",
     "summary": "บันทึกแผนจัดซื้อจัดจ้างที่จัดทำและประกาศแล้วในระบบ e-GP",
     "description": """
@@ -21,7 +21,7 @@
         "purchase",
         "mail",
         "vpk_buddhist_date",
-        "vpk_official_document",
+        "vpk_document_studio_procurement",
         "vpk_purchase_agreement_egp",
     ],
     "external_dependencies": {

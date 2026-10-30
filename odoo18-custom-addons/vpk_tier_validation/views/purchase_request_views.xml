@@ -24,6 +24,10 @@
             <field name="assigned_to" position="attributes">
                 <attribute name="column_invisible">1</attribute>
             </field>
+            <field name="procurement_method_id" position="attributes">
+                <attribute name="string">ซื้อด้วยวิธีการ</attribute>
+                <attribute name="optional">show</attribute>
+            </field>
         </field>
     </record>
 

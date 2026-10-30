@@ -8,6 +8,7 @@
             <field name="origin" position="after">
                 <field
                     name="contract_id"
+                    string="เลขที่สัญญาจ้างซื้อ"
                     options="{'no_create': True}"
                     readonly="is_editable == False"
                 />

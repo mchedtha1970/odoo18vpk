@@ -3,7 +3,7 @@
 
 {
     "name": "VPK Document Studio - ลงนามเอกสาร",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.1.0",
     "category": "Productivity",
     "summary": "ส่งเอกสาร Document Studio เข้ากล่องอนุมัติ ลงนามบน PDF และขอเลขสารบรรณ",
     "author": "VPK",
@@ -19,6 +19,7 @@
         "security/ir.model.access.csv",
         "data/tier_definition_data.xml",
         "views/studio_document_views.xml",
+        "views/studio_template_views.xml",
         "views/saraban_document_views.xml",
     ],
     "assets": {

@@ -181,17 +181,11 @@
         <field name="notify_on_pending" eval="True"/>
         <field name="company_id" eval="False"/>
     </record>
-
-    <record id="user_director_secretary" model="res.users">
-        <field name="name">เลขาผู้อำนวยการ</field>
-        <field name="login">uat.secretary</field>
-        <field name="groups_id" eval="[(4, ref('base.group_user'))]"/>
-    </record>
     <record id="tier_definition_specific_method_secretary" model="tier.definition">
         <field name="name">กลั่นกรองก่อนผู้อำนวยการ — เลขาผู้อำนวยการ</field>
         <field name="model_id" ref="model_vpk_official_document"/>
         <field name="review_type">individual</field>
-        <field name="reviewer_id" ref="user_director_secretary"/>
+        <field name="reviewer_id" ref="vpk_tier_validation.user_director_secretary"/>
         <field name="definition_type">domain</field>
         <field name="definition_domain">[('document_type', '=', 'specific_method_approval')]</field>
         <field name="sequence">25</field>
@@ -203,7 +197,7 @@
         <field name="name">กลั่นกรองบันทึกขอซื้อก่อนผู้อำนวยการ — เลขาผู้อำนวยการ</field>
         <field name="model_id" ref="model_vpk_official_document"/>
         <field name="review_type">individual</field>
-        <field name="reviewer_id" ref="user_director_secretary"/>
+        <field name="reviewer_id" ref="vpk_tier_validation.user_director_secretary"/>
         <field name="definition_type">domain</field>
         <field name="definition_domain">[('document_type', '=', 'purchase_approval_memo')]</field>
         <field name="sequence">25</field>
@@ -215,7 +209,7 @@
         <field name="name">กลั่นกรองรายงานผลการพิจารณาก่อนผู้อำนวยการ — เลขาผู้อำนวยการ</field>
         <field name="model_id" ref="model_vpk_official_document"/>
         <field name="review_type">individual</field>
-        <field name="reviewer_id" ref="user_director_secretary"/>
+        <field name="reviewer_id" ref="vpk_tier_validation.user_director_secretary"/>
         <field name="definition_type">domain</field>
         <field name="definition_domain">[('document_type', '=', 'award_approval')]</field>
         <field name="sequence">25</field>
@@ -239,7 +233,7 @@
         <field name="name">กลั่นกรองประกาศผู้ชนะก่อนผู้อำนวยการ — เลขาผู้อำนวยการ</field>
         <field name="model_id" ref="model_vpk_official_document"/>
         <field name="review_type">individual</field>
-        <field name="reviewer_id" ref="user_director_secretary"/>
+        <field name="reviewer_id" ref="vpk_tier_validation.user_director_secretary"/>
         <field name="definition_type">domain</field>
         <field name="definition_domain">[('document_type', '=', 'winner_announcement')]</field>
         <field name="sequence">10</field>

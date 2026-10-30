@@ -3,7 +3,7 @@
 
 {
     "name": "VPK Document Studio - Procurement",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.2.0",
     "category": "Purchases",
     "summary": "เอกสารจัดซื้อจัดจ้าง (คำสั่งแต่งตั้ง, รายงานขออนุมัติ, ใบตรวจรับ) ด้วย Document Studio",
     "author": "VPK",

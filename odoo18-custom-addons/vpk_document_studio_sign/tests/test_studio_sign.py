@@ -81,6 +81,25 @@ class TestStudioSign(TransactionCase):
         with self.assertRaises(UserError):
             document.action_send_for_signature()
 
+    def test_create_copies_template_approvers(self):
+        template = self.env["vpk.document.studio.template"].create(
+            {"name": "แบบทดสอบผู้อนุมัติเริ่มต้น", "code": "test_sign_default_approvers"}
+        )
+        self.env["vpk.document.studio.template.approver"].create(
+            {
+                "template_id": template.id,
+                "sequence": 1,
+                "user_id": self.director.id,
+                "position": "ผู้อำนวยการ",
+                "is_sign": True,
+            }
+        )
+        document = self.env["vpk.document.studio.document"].create(
+            {"template_id": template.id}
+        )
+        self.assertEqual(document.vpk_approver_line_ids.user_id, self.director)
+        self.assertTrue(document.vpk_approver_line_ids.is_sign)
+
     def test_check_then_sign_approves(self):
         document = self._document()
         document.action_send_for_signature()

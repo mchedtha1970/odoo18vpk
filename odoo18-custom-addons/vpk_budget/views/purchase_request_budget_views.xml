@@ -37,6 +37,10 @@
                 <attribute name="invisible">1</attribute>
             </field>
             <field name="department_id" position="after">
+                <field name="budget_plan_request_id" readonly="state != 'draft'"
+                       context="{'vpk_budget_plan_label': True}"
+                       options="{'no_create': True}"
+                       placeholder="เลือกแผนงบประมาณที่อนุมัติแล้ว"/>
                 <field name="budget_section_key" readonly="state != 'draft'"/>
                 <field name="budget_analytic_account_id" readonly="state != 'draft'"/>
                 <field name="budget_group_id" readonly="state != 'draft'"
@@ -73,7 +77,15 @@
                 <attribute name="context">{'default_budget_post_id': budget_post_id}</attribute>
             </field>
             <xpath expr="//field[@name='line_ids']/list/field[@name='estimated_cost']" position="before">
-                <field name="budget_unit_price" widget="monetary"/>
+                <field name="budget_unit_price" string="ราคาต่อหน่วยซื้อ" widget="monetary"/>
+                <field name="base_uom_unit_price" widget="monetary" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='product_uom_id'][not(@column_invisible)]" position="attributes">
+                <attribute name="string">หน่วยซื้อ</attribute>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='product_uom_id'][not(@column_invisible)]" position="after">
+                <field name="base_uom_qty" optional="show"/>
+                <field name="product_base_uom_id" optional="show"/>
             </xpath>
             <xpath expr="//field[@name='line_ids']/list/field[@name='estimated_cost']" position="attributes">
                 <attribute name="string">งบประมาณ</attribute>
@@ -89,6 +101,9 @@
                 <page string="ตรวจสอบงบประมาณ" name="budget_check">
                     <group>
                         <group>
+                            <field name="budget_plan_request_id" readonly="state != 'draft'"
+                                   context="{'vpk_budget_plan_label': True}"
+                                   options="{'no_create': True}"/>
                             <field name="budget_section_key"
                                    readonly="state != 'draft'"/>
                             <field name="budget_analytic_account_id" readonly="state != 'draft'"/>
@@ -136,6 +151,119 @@
         </field>
     </record>
 
+    <record id="view_purchase_request_form_grouped_header" model="ir.ui.view">
+        <field name="name">purchase.request.form.grouped.header</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="view_purchase_request_form_budget_reservation"/>
+        <field name="priority">300</field>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/group[1]" position="attributes">
+                <attribute name="name">vpk_pr_header</attribute>
+            </xpath>
+            <xpath expr="//sheet/group[1]/group[1]" position="attributes">
+                <attribute name="name">vpk_pr_general</attribute>
+                <attribute name="string">ข้อมูลจัดซื้อจัดจ้าง</attribute>
+            </xpath>
+            <xpath expr="//sheet/group[1]/group[2]" position="attributes">
+                <attribute name="name">vpk_pr_reference</attribute>
+                <attribute name="string">เอกสารอ้างอิง</attribute>
+            </xpath>
+            <xpath expr="//sheet/group[1]/group[2]" position="after">
+                <group name="vpk_pr_budget_info" string="ข้อมูลงบประมาณ"/>
+                <group name="vpk_pr_budget_status" string="สถานะงบประมาณ"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_form_grouped_fields" model="ir.ui.view">
+        <field name="name">purchase.request.form.grouped.fields</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="view_purchase_request_form_grouped_header"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='vpk_pr_budget_info']" position="inside">
+                <xpath expr="//group[@name='vpk_pr_general']//field[@name='budget_plan_request_id']" position="move"/>
+                <xpath expr="//group[@name='vpk_pr_general']//field[@name='budget_section_key']" position="move"/>
+                <xpath expr="//group[@name='vpk_pr_general']//field[@name='budget_analytic_account_id']" position="move"/>
+                <xpath expr="//group[@name='vpk_pr_general']//field[@name='budget_group_id']" position="move"/>
+                <xpath expr="//group[@name='vpk_pr_general']//field[@name='budget_fund_source_id']" position="move"/>
+                <xpath expr="//group[@name='vpk_pr_general']//field[@name='budget_post_id']" position="move"/>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_budget_status']" position="inside">
+                <xpath expr="//field[@name='picking_type_id']" position="move"/>
+                <xpath expr="//field[@name='budget_available_amount']" position="move"/>
+                <xpath expr="//group[field[@name='budget_check_date']]/field[@name='budget_check_state']" position="move"/>
+                <xpath expr="//field[@name='budget_check_date']" position="move"/>
+                <xpath expr="//group[field[@name='budget_requested_amount']]/field[@name='budget_reservation_active']" position="move"/>
+                <xpath expr="//field[@name='budget_requested_amount']" position="move"/>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_general']/field[@name='requested_by']" position="attributes">
+                <attribute name="string">ผู้ประสานงานซื้อ</attribute>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_reference']/field[@name='origin']" position="attributes">
+                <attribute name="string">เอกสารต้นทาง</attribute>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_reference']/field[@name='origin']" position="after">
+                <field name="memo_ref" string="เลขหนังสือจัดจ้าง"/>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_budget_info']/field[@name='budget_plan_request_id']" position="attributes">
+                <attribute name="string">แหล่งของบประมาณ</attribute>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_budget_status']/field[@name='budget_available_amount']" position="attributes">
+                <attribute name="invisible">0</attribute>
+                <attribute name="string">งบประมาณคงเหลือ</attribute>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_budget_status']/field[@name='budget_check_state']" position="attributes">
+                <attribute name="string">สถานะเบิกงบ</attribute>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_budget_status']/field[@name='budget_check_date']" position="attributes">
+                <attribute name="string">วันที่เบิกงบล่าสุด</attribute>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_budget_status']/field[@name='budget_requested_amount']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_form_grouped_columns" model="ir.ui.view">
+        <field name="name">purchase.request.form.grouped.columns</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="view_purchase_request_form_grouped_fields"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='vpk_pr_general']" position="before">
+                <group name="vpk_pr_left_col" class="vpk_pr_stack_col" col="2"/>
+                <group name="vpk_pr_right_col" class="vpk_pr_stack_col" col="2"/>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_general']" position="attributes">
+                <attribute name="colspan">2</attribute>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_budget_info']" position="attributes">
+                <attribute name="colspan">2</attribute>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_reference']" position="attributes">
+                <attribute name="colspan">2</attribute>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_budget_status']" position="attributes">
+                <attribute name="colspan">2</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_form_grouped_columns_move" model="ir.ui.view">
+        <field name="name">purchase.request.form.grouped.columns.move</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="view_purchase_request_form_grouped_columns"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='vpk_pr_left_col']" position="inside">
+                <xpath expr="//group[@name='vpk_pr_general']" position="move"/>
+                <xpath expr="//group[@name='vpk_pr_budget_info']" position="move"/>
+            </xpath>
+            <xpath expr="//group[@name='vpk_pr_right_col']" position="inside">
+                <xpath expr="//group[@name='vpk_pr_reference']" position="move"/>
+                <xpath expr="//group[@name='vpk_pr_budget_status']" position="move"/>
+            </xpath>
+        </field>
+    </record>
+
     <record id="view_purchase_request_tree_budget_reservation" model="ir.ui.view">
         <field name="name">purchase.request.list.budget.reservation</field>
         <field name="model">purchase.request</field>
@@ -157,7 +285,7 @@
         <field name="inherit_id" ref="purchase_request.purchase_request_line_form"/>
         <field name="arch" type="xml">
             <field name="estimated_cost" position="before">
-                <field name="budget_unit_price" widget="monetary" readonly="is_editable == False"/>
+                <field name="budget_unit_price" string="ราคาต่อหน่วยซื้อ" widget="monetary" readonly="is_editable == False"/>
             </field>
             <field name="estimated_cost" position="after">
                 <field name="budget_post_id" readonly="is_editable == False"/>
@@ -175,7 +303,13 @@
         <field name="inherit_id" ref="purchase_request.purchase_request_line_tree"/>
         <field name="arch" type="xml">
             <field name="estimated_cost" position="before">
-                <field name="budget_unit_price" optional="show"/>
+                <field name="base_uom_qty" optional="show"/>
+                <field name="product_base_uom_id" optional="show"/>
+                <field name="budget_unit_price" string="ราคาต่อหน่วยซื้อ" optional="show"/>
+                <field name="base_uom_unit_price" optional="show"/>
+            </field>
+            <field name="product_uom_id" position="attributes">
+                <attribute name="string">หน่วยซื้อ</attribute>
             </field>
             <field name="estimated_cost" position="after">
                 <field name="budget_post_id" optional="show"/>

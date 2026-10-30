@@ -10,7 +10,7 @@
                         string="ดึงข้อมูลจากต้นทาง" icon="fa-refresh"
                         invisible="source_mode == 'uploaded' or state not in ('draft', 'generated') or not source_ref"/>
                 <button name="action_reset_default_approvers" type="object"
-                        string="ผู้ลงนามเริ่มต้น" icon="fa-users"
+                        string="ดึงผู้อนุมัติจากแบบฟอร์ม" icon="fa-users"
                         invisible="not vpk_signing_enabled or state not in ('draft', 'generated')"/>
             </xpath>
             <xpath expr="//field[@name='source_ref']" position="after">

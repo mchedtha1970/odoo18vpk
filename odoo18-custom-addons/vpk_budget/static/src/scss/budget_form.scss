@@ -1,3 +1,22 @@
+// Stack PR header groups in two columns so ข้อมูลงบประมาณ sits under ข้อมูลจัดซื้อจัดจ้าง.
+.o_form_view {
+    .o_group.vpk_pr_stack_col,
+    .o_inner_group.vpk_pr_stack_col {
+        align-self: start;
+        row-gap: 0.25rem;
+    }
+    .vpk_pr_stack_col > .o_group,
+    .vpk_pr_stack_col > .o_inner_group {
+        margin-top: 0.25rem;
+        margin-bottom: 0;
+        width: 100%;
+    }
+    .vpk_pr_stack_col > .o_group:first-child,
+    .vpk_pr_stack_col > .o_inner_group:first-child {
+        margin-top: 0;
+    }
+}
+
 // Full-width budget master/settings forms (same visual width as notebook forms).
 html body.o_web_client.o_vpk_sidebar_menu {
     .o_form_view.o_vpk_budget_form {

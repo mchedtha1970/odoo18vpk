@@ -1,6 +1,6 @@
 {
     "name": "VPK Purchase Order Form (ใบสั่งซื้อ/สั่งจ้าง)",
-    "version": "18.0.1.0.6",
+    "version": "18.0.1.1.0",
     "category": "Purchases",
     "summary": "QWeb ใบสั่งซื้อ/สั่งจ้าง ตามแบบใบ_PO_VPK",
     "description": """
@@ -12,7 +12,7 @@
     "depends": [
         "purchase",
         "purchase_request",
-        "vpk_official_document",
+        "vpk_document_studio_procurement",
         "l10n_th_base_utils",
         "l10n_th_amount_to_text",
     ],

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_contract_essence" model="report.paperformat">
+        <field name="name">ข้อมูลสาระสำคัญในสัญญา (A4)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">12</field>
+        <field name="margin_bottom">12</field>
+        <field name="margin_left">12</field>
+        <field name="margin_right">12</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="action_report_contract_essence" model="ir.actions.report">
+        <field name="name">ข้อมูลสาระสำคัญในสัญญา</field>
+        <field name="model">purchase.requisition</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_purchase_agreement_egp.report_contract_essence</field>
+        <field name="report_file">vpk_purchase_agreement_egp.report_contract_essence</field>
+        <field name="print_report_name">'ข้อมูลสาระสำคัญในสัญญา-%s' % (object.egp_reference or object.name)</field>
+        <field name="binding_model_id" ref="purchase_requisition.model_purchase_requisition"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_contract_essence"/>
+    </record>
+
+    <template id="report_contract_essence">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="v" t-value="o._get_contract_essence_values()"/>
+                <div class="article">
+                    <div class="page vpk-contract-essence">
+                        <div class="text-center">
+                            <h3>ข้อมูลสาระสำคัญในสัญญา</h3>
+                        </div>
+                        <table class="essence-meta table table-sm table-borderless">
+                            <tr>
+                                <td class="lbl">1.</td>
+                                <td class="cap">หน่วยงาน</td>
+                                <td t-esc="v.get('agency')"/>
+                            </tr>
+                            <tr>
+                                <td class="lbl">2.</td>
+                                <td class="cap">เลขที่โครงการ</td>
+                                <td t-esc="v.get('project_no')"/>
+                            </tr>
+                            <tr>
+                                <td class="lbl">3.</td>
+                                <td class="cap">ชื่อโครงการ</td>
+                                <td t-esc="v.get('project_name')"/>
+                            </tr>
+                            <tr>
+                                <td class="lbl">4.</td>
+                                <td class="cap">งบประมาณ</td>
+                                <td><t t-esc="v.get('budget')"/> บาท</td>
+                            </tr>
+                            <tr>
+                                <td class="lbl">5.</td>
+                                <td class="cap">ราคากลาง</td>
+                                <td><t t-esc="v.get('median')"/> บาท</td>
+                            </tr>
+                            <tr>
+                                <td class="lbl">6.</td>
+                                <td colspan="2">รายชื่อผู้เสนอราคา มีดังนี้</td>
+                            </tr>
+                        </table>
+
+                        <table class="essence-grid">
+                            <thead>
+                                <tr>
+                                    <th style="width:6%;"/>
+                                    <th>รายการพิจารณา</th>
+                                    <th style="width:18%;">เลขประจำตัวผู้เสียภาษีอากร</th>
+                                    <th style="width:22%;">รายชื่อผู้เสนอราคา</th>
+                                    <th style="width:16%;">ราคาที่เสนอ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="v.get('offer_rows') or []" t-as="row">
+                                    <tr>
+                                        <td class="num" t-esc="row.get('seq')"/>
+                                        <td t-esc="row.get('item')"/>
+                                        <td class="num" t-esc="row.get('vat')"/>
+                                        <td t-esc="row.get('vendor')"/>
+                                        <td class="amt" t-esc="row.get('amount')"/>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <div>7. ผู้ที่ได้รับการคัดเลือก ได้แก่</div>
+                        <table class="essence-grid">
+                            <thead>
+                                <tr>
+                                    <th style="width:5%;">ลำดับ</th>
+                                    <th style="width:12%;">เลขประจำตัวผู้เสียภาษีอากร</th>
+                                    <th>ชื่อผู้ขาย</th>
+                                    <th style="width:12%;">เลขคุมสัญญาในระบบ e-GP</th>
+                                    <th style="width:10%;">เลขที่สัญญา / ใบสั่งซื้อ</th>
+                                    <th style="width:9%;">วันที่ทำสัญญา / ใบสั่งซื้อ</th>
+                                    <th style="width:10%;">จำนวนเงิน</th>
+                                    <th style="width:10%;">สถานะสัญญา</th>
+                                    <th style="width:12%;">เหตุผลที่คัดเลือก</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="v.get('winner_rows') or []" t-as="row">
+                                    <tr>
+                                        <td class="num" t-esc="row.get('seq')"/>
+                                        <td class="num" t-esc="row.get('vat')"/>
+                                        <td t-esc="row.get('vendor')"/>
+                                        <td class="num" t-esc="row.get('egp_control')"/>
+                                        <td class="num" t-esc="row.get('contract_no')"/>
+                                        <td class="num" t-esc="row.get('contract_date')"/>
+                                        <td class="amt" t-esc="row.get('amount')"/>
+                                        <td t-esc="row.get('status')"/>
+                                        <td t-esc="row.get('reason')"/>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

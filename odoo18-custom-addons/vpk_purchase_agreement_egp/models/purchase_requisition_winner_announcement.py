@@ -314,7 +314,7 @@ class PurchaseRequisitionWinnerAnnouncement(models.Model):
         self.ensure_one()
         docx_content = self._render_docx_bytes()
         try:
-            from odoo.addons.vpk_official_document.models.pdf_converter import (
+            from odoo.addons.vpk_document_studio.models.pdf_converter import (
                 PdfConversionError,
                 convert_docx_bytes_to_pdf,
             )

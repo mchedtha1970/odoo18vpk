@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_committee_confirm_wizard_form" model="ir.ui.view">
+        <field name="name">procurement.committee.confirm.wizard.form</field>
+        <field name="model">procurement.committee.confirm.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ยืนยันการเป็นกรรมการ">
+                <sheet>
+                    <field name="request_id" invisible="1"/>
+                    <field name="summary" nolabel="1"/>
+                    <field name="line_ids">
+                        <list create="0" delete="0">
+                            <field name="committee_type"/>
+                            <field name="approve_role"/>
+                            <field name="name"/>
+                            <field name="confirm_state" widget="badge"
+                                   decoration-info="confirm_state == 'pending'"
+                                   decoration-success="confirm_state == 'accepted'"
+                                   decoration-danger="confirm_state == 'declined'"/>
+                        </list>
+                    </field>
+                    <group>
+                        <field name="decline_reason" placeholder="ระบุถ้าไม่สามารถรับเป็นกรรมการได้"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_accept" type="object" string="ยืนยันว่าสามารถเป็นกรรมการได้"
+                            class="btn-primary" data-hotkey="q"/>
+                    <button name="action_decline" type="object" string="ไม่สามารถรับเป็นกรรมการ"
+                            class="btn-secondary" confirm="ยืนยันว่าไม่สามารถรับเป็นกรรมการในใบขอซื้อนี้?"/>
+                    <button string="ปิด" class="btn-secondary" special="cancel" data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_committee_confirm_wizard" model="ir.actions.act_window">
+        <field name="name">ยืนยันการเป็นกรรมการ</field>
+        <field name="res_model">procurement.committee.confirm.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="view_committee_confirm_wizard_form"/>
+    </record>
+</odoo>

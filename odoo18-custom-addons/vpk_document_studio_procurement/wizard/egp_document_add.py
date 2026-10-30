@@ -47,6 +47,11 @@ class VpkEgpDocumentAddWizard(models.TransientModel):
     file = fields.Binary(string="ไฟล์ต้นทาง (PDF)")
     filename = fields.Char(string="ชื่อไฟล์")
     notes = fields.Text(string="หมายเหตุ")
+    approver_ids = fields.One2many(
+        comodel_name="vpk.studio.document.wizard.approver",
+        inverse_name="egp_wizard_id",
+        string="ลำดับผู้อนุมัติ",
+    )
 
     @api.model
     def default_get(self, fields_list):
@@ -56,24 +61,33 @@ class VpkEgpDocumentAddWizard(models.TransientModel):
             values["egp_reference"] = requisition.egp_reference
         return values
 
-    @api.onchange("studio_document_type_id", "add_mode")
+    def _load_approvers_from_template(self):
+        template = self.studio_template_id
+        self.approver_ids = (
+            template._vpk_approver_wizard_commands()
+            if template
+            else [(5, 0, 0)]
+        )
+
+    @api.onchange("studio_document_type_id", "add_mode", "studio_template_id")
     def _onchange_studio_document_type(self):
         if self.add_mode != "studio":
             self.studio_template_id = False
+            self._load_approvers_from_template()
             return
         studio_type = self.studio_document_type_id
         if self.studio_template_id.document_type_id != studio_type:
             self.studio_template_id = False
-        if not studio_type:
-            return
-        company = self.requisition_id.company_id or self.env.company
-        templates = studio_type.template_ids.filtered(
-            lambda tmpl: tmpl.active
-            and tmpl.company_id in (company, self.env["res.company"])
-            and tmpl.source_model_name in SOURCE_MODELS
-        )
-        if len(templates) == 1:
-            self.studio_template_id = templates
+        if studio_type and not self.studio_template_id:
+            company = self.requisition_id.company_id or self.env.company
+            templates = studio_type.template_ids.filtered(
+                lambda tmpl: tmpl.active
+                and tmpl.company_id in (company, self.env["res.company"])
+                and tmpl.source_model_name in SOURCE_MODELS
+            )
+            if len(templates) == 1:
+                self.studio_template_id = templates
+        self._load_approvers_from_template()
 
     @api.onchange("add_mode")
     def _onchange_add_mode(self):
@@ -141,6 +155,26 @@ class VpkEgpDocumentAddWizard(models.TransientModel):
                 "company_id": requisition.company_id.id,
                 "note": self.notes,
             },
+            approver_rows=self.approver_ids._vpk_seed_rows() or None,
         )
         egp_document.studio_document_id = studio.id
+        Signer = self.env["purchase.requisition.egp.document.signer"]
+        Signer.create(
+            [
+                {
+                    "egp_document_id": egp_document.id,
+                    "sequence": index,
+                    "user_id": line.user_id.id,
+                    "position": line.position or "",
+                    "is_check": line.is_check,
+                    "is_sign": line.is_sign,
+                }
+                for index, line in enumerate(
+                    studio.vpk_approver_line_ids.filtered("user_id").sorted(
+                        key=lambda rec: (rec.sequence, rec.id)
+                    ),
+                    start=1,
+                )
+            ]
+        )
         return studio._action_open_form()

@@ -37,7 +37,7 @@ class PurchaseRequisitionEgpDocumentSigner(models.Model):
 
     def _is_director_secretary(self, user):
         secretary = self.env.ref(
-            "vpk_official_document.user_director_secretary",
+            "vpk_tier_validation.user_director_secretary",
             raise_if_not_found=False,
         )
         return bool(secretary and user == secretary)
@@ -535,6 +535,17 @@ class PurchaseRequisitionEgpDocument(models.Model):
 
 class PurchaseRequisition(models.Model):
     _inherit = "purchase.requisition"
+
+    def action_open_add_egp_document_wizard(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("เพิ่มเอกสาร"),
+            "res_model": "vpk.egp.document.add.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {"default_requisition_id": self.id},
+        }
 
     @api.depends(
         "award_report_ids.state",

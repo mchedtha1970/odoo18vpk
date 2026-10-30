@@ -3,8 +3,6 @@ import base64
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-DIRECTOR_ONLY_EGP_CODES = ("wa_committee_order", "spec_price_committee", "winner_announcement")
-FULL_CHAIN_EGP_CODES = ("specific_method_approval", "award_approval", "consider_procurement")
 STUDIO_TYPE_FOR_EGP_CODE = {"consider_procurement": "award_approval"}
 
 
@@ -187,48 +185,59 @@ class PurchaseRequisitionEgpDocument(models.Model):
             "target": "new",
         }
 
+    def _studio_template_for_egp_type(self):
+        self.ensure_one()
+        if self.studio_document_id.template_id:
+            return self.studio_document_id.template_id
+        code = self.document_type_id.code
+        if not code:
+            return self.env["vpk.document.studio.template"]
+        studio_type = self.env["vpk.document.studio.document.type"].search(
+            [("code", "=", code)], limit=1
+        )
+        company = self.company_id or self.env.company
+        templates = studio_type.template_ids.filtered(
+            lambda tmpl: tmpl.active
+            and tmpl.company_id in (company, self.env["res.company"])
+        )
+        return templates[:1]
+
     def _seed_default_egp_signers(self):
         self.ensure_one()
         if self.signer_line_ids:
             return
-        Values = self.env["vpk.procurement.document.values"]
-        company = self.company_id or self.env.company
-        officer = Values.company_person(company, "officer")[0]
-        head = Values.company_person(company, "head_officer")[0]
-        director = Values.company_person(company, "signer")[0]
-        secretary = Values.director_secretary()
-        code = self.document_type_id.code
-        if code in DIRECTOR_ONLY_EGP_CODES:
-            candidates = [(secretary, "เลขาผู้อำนวยการ", True), (director, "ผู้อำนวยการ", False)]
-        elif code in FULL_CHAIN_EGP_CODES:
-            candidates = [
-                (officer, "เจ้าหน้าที่", False),
-                (head, "หัวหน้าเจ้าหน้าที่", False),
-                (secretary, "เลขาผู้อำนวยการ", True),
-                (director, "ผู้อำนวยการ", False),
-            ]
-        elif code == "integrity_over_100k":
-            candidates = [(officer, "เจ้าหน้าที่", False), (head, "หัวหน้าเจ้าหน้าที่", False)]
-        else:
-            candidates = [(director, "ผู้อำนวยการ", False)]
-        rows = []
-        seen = set()
-        for user, fallback_position, is_check in candidates:
-            if not user or user.id in seen:
-                continue
-            seen.add(user.id)
-            rows.append(
-                {
-                    "egp_document_id": self.id,
-                    "sequence": len(rows) + 1,
-                    "user_id": user.id,
-                    "position": Values.person_from_user(user)[1] or fallback_position,
-                    "is_check": is_check,
-                    "is_sign": not is_check,
-                }
+        studio_lines = self.studio_document_id.vpk_approver_line_ids.filtered("user_id")
+        if studio_lines:
+            self.env["purchase.requisition.egp.document.signer"].create(
+                [
+                    {
+                        "egp_document_id": self.id,
+                        "sequence": index,
+                        "user_id": line.user_id.id,
+                        "position": line.position or "",
+                        "is_check": line.is_check,
+                        "is_sign": line.is_sign,
+                    }
+                    for index, line in enumerate(
+                        studio_lines.sorted(key=lambda rec: (rec.sequence, rec.id)),
+                        start=1,
+                    )
+                ]
             )
+            return
+        template = self._studio_template_for_egp_type()
+        rows = template._vpk_approver_row_vals() if template else []
         if rows:
-            self.env["purchase.requisition.egp.document.signer"].create(rows)
+            self.env["purchase.requisition.egp.document.signer"].create(
+                [
+                    {
+                        "egp_document_id": self.id,
+                        **vals,
+                        "sequence": index,
+                    }
+                    for index, vals in enumerate(rows, start=1)
+                ]
+            )
 
     def action_save_approvers_only(self):
         self.ensure_one()

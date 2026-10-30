@@ -76,13 +76,22 @@ class ApprovalApiService(models.AbstractModel):
         pdf_filename = ""
         if record and record.exists():
             document_name = record.display_name
-            if "document_type" in record._fields:
+            info = (
+                record._vpk_review_card_info()
+                if hasattr(record, "_vpk_review_card_info")
+                else {}
+            )
+            if info:
+                document_type = record.document_type_id.code or False
+                document_type_label = info.get("type_label") or document_type_label
+                subject = info.get("subject") or ""
+            elif "document_type" in record._fields:
                 document_type = record.document_type
                 labels = dict(
                     record._fields["document_type"]._description_selection(record.env)
                 )
                 document_type_label = labels.get(document_type, document_type_label)
-            if "subject" in record._fields:
+            if not subject and "subject" in record._fields:
                 subject = record.subject or ""
             if "request_id" in record._fields and record.request_id:
                 request_id = record.request_id.id
@@ -100,7 +109,7 @@ class ApprovalApiService(models.AbstractModel):
             "status_label": review.display_status or review.status,
             "can_review": bool(review.can_review),
             "can_sign": bool(
-                review.can_review and review.model == "vpk.official.document" and has_pdf
+                review.can_review and self._is_signable(record) and has_pdf
             ),
             "has_comment": bool(review.has_comment),
             "name": display.name or "",
@@ -126,8 +135,9 @@ class ApprovalApiService(models.AbstractModel):
             "pdf_filename": pdf_filename,
             "pdf_url": "/vpk/api/v1/mobile/approvals/%s/pdf" % review.id if has_pdf else False,
         }
-        if detail and record and record.exists() and review.model == "vpk.official.document":
-            payload["signer_name"] = record.signer_name or ""
+        if detail and record and record.exists() and self._is_signable(record):
+            signers = record.vpk_approver_line_ids.filtered("is_sign").sorted("sequence")
+            payload["signer_name"] = signers[-1:].user_id.name or ""
             payload["date"] = fields.Date.to_string(record.date) if record.date else False
             payload["saraban_book_no"] = (
                 record.saraban_book_no if "saraban_book_no" in record._fields else ""
@@ -143,7 +153,11 @@ class ApprovalApiService(models.AbstractModel):
         data = attachment.sudo().datas
         if not data:
             raise UserError(_("ยังไม่มีไฟล์ PDF กรุณากดพิมพ์ PDF ก่อน"))
-        filename = attachment.name or "document.pdf"
+        filename = (
+            ("pdf_filename" in record._fields and record.pdf_filename)
+            or attachment.name
+            or "document.pdf"
+        )
         return {
             "filename": filename,
             "content": base64.b64decode(data),
@@ -158,13 +172,12 @@ class ApprovalApiService(models.AbstractModel):
         reviews = self._user_reviews(record, review)
         if comment:
             reviews.write({"comment": comment})
-        if record._name == "vpk.official.document":
+        if self._is_signable(record):
             if not signature:
                 raise UserError(_("กรุณาลงลายเซ็นบนเอกสาร"))
-            record.sudo()._apply_signature_to_pdf(
-                signature, signer_user=self.env.user
-            )
-        record._validate_tier(reviews)
+            record.action_apply_signature(signature)
+        else:
+            record._validate_tier(reviews)
         if hasattr(record, "_update_counter"):
             record._update_counter({"review_deleted": True})
         review.invalidate_recordset()
@@ -231,8 +244,7 @@ class ApprovalApiService(models.AbstractModel):
 
     def _browse_record(self, review, sudo=False):
         if not review.model or not review.res_id or review.model not in self.env:
-            Model = self.env["vpk.official.document"]
-            return (Model.sudo() if sudo else Model).browse()
+            return self._review_model().browse()
         Model = self.env[review.model]
         if sudo:
             Model = Model.sudo()
@@ -251,18 +263,20 @@ class ApprovalApiService(models.AbstractModel):
     def _review_has_pdf(self, review, record):
         if not record or not record.exists():
             return False
-        if review.model != "vpk.official.document":
+        if not self._is_signable(record):
             return False
-        if "has_pdf" in record._fields:
-            return bool(record.has_pdf)
         return bool(self._pdf_attachment(review, record))
 
     def _pdf_attachment(self, review, record):
-        if not record or not record.exists() or review.model != "vpk.official.document":
+        if not record or not record.exists() or not self._is_signable(record):
             return self.env["ir.attachment"]
-        if hasattr(record, "_get_pdf_attachment"):
-            return record._get_pdf_attachment()
-        return self.env["ir.attachment"]
+        return record.sudo()._get_pdf_attachment()
+
+    def _is_signable(self, record):
+        """Documents signed by stamping a signature on their PDF."""
+        return bool(record) and hasattr(record, "action_apply_signature") and hasattr(
+            record, "_get_pdf_attachment"
+        )
 
     @api.model
     def issue_session(self, login, password, db_name=None):

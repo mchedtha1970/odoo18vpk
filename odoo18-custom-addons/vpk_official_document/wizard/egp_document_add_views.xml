@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_egp_document_add_wizard_form" model="ir.ui.view">
+        <field name="name">vpk.egp.document.add.wizard.form</field>
+        <field name="model">vpk.egp.document.add.wizard</field>
+        <field name="arch" type="xml">
+            <form string="เพิ่มเอกสาร">
+                <group>
+                    <field name="requisition_id" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <field
+                        name="document_type_id"
+                        options="{'no_create': True, 'no_open': True}"
+                    />
+                    <field name="add_mode" widget="radio"/>
+                    <field
+                        name="studio_template_id"
+                        options="{'no_create': True, 'no_open': True}"
+                        invisible="add_mode != 'studio'"
+                        required="add_mode == 'studio'"
+                        placeholder="เลือกแบบฟอร์มจาก Document Studio"
+                    />
+                    <field
+                        name="file"
+                        filename="filename"
+                        invisible="add_mode != 'attach'"
+                        required="add_mode == 'attach'"
+                    />
+                    <field name="filename" invisible="1"/>
+                    <field name="egp_reference"/>
+                    <field name="document_date"/>
+                    <field name="notes"/>
+                </group>
+                <p class="text-muted">
+                    เลือก <b>ดึงจาก Document Studio</b> เพื่อสร้างหนังสือจากแบบฟอร์มที่ตั้งไว้ (ดึงข้อมูลจากใบขอซื้อ/กระบวนการ e-GP ให้อัตโนมัติ)
+                    หรือ <b>แนบไฟล์ต้นทาง</b> เมื่อมีไฟล์ PDF จากระบบ e-GP อยู่แล้ว
+                </p>
+                <footer>
+                    <button
+                        name="action_confirm"
+                        type="object"
+                        string="เพิ่มเอกสาร"
+                        class="btn-primary"
+                        data-hotkey="q"
+                    />
+                    <button string="ยกเลิก" class="btn-secondary" special="cancel" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

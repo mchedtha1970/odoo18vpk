@@ -73,6 +73,13 @@
                     class="oe_highlight"
                     invisible="requisition_type != 'egp_procurement' or state not in ('confirmed', 'done')"
                 />
+                <button
+                    name="action_print_contract_essence"
+                    type="object"
+                    string="พิมพ์ข้อมูลสาระสำคัญในสัญญา"
+                    icon="fa-print"
+                    invisible="requisition_type != 'egp_procurement'"
+                />
             </button>
 
             <button name="action_done" position="attributes">
@@ -260,6 +267,58 @@
                             invisible="state != 'confirmed'"
                         />
                     </group>
+                    <div
+                        name="egp_compare_actions"
+                        class="oe_egp_compare_actions d-flex flex-wrap gap-1 mb-2"
+                    >
+                        <button
+                            name="action_summarize_offered_totals"
+                            type="object"
+                            string="สรุปราคารวมที่เสนอ"
+                            class="btn-primary"
+                            icon="fa-calculator"
+                            invisible="egp_consideration_type not in ('line', 'unit')"
+                        />
+                        <button
+                            name="action_print_contract_essence"
+                            type="object"
+                            string="พิมพ์สาระสำคัญในสัญญา"
+                            class="btn-secondary"
+                            icon="fa-print"
+                        />
+                    </div>
+                    <div class="text-muted mb-2" invisible="egp_consideration_type not in ('line', 'unit')">
+                        โหมดเปรียบเทียบต่อรายการ — ใส่ผู้เสนอราคา รายการสินค้า และราคารวม ระบบจะทอนเป็นราคาต่อหน่วยให้อัตโนมัติ
+                    </div>
+                    <field
+                        name="egp_bid_line_ids"
+                        invisible="egp_consideration_type not in ('line', 'unit')"
+                        context="{'default_requisition_id': id}"
+                    >
+                        <list editable="bottom">
+                            <field
+                                name="partner_id"
+                                options="{'no_create_edit': True}"
+                                context="{'res_partner_search_mode': 'supplier', 'default_supplier_rank': 1}"
+                            />
+                            <field name="bid_id" column_invisible="1" required="0"/>
+                            <field name="requisition_id" column_invisible="1" required="0"/>
+                            <field name="product_id"/>
+                            <field name="name" string="คำอธิบายรายการซื้อใน e-GP"/>
+                            <field name="product_qty"/>
+                            <field name="product_uom_id" groups="uom.group_uom"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="budget_unit_price" optional="show"/>
+                            <field name="budget_amount" optional="show"/>
+                            <field name="price_unit" string="ราคาต่อหน่วยที่เสนอ"/>
+                            <field name="price_subtotal" string="ราคารวมที่เสนอ" readonly="0"/>
+                            <field name="is_winner"/>
+                        </list>
+                    </field>
+                    <separator
+                        string="สรุปผู้เสนอราคา"
+                        invisible="egp_consideration_type not in ('line', 'unit')"
+                    />
                     <field name="egp_bid_ids" context="{'default_requisition_id': id}">
                         <list editable="bottom">
                             <field name="sequence" widget="handle"/>
@@ -271,7 +330,8 @@
                             <field name="egp_bid_reference"/>
                             <field name="bid_date"/>
                             <field name="currency_id" column_invisible="1"/>
-                            <field name="amount_total" sum="รวม" string="ราคาที่เสนอ"/>
+                            <field name="budget_amount_total" sum="รวม" string="ราคารวมงบประมาณ"/>
+                            <field name="amount_total" sum="รวม" string="ราคารวมที่เสนอ"/>
                             <field name="is_winner"/>
                             <field name="notes" optional="show"/>
                         </list>
@@ -288,20 +348,26 @@
                                 </group>
                                 <group>
                                     <field name="currency_id" invisible="1"/>
-                                    <field name="amount_total" string="ราคาที่เสนอ"/>
+                                    <field name="budget_amount_total" string="ราคารวมงบประมาณ"/>
+                                    <field name="amount_total" string="ราคารวมที่เสนอ"/>
                                     <field name="is_winner"/>
                                     <field name="notes"/>
                                 </group>
                             </group>
                             <field name="line_ids">
                                 <list editable="bottom">
+                                    <field name="partner_id" column_invisible="1" required="0"/>
+                                    <field name="requisition_id" column_invisible="1" required="0"/>
                                     <field name="product_id"/>
                                     <field name="name" string="คำอธิบายรายการซื้อใน e-GP"/>
                                     <field name="product_qty"/>
                                     <field name="product_uom_id" groups="uom.group_uom"/>
                                     <field name="currency_id" column_invisible="1"/>
-                                    <field name="price_unit"/>
-                                    <field name="price_subtotal" sum="รวม"/>
+                                    <field name="budget_unit_price" optional="show"/>
+                                    <field name="budget_amount" optional="show"/>
+                                    <field name="price_unit" string="ราคาต่อหน่วยที่เสนอ"/>
+                                    <field name="price_subtotal" string="ราคารวมที่เสนอ" readonly="0"/>
+                                    <field name="is_winner"/>
                                 </list>
                             </field>
                         </form>

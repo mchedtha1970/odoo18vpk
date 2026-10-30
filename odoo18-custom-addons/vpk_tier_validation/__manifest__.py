@@ -1,6 +1,6 @@
 {
     "name": "VPK Sequential Approval Workflow",
-    "version": "18.0.1.5.68",
+    "version": "18.0.1.6.0",
     "category": "Tools",
     "summary": "Multi-level sequential approval for Purchase, Stock, Bills and more",
     "description": """
@@ -41,6 +41,7 @@ Configure at: Settings → กล่องอนุมัติเอกสา�
         "security/vpk_pr_security_groups.xml",
         "security/ir.model.access.csv",
         "data/vpk_pr_user_groups.xml",
+        "data/director_secretary_user.xml",
         "data/report_paperformat.xml",
         "report/purchase_request_official_memo_templates.xml",
         "report/purchase_request_official_memo_report.xml",

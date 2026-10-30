@@ -17,6 +17,7 @@
             </xpath>
             <field name="contract_id" position="after">
                 <field name="procurement_nature"
+                       string="กำหนดการจัดหา"
                        readonly="is_editable == False"/>
                 <field name="procurement_document"
                        readonly="is_editable == False"/>

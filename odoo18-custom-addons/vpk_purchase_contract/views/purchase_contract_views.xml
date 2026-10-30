@@ -86,6 +86,8 @@
                             <field name="partner_id" readonly="state != 'draft'"/>
                             <field name="requisition_id" readonly="state != 'draft'"/>
                             <field name="egp_reference"/>
+                            <field name="egp_contract_control_no" readonly="state in ('done', 'cancel')"/>
+                            <field name="contract_po_number" readonly="state in ('done', 'cancel')"/>
                             <field name="date_start" readonly="state != 'draft'"/>
                             <field name="date_end" readonly="state != 'draft'"/>
                             <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
@@ -100,6 +102,20 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="รายการสินค้าที่ชนะ" name="winner_products">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="product_id"/>
+                                    <field name="name"/>
+                                    <field name="product_qty"/>
+                                    <field name="product_uom_id" groups="uom.group_uom"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="price_unit"/>
+                                    <field name="price_subtotal" sum="รวม"/>
+                                    <field name="egp_bid_line_id" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="เงื่อนไขแบ่งงวด" name="installments">
                             <div class="mb-2" invisible="state != 'draft'">
                                 <button
@@ -197,11 +213,13 @@
                 <field name="name"/>
                 <field name="partner_id"/>
                 <field name="egp_reference" optional="show"/>
+                <field name="egp_contract_control_no" optional="show"/>
+                <field name="contract_po_number" optional="show"/>
                 <field name="date_start"/>
                 <field name="date_end" optional="hide"/>
-                <field name="amount_total"/>
-                <field name="amount_consumed"/>
-                <field name="amount_remaining"/>
+                <field name="amount_total" sum="รวม"/>
+                <field name="amount_consumed" sum="รวม"/>
+                <field name="amount_remaining" sum="รวม"/>
                 <field name="state"/>
                 <field name="company_id" groups="base.group_multi_company" optional="hide"/>
             </list>
@@ -216,6 +234,8 @@
                 <field name="name"/>
                 <field name="partner_id"/>
                 <field name="egp_reference"/>
+                <field name="egp_contract_control_no"/>
+                <field name="contract_po_number"/>
                 <field name="requisition_id"/>
                 <filter string="มีผลบังคับใช้" name="confirmed" domain="[('state', '=', 'confirmed')]"/>
                 <filter string="แบบร่าง" name="draft" domain="[('state', '=', 'draft')]"/>

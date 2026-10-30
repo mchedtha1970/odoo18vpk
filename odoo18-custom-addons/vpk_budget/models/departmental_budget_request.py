@@ -526,6 +526,21 @@ class DepartmentalBudgetRequest(models.Model):
                 form_type.has_section("project") if form_type else False
             )
 
+    @api.depends_context("vpk_budget_plan_label")
+    def _compute_display_name(self):
+        super()._compute_display_name()
+        if not self.env.context.get("vpk_budget_plan_label"):
+            return
+        for rec in self:
+            parts = [rec.name or ""]
+            if rec.analytic_account_id:
+                parts.append(rec.analytic_account_id.name)
+            if rec.form_type_id:
+                parts.append(rec.form_type_id.name)
+            if rec.fiscal_year:
+                parts.append(_("ปี %s") % rec.fiscal_year)
+            rec.display_name = " - ".join(part for part in parts if part)
+
     @api.depends(
         "form_type_id",
         "form_type_id.line_type_ids",
@@ -719,6 +734,27 @@ class DepartmentalBudgetRequest(models.Model):
                 return _rank_matches(matches)
 
         return group._get_filter_product_categories()
+
+    def _ensure_material_overview_lines_from_details(self):
+        """One overview line per material subtype used by the product detail lines."""
+        self.ensure_one()
+        existing = self.material_line_ids.mapped("material_sub_type_id")
+        missing = self.material_detail_ids.filtered(
+            lambda detail: detail.material_sub_type_id
+            and detail.material_sub_type_id not in existing
+        )
+        if not missing or not self._form_has_line_type("supplies_budget"):
+            return
+        request = self.with_context(
+            skip_budget_request_lock=True, skip_material_detail_sync=True
+        )
+        for subtype in missing.mapped("material_sub_type_id"):
+            post = missing.filtered(
+                lambda detail: detail.material_sub_type_id == subtype
+                and detail.budget_post_id
+            )[:1].budget_post_id
+            request._ensure_material_overview_line(subtype, post)
+        self.invalidate_recordset(["material_line_ids"])
 
     def _ensure_material_overview_line(self, subtype, budget_post):
         """Ensure overview material line exists for the loaded subtype."""
@@ -1305,6 +1341,7 @@ class DepartmentalBudgetRequest(models.Model):
         """Persist material requested amounts from product detail lines."""
         Line = self.env["departmental.budget.request.line"]
         for rec in self:
+            rec._ensure_material_overview_lines_from_details()
             amounts = rec._material_detail_amounts_by_subtype()
             for line in rec.material_line_ids:
                 subtype_id = line.material_sub_type_id.id

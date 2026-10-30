@@ -11,4 +11,9 @@ access_generate_installments_purchase_manager,purchase.contract.generate.install
 access_generate_installments_pr_manager,purchase.contract.generate.installments pr manager,model_purchase_contract_generate_installments,purchase_request.group_purchase_request_manager,1,1,1,0
 access_purchase_contract_base_user,purchase.contract base user,model_purchase_contract,base.group_user,1,0,0,0
 access_purchase_contract_installment_base_user,purchase.contract.installment base user,model_purchase_contract_installment,base.group_user,1,0,0,0
+access_purchase_contract_line_purchase_user,purchase.contract.line purchase user,model_purchase_contract_line,purchase.group_purchase_user,1,0,0,0
+access_purchase_contract_line_purchase_manager,purchase.contract.line purchase manager,model_purchase_contract_line,purchase.group_purchase_manager,1,1,1,1
+access_purchase_contract_line_pr_user,purchase.contract.line pr user,model_purchase_contract_line,purchase_request.group_purchase_request_user,1,0,0,0
+access_purchase_contract_line_pr_manager,purchase.contract.line pr manager,model_purchase_contract_line,purchase_request.group_purchase_request_manager,1,1,1,1
+access_purchase_contract_line_base_user,purchase.contract.line base user,model_purchase_contract_line,base.group_user,1,0,0,0
 

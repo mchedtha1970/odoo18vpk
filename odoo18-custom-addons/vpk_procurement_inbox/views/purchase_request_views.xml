@@ -26,6 +26,7 @@
                 <field name="is_procurement_overdue"/>
                 <field name="procurement_owner_id"/>
                 <field name="procurement_inbox_lane"/>
+                <field name="procurement_inbox_stage"/>
                 <field name="procurement_verified"/>
                 <templates>
                     <t t-name="card">
@@ -121,6 +122,7 @@
                 <field name="estimated_cost" optional="show" sum="รวม"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="procurement_owner_id"/>
+                <field name="procurement_inbox_stage" optional="show" string="สถานะคิวพัสดุ"/>
                 <field name="procurement_verified" optional="show"/>
                 <field name="is_procurement_overdue" column_invisible="1"/>
                 <field name="state" optional="hide"/>
@@ -183,6 +185,11 @@
                 />
                 <separator/>
                 <filter
+                    name="group_stage"
+                    string="สถานะคิวพัสดุ"
+                    context="{'group_by': 'procurement_inbox_stage'}"
+                />
+                <filter
                     name="group_department"
                     string="หน่วยงาน"
                     context="{'group_by': 'department_id'}"
@@ -191,6 +198,11 @@
                     name="group_owner"
                     string="ผู้รับงาน"
                     context="{'group_by': 'procurement_owner_id'}"
+                />
+                <filter
+                    name="group_method"
+                    string="วิธีการจัดซื้อ"
+                    context="{'group_by': 'procurement_method_id'}"
                 />
                 <filter
                     name="group_days"
@@ -278,18 +290,26 @@
                     </span>
                 </div>
             </xpath>
-            <xpath expr="//field[@name='assigned_to']" position="after">
-                <field
-                    name="procurement_owner_id"
-                    readonly="state != 'sent_to_procurement'"
-                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
-                />
-                <field name="sent_to_procurement_date" readonly="1"/>
-                <field name="procurement_claimed_date" readonly="1"/>
-                <field name="days_waiting_procurement" readonly="1"/>
-                <field name="procurement_verified" readonly="1"/>
-                <field name="procurement_verified_by" readonly="1" invisible="not procurement_verified"/>
-                <field name="procurement_verified_date" readonly="1" invisible="not procurement_verified"/>
+            <xpath expr="//sheet/notebook" position="before">
+                <group name="vpk_pr_doc_status" string="สถานะเอกสารขอซื้อ">
+                    <group>
+                        <field name="sent_to_procurement_date" readonly="1"/>
+                        <field name="procurement_claimed_date" readonly="1"/>
+                        <field name="days_waiting_procurement" readonly="1"/>
+                        <field name="procurement_verified" readonly="1"/>
+                    </group>
+                    <group>
+                        <field
+                            name="procurement_owner_id"
+                            readonly="state != 'sent_to_procurement'"
+                            groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
+                        />
+                        <field name="procurement_verified_by" readonly="1"
+                               invisible="not procurement_verified"/>
+                        <field name="procurement_verified_date" readonly="1"
+                               invisible="not procurement_verified"/>
+                    </group>
+                </group>
             </xpath>
         </field>
     </record>
@@ -299,7 +319,7 @@
         <field name="name">ใบขอซื้อจากหน่วยงาน</field>
         <field name="res_model">purchase.request</field>
         <field name="view_mode">kanban,list,form</field>
-        <field name="domain">[('state', '=', 'sent_to_procurement')]</field>
+        <field name="domain">[('state', 'in', ('sent_to_procurement', 'to_approve', 'approved', 'in_progress'))]</field>
         <field name="context">{}</field>
         <field name="search_view_id" ref="view_purchase_request_search_procurement_inbox"/>
         <field name="help" type="html">
@@ -325,7 +345,7 @@
         <field name="name">ยังไม่มีผู้รับ</field>
         <field name="res_model">purchase.request</field>
         <field name="view_mode">kanban,list,form</field>
-        <field name="domain">[('state', '=', 'sent_to_procurement'), ('procurement_owner_id', '=', False)]</field>
+        <field name="domain">[('state', 'in', ('sent_to_procurement', 'to_approve', 'approved', 'in_progress')), ('procurement_owner_id', '=', False)]</field>
         <field name="search_view_id" ref="view_purchase_request_search_procurement_inbox"/>
     </record>
     <record id="action_procurement_inbox_unassigned_kanban" model="ir.actions.act_window.view">
@@ -345,7 +365,7 @@
         <field name="name">รับงานแล้ว</field>
         <field name="res_model">purchase.request</field>
         <field name="view_mode">kanban,list,form</field>
-        <field name="domain">[('state', '=', 'sent_to_procurement'), ('procurement_owner_id', '!=', False)]</field>
+        <field name="domain">[('state', 'in', ('sent_to_procurement', 'to_approve', 'approved', 'in_progress')), ('procurement_owner_id', '!=', False)]</field>
         <field name="search_view_id" ref="view_purchase_request_search_procurement_inbox"/>
     </record>
     <record id="action_procurement_inbox_claimed_kanban" model="ir.actions.act_window.view">
@@ -365,7 +385,7 @@
         <field name="name">งานของฉัน</field>
         <field name="res_model">purchase.request</field>
         <field name="view_mode">kanban,list,form</field>
-        <field name="domain">[('state', '=', 'sent_to_procurement'), ('procurement_owner_id', '=', uid)]</field>
+        <field name="domain">[('state', 'in', ('sent_to_procurement', 'to_approve', 'approved', 'in_progress')), ('procurement_owner_id', '=', uid)]</field>
         <field name="search_view_id" ref="view_purchase_request_search_procurement_inbox"/>
     </record>
     <record id="action_procurement_inbox_mine_kanban" model="ir.actions.act_window.view">
@@ -385,7 +405,7 @@
         <field name="name">ค้างเกิน 3 วัน</field>
         <field name="res_model">purchase.request</field>
         <field name="view_mode">kanban,list,form</field>
-        <field name="domain">[('state', '=', 'sent_to_procurement'), ('is_procurement_overdue', '=', True)]</field>
+        <field name="domain">[('state', 'in', ('sent_to_procurement', 'to_approve', 'approved', 'in_progress')), ('is_procurement_overdue', '=', True)]</field>
         <field name="search_view_id" ref="view_purchase_request_search_procurement_inbox"/>
     </record>
     <record id="action_procurement_inbox_overdue_kanban" model="ir.actions.act_window.view">

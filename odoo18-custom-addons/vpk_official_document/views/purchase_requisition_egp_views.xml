@@ -69,6 +69,25 @@
         <field name="model">purchase.requisition</field>
         <field name="inherit_id" ref="vpk_purchase_agreement_egp.view_purchase_requisition_form_egp"/>
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='egp_document_ids']" position="before">
+                <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+                    <button
+                        name="action_open_add_egp_document_wizard"
+                        type="object"
+                        string="เพิ่มเอกสาร"
+                        class="btn-primary"
+                        groups="purchase.group_purchase_user"
+                        invisible="state in ('done', 'cancel')"
+                    />
+                    <span class="text-muted">
+                        เลือกดึงจาก Document Studio หรือแนบไฟล์ต้นทางจากระบบ e-GP
+                    </span>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='egp_document_ids']/list" position="attributes">
+                <attribute name="create">0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='egp_document_ids']/list/control" position="replace"/>
             <xpath expr="//field[@name='egp_document_ids']//field[@name='document_type_code']" position="after">
                 <field name="official_document_id" column_invisible="1"/>
             </xpath>

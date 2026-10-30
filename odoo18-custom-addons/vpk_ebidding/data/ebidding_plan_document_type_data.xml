@@ -16,12 +16,12 @@
             <field name="code">plan_approval_letter</field>
             <field name="sequence">30</field>
         </record>
-        <record id="official_document_type_egp_plan_approval" model="vpk.official.document.type">
+        <record id="studio_document_type_egp_plan_approval" model="vpk.document.studio.document.type">
             <field name="name">เอกสารแผนจัดซื้อจัดจ้างจาก e-GP</field>
             <field name="code">egp_plan_approval</field>
             <field name="sequence">15</field>
-            <field name="is_system">True</field>
-            <field name="note">ใช้กับเอกสารที่แนบจากแท็บแนบเอกสาร e-GP ของชุดแผน</field>
+            <field name="company_id" eval="False"/>
+            <field name="description">ใช้กับเอกสารที่แนบจากแท็บแนบเอกสาร e-GP ของชุดแผน</field>
         </record>
     </data>
 </odoo>

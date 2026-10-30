@@ -5,6 +5,27 @@
         <field name="model">purchase.request</field>
         <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="committee_member_count" invisible="1"/>
+                <field name="committee_confirm_pending_mine" invisible="1"/>
+                <button name="action_request_committee_confirm" type="object"
+                        string="ขอความยินยอมกรรมการ"
+                        class="btn-secondary"
+                        invisible="committee_member_count == 0"
+                        groups="purchase_request.group_purchase_request_user,purchase.group_purchase_user"/>
+                <button name="%(action_committee_confirm_wizard)s" type="action"
+                        string="ยืนยันว่าสามารถเป็นกรรมการได้"
+                        class="btn-primary"
+                        invisible="not committee_confirm_pending_mine"/>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-info" role="alert"
+                     invisible="not committee_confirm_pending_mine">
+                    ท่านถูกเสนอเป็นกรรมการในใบขอซื้อนี้ กรุณายืนยันว่าสามารถรับเป็นกรรมการได้ก่อนเสนอแต่งตั้ง
+                    <button name="%(action_committee_confirm_wizard)s" type="action"
+                            string="ตอบคำขอ" class="btn btn-primary btn-sm ms-2"/>
+                </div>
+            </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_view_committee_appointments" type="object"
                         class="oe_stat_button" icon="fa-users"
@@ -24,6 +45,11 @@
         <field name="arch" type="xml">
             <xpath expr="//group[@name='wa_committee']" position="before">
                 <group name="price_mid_committee" string="คณะกรรมการกำหนดคุณลักษณะและราคากลาง">
+                    <div class="mb-2" invisible="is_editable == False">
+                    <button name="action_open_committee_select_wizard" type="object"
+                            string="เลือกกรรมการหลายคน" icon="fa-users" class="btn-secondary"
+                            context="{'committee_type': 'price_mid'}"/>
+                </div>
                     <field
                         name="price_mid_committee_ids"
                         nolabel="1"
@@ -38,6 +64,13 @@
                             />
                             <field name="name"/>
                             <field name="approve_role"/>
+                            <field name="confirm_state" widget="badge"
+                                   decoration-info="confirm_state == 'pending'"
+                                   decoration-success="confirm_state == 'accepted'"
+                                   decoration-danger="confirm_state == 'declined'"
+                                   decoration-muted="confirm_state == 'not_sent'"/>
+                            <field name="confirm_reply_date" optional="hide"/>
+                            <field name="confirm_note" optional="hide"/>
                             <field name="department_id"/>
                             <field name="email"/>
                             <field name="phone"/>
@@ -54,6 +87,58 @@
             </xpath>
             <xpath expr="//group[@name='wa_committee']" position="attributes">
                 <attribute name="string">คณะกรรมการตรวจรับ</attribute>
+            </xpath>
+            <xpath expr="//field[@name='procurement_committee_ids']" position="before">
+                <div class="mb-2" invisible="is_editable == False">
+                    <button name="action_open_committee_select_wizard" type="object"
+                            string="เลือกกรรมการหลายคน" icon="fa-users" class="btn-secondary"
+                            context="{'committee_type': 'procurement'}"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='work_acceptance_committee_ids']" position="before">
+                <div class="mb-2" invisible="is_editable == False">
+                    <button name="action_open_committee_select_wizard" type="object"
+                            string="เลือกกรรมการหลายคน" icon="fa-users" class="btn-secondary"
+                            context="{'committee_type': 'work_acceptance'}"/>
+                </div>
+            </xpath>
+            <xpath expr="//page[@name='committee']" position="inside">
+                <group>
+                    <field name="committee_member_count" invisible="1"/>
+                    <field name="committee_confirm_summary" readonly="1"/>
+                    <div class="mb-2">
+                        <button name="action_request_committee_confirm" type="object"
+                                string="ขอความยินยอมกรรมการ" icon="fa-bell" class="btn-primary"
+                                invisible="committee_member_count == 0"
+                                groups="purchase_request.group_purchase_request_user,purchase.group_purchase_user"/>
+                    </div>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_form_committee_confirm_status" model="ir.ui.view">
+        <field name="name">purchase.request.form.committee.confirm.status</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="l10n_th_gov_purchase_request.view_purchase_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='work_acceptance_committee_ids']/list/field[@name='approve_role']" position="after">
+                <field name="confirm_state" widget="badge"
+                       decoration-info="confirm_state == 'pending'"
+                       decoration-success="confirm_state == 'accepted'"
+                       decoration-danger="confirm_state == 'declined'"
+                       decoration-muted="confirm_state == 'not_sent'"/>
+                <field name="confirm_reply_date" optional="hide"/>
+                <field name="confirm_note" optional="hide"/>
+            </xpath>
+            <xpath expr="//field[@name='procurement_committee_ids']/list/field[@name='approve_role']" position="after">
+                <field name="confirm_state" widget="badge"
+                       decoration-info="confirm_state == 'pending'"
+                       decoration-success="confirm_state == 'accepted'"
+                       decoration-danger="confirm_state == 'declined'"
+                       decoration-muted="confirm_state == 'not_sent'"/>
+                <field name="confirm_reply_date" optional="hide"/>
+                <field name="confirm_note" optional="hide"/>
             </xpath>
         </field>
     </record>

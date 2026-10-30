@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_document_studio_template_form_approvers" model="ir.ui.view">
+        <field name="name">vpk.document.studio.template.form.approvers</field>
+        <field name="model">vpk.document.studio.template</field>
+        <field name="inherit_id" ref="vpk_document_studio.view_document_studio_template_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="ผู้อนุมัติเริ่มต้น" name="default_approvers">
+                    <div class="text-muted mb-2">
+                        กำหนดลำดับผู้อนุมัติเริ่มต้นของเอกสารที่สร้างจากแบบฟอร์มนี้
+                        ยังปรับได้ตอนสร้างเอกสารก่อนส่งอนุมัติ
+                    </div>
+                    <field name="default_approver_ids" nolabel="1">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="user_id" string="ผู้อนุมัติ"
+                                   widget="many2one_avatar_user"
+                                   options="{'no_create': True}"/>
+                            <field name="position" string="ตำแหน่ง"/>
+                            <field name="is_check" string="ตรวจสอบ"/>
+                            <field name="is_sign" string="ลงนาม"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

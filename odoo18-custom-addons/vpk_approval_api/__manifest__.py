@@ -3,7 +3,7 @@
 
 {
     "name": "VPK Mobile Approval API",
-    "version": "18.0.1.0.5",
+    "version": "18.0.1.1.0",
     "category": "Tools",
     "summary": "REST API ให้แอปมือถือดึงงานรออนุมัติ ประวัติที่อนุมัติแล้ว เปิดเอกสาร PDF และอนุมัติ/ลงนาม",
     "author": "VPK",
@@ -12,7 +12,7 @@
         "base",
         "web",
         "vpk_tier_validation",
-        "vpk_official_document",
+        "vpk_document_studio_sign",
     ],
     "data": [],
     "installable": True,

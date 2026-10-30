@@ -6,7 +6,7 @@ import base64
 from odoo import _, api, models
 from odoo.exceptions import UserError
 
-from odoo.addons.vpk_official_document.models.pdf_stamp import (
+from odoo.addons.vpk_document_studio_sign.models.pdf_stamp import (
     SignatureStampError,
     stamp_signature_on_pdf,
 )

@@ -223,13 +223,13 @@ class PurchaseRequisitionEgpDocument(models.Model):
 
     def _convert_winner_docx_to_pdf(self, docx_content):
         try:
-            from odoo.addons.vpk_official_document.models.pdf_converter import (
+            from odoo.addons.vpk_document_studio.models.pdf_converter import (
                 PdfConversionError,
                 convert_docx_bytes_to_pdf,
             )
         except ImportError:
             _logger.info(
-                "vpk_official_document is not installed; storing winner announcement as Word"
+                "PDF converter is not available; storing winner announcement as Word"
             )
             return False
         try:

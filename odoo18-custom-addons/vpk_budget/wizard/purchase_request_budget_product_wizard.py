@@ -33,6 +33,7 @@ class PurchaseRequestBudgetProductWizard(models.TransientModel):
 
     @api.depends(
         "request_id",
+        "request_id.budget_plan_request_id",
         "request_id.budget_analytic_account_id",
         "request_id.budget_fund_source_id",
         "request_id.budget_group_id",
@@ -47,6 +48,11 @@ class PurchaseRequestBudgetProductWizard(models.TransientModel):
         self.ensure_one()
         request = self.request_id
         check_date = request._allocation_check_date()
+        if request.budget_plan_request_id:
+            return [
+                ("request_id", "=", request.budget_plan_request_id.id),
+                ("request_id.state", "=", "approved"),
+            ]
         return [
             ("request_id.state", "=", "approved"),
             ("request_id.analytic_account_id", "=", request.budget_analytic_account_id.id),
@@ -127,14 +133,19 @@ class PurchaseRequestBudgetProductWizard(models.TransientModel):
             for line in self.request_id.line_ids
         )
 
+    @api.model
+    def _purchase_uom(self, product, plan_uom):
+        """Plan quantities and prices are counted in the product purchase UoM."""
+        return product.uom_po_id or plan_uom
+
     def _suggested_qty(self, allocated_qty, unit_price, remaining_amount):
-        if remaining_amount <= 0:
+        """Allocated plan quantity, reduced only when the remaining budget can't cover it."""
+        if remaining_amount <= 0 or not unit_price or unit_price <= 0:
             return allocated_qty or 1.0
-        if unit_price and unit_price > 0:
-            qty = remaining_amount / unit_price
-            if qty > 0:
-                return qty
-        return allocated_qty or 1.0
+        affordable = remaining_amount / unit_price
+        if allocated_qty and allocated_qty <= affordable + 1e-6:
+            return allocated_qty
+        return affordable
 
     def _prepare_product_line_vals(self):
         self.ensure_one()
@@ -221,11 +232,14 @@ class PurchaseRequestBudgetProductWizard(models.TransientModel):
             if remaining <= 1e-6:
                 continue
             qty = self._suggested_qty(row["allocated_qty"], unit_price, remaining)
+            plan_uom = row["uom"] or product.uom_id
+            purchase_uom = self._purchase_uom(product, plan_uom)
             vals_list.append(
                 {
                     "selected": False,
                     "product_id": product_id,
-                    "product_uom_id": row["uom"].id if row["uom"] else False,
+                    "product_uom_id": plan_uom.id if plan_uom else False,
+                    "purchase_uom_id": purchase_uom.id if purchase_uom else False,
                     "allocated_qty": row["allocated_qty"],
                     "allocated_amount": row["allocated_amount"],
                     "unit_price": unit_price,
@@ -337,8 +351,8 @@ class PurchaseRequestBudgetProductWizard(models.TransientModel):
                     "product_id": product.id,
                     "name": name,
                     "product_qty": qty,
-                    "product_uom_id": (
-                        wiz_line.product_uom_id or product.uom_id
+                    "product_uom_id": self._purchase_uom(
+                        product, wiz_line.product_uom_id or product.uom_id
                     ).id,
                     "date_required": date_required,
                     "budget_post_id": self.budget_post_id.id,
@@ -385,16 +399,21 @@ class PurchaseRequestBudgetProductWizardLine(models.TransientModel):
     )
     product_uom_id = fields.Many2one(
         comodel_name="uom.uom",
-        string="หน่วย",
+        string="หน่วยนับ (เล็กสุด)",
+        readonly=True,
+    )
+    purchase_uom_id = fields.Many2one(
+        comodel_name="uom.uom",
+        string="หน่วยซื้อ",
         readonly=True,
     )
     allocated_qty = fields.Float(
-        string="จำนวนที่จัดสรร",
+        string="จำนวนที่จัดสรร (หน่วยซื้อ)",
         digits="Product Unit of Measure",
         readonly=True,
     )
     unit_price = fields.Monetary(
-        string="ราคา/หน่วย",
+        string="ราคา/หน่วยซื้อ",
         currency_field="currency_id",
         readonly=True,
     )

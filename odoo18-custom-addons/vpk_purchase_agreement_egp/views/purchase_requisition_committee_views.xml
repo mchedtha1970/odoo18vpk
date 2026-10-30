@@ -32,6 +32,13 @@
                                 />
                                 <field name="name"/>
                                 <field name="approve_role"/>
+                                <field name="source_confirm_state" widget="badge"
+                                       decoration-info="source_confirm_state == 'pending'"
+                                       decoration-success="source_confirm_state == 'accepted'"
+                                       decoration-danger="source_confirm_state == 'declined'"
+                                       decoration-muted="source_confirm_state == 'not_sent'"/>
+                                <field name="source_confirm_reply_date" optional="hide"/>
+                                <field name="source_confirm_note" optional="hide"/>
                                 <field name="department_id"/>
                                 <field name="email"/>
                                 <field name="phone"/>
@@ -55,6 +62,13 @@
                                 />
                                 <field name="name"/>
                                 <field name="approve_role"/>
+                                <field name="source_confirm_state" widget="badge"
+                                       decoration-info="source_confirm_state == 'pending'"
+                                       decoration-success="source_confirm_state == 'accepted'"
+                                       decoration-danger="source_confirm_state == 'declined'"
+                                       decoration-muted="source_confirm_state == 'not_sent'"/>
+                                <field name="source_confirm_reply_date" optional="hide"/>
+                                <field name="source_confirm_note" optional="hide"/>
                                 <field name="department_id"/>
                                 <field name="email"/>
                                 <field name="phone"/>
@@ -78,6 +92,13 @@
                                 />
                                 <field name="name"/>
                                 <field name="approve_role"/>
+                                <field name="source_confirm_state" widget="badge"
+                                       decoration-info="source_confirm_state == 'pending'"
+                                       decoration-success="source_confirm_state == 'accepted'"
+                                       decoration-danger="source_confirm_state == 'declined'"
+                                       decoration-muted="source_confirm_state == 'not_sent'"/>
+                                <field name="source_confirm_reply_date" optional="hide"/>
+                                <field name="source_confirm_note" optional="hide"/>
                                 <field name="department_id"/>
                                 <field name="email"/>
                                 <field name="phone"/>

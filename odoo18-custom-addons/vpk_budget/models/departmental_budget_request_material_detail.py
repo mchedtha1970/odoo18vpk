@@ -76,6 +76,12 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
         comodel_name="uom.uom",
         string="หน่วยนับ",
     )
+    product_purchase_uom_id = fields.Many2one(
+        comodel_name="uom.uom",
+        string="หน่วยซื้อ",
+        related="product_id.uom_po_id",
+        store=True,
+    )
     opening_qty = fields.Float(
         string="ปริมาณคงเหลือยกมา",
         digits=(16, 2),

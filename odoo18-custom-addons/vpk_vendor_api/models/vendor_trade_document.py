@@ -70,7 +70,7 @@ class VpkVendorTradeDocument(models.Model):
             attachment.write({"mimetype": "application/pdf"})
         return {
             "type": "ir.actions.client",
-            "tag": "vpk_official_document_sign_pdf_viewer",
+            "tag": "vpk_document_sign_pdf_viewer",
             "name": self.name or self.filename,
             "params": {
                 "attachment_id": attachment.id,

@@ -3,9 +3,9 @@
     <record id="view_purchase_request_form_vpk_po" model="ir.ui.view">
         <field name="name">purchase.request.form.vpk.po</field>
         <field name="model">purchase.request</field>
-        <field name="inherit_id" ref="vpk_official_document.view_purchase_request_form_official_document"/>
+        <field name="inherit_id" ref="vpk_document_studio_procurement.view_purchase_request_form_studio_document"/>
         <field name="arch" type="xml">
-            <xpath expr="//page[@name='related_official_documents']" position="after">
+            <xpath expr="//page[@name='related_studio_documents']" position="after">
                 <page string="ใบสั่งซื้อ" name="vpk_purchase_orders">
                     <div class="text-muted mb-2">
                         กด <b>พิมพ์ PDF</b> เพื่อบันทึกไฟล์ใบสั่งซื้อในรายการ

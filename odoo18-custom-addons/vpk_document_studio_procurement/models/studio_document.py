@@ -1,8 +1,6 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
-COMMITTEE_ORDER_TYPES = ("wa_committee_order", "spec_price_committee")
-DIRECTOR_ONLY_TYPES = COMMITTEE_ORDER_TYPES + ("winner_announcement",)
 PR_APPROVAL_PACKET_TYPES = ("wa_committee_order", "specific_method_approval")
 LINK_FIELDS = {
     "purchase.request": "request_id",
@@ -116,9 +114,18 @@ class DocumentStudioDocument(models.Model):
         if not template or not record:
             return values
         type_code = template.document_type_id.code
-        provided = self.env["vpk.procurement.document.values"].values_for(
-            record, type_code
-        )
+        Values = self.env["vpk.procurement.document.values"]
+        provided = Values.values_for(record, type_code)
+        people = Values.people_from_approver_lines(template.default_approver_ids)
+        for key, value in people.items():
+            if value:
+                provided[key] = value
+        if people:
+            committee = Values.committee_rows(
+                request=record if record._name == "purchase.request" else None,
+                acceptance=record if record._name == "work.acceptance" else None,
+            )
+            provided.update(Values.integrity_values(provided, committee))
         if record._name == "purchase.request":
             StudioField = self.env["vpk.document.studio.field"]
             lines = record.line_ids.filtered(
@@ -169,57 +176,56 @@ class DocumentStudioDocument(models.Model):
     # ------------------------------------------------------------------
     # Default approvers
     # ------------------------------------------------------------------
-    def _vpk_default_approver_rows(self):
-        """[(user, position, is_check)] for a new document of this type."""
+    def _vpk_default_approver_vals(self):
+        """Sequential approver dicts: template first, else committee of this request."""
         self.ensure_one()
+        if self.template_id:
+            rows = self.template_id._vpk_approver_row_vals()
+            if rows:
+                return rows
         Values = self.env["vpk.procurement.document.values"]
-        company = self.company_id
-        secretary = Values.director_secretary()
-        _signer, _name, signer_position = Values.company_person(company, "signer")
-        signer = _signer
         code = self.document_type_code
+        if code not in ("inspection_report", "integrity_over_100k"):
+            return []
         rows = []
-        if code == "inspection_report":
-            committee = Values.committee_rows(request=self.request_id, acceptance=self.wa_id)
-            for row in committee:
-                if row["user"]:
-                    rows.append((row["user"], row["position"], False))
-            return rows
-        if code == "integrity_over_100k":
-            head, _hn, head_position = Values.company_person(company, "head_officer")
-            officer, _on, officer_position = Values.company_person(company, "officer")
-            if not officer and self.request_id:
-                officer = self.request_id.assigned_to or self.request_id.requested_by
-            rows += [(head, head_position, False), (officer, officer_position, False)]
-            for row in Values.committee_rows(request=self.request_id, acceptance=self.wa_id):
-                rows.append((row["user"], row["position"], False))
-            return [row for row in rows if row[0]]
-        if code in DIRECTOR_ONLY_TYPES:
-            rows = [(secretary, "เลขาผู้อำนวยการ", True), (signer, signer_position, False)]
-            return [row for row in rows if row[0]]
-        officer, _on, officer_position = Values.company_person(company, "officer")
-        if not officer and self.request_id:
-            officer = self.request_id.assigned_to or self.request_id.requested_by
-        head, _hn, head_position = Values.company_person(company, "head_officer")
-        rows = [
-            (officer, officer_position or "เจ้าหน้าที่", False),
-            (head, head_position or "หัวหน้าเจ้าหน้าที่", False),
-            (secretary, "เลขาผู้อำนวยการ", True),
-            (signer, signer_position, False),
-        ]
-        return [row for row in rows if row[0]]
+        seen = set()
+        for member in Values.committee_rows(request=self.request_id, acceptance=self.wa_id):
+            user = member.get("user")
+            if not user or user.id in seen:
+                continue
+            seen.add(user.id)
+            rows.append(
+                {
+                    "sequence": len(rows) + 1,
+                    "user_id": user.id,
+                    "position": member.get("position") or "",
+                    "is_check": False,
+                    "is_sign": True,
+                }
+            )
+        return rows
 
-    def _vpk_seed_default_approvers(self, replace=False):
+    def _vpk_seed_default_approvers(self, replace=False, rows=None):
         Line = self.env["vpk.approval.line"].sudo()
         for rec in self:
             if rec.vpk_approver_line_ids and not replace:
                 continue
-            if replace:
-                rec.vpk_approver_line_ids.sudo().unlink()
+            source = rows if rows is not None else rec._vpk_default_approver_vals()
+            rec.vpk_approver_line_ids.sudo().unlink()
             seen = set()
             vals_list = []
-            for user, position, is_check in rec._vpk_default_approver_rows():
-                if user.id in seen:
+            for item in source:
+                if isinstance(item, dict):
+                    user = self.env["res.users"].browse(item.get("user_id"))
+                    position = item.get("position") or ""
+                    is_check = bool(item.get("is_check"))
+                    is_sign = bool(item.get("is_sign")) and not is_check
+                    if not is_check and not is_sign:
+                        is_sign = True
+                else:
+                    user, position, is_check = item
+                    is_sign = not is_check
+                if not user or user.id in seen:
                     continue
                 seen.add(user.id)
                 vals_list.append(
@@ -230,7 +236,7 @@ class DocumentStudioDocument(models.Model):
                         "user_id": user.id,
                         "position": position or "",
                         "is_check": is_check,
-                        "is_sign": not is_check,
+                        "is_sign": is_sign,
                     }
                 )
             if vals_list:
@@ -318,7 +324,9 @@ class DocumentStudioDocument(models.Model):
         }
 
     @api.model
-    def _vpk_create_for_record(self, record, document_type, template=False, extra=None):
+    def _vpk_create_for_record(
+        self, record, document_type, template=False, extra=None, approver_rows=None
+    ):
         """Create a studio document of `document_type` from `record`."""
         if not template:
             template = self.env["vpk.document.studio.template"]._vpk_template_for_type(
@@ -340,7 +348,10 @@ class DocumentStudioDocument(models.Model):
         }
         vals.update(extra or {})
         document = self.create(vals)
-        document._vpk_seed_default_approvers()
+        kwargs = {}
+        if approver_rows is not None:
+            kwargs = {"replace": True, "rows": approver_rows}
+        document._vpk_seed_default_approvers(**kwargs)
         return document
 
     @api.model

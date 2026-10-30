@@ -35,10 +35,11 @@ class TestMobileApprovalApiService(TransactionCase):
                 ],
             }
         )
+        Document = self.env["vpk.document.studio.document"]
         self.definition = self.env["tier.definition"].create(
             {
-                "name": "อนุมัติเอกสารราชการ (ทดสอบ API)",
-                "model_id": self.env["ir.model"]._get("vpk.official.document").id,
+                "name": "อนุมัติเอกสาร Document Studio (ทดสอบ API)",
+                "model_id": self.env["ir.model"]._get(Document._name).id,
                 "review_type": "individual",
                 "reviewer_id": self.user.id,
                 "definition_type": "domain",
@@ -48,34 +49,15 @@ class TestMobileApprovalApiService(TransactionCase):
                 "company_id": False,
             }
         )
-        self.document = self.env["vpk.official.document"].create(
-            {
-                "document_type": "wa_committee_order",
-                "agency": "โรงพยาบาลวชิระภูเก็ต",
-                "signer_name": self.user.name,
-                "line_ids": [
-                    Command.create(
-                        {"name": "นายทดสอบ ประธาน", "role": "chairman"}
-                    )
-                ],
-            }
+        document_type = self.env["vpk.document.studio.document.type"].create(
+            {"name": "คำสั่งทดสอบ API", "code": "mobile_api_test", "company_id": False}
         )
-        attachment = self.env["ir.attachment"].create(
-            {
-                "name": "order.pdf",
-                "datas": _tiny_pdf(),
-                "res_model": self.document._name,
-                "res_id": self.document.id,
-                "mimetype": "application/pdf",
-            }
+        self.document = Document.create(
+            {"source_mode": "uploaded", "document_type_id": document_type.id}
         )
-        self.document.write(
-            {
-                "pdf_file": _tiny_pdf(),
-                "pdf_filename": "order.pdf",
-                "pdf_attachment_id": attachment.id,
-                "state": "to_approve",
-            }
+        self.document.attach_uploaded_file(_tiny_pdf(), "order.pdf")
+        self.document.with_context(skip_validation_check=True).write(
+            {"state": "to_approve"}
         )
         self.review = self.env["tier.review"].create(
             {
@@ -133,6 +115,8 @@ class TestMobileApprovalApiService(TransactionCase):
         self.fail("other user must not open this review")
 
     def test_validate_without_purchase_request_acl(self):
+        if "request_id" not in self.document._fields:
+            self.skipTest("vpk_document_studio_procurement is not installed")
         request = self.env["purchase.request"].search([], limit=1)
         if not request:
             self.skipTest("No purchase request in test database")

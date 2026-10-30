@@ -1,6 +1,6 @@
 {
     "name": "VPK Committee Appointment - แต่งตั้งคณะกรรมการซื้อจ้าง",
-    "version": "18.0.1.1.5",
+    "version": "18.0.1.3.1",
     "category": "Purchases",
     "summary": "เอกสารขออนุมัติแต่งตั้งคณะกรรมการกำหนดคุณลักษณะและราคากลาง / จัดซื้อจัดจ้าง / ตรวจรับ + อีเมลแจ้งเมื่ออนุมัติ",
     "depends": [
@@ -14,6 +14,8 @@
         "data/ir_sequence_data.xml",
         "data/mail_template_data.xml",
         "views/committee_appointment_views.xml",
+        "views/committee_select_wizard_views.xml",
+        "views/committee_confirm_wizard_views.xml",
         "views/purchase_request_views.xml",
         "views/menu_views.xml",
         "report/committee_appointment_report.xml",

@@ -8,10 +8,50 @@
                     <div class="o_vpk_dashboard_header_text">
                         <h2 class="mb-1">Dashboard พัสดุรับงาน</h2>
                         <p class="text-muted mb-0">
-                            ใบขอซื้อที่หน่วยงานส่งมาแล้ว — กดการ์ด KPI เพื่อกรอง แล้วกดรับงานหรือเปิดทำรายการ
+                            ใบขอซื้อที่หน่วยงานส่งมาแล้ว — สลับมุมมองบอร์ด การ์ด หรือตาราง แล้วกดรับงานหรือเปิดทำรายการ
                         </p>
                     </div>
                     <div class="o_vpk_dashboard_header_actions">
+                        <div class="o_vpk_view_switch btn-group" role="group">
+                            <button
+                                type="button"
+                                class="btn btn-sm"
+                                t-att-class="state.viewMode === 'board' ? 'btn-primary' : 'btn-outline-secondary'"
+                                t-on-click="() => this.setViewMode('board')"
+                            >
+                                บอร์ด
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-sm"
+                                t-att-class="state.viewMode === 'cards' ? 'btn-primary' : 'btn-outline-secondary'"
+                                t-on-click="() => this.setViewMode('cards')"
+                            >
+                                การ์ด
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-sm"
+                                t-att-class="state.viewMode === 'list' ? 'btn-primary' : 'btn-outline-secondary'"
+                                t-on-click="() => this.setViewMode('list')"
+                            >
+                                ตาราง
+                            </button>
+                        </div>
+                        <label class="o_vpk_groupby_label" t-att-class="state.viewMode === 'cards' ? 'opacity-50' : ''">
+                            จัดกลุ่ม
+                            <select
+                                class="form-select form-select-sm"
+                                t-on-change="onGroupByChange"
+                                t-att-disabled="state.viewMode === 'cards'"
+                            >
+                                <t t-foreach="groupByOptions" t-as="opt" t-key="opt.value">
+                                    <option t-att-value="opt.value" t-att-selected="opt.value === state.groupBy">
+                                        <t t-esc="opt.label"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </label>
                         <button
                             type="button"
                             class="btn btn-outline-secondary btn-sm"
@@ -38,6 +78,16 @@
                     >
                         <div class="o_vpk_inbox_kpi_value"><t t-esc="state.stats.total"/></div>
                         <div class="o_vpk_inbox_kpi_label">ทั้งหมด</div>
+                        <div class="o_vpk_inbox_kpi_amount">฿ <t t-esc="formatAmount(state.stats.amount_total)"/></div>
+                    </button>
+                    <button
+                        type="button"
+                        class="o_vpk_inbox_kpi claimed"
+                        t-att-class="state.activeFilter === 'in_progress' ? 'active' : ''"
+                        t-on-click="() => this.selectFilter('in_progress')"
+                    >
+                        <div class="o_vpk_inbox_kpi_value"><t t-esc="state.stats.in_progress"/></div>
+                        <div class="o_vpk_inbox_kpi_label">กำลังดำเนินการ</div>
                     </button>
                     <button
                         type="button"
@@ -87,9 +137,97 @@
                     </button>
                 </div>
 
+                <div class="o_vpk_inbox_breakdown_row" t-if="state.ready and state.stats.total">
+                    <section class="o_vpk_inbox_breakdown">
+                        <h3>ตามหน่วยงาน</h3>
+                        <t t-foreach="state.stats.by_department" t-as="row" t-key="'dept-' + (row.id || 'none')">
+                            <button
+                                type="button"
+                                class="o_vpk_inbox_breakdown_row_btn"
+                                t-att-class="isBreakdownActive('department', row) ? 'active' : ''"
+                                t-on-click="() => this.selectBreakdown('department', row)"
+                            >
+                                <div class="o_vpk_inbox_breakdown_meta">
+                                    <span t-esc="row.name"/>
+                                    <strong t-esc="row.count"/>
+                                </div>
+                                <div class="o_vpk_inbox_breakdown_bar">
+                                    <span t-att-style="barStyle(row, state.stats.by_department)"/>
+                                </div>
+                                <small>฿ <t t-esc="formatAmount(row.amount)"/></small>
+                            </button>
+                        </t>
+                    </section>
+                    <section class="o_vpk_inbox_breakdown">
+                        <h3>ตามวิธีการจัดซื้อ</h3>
+                        <t t-foreach="state.stats.by_method" t-as="row" t-key="'method-' + (row.id || 'none')">
+                            <button
+                                type="button"
+                                class="o_vpk_inbox_breakdown_row_btn"
+                                t-att-class="isBreakdownActive('method', row) ? 'active' : ''"
+                                t-on-click="() => this.selectBreakdown('method', row)"
+                            >
+                                <div class="o_vpk_inbox_breakdown_meta">
+                                    <span t-esc="row.name"/>
+                                    <strong t-esc="row.count"/>
+                                </div>
+                                <div class="o_vpk_inbox_breakdown_bar">
+                                    <span t-att-style="barStyle(row, state.stats.by_method)"/>
+                                </div>
+                                <small>฿ <t t-esc="formatAmount(row.amount)"/></small>
+                            </button>
+                        </t>
+                    </section>
+                    <section class="o_vpk_inbox_breakdown">
+                        <h3>ตามผู้รับงาน</h3>
+                        <t t-foreach="state.stats.by_owner" t-as="row" t-key="'owner-' + (row.id || 'none')">
+                            <button
+                                type="button"
+                                class="o_vpk_inbox_breakdown_row_btn"
+                                t-att-class="isBreakdownActive('owner', row) ? 'active' : ''"
+                                t-on-click="() => this.selectBreakdown('owner', row)"
+                            >
+                                <div class="o_vpk_inbox_breakdown_meta">
+                                    <span t-esc="row.name"/>
+                                    <strong t-esc="row.count"/>
+                                </div>
+                                <div class="o_vpk_inbox_breakdown_bar">
+                                    <span t-att-style="barStyle(row, state.stats.by_owner)"/>
+                                </div>
+                                <small>฿ <t t-esc="formatAmount(row.amount)"/></small>
+                            </button>
+                        </t>
+                    </section>
+                    <section class="o_vpk_inbox_breakdown">
+                        <h3>ตามอายุงาน</h3>
+                        <t t-foreach="state.stats.by_aging" t-as="row" t-key="'aging-' + row.id">
+                            <button
+                                type="button"
+                                class="o_vpk_inbox_breakdown_row_btn"
+                                t-att-class="isBreakdownActive('aging', row) ? 'active' : ''"
+                                t-on-click="() => this.selectBreakdown('aging', row)"
+                            >
+                                <div class="o_vpk_inbox_breakdown_meta">
+                                    <span t-esc="row.name"/>
+                                    <strong t-esc="row.count"/>
+                                </div>
+                                <div class="o_vpk_inbox_breakdown_bar">
+                                    <span t-att-style="barStyle(row, state.stats.by_aging)"/>
+                                </div>
+                                <small>฿ <t t-esc="formatAmount(row.amount)"/></small>
+                            </button>
+                        </t>
+                    </section>
+                </div>
+
+                <div class="o_vpk_dashboard_filter_chip" t-if="extraFilterLabel">
+                    <span>กำลังกรอง: <t t-esc="extraFilterLabel"/></span>
+                    <button type="button" class="btn btn-link btn-sm" t-on-click="clearExtraFilter">ล้างตัวกรอง</button>
+                </div>
+
                 <div class="o_vpk_dashboard_body flex-grow-1" t-if="state.ready and viewProps">
                     <t t-if="state.stats.total">
-                        <View t-props="viewProps"/>
+                        <View t-props="viewProps" t-key="viewKey"/>
                     </t>
                     <t t-else="">
                         <div class="o_vpk_dashboard_empty text-center text-muted py-5">

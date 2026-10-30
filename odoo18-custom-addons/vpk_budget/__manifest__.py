@@ -1,6 +1,6 @@
 {
     "name": "VPK Budget",
-    "version": "18.0.2.99.25",
+    "version": "18.0.2.99.29",
     "category": "Accounting",
     "summary": "งบประมาณ แหล่งเงิน กลุ่มงบประมาณ คำของบ และบัญชีวิเคราะห์",
     "author": "VPK",

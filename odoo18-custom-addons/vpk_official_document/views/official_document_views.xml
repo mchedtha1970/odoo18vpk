@@ -388,6 +388,26 @@
         <field name="context">{'default_document_type': 'award_approval'}</field>
     </record>
 
+    <record id="view_document_studio_document_type_form_official" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.type.form.official</field>
+        <field name="model">vpk.document.studio.document.type</field>
+        <field name="inherit_id" ref="vpk_document_studio.view_document_studio_document_type_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='templates']" position="after">
+                <page string="เชื่อมโยงประเภทเอกสาร" name="linked_types">
+                    <div class="text-muted mb-2">
+                        เมื่อกด "เพิ่มเอกสาร" ในกระบวนการ e-GP แล้วเลือกประเภทที่ผูกไว้ ระบบจะแสดงเฉพาะแบบฟอร์มของประเภทนี้
+                        (ถ้ามีแบบฟอร์มเดียวจะเลือกให้อัตโนมัติ)
+                    </div>
+                    <group>
+                        <field name="egp_document_type_ids" widget="many2many_tags"
+                               options="{'no_create': True}"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
     <record id="view_document_studio_document_form_pr" model="ir.ui.view">
         <field name="name">vpk.document.studio.document.form.pr</field>
         <field name="model">vpk.document.studio.document</field>

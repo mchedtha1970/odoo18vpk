@@ -3115,7 +3115,7 @@ class OfficialDocument(models.Model):
 
     def _vpk_director_secretary_user(self):
         return self.env.ref(
-            "vpk_official_document.user_director_secretary",
+            "vpk_tier_validation.user_director_secretary",
             raise_if_not_found=False,
         )
 
@@ -3775,7 +3775,7 @@ class OfficialDocumentSigner(models.Model):
 
     def _is_director_secretary(self, user):
         secretary = self.env.ref(
-            "vpk_official_document.user_director_secretary",
+            "vpk_tier_validation.user_director_secretary",
             raise_if_not_found=False,
         )
         return bool(secretary and user == secretary)

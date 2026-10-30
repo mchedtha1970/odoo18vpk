@@ -8,6 +8,73 @@ SOURCE_MODELS = [
 ]
 
 
+class StudioDocumentWizardApprover(models.TransientModel):
+    _name = "vpk.studio.document.wizard.approver"
+    _description = "ผู้อนุมัติตอนสร้างเอกสาร"
+    _order = "sequence, id"
+
+    wizard_id = fields.Many2one(
+        comodel_name="vpk.studio.document.add.wizard",
+        ondelete="cascade",
+    )
+    egp_wizard_id = fields.Many2one(
+        comodel_name="vpk.egp.document.add.wizard",
+        ondelete="cascade",
+    )
+    sequence = fields.Integer(string="ลำดับอนุมัติ", default=10)
+    user_id = fields.Many2one(
+        comodel_name="res.users",
+        string="ผู้อนุมัติ",
+        domain=[("share", "=", False)],
+    )
+    position = fields.Char(string="ตำแหน่ง")
+    is_check = fields.Boolean(string="ตรวจสอบ")
+    is_sign = fields.Boolean(string="ลงนาม", default=True)
+
+    @api.onchange("user_id")
+    def _onchange_user_id(self):
+        Approval = self.env["vpk.approval.line"]
+        if self.user_id:
+            position = Approval._position_from_user(self.user_id)
+            if position:
+                self.position = position
+            if Approval._is_director_secretary(self.user_id):
+                self.is_check = True
+                self.is_sign = False
+            elif not self.is_check:
+                self.is_sign = True
+
+    @api.onchange("is_check")
+    def _onchange_is_check(self):
+        if self.is_check:
+            self.is_sign = False
+
+    @api.onchange("is_sign")
+    def _onchange_is_sign(self):
+        if self.is_sign:
+            self.is_check = False
+
+    def _vpk_seed_rows(self):
+        rows = []
+        for line in self.sorted(key=lambda rec: (rec.sequence, rec.id)):
+            if not line.user_id:
+                continue
+            is_check = bool(line.is_check)
+            is_sign = bool(line.is_sign) and not is_check
+            if not is_check and not is_sign:
+                is_sign = True
+            rows.append(
+                {
+                    "sequence": line.sequence or len(rows) + 1,
+                    "user_id": line.user_id.id,
+                    "position": line.position or "",
+                    "is_check": is_check,
+                    "is_sign": is_sign,
+                }
+            )
+        return rows
+
+
 class StudioDocumentAddWizard(models.TransientModel):
     _name = "vpk.studio.document.add.wizard"
     _description = "เพิ่มเอกสารจากใบขอซื้อ / ใบตรวจรับ"
@@ -40,6 +107,11 @@ class StudioDocumentAddWizard(models.TransientModel):
     file = fields.Binary(string="ไฟล์ต้นทาง")
     filename = fields.Char(string="ชื่อไฟล์")
     notes = fields.Text(string="หมายเหตุ")
+    approver_ids = fields.One2many(
+        comodel_name="vpk.studio.document.wizard.approver",
+        inverse_name="wizard_id",
+        string="ลำดับผู้อนุมัติ",
+    )
 
     @api.depends("res_model")
     def _compute_source_model_id(self):
@@ -66,25 +138,41 @@ class StudioDocumentAddWizard(models.TransientModel):
             "target": "new",
         }
 
-    @api.onchange("document_type_id", "add_mode")
+    def _search_studio_template(self):
+        self.ensure_one()
+        if not self.document_type_id:
+            return self.env["vpk.document.studio.template"]
+        return self.env["vpk.document.studio.template"].search(
+            [
+                ("document_type_id", "=", self.document_type_id.id),
+                ("active", "=", True),
+                ("company_id", "in", [False, self.company_id.id]),
+                "|",
+                ("source_model_id", "=", False),
+                ("source_model_id", "=", self.source_model_id.id),
+            ],
+            order="source_model_id, id desc",
+            limit=1,
+        )
+
+    def _load_approvers_from_template(self, template=False):
+        template = template or self.studio_template_id or self._search_studio_template()
+        self.approver_ids = (
+            template._vpk_approver_wizard_commands()
+            if template
+            else [(5, 0, 0)]
+        )
+
+    @api.onchange("document_type_id", "add_mode", "studio_template_id")
     def _onchange_document_type_id(self):
         if self.add_mode != "studio":
-            self.studio_template_id = False
+            if self.studio_template_id:
+                self.studio_template_id = False
+            self._load_approvers_from_template()
             return
         if self.document_type_id and self.studio_template_id.document_type_id != self.document_type_id:
-            Template = self.env["vpk.document.studio.template"]
-            self.studio_template_id = Template.search(
-                [
-                    ("document_type_id", "=", self.document_type_id.id),
-                    ("active", "=", True),
-                    ("company_id", "in", [False, self.company_id.id]),
-                    "|",
-                    ("source_model_id", "=", False),
-                    ("source_model_id", "=", self.source_model_id.id),
-                ],
-                order="source_model_id, id desc",
-                limit=1,
-            )
+            self.studio_template_id = self._search_studio_template()
+        self._load_approvers_from_template()
 
     def _record(self):
         self.ensure_one()
@@ -116,15 +204,21 @@ class StudioDocumentAddWizard(models.TransientModel):
                 }
             )
             document.attach_uploaded_file(self.file, self.filename)
-            document._vpk_seed_default_approvers()
+            rows = self.approver_ids._vpk_seed_rows()
+            if rows:
+                document._vpk_seed_default_approvers(replace=True, rows=rows)
+            else:
+                document._vpk_seed_default_approvers()
         else:
             if not self.studio_template_id:
                 raise UserError(_("กรุณาเลือกแบบฟอร์ม Document Studio"))
+            rows = self.approver_ids._vpk_seed_rows()
             document = Document._vpk_create_for_record(
                 record,
                 self.document_type_id,
                 template=self.studio_template_id,
                 extra={"note": self.notes},
+                approver_rows=rows or None,
             )
         if existing:
             existing.action_cancel()

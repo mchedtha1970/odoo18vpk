@@ -235,7 +235,7 @@ class PurchaseOrder(models.Model):
             raise UserError(_("ยังไม่มีไฟล์ PDF กรุณากดพิมพ์ PDF ก่อน"))
         return {
             "type": "ir.actions.client",
-            "tag": "vpk_official_document_sign_pdf_viewer",
+            "tag": "vpk_document_sign_pdf_viewer",
             "name": self.display_name,
             "params": {
                 "attachment_id": attachment.id,

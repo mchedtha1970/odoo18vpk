@@ -78,6 +78,36 @@ class DocumentStudioDocument(models.Model):
             else:
                 rec.signature_state = "not_sent"
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._vpk_seed_template_approvers()
+        return records
+
+    def _vpk_seed_template_approvers(self, replace=False):
+        """Copy sequential approvers from the document template when the table is empty."""
+        Line = self.env["vpk.approval.line"].sudo()
+        for rec in self:
+            if rec.vpk_approver_line_ids and not replace:
+                continue
+            template = rec.template_id
+            if not template or not template.default_approver_ids:
+                continue
+            if replace:
+                rec.vpk_approver_line_ids.sudo().unlink()
+            vals_list = [
+                {
+                    **vals,
+                    "res_model": rec._name,
+                    "res_id": rec.id,
+                    "sequence": index,
+                }
+                for index, vals in enumerate(template._vpk_approver_row_vals(), start=1)
+            ]
+            if vals_list:
+                Line.create(vals_list)
+        return True
+
     # ------------------------------------------------------------------
     # Generation guards and merge values
     # ------------------------------------------------------------------

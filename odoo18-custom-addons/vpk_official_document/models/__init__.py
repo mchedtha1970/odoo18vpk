@@ -14,3 +14,4 @@ from . import work_acceptance
 from . import saraban_document
 from . import tier_definition
 from . import tier_review
+from . import studio_document_type

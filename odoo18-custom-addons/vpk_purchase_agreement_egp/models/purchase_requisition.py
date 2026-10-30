@@ -47,6 +47,12 @@ class PurchaseRequisition(models.Model):
         string="ผู้เสนอราคา",
         copy=False,
     )
+    egp_bid_line_ids = fields.One2many(
+        comodel_name="purchase.requisition.egp.bid.line",
+        inverse_name="requisition_id",
+        string="รายการเปรียบเทียบราคา",
+        copy=False,
+    )
     procurement_type_id = fields.Many2one(
         comodel_name="procurement.type",
         string="ประเภทการสั่งซื้อ",
@@ -333,6 +339,11 @@ class PurchaseRequisition(models.Model):
                     "approve_role": member.approve_role,
                     "committee_type": committee_type,
                     "note": member.note,
+                    "confirm_state": member.confirm_state,
+                    "confirm_request_date": member.confirm_request_date,
+                    "confirm_reply_date": member.confirm_reply_date,
+                    "confirm_note": member.confirm_note,
+                    "confirm_requested_by": member.confirm_requested_by.id,
                 }
             )
             for member in members
@@ -444,6 +455,8 @@ class PurchaseRequisition(models.Model):
             else:
                 code = "purchase.requisition.egp.procurement"
             requisition.name = self.env["ir.sequence"].with_company(requisition.company_id).next_by_code(code)
+        if any(key in vals for key in ("egp_bid_ids", "egp_bid_line_ids")):
+            self._summarize_offered_totals()
         return res
 
     def action_confirm(self):
@@ -720,6 +733,36 @@ class PurchaseRequisition(models.Model):
             closed.with_context(egp_flow_auto=True).write({"egp_flow_stage": "done"})
         return res
 
+    def _summarize_offered_totals(self):
+        for requisition in self:
+            if requisition.egp_consideration_type not in ("line", "unit"):
+                continue
+            totals = {}
+            for line in requisition.egp_bid_line_ids:
+                if not line.bid_id or not line.product_id:
+                    continue
+                totals[line.bid_id] = totals.get(line.bid_id, 0.0) + (
+                    line.price_subtotal or 0.0
+                )
+            for bid in requisition.egp_bid_ids:
+                bid.amount_total = totals.get(bid, 0.0)
+
+    def action_summarize_offered_totals(self):
+        self._summarize_offered_totals()
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("สรุปราคารวมที่เสนอ"),
+                "message": _(
+                    "คำนวณราคารวมจากรายการสินค้าในตารางเปรียบเทียบราคาแล้ว"
+                ),
+                "type": "success",
+                "sticky": False,
+                "next": {"type": "ir.actions.client", "tag": "soft_reload"},
+            },
+        }
+
     def action_close_after_award(self):
         self.ensure_one()
         if self.requisition_type == "egp_procurement":
@@ -739,6 +782,151 @@ class PurchaseRequisition(models.Model):
                 )
             )
         self.action_done()
+
+    def action_print_contract_essence(self):
+        self.ensure_one()
+        return self.env.ref(
+            "vpk_purchase_agreement_egp.action_report_contract_essence"
+        ).report_action(self)
+
+    def _format_essence_amount(self, amount):
+        return "{:,.2f}".format(amount or 0.0)
+
+    def _format_essence_date(self, date_value):
+        if not date_value:
+            return "-"
+        return "%02d/%02d/%04d" % (
+            date_value.day,
+            date_value.month,
+            date_value.year + 543,
+        )
+
+    def _essence_item_name(self, line):
+        return (
+            line.name
+            or getattr(line, "product_description_variants", False)
+            or (line.product_id.display_name if line.product_id else "-")
+        )
+
+    def _essence_offer_lines(self):
+        self.ensure_one()
+        winning = self.egp_bid_line_ids.filtered(
+            lambda line: line.is_winner and line.product_id
+        )
+        if winning:
+            return winning
+        if self.egp_consideration_type == "total":
+            winner = self.egp_bid_ids.filtered("is_winner")[:1]
+            if winner and winner.line_ids:
+                return winner.line_ids.filtered("product_id")
+        return self.egp_bid_line_ids.filtered("product_id")
+
+    def _essence_contracts_for_partner(self, partner):
+        if "contract_ids" not in self._fields or not partner:
+            return self.env["purchase.contract"]
+        return self.contract_ids.filtered(
+            lambda contract: contract.partner_id == partner
+            and contract.state != "cancel"
+        )
+
+    def _get_contract_essence_values(self):
+        self.ensure_one()
+        offer_lines = self._essence_offer_lines()
+        unique_products = offer_lines.mapped("product_id")
+        budget_by_product = {}
+        for line in offer_lines:
+            if line.product_id and line.budget_amount and line.product_id.id not in budget_by_product:
+                budget_by_product[line.product_id.id] = line.budget_amount
+        budget = self.purchase_request_amount_total or sum(budget_by_product.values())
+        offer_rows = []
+        for index, line in enumerate(offer_lines, start=1):
+            partner = line.partner_id
+            offer_rows.append(
+                {
+                    "seq": index,
+                    "item": self._essence_item_name(line),
+                    "vat": partner.vat or "-",
+                    "vendor": partner.display_name or "-",
+                    "amount": self._format_essence_amount(line.price_subtotal),
+                }
+            )
+        if not offer_rows:
+            for index, bid in enumerate(self.egp_bid_ids, start=1):
+                offer_rows.append(
+                    {
+                        "seq": index,
+                        "item": self.egp_project_name or self.name or "-",
+                        "vat": bid.partner_id.vat or "-",
+                        "vendor": bid.partner_id.display_name or "-",
+                        "amount": self._format_essence_amount(bid.amount_total),
+                    }
+                )
+        winner_partners = offer_lines.filtered("is_winner").mapped("partner_id")
+        if not winner_partners:
+            winner_partners = self.egp_bid_ids.filtered("is_winner").mapped("partner_id")
+        winner_rows = []
+        for index, partner in enumerate(winner_partners, start=1):
+            partner_lines = offer_lines.filtered(lambda line: line.partner_id == partner)
+            amount = sum(partner_lines.mapped("price_subtotal"))
+            bid = self.egp_bid_ids.filtered(lambda rec: rec.partner_id == partner)[:1]
+            if not amount and bid:
+                amount = bid.amount_total
+            contracts = self._essence_contracts_for_partner(partner)
+            contract = contracts[:1]
+            orders = self.purchase_ids.filtered(
+                lambda order: order.partner_id == partner and order.state != "cancel"
+            )
+            official_no = False
+            if contract and "contract_po_number" in contract._fields:
+                official_no = contract.contract_po_number
+            contract_no = official_no or " / ".join(
+                part
+                for part in [
+                    contract.name if contract else False,
+                    orders[:1].name if orders else False,
+                ]
+                if part
+            ) or "-"
+            egp_control = "-"
+            if contract and "egp_contract_control_no" in contract._fields:
+                egp_control = contract.egp_contract_control_no or "-"
+            state_label = "-"
+            if contract:
+                state_label = dict(contract._fields["state"].selection).get(
+                    contract.state, contract.state
+                )
+            winner_rows.append(
+                {
+                    "seq": index,
+                    "vat": partner.vat or "-",
+                    "vendor": partner.display_name or "-",
+                    "egp_control": egp_control,
+                    "contract_no": contract_no,
+                    "contract_date": self._format_essence_date(
+                        contract.date_start if contract else False
+                    ),
+                    "amount": self._format_essence_amount(
+                        contract.amount_total if contract else amount
+                    ),
+                    "status": state_label,
+                    "reason": (bid.notes if bid and bid.notes else "-"),
+                }
+            )
+        method_name = self.procurement_method_id.display_name if self.procurement_method_id else ""
+        project_name = self.egp_project_name or ""
+        if not project_name and unique_products:
+            project_name = "จำนวน %s รายการ" % len(unique_products)
+            if method_name:
+                project_name = "%s ด้วยวิธี%s" % (project_name, method_name)
+        return {
+            "agency": self.company_id.display_name or "-",
+            "project_no": self.egp_reference or "-",
+            "project_name": project_name or self.name or "-",
+            "budget": self._format_essence_amount(budget),
+            "median": self._format_essence_amount(budget),
+            "offer_rows": offer_rows,
+            "winner_rows": winner_rows,
+        }
 
 
 class PurchaseRequisitionLine(models.Model):

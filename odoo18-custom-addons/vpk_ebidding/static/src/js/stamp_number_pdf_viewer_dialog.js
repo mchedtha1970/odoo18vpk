@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
 import { _t } from "@web/core/l10n/translation";
-import { SignPdfViewerDialog } from "@vpk_official_document/js/sign_pdf_viewer_dialog";
+import { SignPdfViewerDialog } from "@vpk_document_studio_sign/js/sign_pdf_viewer_dialog";
 
 const THAI_DIGITS = {
     0: "๐",

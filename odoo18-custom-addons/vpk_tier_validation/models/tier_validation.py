@@ -28,7 +28,7 @@ class TierValidation(models.AbstractModel):
     )
     def _compute_vpk_secretary_can_screen(self):
         secretary = self.env.ref(
-            "vpk_official_document.user_director_secretary",
+            "vpk_tier_validation.user_director_secretary",
             raise_if_not_found=False,
         )
         for rec in self:
@@ -49,11 +49,10 @@ class TierValidation(models.AbstractModel):
     def _vpk_requires_approver_table(self):
         """Documents that must have rows in the approver table before they are sent.
 
-        Purchase requests are approved by signing the related official documents,
-        and official documents check their own signer table.
+        Purchase requests are approved by signing the related documents.
         """
         self.ensure_one()
-        return self._name not in ("purchase.request", "vpk.official.document")
+        return self._name != "purchase.request"
 
     def _vpk_check_approver_table(self):
         for rec in self:
@@ -70,7 +69,7 @@ class TierValidation(models.AbstractModel):
 
     def request_validation(self):
         self._vpk_check_approver_table()
-        # Purchase requests are approved by signing the related official documents.
+        # Purchase requests are approved by signing the related documents.
         lined = self.filtered(
             lambda rec: rec._name != "purchase.request"
             and rec.vpk_approver_line_ids.filtered("user_id")
@@ -142,8 +141,6 @@ class TierValidation(models.AbstractModel):
                 if parent is not None:
                     parent.remove(node)
             res["arch"] = etree.tostring(doc)
-            return res
-        if self._name == "vpk.official.document":
             return res
         doc = etree.XML(res["arch"])
         if doc.xpath("//field[@name='vpk_approver_line_ids']"):

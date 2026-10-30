@@ -37,9 +37,10 @@
                     >
                         <field name="selected" widget="boolean_toggle"/>
                         <field name="product_id"/>
-                        <field name="product_uom_id" optional="show"/>
+                        <field name="product_uom_id" force_save="1"/>
+                        <field name="purchase_uom_id" force_save="1"/>
                         <field name="allocated_qty"/>
-                        <field name="unit_price"/>
+                        <field name="unit_price" force_save="1"/>
                         <field name="allocated_amount"/>
                         <field name="remaining_amount"/>
                         <field name="product_qty"/>
