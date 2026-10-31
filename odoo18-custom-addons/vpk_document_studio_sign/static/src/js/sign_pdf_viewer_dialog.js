@@ -429,6 +429,13 @@ export class SignPdfViewerDialog extends Component {
         setTimeout(bind, 250);
     }
 
+    _notifyError(error) {
+        this.notification.add(error.data?.message || error.message || _t("ทำรายการไม่สำเร็จ"), {
+            type: "danger",
+            sticky: true,
+        });
+    }
+
     async _callTier(methodName, onDone) {
         if (this.state.busy) {
             return;
@@ -448,8 +455,9 @@ export class SignPdfViewerDialog extends Component {
             } else if (onDone) {
                 await onDone();
             }
-        } catch (_err) {
+        } catch (error) {
             this.state.busy = false;
+            this._notifyError(error);
         }
     }
 
@@ -548,8 +556,9 @@ export class SignPdfViewerDialog extends Component {
             } else {
                 await afterSign();
             }
-        } catch (_err) {
+        } catch (error) {
             this.state.busy = false;
+            this._notifyError(error);
         }
     }
 

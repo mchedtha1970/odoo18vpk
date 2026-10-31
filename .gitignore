@@ -13,7 +13,8 @@ tools/
 .cache/
 .local/
 .npm/
-.claude/
+.claude/*
+!.claude/agents/
 .copilot/
 .dotnet/
 .cursor/
@@ -66,3 +67,4 @@ odoo18vpk-docker/VPK_S1/filestore/
 # Office lock files
 ~$*
 **/~$*
+scripts/playwright/reports/

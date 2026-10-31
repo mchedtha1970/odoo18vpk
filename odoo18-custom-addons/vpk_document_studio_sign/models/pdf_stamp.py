@@ -15,6 +15,17 @@ SIGNATURE_MAX_HEIGHT = 56.0
 SIGNATURE_GAP_ABOVE_NAME = 5.0
 PAGE_MARGIN = 18.0
 
+# Thai PDF fonts such as TH Sarabun expose tall-consonant forms in the Private Use Area.
+THAI_GLYPH_BASES = {"\uf700": "\u0e10", "\uf70f": "\u0e0d", "\u0e33": "\u0e32"}
+# Tone marks and upper/lower vowels: PUA variants come back out of order, so ignore them.
+THAI_MARKS = frozenset(
+    chr(code)
+    for code in (
+        [0x0E31, *range(0x0E34, 0x0E3B), *range(0x0E47, 0x0E4F)]
+        + [code for code in range(0xF700, 0xF71B) if chr(code) not in THAI_GLYPH_BASES]
+    )
+)
+
 
 class SignatureStampError(ValueError):
     """Raised when the signature cannot be placed on the PDF."""
@@ -51,6 +62,45 @@ def _union_charboxes(textpage, start, count):
     return min(xs), min(ys), max(xs), max(ys)
 
 
+def _match_key(text):
+    """Return text reduced to what survives Thai PDF extraction, for comparing names."""
+    key = []
+    for char in text or "":
+        if char.isspace() or char in THAI_MARKS:
+            continue
+        key.append(THAI_GLYPH_BASES.get(char, char).casefold())
+    return "".join(key)
+
+
+def _find_normalized_rect(textpage, needles):
+    """Find needles by match key, for text that ``textpage.search`` cannot match."""
+    indexes = []
+    key = []
+    for index in range(textpage.count_chars()):
+        char_key = _match_key(textpage.get_text_range(index, 1))
+        if char_key:
+            indexes.append(index)
+            key.append(char_key[0])
+    page_key = "".join(key)
+    last_rect = None
+    for needle in needles:
+        needle_key = _match_key(needle)
+        position = page_key.rfind(needle_key) if needle_key else -1
+        if position < 0:
+            continue
+        boxes = [
+            textpage.get_charbox(index)
+            for index in indexes[position : position + len(needle_key)]
+        ]
+        last_rect = (
+            min(box[0] for box in boxes),
+            min(box[1] for box in boxes),
+            max(box[2] for box in boxes),
+            max(box[3] for box in boxes),
+        )
+    return last_rect
+
+
 def find_text_rect(pdf, search_texts):
     """Return ``(page_index, (x0, y0, x1, y1))`` for the last matching text."""
     last_hit = None
@@ -74,6 +124,10 @@ def find_text_rect(pdf, search_texts):
                     rect = _union_charboxes(textpage, start, count)
                     if rect:
                         last_hit = (page_index, rect)
+            if not last_hit or last_hit[0] != page_index:
+                rect = _find_normalized_rect(textpage, needles)
+                if rect:
+                    last_hit = (page_index, rect)
         finally:
             textpage.close()
     return last_hit

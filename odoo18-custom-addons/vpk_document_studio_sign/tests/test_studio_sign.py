@@ -7,6 +7,8 @@ import io
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, new_test_user, tagged
 
+from odoo.addons.vpk_document_studio_sign.models import pdf_stamp
+
 
 def _pdf_with_name(name):
     from reportlab.lib.pagesizes import A4
@@ -73,6 +75,17 @@ class TestStudioSign(TransactionCase):
                 }
             )
         return document
+
+    def test_match_key_handles_thai_pdf_glyphs(self):
+        extracted = "( ผ\uf70bูทดสอบหัวหน\uf70bาเจ\uf70bาหน\uf70bาที่ )"
+        self.assertEqual(
+            pdf_stamp._match_key(extracted),
+            pdf_stamp._match_key("(ผู้ทดสอบหัวหน้าเจ้าหน้าที่)"),
+        )
+        self.assertEqual(pdf_stamp._match_key("ซ้อื"), pdf_stamp._match_key("ซื้อ"))
+        self.assertNotEqual(
+            pdf_stamp._match_key("ผู้ทดสอบพัสดุ"), pdf_stamp._match_key("ผู้ทดสอบหน่วยงาน")
+        )
 
     def test_send_requires_approvers(self):
         document = self.env["vpk.document.studio.document"].create(

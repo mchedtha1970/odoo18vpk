@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""เปิดหน้าต่างเบราว์เซอร์แล้วสร้างใบขอซื้อยา เป็นร่าง
+"""เปิดหน้าต่างเบราว์เซอร์แล้วทำใบขอซื้อยาตามขั้นตอนใน purchase_flows.md
 
-หัวใบและรายการสินค้าอ่านจาก purchase_flows.md
+หัวใบ รายการสินค้า และขั้นตอนอ่านจาก purchase_flows.md
 ราคาต่อหน่วยให้ระบบดึงจากคำของบที่อนุมัติ (ไม่พิมพ์ราคาเอง)
-บันทึกเป็นร่าง ไม่กดตรวจงบ ไม่ส่งพัสดุ และไม่ขออนุมัติ
+ขั้นตอนในไฟล์นั้นต่อเนื่องถึงการสร้างรายการ e-GP และมีการอนุมัติแบบทดสอบ ใช้กับเครื่องทดสอบเท่านั้น
 
 รัน:
     pip install playwright
     playwright install chromium
     python scripts/playwright/create_medicine_purchase_request.py
 
-รหัสผ่านอ่านจากตัวแปร ODOO_PASSWORD
-ถ้าไม่ตั้งไว้ สคริปต์จะอ่านบัญชีหน่วยงานจากสคริปต์คู่มือในเครื่องนี้
+รหัสผ่านอ่านจากตัวแปร ODOO_PASSWORD ถ้าไม่ตั้งไว้จะใช้รหัสของผู้ใช้ทดสอบในหน้า login
+ตั้ง HEADLESS=1 เพื่อไม่แสดงหน้าต่าง และตั้ง SCREENSHOT_PATH เพื่อกำหนดที่เก็บภาพเมื่อพลาด
 """
 
 import asyncio
@@ -23,22 +23,10 @@ from pathlib import Path
 from playwright.async_api import TimeoutError as PlaywrightTimeout
 from playwright.async_api import async_playwright
 
-ROOT = Path(__file__).resolve().parents[2]
+from odoo_session import BASE_URL, launch_browser, login_as
+
 FLOW_FILE = Path(__file__).with_name("purchase_flows.md")
-BASE_URL = os.environ.get("ODOO_URL", "http://127.0.0.1:8069")
 USER = os.environ.get("ODOO_USER", "uat.dept")
-
-
-def load_password():
-    value = os.environ.get("ODOO_PASSWORD", "").strip()
-    if value:
-        return value
-    manual = ROOT / "docs" / "build_procurement_user_manual_docx.py"
-    text = manual.read_text(encoding="utf-8")
-    match = re.search(r'\["หน่วยงาน",\s*"uat\.dept",\s*"([^"]+)"', text)
-    if not match:
-        raise SystemExit("ตั้งค่า ODOO_PASSWORD ก่อนรันสคริปต์")
-    return match.group(1)
 
 
 def split_kv(text):
@@ -53,6 +41,7 @@ def load_flow(path):
     products = []
     notes = []
     procurement_notes = []
+    documents = []
     section = None
     for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
@@ -64,8 +53,24 @@ def load_flow(path):
                 section = "order"
             elif "งานจัดซื้อ" in title:
                 section = "procurement"
+            elif "เอกสารและผู้ลงนาม" in title:
+                section = "documents"
             else:
                 section = None
+            continue
+        if section == "documents":
+            cells = [cell.strip() for cell in line.strip("|").split("|")]
+            if line.startswith("|") and cells[0] != "เอกสาร" and set(cells[0]) - set("-: "):
+                documents.append(
+                    {
+                        "label": cells[0],
+                        "owner": cells[1],
+                        "signers": [
+                            dict(zip(("login", "name"), map(str.strip, signer.split("="))))
+                            for signer in cells[2].split(",")
+                        ],
+                    }
+                )
             continue
         if section == "procurement":
             if line:
@@ -118,11 +123,10 @@ def load_flow(path):
         "committee": "คณะกรรมการ" in note_text,
         "committee_role": "ประธาน" if "ประธาน" in note_text else "คณะกรรมการ",
         "budget": "ตรวจสอบงบ" in note_text,
-        "approval": "เอกสารอนุมัติ" in note_text or "ส่งอนุมัติ" in note_text,
-        "approve": "ให้อนุมัติ" in note_text,
         "send": "ส่งพัสดุ" in note_text,
         "to_egp": "e-GP" in " ".join(procurement_notes),
         "procurement_user": "uat.procurement",
+        "documents": documents,
     }
     return order, products, steps
 
@@ -235,7 +239,7 @@ async def click_tab(page, label):
 
 
 async def add_committee(page, role_label):
-    await click_tab(page, "รายชื่อคณะกรรมการ")
+    await click_tab(page, "คณะกรรมการ")
     lines = page.locator('.o_field_widget[name="work_acceptance_committee_ids"]')
     await lines.locator(".o_field_x2many_list_row_add a").click()
     row = lines.locator("tr.o_selected_row")
@@ -268,25 +272,100 @@ async def check_budget(page):
     await page.wait_for_timeout(800)
 
 
-async def approve_purchase_memo(page, pr_url, do_approve):
-    await click_tab(page, "เอกสารอนุมัติขอซื้อ")
-    await page.locator('button[name="action_create_purchase_approval_memo"]').first.click()
-    await page.locator('button[name="action_open_send_wizard"]').wait_for(
-        state="visible", timeout=20000
+async def pick_m2o(page, scope, field_name, query, option_text):
+    box = scope.locator(f'[name="{field_name}"] input').first
+    await box.click()
+    await box.fill("")
+    await box.press_sequentially(query, delay=30)
+    menu = page.locator(".o-autocomplete--dropdown-menu").locator("visible=true").last
+    await menu.wait_for(state="visible", timeout=10000)
+    option = menu.get_by_text(option_text, exact=True).first
+    await option.wait_for(state="visible", timeout=15000)
+    await option.click()
+    await page.wait_for_timeout(500)
+
+
+async def open_record(page, url):
+    await page.goto(url, wait_until="domcontentloaded")
+    await page.locator(".o_form_view").first.wait_for(state="visible", timeout=20000)
+
+
+async def add_document(page, document):
+    """สร้างเอกสารจากแท็บเอกสารที่เกี่ยวข้อง แล้วส่งลงนาม คืนเลขและ URL ของเอกสาร."""
+    await click_tab(page, "เอกสารที่เกี่ยวข้อง")
+    await page.locator('button[name="action_open_add_studio_document_wizard"]').click()
+    modal = page.locator(".modal").last
+    await modal.locator('[name="document_type_id"]').wait_for(state="visible")
+    await pick_m2o(page, modal, "document_type_id", document["label"], document["label"])
+    await page.wait_for_timeout(800)
+    for signer in document["signers"]:
+        approvers = modal.locator('[name="approver_ids"]')
+        await approvers.locator(".o_field_x2many_list_row_add a").click()
+        row = approvers.locator("tr.o_selected_row")
+        await pick_m2o(page, row, "user_id", signer["name"], signer["name"])
+    await modal.locator('button[name="action_confirm"]').click()
+    send = page.locator('button[name="action_send_for_signature"]')
+    await send.wait_for(state="visible", timeout=60000)
+    match = re.search(r"vpk\.document\.studio\.document/(\d+)", page.url)
+    url = f"{BASE_URL}/odoo/vpk.document.studio.document/{match.group(1)}"
+    name = (await page.locator('.o_field_widget[name="name"]').first.inner_text()).strip()
+    await send.click()
+    # ระบบสร้าง PDF ตอนส่งลงนาม ต้องรอให้จบก่อนเปลี่ยนผู้ใช้
+    await send.wait_for(state="hidden", timeout=120000)
+    print("ส่งลงนามแล้ว:", document["label"], name)
+    return name, url
+
+
+async def draw_signature(page, modal):
+    canvas = modal.locator("canvas").first
+    await canvas.wait_for(state="visible", timeout=10000)
+    box = await canvas.bounding_box()
+    await page.mouse.move(box["x"] + 40, box["y"] + 40)
+    await page.mouse.down()
+    for step in range(1, 6):
+        await page.mouse.move(
+            box["x"] + 40 + step * 40, box["y"] + 40 + (step % 2) * 40, steps=4
+        )
+    await page.mouse.up()
+
+
+async def sign_document(page, url, login):
+    await login_as(page, login)
+    await open_record(page, url)
+    await page.locator('button[name="action_open_sign_viewer"]').click(timeout=20000)
+    viewer = page.locator(".o_vpk_sign_pdf_container").first
+    await viewer.wait_for(state="visible", timeout=20000)
+    pdf = page.frame_locator(".o_vpk_sign_pdf_iframe").locator("#viewerContainer")
+    await pdf.locator(".page").first.wait_for(state="visible", timeout=30000)
+    await pdf.evaluate("(element) => { element.scrollTop = element.scrollHeight; }")
+    await page.wait_for_function(
+        """() => {
+            const button = document.querySelector('.o_vpk_sign_pdf_footer button.btn-success');
+            return button && !button.disabled;
+        }""",
+        timeout=20000,
     )
-    print("เปิดบันทึกข้อความอนุมัติขอซื้อแล้ว")
-    await page.locator('button[name="action_open_send_wizard"]').click()
-    await page.locator(".modal .o_field_widget[name='skip_approval']").wait_for(
-        state="visible"
-    )
-    if do_approve:
-        checkbox = page.locator(".modal .o_field_widget[name='skip_approval'] input")
-        await checkbox.check()
-    await page.locator(".modal button[name='action_confirm']").click()
-    await page.locator(".modal").wait_for(state="hidden", timeout=20000)
-    print("ส่งเอกสารอนุมัติแล้ว", "และถือว่าอนุมัติสำหรับทดสอบ" if do_approve else "")
-    await page.goto(pr_url, wait_until="domcontentloaded")
-    await page.locator(".o_form_view").wait_for(state="visible")
+    await page.locator(".o_vpk_sign_pdf_footer button.btn-success").click()
+    modal = page.locator(".modal:has(canvas)").last
+    await draw_signature(page, modal)
+    async with page.expect_response(
+        lambda response: "action_apply_signature" in response.url
+    ) as signed:
+        await modal.locator(".modal-footer button.btn-primary").click()
+    result = await (await signed.value).json()
+    if "error" in result:
+        data = result["error"].get("data") or {}
+        raise RuntimeError(f"ลงนามไม่สำเร็จ ({login}): {data.get('message') or result['error']}")
+    await viewer.wait_for(state="hidden", timeout=60000)
+    print("ลงนามแล้ว:", login)
+
+
+async def complete_document(page, document):
+    """สร้างเอกสาร ส่งลงนาม แล้วลงนามตามลำดับ."""
+    name, url = await add_document(page, document)
+    for signer in document["signers"]:
+        await sign_document(page, url, signer["login"])
+    print(f"เอกสารลงนามครบ {document['label']}: {name}")
 
 
 async def create_purchase_request(page, order, products, steps):
@@ -349,8 +428,11 @@ async def create_purchase_request(page, order, products, steps):
         if await closer.count():
             await closer.first.click()
     pr_url = page.url
-    if steps["approval"]:
-        await approve_purchase_memo(page, pr_url, steps["approve"])
+    for document in steps["documents"]:
+        if document["owner"] == USER:
+            await complete_document(page, document)
+            await login_as(page, USER)
+            await open_record(page, pr_url)
     if steps["send"]:
         await page.locator('button[name="action_send_to_procurement"]').click()
         await page.wait_for_timeout(1200)
@@ -358,60 +440,8 @@ async def create_purchase_request(page, order, products, steps):
     return name
 
 
-async def login_as(page, user, password):
-    await page.goto(f"{BASE_URL}/web/session/logout", wait_until="domcontentloaded")
-    await page.goto(f"{BASE_URL}/web/login", wait_until="domcontentloaded")
-    await page.locator("#login").wait_for(state="visible")
-    await page.locator("#vpk_test_user option[value='%s']" % user).wait_for(
-        state="attached", timeout=15000
-    )
-    await page.evaluate(
-        """([login, passwordValue]) => {
-            const select = document.querySelector('#vpk_test_user');
-            const option = [...select.options].find((item) => item.value === login);
-            const user = document.querySelector('#login');
-            const password = document.querySelector('#password');
-            user.value = login;
-            password.value = (option && option.dataset.password) || passwordValue;
-            select.value = login;
-        }""",
-        [user, password],
-    )
-    await page.locator("button.vpk-login-submit").click()
-    await page.wait_for_url(re.compile(r"/odoo(?:\?|$|/)"), timeout=30000)
-
-
-async def issue_and_approve(page, pr_url, document_label):
-    await click_tab(page, "เอกสารราชการที่เกี่ยวข้อง")
-    select = page.locator(
-        '.o_field_widget[name="official_document_to_create"] select'
-    )
-    await select.select_option(label=document_label)
-    await page.locator('button[name="action_create_selected_official_document"]').click()
-    await page.locator(".o_form_view").wait_for(state="visible", timeout=20000)
-    send = page.locator('button[name="action_open_send_wizard"]')
-    try:
-        await send.wait_for(state="visible", timeout=8000)
-    except PlaywrightTimeout:
-        print("เอกสารอนุมัติแล้ว:", document_label)
-        await page.goto(pr_url, wait_until="domcontentloaded")
-        await page.locator(".o_form_view").wait_for(state="visible")
-        return
-    print("เปิดเอกสารแล้ว:", document_label)
-    await page.locator('button[name="action_open_send_wizard"]').click()
-    await page.locator(".modal .o_field_widget[name='skip_approval']").wait_for(
-        state="visible"
-    )
-    await page.locator(".modal .o_field_widget[name='skip_approval'] input").check()
-    await page.locator(".modal button[name='action_confirm']").click()
-    await page.locator(".modal").wait_for(state="hidden", timeout=30000)
-    print("ส่งอนุมัติแล้ว:", document_label)
-    await page.goto(pr_url, wait_until="domcontentloaded")
-    await page.locator(".o_form_view").wait_for(state="visible")
-
-
-async def continue_to_egp(page, pr_name, user, password):
-    await login_as(page, user, password)
+async def continue_to_egp(page, pr_name, user, documents):
+    await login_as(page, user)
     await page.goto(f"{BASE_URL}/odoo/action-979", wait_until="domcontentloaded")
     card = page.locator(".o_vpk_inbox_card", has_text=pr_name).first
     await card.wait_for(state="visible", timeout=20000)
@@ -421,55 +451,63 @@ async def continue_to_egp(page, pr_name, user, password):
         await page.wait_for_timeout(1200)
         print("รับงานแล้ว:", pr_name)
     await card.locator('button[name="action_open_procurement_work"]').click()
-    await page.locator(".o_form_view").wait_for(state="visible", timeout=20000)
+    await page.locator(".o_form_view").first.wait_for(state="visible", timeout=20000)
     pr_url = page.url
-    await issue_and_approve(
-        page, pr_url, "คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ"
-    )
-    await issue_and_approve(
-        page, pr_url, "รายงานขออนุมัติจัดซื้อจัดจ้างโดยวิธีเฉพาะเจาะจง"
-    )
+    for document in documents:
+        if document["owner"] == user:
+            await complete_document(page, document)
+            await login_as(page, user)
+            await open_record(page, pr_url)
+    verify = page.locator('button[name="action_verify_procurement"]')
+    if await verify.count() and await verify.first.is_visible():
+        await verify.first.click()
+        await page.wait_for_timeout(1200)
+        print("พัสดุยืนยันการตรวจสอบแล้ว:", pr_name)
     send = page.locator('button[name="action_send_to_egp"]')
     await send.wait_for(state="visible", timeout=20000)
     await send.click()
     await page.locator('button[name="make_purchase_requisition"]').click()
-    await page.locator(".o_form_view").wait_for(state="visible", timeout=20000)
-    egp_name = (
-        await page.locator('.o_field_widget[name="name"]').first.inner_text()
-    ).strip()
+    await page.locator(".modal").wait_for(state="hidden", timeout=20000)
+    egp_row = page.locator(".o_data_row", has_text=pr_name).first
+    egp_cell = egp_row.locator('td[name="name"]')
+    await egp_cell.wait_for(state="visible", timeout=20000)
+    egp_name = (await egp_cell.inner_text()).strip()
     print("สร้างรายการ e-GP แล้ว:", egp_name)
     return egp_name
 
 
 async def main():
     order, products, steps = load_flow(FLOW_FILE)
-    password = load_password()
+    headless = os.environ.get("HEADLESS") == "1"
     async with async_playwright() as playwright:
-        browser = await playwright.chromium.launch(headless=False, slow_mo=250)
-        context = await browser.new_context(viewport={"width": 1440, "height": 900})
+        browser = await launch_browser(
+            playwright, headless=headless, slow_mo=0 if headless else 250
+        )
+        context = await browser.new_context(viewport={"width": 1440, "height": 1600})
         page = await context.new_page()
         try:
             resume = os.environ.get("RESUME_PR")
             if resume:
                 await continue_to_egp(
-                    page, resume, steps["procurement_user"], password
+                    page, resume, steps["procurement_user"], steps["documents"]
                 )
             else:
-                await login_as(page, USER, password)
+                await login_as(page, USER)
                 pr_name = await create_purchase_request(page, order, products, steps)
                 if steps.get("to_egp"):
                     await continue_to_egp(
-                        page, pr_name, steps["procurement_user"], password
+                        page, pr_name, steps["procurement_user"], steps["documents"]
                     )
-            hold = int(os.environ.get("HOLD_SECONDS", "20"))
+            hold = int(os.environ.get("HOLD_SECONDS", "0" if headless else "20"))
             print(f"เปิดหน้าต่างค้างไว้ {hold} วินาที")
             await page.wait_for_timeout(hold * 1000)
         except Exception as error:
-            shot = Path("/tmp/playwright-pr-error.png")
+            shot = Path(os.environ.get("SCREENSHOT_PATH", "/tmp/playwright-pr-error.png"))
             await page.screenshot(path=str(shot), full_page=True)
             print("ทำรายการไม่สำเร็จ:", error)
             print("ภาพหน้าจอ:", shot)
-            await page.wait_for_timeout(8000)
+            if not headless:
+                await page.wait_for_timeout(8000)
             return 1
         finally:
             await browser.close()
