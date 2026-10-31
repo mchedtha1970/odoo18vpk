@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <menuitem id="menu_ebidding_root"
-              name="e-Bidding"
-              parent="purchase.menu_purchase_root"
-              sequence="78"/>
+              name="แผนจัดซื้อจัดจ้าง"
+              parent="vpk_purchase_agreement_egp.menu_egp_process_root"
+              sequence="5"/>
 
     <menuitem id="menu_ebidding_plan"
-              name="แผนจัดซื้อจัดจ้างจาก e-GP"
+              name="แผนรวมจัดซื้อจัดจ้าง"
               parent="menu_ebidding_root"
               action="action_ebidding_plan"
               sequence="10"/>
@@ -17,17 +17,23 @@
               action="action_ebidding_plan_line"
               sequence="15"/>
 
+    <menuitem id="menu_ebidding_tools"
+              name="เครื่องมือ"
+              parent="menu_ebidding_root"
+              sequence="90"
+              groups="purchase.group_purchase_manager"/>
+
     <menuitem id="menu_ebidding_plan_import"
               name="นำเข้าแผนจาก Excel"
-              parent="menu_ebidding_root"
+              parent="menu_ebidding_tools"
               action="action_ebidding_plan_import_wizard"
-              sequence="20"
+              sequence="10"
               groups="purchase.group_purchase_manager"/>
 
     <menuitem id="menu_ebidding_plan_document_type"
               name="ประเภทเอกสาร e-GP ของแผน"
-              parent="menu_ebidding_root"
+              parent="menu_ebidding_tools"
               action="action_ebidding_plan_document_type"
-              sequence="90"
+              sequence="20"
               groups="purchase.group_purchase_manager"/>
 </odoo>

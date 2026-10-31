@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_contract_form_contract_documents" model="ir.ui.view">
+        <field name="name">purchase.contract.form.contract.documents</field>
+        <field name="model">purchase.contract</field>
+        <field name="inherit_id" ref="vpk_purchase_contract.view_purchase_contract_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='contract_attachments']" position="replace">
+                <page string="เอกสารสัญญา" name="contract_attachments">
+                    <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+                        <button name="action_open_add_contract_document_wizard" type="object"
+                                string="เพิ่มเอกสาร" class="btn-primary"
+                                groups="purchase.group_purchase_user"
+                                invisible="not id or state == 'cancel'"/>
+                        <span class="text-muted">
+                            เลือกดึงจาก Document Studio หรือแนบไฟล์ต้นทางจากระบบ e-GP
+                        </span>
+                    </div>
+                    <field name="contract_document_ids" context="{'default_contract_id': id}">
+                        <list editable="bottom" create="0">
+                            <field name="sequence" widget="handle"/>
+                            <field name="contract_id" column_invisible="1"/>
+                            <field name="studio_document_id" column_invisible="1"/>
+                            <field name="document_type_id"
+                                   string="ประเภทเอกสาร"
+                                   width="260px"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="egp_reference" string="เลขอ้างอิง e-GP"/>
+                            <field name="document_date" string="วันที่เอกสาร"/>
+                            <field name="document_filename" column_invisible="1"/>
+                            <field name="document_file" filename="document_filename"
+                                   widget="binary" string="ไฟล์แนบ (PDF)"
+                                   readonly="signature_state != 'not_sent'"/>
+                            <button name="action_preview_document" type="object"
+                                    string="ดูเอกสาร" icon="fa-eye"
+                                    invisible="not document_file"/>
+                            <button name="action_open_studio_document" type="object"
+                                    string="เปิด Document Studio" icon="fa-file-text-o"
+                                    class="btn-link"
+                                    invisible="not studio_document_id"/>
+                            <field name="signer_summary" string="ลงนาม/อนุมัติ"
+                                   width="180px" optional="show"/>
+                            <button name="action_open_approver_modal" type="object"
+                                    string="เพิ่มผู้อนุมัติ"
+                                    icon="fa-user-plus"
+                                    class="btn-link"
+                                    groups="purchase.group_purchase_user"
+                                    title="กำหนดผู้อนุมัติและส่งไฟล์ที่แนบเข้ากล่องงานรออนุมัติ"/>
+                            <button name="action_send_for_signature_inbox" type="object"
+                                    string="ส่งเพื่อลงนาม"
+                                    icon="fa-paper-plane"
+                                    class="btn-link"
+                                    groups="purchase.group_purchase_user"
+                                    invisible="signature_state in ('waiting', 'signed') or not document_file"
+                                    title="ส่งเข้ากล่องงานรออนุมัติ ตามลำดับผู้อนุมัติที่กำหนด"/>
+                            <field name="signature_state" string="สถานะการลงนาม"
+                                   widget="badge"
+                                   decoration-muted="signature_state == 'not_sent'"
+                                   decoration-warning="signature_state == 'waiting'"
+                                   decoration-success="signature_state == 'signed'"/>
+                            <field name="notes" string="หมายเหตุ" optional="hide"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_contract_document_approver_form" model="ir.ui.view">
+        <field name="name">purchase.contract.document.approver.form</field>
+        <field name="model">purchase.contract.document</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <form string="กำหนดผู้อนุมัติเอกสารสัญญา">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="document_type_id" string="ประเภทเอกสาร" readonly="1"/>
+                            <field name="egp_reference" string="เลขอ้างอิง e-GP" readonly="1"/>
+                            <field name="contract_id" string="สัญญา" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="document_date" string="วันที่เอกสาร" readonly="1"/>
+                            <field name="document_filename" invisible="1"/>
+                            <field name="document_file" filename="document_filename"
+                                   string="ไฟล์แนบ (PDF)" readonly="1"/>
+                            <field name="signature_state" widget="badge"
+                                   decoration-muted="signature_state == 'not_sent'"
+                                   decoration-warning="signature_state == 'waiting'"
+                                   decoration-success="signature_state == 'signed'"/>
+                        </group>
+                    </group>
+                    <group string="รายชื่อผู้อนุมัติตามลำดับ (ส่งเข้ากล่องงานรออนุมัติ)"
+                           name="contract_document_approvers">
+                        <div class="text-muted mb-2" colspan="2">
+                            ระบุผู้อนุมัติตามลำดับที่จะให้ไฟล์เอกสารนี้ส่งไปในกล่องงานรออนุมัติ
+                            ของผู้อนุมัติแต่ละท่าน
+                        </div>
+                        <field name="signer_line_ids" nolabel="1" colspan="2"
+                               readonly="signature_state in ('waiting', 'signed')">
+                            <list editable="bottom">
+                                <control>
+                                    <create name="add_contract_signer_control" string="เพิ่มผู้อนุมัติ"/>
+                                </control>
+                                <field name="sequence" widget="handle"/>
+                                <field name="user_id" string="ผู้อนุมัติ"
+                                       widget="many2one_avatar_user"
+                                       options="{'no_create': True}"/>
+                                <field name="position" string="ตำแหน่ง"/>
+                                <field name="is_check" string="ตรวจสอบ"/>
+                                <field name="is_sign" string="ลงนาม"/>
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_save_and_send_to_approver_inbox"
+                            type="object"
+                            string="บันทึกและส่งเข้ากล่องผู้อนุมัติ"
+                            icon="fa-paper-plane"
+                            class="btn-primary"
+                            invisible="signature_state in ('waiting', 'signed')"/>
+                    <button name="action_save_approvers_only"
+                            type="object"
+                            string="บันทึกรายชื่อผู้อนุมัติ"
+                            class="btn-secondary"
+                            invisible="signature_state in ('waiting', 'signed')"/>
+                    <button string="ปิด" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

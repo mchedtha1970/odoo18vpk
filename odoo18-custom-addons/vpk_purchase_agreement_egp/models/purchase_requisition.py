@@ -918,10 +918,14 @@ class PurchaseRequisition(models.Model):
             project_name = "จำนวน %s รายการ" % len(unique_products)
             if method_name:
                 project_name = "%s ด้วยวิธี%s" % (project_name, method_name)
+        consideration_label = dict(
+            self._fields["egp_consideration_type"].selection
+        ).get(self.egp_consideration_type or "", "")
         return {
             "agency": self.company_id.display_name or "-",
             "project_no": self.egp_reference or "-",
             "project_name": project_name or self.name or "-",
+            "consideration": consideration_label or "-",
             "budget": self._format_essence_amount(budget),
             "median": self._format_essence_amount(budget),
             "offer_rows": offer_rows,

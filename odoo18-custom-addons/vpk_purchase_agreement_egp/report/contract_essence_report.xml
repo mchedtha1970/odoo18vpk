@@ -52,6 +52,11 @@
                                 <td t-esc="v.get('project_name')"/>
                             </tr>
                             <tr>
+                                <td class="lbl"/>
+                                <td class="cap">การพิจารณา</td>
+                                <td t-esc="v.get('consideration')"/>
+                            </tr>
+                            <tr>
                                 <td class="lbl">4.</td>
                                 <td class="cap">งบประมาณ</td>
                                 <td><t t-esc="v.get('budget')"/> บาท</td>

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "VPK e-Bidding",
-    "version": "18.0.1.24.0",
+    "version": "18.0.1.24.5",
     "category": "Purchases",
     "summary": "บันทึกแผนจัดซื้อจัดจ้างที่จัดทำและประกาศแล้วในระบบ e-GP",
     "description": """

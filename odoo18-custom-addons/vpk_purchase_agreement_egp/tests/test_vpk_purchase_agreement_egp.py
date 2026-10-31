@@ -801,6 +801,7 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
         )
         values = self.requisition._get_contract_essence_values()
         self.assertEqual(values["project_no"], "68124983449")
+        self.assertEqual(values["consideration"], "ราคาต่อรายการ")
         self.assertEqual(len(values["offer_rows"]), 1)
         self.assertEqual(values["offer_rows"][0]["vendor"], "Vendor A")
         self.assertEqual(values["offer_rows"][0]["amount"], "300.00")

@@ -14,11 +14,33 @@
         <field name="name">ส่งกระบวนการ eGP</field>
     </record>
 
-    <!-- Purchase menu / list of agreements -->
+    <!-- กลุ่มกระบวนการ eGP ใต้ระบบจัดซื้อจัดจ้าง -->
+    <menuitem
+        id="menu_egp_process_root"
+        name="กระบวนการ eGP"
+        parent="purchase.menu_purchase_root"
+        sequence="20"
+        groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
+    />
     <record id="purchase_requisition.action_purchase_requisition" model="ir.actions.act_window">
-        <field name="name">กระบวนการ eGP</field>
+        <field name="name">รายการโครงการ</field>
     </record>
     <record id="purchase_requisition.menu_purchase_requisition_pro_mgt" model="ir.ui.menu">
-        <field name="name">กระบวนการ eGP</field>
+        <field name="active" eval="False"/>
     </record>
+    <menuitem
+        id="menu_egp_project_root"
+        name="โครงการ"
+        parent="menu_egp_process_root"
+        sequence="10"
+        groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
+    />
+    <menuitem
+        id="menu_egp_list"
+        name="รายการโครงการ"
+        parent="menu_egp_project_root"
+        action="purchase_requisition.action_purchase_requisition"
+        sequence="10"
+        groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
+    />
 </odoo>

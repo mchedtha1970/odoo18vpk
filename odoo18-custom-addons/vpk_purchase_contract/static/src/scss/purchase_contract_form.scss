@@ -1,0 +1,48 @@
+/* ฟอร์มทะเบียนสัญญา / ประเภทสัญญา ให้กว้างเต็มพื้นที่เหมือนฟอร์มอื่น */
+html body.o_web_client {
+    .o_form_view.o_vpk_fullwidth_form {
+        max-width: 100% !important;
+        min-width: 0 !important;
+
+        .o_form_view_container {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            flex: 1 1 auto !important;
+            width: auto !important;
+        }
+
+        .o_form_sheet_bg {
+            width: 100% !important;
+            max-width: 100% !important;
+            align-self: stretch !important;
+            flex: 1 1 auto !important;
+        }
+
+        .o_form_renderer .o_form_sheet,
+        .o_form_sheet_bg > .o_form_sheet {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .o_vpk_inline_period {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+
+            > .o_field_widget {
+                flex: 0 0 5rem;
+                width: 5rem !important;
+                min-width: 0;
+
+                input {
+                    text-align: center;
+                }
+            }
+
+            > span {
+                white-space: nowrap;
+            }
+        }
+    }
+}

@@ -1,11 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <menuitem
+        id="menu_purchase_contract_root"
+        name="บริหารสัญญา"
+        parent="vpk_purchase_agreement_egp.menu_egp_process_root"
+        sequence="30"
+        groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
+    />
+    <record id="menu_purchase_contract_root" model="ir.ui.menu">
+        <field name="web_icon" eval="False"/>
+    </record>
+
+    <menuitem
         id="menu_purchase_contract"
-        name="ทะเบียนสัญญา"
-        parent="purchase.menu_procurement_management"
+        name="รายการสัญญา"
+        parent="menu_purchase_contract_root"
         action="action_purchase_contract"
-        sequence="25"
+        sequence="10"
+        groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
+    />
+
+    <menuitem
+        id="menu_purchase_contract_config"
+        name="การตั้งค่า"
+        parent="menu_purchase_contract_root"
+        sequence="90"
+        groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
+    />
+
+    <menuitem
+        id="menu_purchase_contract_category"
+        name="หมวดสัญญา"
+        parent="menu_purchase_contract_config"
+        action="action_purchase_contract_category"
+        sequence="10"
+        groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
+    />
+
+    <menuitem
+        id="menu_purchase_contract_type"
+        name="ประเภทสัญญา"
+        parent="menu_purchase_contract_config"
+        action="action_purchase_contract_type"
+        sequence="20"
         groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
     />
 </odoo>

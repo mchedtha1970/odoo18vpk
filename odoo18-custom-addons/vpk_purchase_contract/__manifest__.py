@@ -3,7 +3,7 @@
 
 {
     "name": "VPK Purchase Contract",
-    "version": "18.0.1.1.6",
+    "version": "18.0.1.1.24",
     "category": "Purchases",
     "summary": "ทะเบียนสัญญาหลัก ผูกสัญญาบน PR/PO ตรวจยอดคงเหลือแบบ Hard Block และตัดลดเรียลไทม์",
     "author": "VPK",
@@ -27,6 +27,11 @@
         "views/purchase_requisition_views.xml",
         "views/menu.xml",
     ],
+    "assets": {
+        "web.assets_backend": [
+            "vpk_purchase_contract/static/src/scss/purchase_contract_form.scss",
+        ],
+    },
     "installable": True,
     "application": False,
 }

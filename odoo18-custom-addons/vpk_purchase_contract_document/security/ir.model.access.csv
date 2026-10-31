@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_purchase_contract_document_user,purchase.contract.document user,model_purchase_contract_document,purchase.group_purchase_user,1,1,1,1
+access_purchase_contract_document_signer_user,purchase.contract.document.signer user,model_purchase_contract_document_signer,purchase.group_purchase_user,1,1,1,1
+access_vpk_contract_document_add_wizard_user,vpk.contract.document.add.wizard user,model_vpk_contract_document_add_wizard,purchase.group_purchase_user,1,1,1,1

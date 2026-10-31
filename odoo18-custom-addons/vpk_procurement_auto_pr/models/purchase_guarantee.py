@@ -52,8 +52,18 @@ class ProcurementGuarantee(models.Model):
         index=True,
         help="เลขที่สัญญาหลักของโรงพยาบาล (ไม่ใช่รหัสเปิดบัญชี OPEN-DEP)",
     )
+    egp_contract_control_no = fields.Char(
+        string="เลขคุมสัญญาใน e-GP",
+        tracking=True,
+        index=True,
+    )
+    contract_po_number = fields.Char(
+        string="เลขที่สัญญา",
+        tracking=True,
+        index=True,
+    )
     egp_number = fields.Char(
-        string="เลขที่ eGP",
+        string="เลขที่โครงการ",
         tracking=True,
         index=True,
         help="เลขที่โครงการในระบบ e-GP",
@@ -278,6 +288,10 @@ class ProcurementGuarantee(models.Model):
                 and not name.startswith("OPEN-DEP-")
             ):
                 guarantee.official_contract_number = name
+            if not guarantee.egp_contract_control_no and contract.egp_contract_control_no:
+                guarantee.egp_contract_control_no = contract.egp_contract_control_no
+            if not guarantee.contract_po_number and contract.contract_po_number:
+                guarantee.contract_po_number = contract.contract_po_number
             if not guarantee.egp_number and contract.egp_reference:
                 guarantee.egp_number = contract.egp_reference
             project = contract.requisition_id.egp_project_name
@@ -369,6 +383,10 @@ class ProcurementGuarantee(models.Model):
                     )
                     or _("New")
                 )
+            contract = self.env["purchase.contract"].browse(vals.get("contract_id"))
+            if contract:
+                vals.setdefault("egp_contract_control_no", contract.egp_contract_control_no)
+                vals.setdefault("contract_po_number", contract.contract_po_number)
         records = super().create(vals_list)
         records._sync_vendor_guarantee_tags()
         return records
@@ -444,6 +462,22 @@ class PurchaseContract(models.Model):
         currency_field="currency_id",
     )
 
+    def action_open_new_guarantee(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("สร้าง หลักประกัน"),
+            "res_model": "procurement.guarantee",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_contract_id": self.id,
+                "default_base_amount": self.amount_total,
+                "default_coverage_start_date": self.date_start,
+                "default_coverage_end_date": self.date_end,
+            },
+        }
+
     @api.depends("guarantee_ids.state", "guarantee_ids.amount")
     def _compute_guarantee_summary(self):
         for contract in self:
@@ -468,6 +502,20 @@ class PurchaseOrder(models.Model):
         compute="_compute_guarantee_summary",
         string="จำนวนหลักประกัน",
     )
+
+    def action_open_new_guarantee(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("สร้าง หลักประกัน"),
+            "res_model": "procurement.guarantee",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_purchase_order_id": self.id,
+                "default_base_amount": self.amount_total,
+            },
+        }
 
     @api.depends("guarantee_ids")
     def _compute_guarantee_summary(self):

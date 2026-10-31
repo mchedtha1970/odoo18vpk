@@ -4,7 +4,7 @@
         <field name="name">purchase.contract.form</field>
         <field name="model">purchase.contract</field>
         <field name="arch" type="xml">
-            <form string="ทะเบียนสัญญาหลัก">
+            <form string="ทะเบียนสัญญาหลัก" class="o_vpk_fullwidth_form">
                 <header>
                     <button
                         name="action_confirm"
@@ -82,27 +82,66 @@
                         </h1>
                     </div>
                     <group>
-                        <group string="ข้อมูลสัญญา">
-                            <field name="partner_id" readonly="state != 'draft'"/>
+                        <group string="ข้อมูลสัญญา" name="contract_info">
                             <field name="requisition_id" readonly="state != 'draft'"/>
                             <field name="egp_reference"/>
+                            <field
+                                name="egp_consideration_type"
+                                widget="radio"
+                                options="{'horizontal': true}"
+                                invisible="not requisition_id"
+                            />
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="contract_type_id" readonly="state != 'draft'"/>
+                            <field name="contract_category_id"/>
                             <field name="egp_contract_control_no" readonly="state in ('done', 'cancel')"/>
                             <field name="contract_po_number" readonly="state in ('done', 'cancel')"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="ระยะเวลาสัญญาและส่งมอบ" name="contract_duration">
                             <field name="date_start" readonly="state != 'draft'"/>
                             <field name="date_end" readonly="state != 'draft'"/>
-                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
-                            <field name="currency_id" readonly="state != 'draft'"/>
+                            <field name="delivery_due_date" readonly="state != 'draft'"/>
+                            <field name="delivery_term_days" readonly="state != 'draft'"/>
                         </group>
-                        <group string="วงเงินสัญญา">
+                    </group>
+                    <group>
+                        <group string="การรับประกัน" name="contract_warranty" class="o_vpk_warranty_group">
+                            <label for="warranty_period_years" string="ระยะเวลารับประกันความชำรุดบกพร่อง"/>
+                            <div class="o_vpk_inline_period">
+                                <field name="warranty_period_years" readonly="state != 'draft'"/>
+                                <span>ปี</span>
+                                <field name="warranty_period_months" readonly="state != 'draft'"/>
+                                <span>เดือน</span>
+                                <field name="warranty_period_days" readonly="state != 'draft'"/>
+                                <span>วัน</span>
+                                <span class="text-muted">นับถัดจากวันที่ได้รับมอบ</span>
+                            </div>
+                            <label for="warranty_fix_days" string="ระยะเวลาให้แก้ไข/ซ่อมแซมภายใน"/>
+                            <div class="o_vpk_inline_period">
+                                <field name="warranty_fix_days" readonly="state != 'draft'"/>
+                                <span>วัน</span>
+                                <span class="text-muted">นับถัดจากวันที่ได้รับแจ้ง</span>
+                            </div>
+                        </group>
+                        <group string="วงเงินสัญญา" name="contract_amount">
+                            <field name="payment_type" readonly="state != 'draft'"/>
+                            <field
+                                name="has_advance_payment"
+                                widget="radio"
+                                options="{'horizontal': true}"
+                                readonly="state != 'draft'"
+                            />
+                            <field name="currency_id" readonly="state != 'draft'"/>
                             <field name="amount_total" readonly="state != 'draft'"/>
-                            <field name="amount_pr_reserved"/>
-                            <field name="amount_po_confirmed"/>
-                            <field name="amount_consumed"/>
+                            <field name="amount_pr_reserved" invisible="1"/>
+                            <field name="amount_po_confirmed" invisible="1"/>
+                            <field name="amount_consumed" invisible="1"/>
                             <field name="amount_remaining"/>
                         </group>
                     </group>
                     <notebook>
-                        <page string="รายการสินค้าที่ชนะ" name="winner_products">
+                        <page string="รายการสินค้าที่ตกลงซื้อขาย" name="winner_products">
                             <field name="line_ids" readonly="state != 'draft'">
                                 <list editable="bottom">
                                     <field name="product_id"/>
@@ -212,14 +251,20 @@
             <list string="ทะเบียนสัญญาหลัก">
                 <field name="name"/>
                 <field name="partner_id"/>
+                <field name="contract_type_id" optional="show"/>
+                <field name="contract_category_id" optional="show"/>
                 <field name="egp_reference" optional="show"/>
+                <field name="egp_consideration_type" optional="hide"/>
                 <field name="egp_contract_control_no" optional="show"/>
                 <field name="contract_po_number" optional="show"/>
                 <field name="date_start"/>
+                <field name="delivery_due_date" optional="hide"/>
+                <field name="delivery_term_days" optional="hide"/>
                 <field name="date_end" optional="hide"/>
-                <field name="amount_total" sum="รวม"/>
-                <field name="amount_consumed" sum="รวม"/>
-                <field name="amount_remaining" sum="รวม"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="amount_total" sum="รวม" widget="monetary"/>
+                <field name="amount_consumed" sum="รวม" widget="monetary"/>
+                <field name="amount_remaining" sum="รวม" widget="monetary"/>
                 <field name="state"/>
                 <field name="company_id" groups="base.group_multi_company" optional="hide"/>
             </list>
@@ -234,6 +279,8 @@
                 <field name="name"/>
                 <field name="partner_id"/>
                 <field name="egp_reference"/>
+                <field name="contract_type_id"/>
+                <field name="contract_category_id"/>
                 <field name="egp_contract_control_no"/>
                 <field name="contract_po_number"/>
                 <field name="requisition_id"/>
@@ -242,6 +289,8 @@
                 <filter string="ปิดแล้ว" name="done" domain="[('state', '=', 'done')]"/>
                 <group expand="0" string="Group By">
                     <filter string="คู่ค้า" name="groupby_partner" context="{'group_by': 'partner_id'}"/>
+                    <filter string="ประเภทสัญญา" name="groupby_contract_type" context="{'group_by': 'contract_type_id'}"/>
+                    <filter string="หมวดสัญญา" name="groupby_contract_category" context="{'group_by': 'contract_category_id'}"/>
                     <filter string="สถานะ" name="groupby_state" context="{'group_by': 'state'}"/>
                 </group>
             </search>
@@ -249,7 +298,7 @@
     </record>
 
     <record id="action_purchase_contract" model="ir.actions.act_window">
-        <field name="name">ทะเบียนสัญญาหลัก</field>
+        <field name="name">รายการสัญญา</field>
         <field name="res_model">purchase.contract</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_purchase_contract_search"/>
@@ -261,6 +310,120 @@
             <p>
                 กรอกมูลค่ารวมสัญญา คู่ค้า และเงื่อนไขแบ่งงวดจ่ายเงิน
                 เพื่อใช้เป็นฐานตรวจวงเงินเมื่อเปิด PR/PO งวดถัดไป
+            </p>
+        </field>
+    </record>
+
+    <!-- Master views and action for contract types -->
+    <record id="view_purchase_contract_type_tree" model="ir.ui.view">
+        <field name="name">purchase.contract.type.tree</field>
+        <field name="model">purchase.contract.type</field>
+        <field name="arch" type="xml">
+            <list string="ประเภทสัญญา">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="category_id"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_purchase_contract_type_form" model="ir.ui.view">
+        <field name="name">purchase.contract.type.form</field>
+        <field name="model">purchase.contract.type</field>
+        <field name="arch" type="xml">
+            <form string="ประเภทสัญญา" class="o_vpk_fullwidth_form">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="เช่น สัญญาซื้อขาย"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="category_id"/>
+                            <field name="code"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="description" placeholder="คำอธิบายเพิ่มเติม..."/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_purchase_contract_type" model="ir.actions.act_window">
+        <field name="name">ประเภทสัญญา</field>
+        <field name="res_model">purchase.contract.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                เพิ่ม/แก้ไข ประเภทสัญญาเพื่อเลือกใช้งานในทะเบียนสัญญา
+            </p>
+        </field>
+    </record>
+
+    <record id="view_purchase_contract_category_tree" model="ir.ui.view">
+        <field name="name">purchase.contract.category.tree</field>
+        <field name="model">purchase.contract.category</field>
+        <field name="arch" type="xml">
+            <list string="หมวดสัญญา">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_purchase_contract_category_form" model="ir.ui.view">
+        <field name="name">purchase.contract.category.form</field>
+        <field name="model">purchase.contract.category</field>
+        <field name="arch" type="xml">
+            <form string="หมวดสัญญา" class="o_vpk_fullwidth_form">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="เช่น งานก่อสร้าง"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="description" placeholder="คำอธิบายเพิ่มเติม..."/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="ประเภทสัญญา" name="types">
+                            <field name="type_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="active"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_purchase_contract_category" model="ir.actions.act_window">
+        <field name="name">หมวดสัญญา</field>
+        <field name="res_model">purchase.contract.category</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                เพิ่ม/แก้ไข หมวดสัญญา เพื่อให้ประเภทสัญญาเลือกใช้งาน
             </p>
         </field>
     </record>

@@ -16,4 +16,9 @@ access_purchase_contract_line_purchase_manager,purchase.contract.line purchase m
 access_purchase_contract_line_pr_user,purchase.contract.line pr user,model_purchase_contract_line,purchase_request.group_purchase_request_user,1,0,0,0
 access_purchase_contract_line_pr_manager,purchase.contract.line pr manager,model_purchase_contract_line,purchase_request.group_purchase_request_manager,1,1,1,1
 access_purchase_contract_line_base_user,purchase.contract.line base user,model_purchase_contract_line,base.group_user,1,0,0,0
-
+access_purchase_contract_type_user,purchase.contract.type user,model_purchase_contract_type,base.group_user,1,0,0,0
+access_purchase_contract_type_manager,purchase.contract.type manager,model_purchase_contract_type,purchase.group_purchase_manager,1,1,1,1
+access_purchase_contract_type_pr_manager,purchase.contract.type pr manager,model_purchase_contract_type,purchase_request.group_purchase_request_manager,1,1,1,1
+access_purchase_contract_category_user,purchase.contract.category user,model_purchase_contract_category,base.group_user,1,0,0,0
+access_purchase_contract_category_manager,purchase.contract.category manager,model_purchase_contract_category,purchase.group_purchase_manager,1,1,1,1
+access_purchase_contract_category_pr_manager,purchase.contract.category pr manager,model_purchase_contract_category,purchase_request.group_purchase_request_manager,1,1,1,1

@@ -209,7 +209,7 @@
     </record>
 
     <record id="action_ebidding_plan" model="ir.actions.act_window">
-        <field name="name">แผนจัดซื้อจัดจ้างจาก e-GP</field>
+        <field name="name">แผนรวมจัดซื้อจัดจ้าง</field>
         <field name="res_model">ebidding.plan</field>
         <field name="view_mode">list,form</field>
         <field name="help" type="html">

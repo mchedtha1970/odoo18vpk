@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <menuitem id="menu_procurement_plan_root"
-              name="แผนจัดซื้อจัดจ้าง"
+              name="แผนจัดซื้อจัดจ้าง (ภายใน)"
               parent="purchase.menu_purchase_root"
               sequence="75"/>
 

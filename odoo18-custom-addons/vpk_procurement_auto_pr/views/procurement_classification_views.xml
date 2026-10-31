@@ -281,7 +281,7 @@
         <field name="inherit_id"
                ref="vpk_purchase_contract.view_purchase_contract_form"/>
         <field name="arch" type="xml">
-            <field name="date_start" position="after">
+            <field name="date_end" position="after">
                 <field name="contract_term_days"
                        readonly="state != 'draft'"/>
                 <field name="confirmed_date"/>

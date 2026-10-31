@@ -254,7 +254,7 @@
                     </field>
                 </page>
                 <page
-                    string="เปรียบเทียบราคา"
+                    string="ผู้เสนอราคาและการพิจารณา"
                     name="egp_rfqs"
                     invisible="requisition_type != 'egp_procurement'"
                 >

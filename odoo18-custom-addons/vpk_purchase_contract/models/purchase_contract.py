@@ -1,6 +1,8 @@
 # Copyright 2026 VPK
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 
+from datetime import timedelta
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
@@ -28,6 +30,20 @@ class PurchaseContract(models.Model):
         domain="[('supplier_rank', '>', 0)]",
         context={"res_partner_search_mode": "supplier"},
     )
+    contract_type_id = fields.Many2one(
+        comodel_name="purchase.contract.type",
+        string="ประเภทสัญญา",
+        tracking=True,
+        index=True,
+        help="ประเภทสัญญาที่เลือกจากตาราง master",
+    )
+    contract_category_id = fields.Many2one(
+        comodel_name="purchase.contract.category",
+        related="contract_type_id.category_id",
+        string="หมวดสัญญา",
+        store=True,
+        readonly=True,
+    )
     company_id = fields.Many2one(
         comodel_name="res.company",
         string="บริษัท",
@@ -41,6 +57,26 @@ class PurchaseContract(models.Model):
         required=True,
         default=lambda self: self.env.company.currency_id,
     )
+    payment_type = fields.Selection(
+        selection=[
+            ("once", "จ่ายครั้งเดียว"),
+            ("installment", "จ่ายตามงวดเงินที่กำหนด"),
+        ],
+        string="ประเภทการจ่ายเงิน",
+        default="installment",
+        required=True,
+        tracking=True,
+    )
+    has_advance_payment = fields.Selection(
+        selection=[
+            ("advance", "จ่ายเงินล่วงหน้า"),
+            ("no_advance", "ไม่จ่ายเงินล่วงหน้า"),
+        ],
+        string="การชำระเงินให้แก่คู่ค้ามีการจ่ายเงินล่วงหน้าหรือไม่",
+        default="no_advance",
+        required=True,
+        tracking=True,
+    )
     amount_total = fields.Monetary(
         string="มูลค่ารวมสัญญา",
         required=True,
@@ -53,7 +89,42 @@ class PurchaseContract(models.Model):
         default=fields.Date.context_today,
         tracking=True,
     )
+    delivery_due_date = fields.Date(
+        string="ส่งมอบของภายในวันที่",
+        tracking=True,
+        help="วันที่ครบกำหนดส่งมอบของ คำนวณจากวันเริ่มสัญญาและจำนวนวันได้ และแก้ไขได้",
+    )
+    delivery_term_days = fields.Integer(
+        string="ส่งมอบของภายใน (จำนวนวัน)",
+        tracking=True,
+        help="จำนวนวันนับจากวันเริ่มสัญญาถึงวันส่งมอบของ คำนวณอัตโนมัติและแก้ไขได้",
+    )
     date_end = fields.Date(string="วันสิ้นสุดสัญญา", tracking=True)
+    # Warranty / defect guarantee period
+    warranty_period_years = fields.Integer(
+        string="ระยะเวลาการรับประกัน (ปี)",
+        default=0,
+        tracking=True,
+        help="จำนวนปีของระยะเวลาการรับประกันความชำรุดบกพร่องหรือการชดใช้",
+    )
+    warranty_period_months = fields.Integer(
+        string="ระยะเวลาการรับประกัน (เดือน)",
+        default=0,
+        tracking=True,
+        help="จำนวนเดือนของระยะเวลาการรับประกันความชำรุดบกพร่องหรือการชดใช้",
+    )
+    warranty_period_days = fields.Integer(
+        string="ระยะเวลาการรับประกัน (วัน)",
+        default=0,
+        tracking=True,
+        help="จำนวนวันของระยะเวลาการรับประกันความชำรุดบกพร่องหรือการชดใช้",
+    )
+    warranty_fix_days = fields.Integer(
+        string="ระยะเวลาให้แก้ไข/ซ่อมแซมให้เสร็จ (วัน)",
+        default=15,
+        tracking=True,
+        help="จำนวนวันให้อีกฝ่ายแก้ไขหรือซ่อมแซมหลังได้รับแจ้ง",
+    )
     description = fields.Text(string="เงื่อนไขข้อตกลง")
     payment_term_note = fields.Text(
         string="เงื่อนไขแบ่งงวดจ่ายเงิน",
@@ -85,6 +156,13 @@ class PurchaseContract(models.Model):
         related="requisition_id.egp_reference",
         store=True,
         readonly=True,
+    )
+    egp_consideration_type = fields.Selection(
+        related="requisition_id.egp_consideration_type",
+        string="การพิจารณา",
+        store=True,
+        readonly=True,
+        help="ดึงจากกระบวนการ e-GP ที่อ้างอิง",
     )
     egp_contract_control_no = fields.Char(
         string="เลขคุมสัญญาในระบบ e-GP",
@@ -120,7 +198,7 @@ class PurchaseContract(models.Model):
     line_ids = fields.One2many(
         comodel_name="purchase.contract.line",
         inverse_name="contract_id",
-        string="รายการสินค้าที่ชนะ",
+        string="รายการสินค้าที่ตกลงซื้อขาย",
         copy=True,
     )
     purchase_request_ids = fields.One2many(
@@ -319,8 +397,63 @@ class PurchaseContract(models.Model):
             )
         return remaining
 
+    @api.onchange("delivery_due_date")
+    def _onchange_delivery_due_date(self):
+        if self.date_start and self.delivery_due_date:
+            self.delivery_term_days = (
+                self.delivery_due_date - self.date_start
+            ).days
+
+    @api.onchange("date_start", "delivery_term_days")
+    def _onchange_delivery_term_days(self):
+        if self.date_start and self.delivery_term_days not in (False, None):
+            self.delivery_due_date = self.date_start + timedelta(
+                days=self.delivery_term_days or 0
+            )
+
+    def _prepare_delivery_vals(self, vals):
+        vals = dict(vals)
+        start = vals.get("date_start") or fields.Date.context_today(self)
+        start = fields.Date.to_date(start) if start else False
+        due = vals.get("delivery_due_date")
+        due = fields.Date.to_date(due) if due else False
+        has_days = "delivery_term_days" in vals
+        has_due = bool(due)
+        if start and has_days and not has_due:
+            vals["delivery_due_date"] = start + timedelta(
+                days=vals.get("delivery_term_days") or 0
+            )
+        elif start and has_due and not has_days:
+            vals["delivery_term_days"] = (due - start).days
+        return vals
+
+    def _realign_delivery(self, touched):
+        self.ensure_one()
+        if not self.date_start:
+            return
+        updates = {}
+        if "delivery_term_days" in touched and "delivery_due_date" not in touched:
+            due = self.date_start + timedelta(days=self.delivery_term_days or 0)
+            if due != self.delivery_due_date:
+                updates["delivery_due_date"] = due
+        elif "delivery_due_date" in touched:
+            days = (
+                (self.delivery_due_date - self.date_start).days
+                if self.delivery_due_date
+                else 0
+            )
+            if days != self.delivery_term_days:
+                updates["delivery_term_days"] = days
+        elif "date_start" in touched:
+            due = self.date_start + timedelta(days=self.delivery_term_days or 0)
+            if due != self.delivery_due_date:
+                updates["delivery_due_date"] = due
+        if updates:
+            super(PurchaseContract, self).write(updates)
+
     @api.model_create_multi
     def create(self, vals_list):
+        prepared = []
         for vals in vals_list:
             if vals.get("name", _("New")) in (_("New"), "New", False):
                 vals["name"] = (
@@ -328,7 +461,17 @@ class PurchaseContract(models.Model):
                 )
             if not vals.get("contract_po_number"):
                 vals["contract_po_number"] = vals.get("name")
-        return super().create(vals_list)
+            prepared.append(self._prepare_delivery_vals(vals))
+        return super().create(prepared)
+
+    def write(self, vals):
+        delivery_keys = {"date_start", "delivery_due_date", "delivery_term_days"}
+        touched = delivery_keys.intersection(vals)
+        result = super().write(vals)
+        if touched:
+            for contract in self:
+                contract._realign_delivery(touched)
+        return result
 
     @api.constrains("amount_total")
     def _check_amount_total(self):
@@ -345,6 +488,16 @@ class PurchaseContract(models.Model):
                 and contract.date_end < contract.date_start
             ):
                 raise ValidationError(_("วันสิ้นสุดสัญญาต้องไม่ก่อนวันเริ่มสัญญา"))
+
+    @api.constrains("date_start", "delivery_due_date")
+    def _check_delivery_due_date(self):
+        for contract in self:
+            if (
+                contract.date_start
+                and contract.delivery_due_date
+                and contract.delivery_due_date < contract.date_start
+            ):
+                raise ValidationError(_("วันส่งมอบของต้องไม่ก่อนวันเริ่มสัญญา"))
 
     def action_confirm(self):
         for contract in self:

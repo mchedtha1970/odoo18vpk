@@ -92,6 +92,7 @@ class TestEgpWinnerContract(TransactionCase):
         self.assertEqual(contract_a.line_ids.product_id, self.product)
         self.assertAlmostEqual(contract_a.amount_total, 200.0)
         self.assertEqual(contract_a.line_ids.egp_bid_line_id, line_a)
+        self.assertEqual(contract_a.egp_consideration_type, "line")
 
     def test_total_mode_copies_winner_products(self):
         requisition = self._make_requisition("total")
@@ -116,6 +117,7 @@ class TestEgpWinnerContract(TransactionCase):
         self.assertEqual(contract.partner_id, self.partner)
         self.assertEqual(len(contract.line_ids), 2)
         self.assertAlmostEqual(contract.amount_total, bid.amount_total)
+        self.assertEqual(contract.egp_consideration_type, "total")
 
     def test_contract_has_egp_control_and_po_number(self):
         contract = self.env["purchase.contract"].create(
@@ -130,6 +132,27 @@ class TestEgpWinnerContract(TransactionCase):
         self.assertEqual(contract.egp_contract_control_no, "68129483488")
         contract.write({"contract_po_number": "CTR/2026/0009"})
         self.assertEqual(contract.contract_po_number, "CTR/2026/0009")
+
+    def test_contract_type_uses_category_master(self):
+        category = self.env["purchase.contract.category"].create(
+            {"name": "งานก่อสร้าง", "code": "CON"}
+        )
+        contract_type = self.env["purchase.contract.type"].create(
+            {
+                "name": "สัญญาจ้างก่อสร้าง",
+                "code": "C01",
+                "category_id": category.id,
+            }
+        )
+        contract = self.env["purchase.contract"].create(
+            {
+                "partner_id": self.partner.id,
+                "amount_total": 100.0,
+                "contract_type_id": contract_type.id,
+            }
+        )
+        self.assertEqual(contract_type.category_id, category)
+        self.assertEqual(contract.contract_category_id, category)
 
     def test_essence_print_uses_contract_egp_fields(self):
         requisition = self._make_requisition("total")
