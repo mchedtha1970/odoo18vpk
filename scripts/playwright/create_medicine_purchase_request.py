@@ -12,6 +12,7 @@
 
 รหัสผ่านอ่านจากตัวแปร ODOO_PASSWORD ถ้าไม่ตั้งไว้จะใช้รหัสของผู้ใช้ทดสอบในหน้า login
 ตั้ง HEADLESS=1 เพื่อไม่แสดงหน้าต่าง และตั้ง SCREENSHOT_PATH เพื่อกำหนดที่เก็บภาพเมื่อพลาด
+ปรับความเร็วได้ด้วย SLOW_MO (มิลลิวินาทีต่อการกระทำ) และ PAGE_PAUSE (วินาทีที่พักในแต่ละหน้า)
 """
 
 import asyncio
@@ -27,6 +28,9 @@ from odoo_session import BASE_URL, launch_browser, login_as
 
 FLOW_FILE = Path(__file__).with_name("purchase_flows.md")
 USER = os.environ.get("ODOO_USER", "uat.dept")
+HEADLESS = os.environ.get("HEADLESS") == "1"
+SLOW_MO = int(os.environ.get("SLOW_MO", "0" if HEADLESS else "1000"))
+PAGE_PAUSE = float(os.environ.get("PAGE_PAUSE", "0" if HEADLESS else "2"))
 
 
 def split_kv(text):
@@ -285,9 +289,14 @@ async def pick_m2o(page, scope, field_name, query, option_text):
     await page.wait_for_timeout(500)
 
 
+async def pause(page):
+    await page.wait_for_timeout(PAGE_PAUSE * 1000)
+
+
 async def open_record(page, url):
     await page.goto(url, wait_until="domcontentloaded")
     await page.locator(".o_form_view").first.wait_for(state="visible", timeout=20000)
+    await pause(page)
 
 
 async def add_document(page, document):
@@ -309,9 +318,11 @@ async def add_document(page, document):
     match = re.search(r"vpk\.document\.studio\.document/(\d+)", page.url)
     url = f"{BASE_URL}/odoo/vpk.document.studio.document/{match.group(1)}"
     name = (await page.locator('.o_field_widget[name="name"]').first.inner_text()).strip()
+    await pause(page)
     await send.click()
     # ระบบสร้าง PDF ตอนส่งลงนาม ต้องรอให้จบก่อนเปลี่ยนผู้ใช้
     await send.wait_for(state="hidden", timeout=120000)
+    await pause(page)
     print("ส่งลงนามแล้ว:", document["label"], name)
     return name, url
 
@@ -337,6 +348,7 @@ async def sign_document(page, url, login):
     await viewer.wait_for(state="visible", timeout=20000)
     pdf = page.frame_locator(".o_vpk_sign_pdf_iframe").locator("#viewerContainer")
     await pdf.locator(".page").first.wait_for(state="visible", timeout=30000)
+    await pause(page)
     await pdf.evaluate("(element) => { element.scrollTop = element.scrollHeight; }")
     await page.wait_for_function(
         """() => {
@@ -412,6 +424,7 @@ async def create_purchase_request(page, order, products, steps):
     await description.click()
     await description.fill(order["คำอธิบาย"])
     await save_form(page)
+    await pause(page)
 
     for item in products:
         item["budget_post"] = order.get("หมวดงบประมาณ") or ""
@@ -478,10 +491,9 @@ async def continue_to_egp(page, pr_name, user, documents):
 
 async def main():
     order, products, steps = load_flow(FLOW_FILE)
-    headless = os.environ.get("HEADLESS") == "1"
     async with async_playwright() as playwright:
         browser = await launch_browser(
-            playwright, headless=headless, slow_mo=0 if headless else 250
+            playwright, headless=HEADLESS, slow_mo=SLOW_MO
         )
         context = await browser.new_context(viewport={"width": 1440, "height": 1600})
         page = await context.new_page()
@@ -498,15 +510,18 @@ async def main():
                     await continue_to_egp(
                         page, pr_name, steps["procurement_user"], steps["documents"]
                     )
-            hold = int(os.environ.get("HOLD_SECONDS", "0" if headless else "20"))
+            hold = int(os.environ.get("HOLD_SECONDS", "0" if HEADLESS else "20"))
             print(f"เปิดหน้าต่างค้างไว้ {hold} วินาที")
             await page.wait_for_timeout(hold * 1000)
         except Exception as error:
+            print("ทำรายการไม่สำเร็จ:", error)
+            if page.is_closed():
+                print("หน้าต่างเบราว์เซอร์ถูกปิดระหว่างทำรายการ")
+                return 1
             shot = Path(os.environ.get("SCREENSHOT_PATH", "/tmp/playwright-pr-error.png"))
             await page.screenshot(path=str(shot), full_page=True)
-            print("ทำรายการไม่สำเร็จ:", error)
             print("ภาพหน้าจอ:", shot)
-            if not headless:
+            if not HEADLESS:
                 await page.wait_for_timeout(8000)
             return 1
         finally:

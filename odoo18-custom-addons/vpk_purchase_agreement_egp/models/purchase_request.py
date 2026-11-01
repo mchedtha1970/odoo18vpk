@@ -192,6 +192,71 @@ class PurchaseRequest(models.Model):
             return bool(self.procurement_verified or self.state == "approved")
         return self.state in ("approved", "sent_to_procurement")
 
+    @api.model
+    def _vpk_is_department_related_viewer(self):
+        """หน่วยงานดูเอกสารต่อเนื่องจาก PR ของตนได้ แต่ไม่ใช่เจ้าหน้าที่จัดซื้อ"""
+        user = self.env.user
+        if user.has_group("purchase.group_purchase_user"):
+            return False
+        if user.has_group("purchase_request.group_purchase_request_manager"):
+            return False
+        return user.has_group("purchase_request.group_purchase_request_user")
+
+    def _vpk_action_open_related_readonly(self, records, name):
+        """เปิดเอกสารที่เกี่ยวข้องจาก PR — หน่วยงานได้แค่ดู"""
+        self.ensure_one()
+        records = records.exists()
+        if not records:
+            raise UserError(_("ยังไม่มีรายการที่เกี่ยวข้องให้เปิดดู"))
+        action = {
+            "type": "ir.actions.act_window",
+            "name": name,
+            "res_model": records._name,
+            "target": "current",
+            "context": {
+                "create": False,
+                "edit": False,
+                "delete": False,
+                "duplicate": False,
+            },
+        }
+        if self._vpk_is_department_related_viewer():
+            action["flags"] = {"mode": "readonly", "create": False}
+        if len(records) == 1:
+            action["res_id"] = records.id
+            action["view_mode"] = "form"
+            action["views"] = [(False, "form")]
+        else:
+            action["view_mode"] = "list,form"
+            action["domain"] = [("id", "in", records.ids)]
+        return action
+
+    def _get_related_requisitions(self):
+        self.ensure_one()
+        requisitions = self.mapped("line_ids.requisition_lines.requisition_id")
+        if isinstance(self.id, int):
+            requisitions |= self._get_egp_requisitions()
+        return requisitions
+
+    @api.depends("line_ids.requisition_lines.requisition_id")
+    def _compute_requisition_count(self):
+        for rec in self:
+            rec.requisition_count = len(rec._get_related_requisitions())
+
+    def action_view_purchase_requisition(self):
+        self.ensure_one()
+        return self._vpk_action_open_related_readonly(
+            self._get_related_requisitions(),
+            _("กระบวนการ e-GP"),
+        )
+
+    def action_open_related_egp(self):
+        self.ensure_one()
+        return self._vpk_action_open_related_readonly(
+            self.egp_requisition_id or self._get_egp_requisitions(),
+            _("กระบวนการ e-GP"),
+        )
+
     def action_send_to_egp(self):
         self.ensure_one()
         if not self._vpk_can_send_to_egp():

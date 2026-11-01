@@ -2,12 +2,15 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 
 import base64
+import logging
 import re
 from urllib.parse import quote
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
 from odoo.tools import email_normalize
+
+_logger = logging.getLogger(__name__)
 
 
 class VendorApiService(models.AbstractModel):
@@ -301,16 +304,38 @@ class VendorApiService(models.AbstractModel):
 
     def sign_order(self, order_id, signature=None, name=None, signature_box=None):
         order = self._require_order(order_id).sudo()
+        if order.state == "cancel":
+            raise UserError(_("ใบสั่งซื้อนี้ถูกยกเลิกแล้ว"))
+        if order.vpk_vendor_confirm_state == "confirmed":
+            raise UserError(_("ใบสั่งซื้อนี้ยืนยันแล้ว"))
         if order.vpk_vendor_confirm_state != "waiting":
             raise UserError(_("ใบสั่งซื้อนี้ไม่ได้อยู่ในสถานะรอผู้ขายยืนยัน"))
-        if not order._can_vendor_confirm():
-            raise UserError(_("เอกสารนี้ไม่ได้อยู่ในสถานะที่ต้องให้ผู้ขายยืนยัน"))
         signer = (name or self.env.user.name or order.partner_id.name or "").strip()
         raw = (signature or "").strip()
         if raw.startswith("data:"):
             raw = raw.split(",", 1)[-1]
+        if not raw:
+            raise UserError(_("กรุณาลงลายเซ็น"))
         order._vpk_stamp_vendor_signature(raw, signature_box=signature_box)
-        order.action_portal_vendor_confirm(name=signer, signature=raw)
+        order.write(
+            {
+                "signed_by": signer,
+                "signed_on": fields.Datetime.now(),
+                "signature": raw,
+            }
+        )
+        if order.state in ("draft", "sent"):
+            try:
+                with self.env.cr.savepoint():
+                    order.with_context(
+                        portal_vendor_confirm=True,
+                        vpk_skip_po_pdf_regen=True,
+                    ).button_confirm()
+            except Exception:
+                _logger.exception(
+                    "vendor sign kept the stamped PDF but could not confirm PO %s",
+                    order.name,
+                )
         order.invalidate_recordset()
         return {"ok": True, "item": self.serialize_order(order)}
 

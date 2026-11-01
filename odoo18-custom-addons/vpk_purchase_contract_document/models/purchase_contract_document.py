@@ -240,7 +240,14 @@ class PurchaseContractDocument(models.Model):
         self.ensure_one()
         if not self.studio_document_id:
             raise UserError(_("เอกสารนี้ไม่ได้สร้างจาก Document Studio"))
-        return self.studio_document_id._action_open_form()
+        action = self.studio_document_id._action_open_form()
+        if self.env["purchase.request"]._vpk_is_department_related_viewer():
+            action = dict(action or {})
+            context = dict(action.get("context") or {})
+            context.update({"create": False, "edit": False, "delete": False})
+            action["context"] = context
+            action["flags"] = {"mode": "readonly", "create": False}
+        return action
 
     # ------------------------------------------------------------------
     # Approvers
@@ -408,3 +415,14 @@ class PurchaseContractDocument(models.Model):
             raise UserError(_("กรุณาแนบไฟล์ PDF ก่อนส่งเข้ากล่องผู้อนุมัติ"))
         self._ensure_studio_document().action_send_for_signature()
         return {"type": "ir.actions.act_window_close"}
+
+    @api.model
+    def _get_view(self, view_id=None, view_type="form", **options):
+        arch, view = super()._get_view(view_id=view_id, view_type=view_type, **options)
+        if view_type == "form" and self.env[
+            "purchase.request"
+        ]._vpk_is_department_related_viewer():
+            arch.set("edit", "false")
+            arch.set("create", "false")
+            arch.set("delete", "false")
+        return arch, view

@@ -6,6 +6,7 @@ from odoo.exceptions import UserError
 
 PROCUREMENT_IN_PROGRESS_STATES = ("to_approve", "approved", "in_progress")
 PROCUREMENT_INBOX_STATES = ("sent_to_procurement",) + PROCUREMENT_IN_PROGRESS_STATES
+ASSIGN_ACTIVITY_PREFIX = "มอบหมายงานพัสดุ"
 
 
 class PurchaseRequest(models.Model):
@@ -24,10 +25,18 @@ class PurchaseRequest(models.Model):
         tracking=True,
         copy=False,
         index=True,
-        help="เจ้าหน้าที่พัสดุที่รับใบนี้ไปดำเนินการ",
+        help="เจ้าหน้าที่พัสดุที่ได้รับมอบหมายให้ดำเนินการใบนี้",
+    )
+    procurement_assigned_by = fields.Many2one(
+        "res.users",
+        string="ผู้มอบหมายงาน",
+        readonly=True,
+        copy=False,
+        tracking=True,
+        help="หัวหน้าพัสดุ/admin ที่ตรวจสอบแล้วมอบหมายงาน",
     )
     procurement_claimed_date = fields.Datetime(
-        string="วันที่รับงาน",
+        string="วันที่มอบหมายงาน",
         readonly=True,
         copy=False,
     )
@@ -39,9 +48,9 @@ class PurchaseRequest(models.Model):
     )
     procurement_inbox_lane = fields.Selection(
         [
-            ("unassigned", "ยังไม่มีผู้รับ"),
+            ("unassigned", "รอมอบหมาย"),
             ("mine", "ของฉัน"),
-            ("others", "มีผู้รับแล้ว"),
+            ("others", "มอบหมายแล้ว"),
         ],
         string="คิวรับงาน",
         compute="_compute_procurement_inbox_lane",
@@ -49,8 +58,8 @@ class PurchaseRequest(models.Model):
     )
     procurement_inbox_stage = fields.Selection(
         [
-            ("waiting", "รอรับงาน"),
-            ("claimed", "รับงานแล้ว"),
+            ("waiting", "รอมอบหมาย"),
+            ("claimed", "มอบหมายแล้ว"),
             ("progress", "กำลังดำเนินการ"),
         ],
         string="สถานะคิวพัสดุ",
@@ -159,12 +168,54 @@ class PurchaseRequest(models.Model):
             return ["!"] + domain
         return domain
 
+    @api.model
+    def _user_is_procurement_dispatcher(self):
+        """หัวหน้าพัสดุ/admin ที่ตรวจกล่องรวมแล้วมอบหมายงาน"""
+        return self.env.user.has_group(
+            "purchase_request.group_purchase_request_manager"
+        )
+
+    @api.model
+    def _procurement_assignee_domain(self):
+        group_ids = []
+        for xmlid in (
+            "vpk_tier_validation.group_vpk_procurement_officer",
+            "purchase_request.group_purchase_request_manager",
+        ):
+            group = self.env.ref(xmlid, raise_if_not_found=False)
+            if group:
+                group_ids.append(group.id)
+        domain = [("share", "=", False), ("active", "=", True)]
+        if group_ids:
+            domain.append(("groups_id", "in", group_ids))
+        return domain
+
+    def _clear_procurement_assign_activities(self):
+        activities = self.mapped("activity_ids").filtered(
+            lambda act: act.summary
+            and act.summary.startswith(ASSIGN_ACTIVITY_PREFIX)
+        )
+        if activities:
+            activities.unlink()
+
+    def _schedule_procurement_assign_activity(self, user, note=False):
+        self.ensure_one()
+        self._clear_procurement_assign_activities()
+        self.activity_schedule(
+            "mail.mail_activity_data_todo",
+            user_id=user.id,
+            summary=_("%s: %s") % (ASSIGN_ACTIVITY_PREFIX, self.name),
+            note=note
+            or _("กรุณาเปิดใบขอซื้อนี้แล้วดำเนินการจัดซื้อจัดจ้างต่อ"),
+        )
+
     def action_send_to_procurement(self):
         res = super().action_send_to_procurement()
         self.write(
             {
                 "sent_to_procurement_date": fields.Datetime.now(),
                 "procurement_owner_id": False,
+                "procurement_assigned_by": False,
                 "procurement_claimed_date": False,
                 "procurement_verified": False,
                 "procurement_verified_by": False,
@@ -174,6 +225,7 @@ class PurchaseRequest(models.Model):
                 "procurement_returned_date": False,
             }
         )
+        self._clear_procurement_assign_activities()
         self._notify_procurement_inbox_updated()
         return res
 
@@ -182,6 +234,7 @@ class PurchaseRequest(models.Model):
         vals = {
             "sent_to_procurement_date": False,
             "procurement_owner_id": False,
+            "procurement_assigned_by": False,
             "procurement_claimed_date": False,
             "procurement_verified": False,
             "procurement_verified_by": False,
@@ -196,6 +249,7 @@ class PurchaseRequest(models.Model):
                 }
             )
         self.write(vals)
+        self._clear_procurement_assign_activities()
         self._notify_procurement_inbox_updated()
         return res
 
@@ -204,10 +258,19 @@ class PurchaseRequest(models.Model):
         user = self.env.user
         now = fields.Datetime.now()
         today = fields.Date.context_today(self)
+        is_dispatcher = self._user_is_procurement_dispatcher()
         for rec in self:
             if rec.state not in ("sent_to_procurement", "to_approve", "approved"):
                 raise UserError(
                     _("ยืนยันการตรวจสอบได้เฉพาะใบขอซื้อที่ส่งมาให้พัสดุแล้ว")
+                )
+            if rec.procurement_owner_id and rec.procurement_owner_id != user and not is_dispatcher:
+                raise UserError(
+                    _("ยืนยันการตรวจสอบได้เฉพาะผู้ที่ได้รับมอบหมาย หรือหัวหน้าพัสดุ")
+                )
+            if not rec.procurement_owner_id and not is_dispatcher:
+                raise UserError(
+                    _("ใบนี้ยังอยู่ในกล่องรวม กรุณารอหัวหน้าพัสดุมอบหมายงานก่อน")
                 )
             active_lines = rec.line_ids.filtered(
                 lambda line: not line.cancelled and line.product_qty
@@ -229,6 +292,7 @@ class PurchaseRequest(models.Model):
             }
             if not rec.procurement_owner_id:
                 vals["procurement_owner_id"] = user.id
+                vals["procurement_assigned_by"] = user.id
                 vals["procurement_claimed_date"] = now
             if "verified_by" in rec._fields:
                 vals["verified_by"] = user.id
@@ -308,8 +372,87 @@ class PurchaseRequest(models.Model):
         self._notify_procurement_inbox_updated()
         return True
 
+    def action_open_assign_wizard(self):
+        """เปิดหน้าต่างให้หัวหน้าพัสดุเลือกเจ้าหน้าที่ผู้รับงาน"""
+        if not self._user_is_procurement_dispatcher():
+            raise UserError(_("เฉพาะหัวหน้าพัสดุเท่านั้นที่มอบหมายหรือส่งต่องานได้"))
+        for rec in self:
+            if rec.state not in PROCUREMENT_INBOX_STATES:
+                raise UserError(
+                    _("มอบหมายได้เฉพาะใบขอซื้อที่ส่งให้พัสดุแล้ว")
+                )
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("มอบหมายงาน"),
+            "res_model": "purchase.request.assign.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_request_ids": [(6, 0, self.ids)],
+                "active_ids": self.ids,
+                "active_model": "purchase.request",
+            },
+        }
+
+    def action_assign_procurement(self, user, note=False):
+        """หัวหน้าพัสดุตรวจสอบแล้วมอบหมาย/ส่งต่องานให้เจ้าหน้าที่"""
+        if not self._user_is_procurement_dispatcher():
+            raise UserError(_("เฉพาะหัวหน้าพัสดุเท่านั้นที่มอบหมายหรือส่งต่องานได้"))
+        if not user:
+            raise UserError(_("กรุณาเลือกเจ้าหน้าที่พัสดุผู้รับงาน"))
+        if user.share:
+            raise UserError(_("ไม่สามารถมอบหมายให้ผู้ใช้นี้ได้"))
+        now = fields.Datetime.now()
+        assigner = self.env.user
+        for rec in self:
+            if rec.state not in PROCUREMENT_INBOX_STATES:
+                raise UserError(
+                    _("มอบหมายได้เฉพาะใบขอซื้อที่ส่งให้พัสดุแล้ว")
+                )
+            old = rec.procurement_owner_id
+            rec.write(
+                {
+                    "procurement_owner_id": user.id,
+                    "procurement_assigned_by": assigner.id,
+                    "procurement_claimed_date": now,
+                }
+            )
+            rec._schedule_procurement_assign_activity(user, note)
+            rec.message_subscribe(partner_ids=user.partner_id.ids)
+            if old and old != user:
+                body = _(
+                    "ส่งต่องานจาก %(old)s ให้ %(new)s โดย %(by)s"
+                ) % {
+                    "old": old.display_name,
+                    "new": user.display_name,
+                    "by": assigner.display_name,
+                }
+            else:
+                body = _("มอบหมายงานให้ %(new)s โดย %(by)s") % {
+                    "new": user.display_name,
+                    "by": assigner.display_name,
+                }
+            if note:
+                body = "%s<br/>%s" % (body, _("หมายเหตุ: %s") % note)
+            rec.message_post(body=body)
+            rec.message_notify(
+                partner_ids=user.partner_id.ids,
+                subject=_("ได้รับมอบหมายใบขอซื้อ %s") % rec.name,
+                body=_(
+                    "<p>เรียน %s</p>"
+                    "<p>หัวหน้าพัสดุได้ตรวจสอบและมอบหมายใบขอซื้อ <b>%s</b> ให้ท่านดำเนินการต่อ</p>"
+                )
+                % (user.display_name, rec.display_name),
+            )
+        self._notify_procurement_inbox_updated()
+        return True
+
     def action_claim_procurement(self):
-        """พัสดุกดรับงาน เพื่อดึงใบมาเป็นของตน"""
+        """หัวหน้าพัสดุรับงานเองจากกล่องรวม"""
+        if not self._user_is_procurement_dispatcher():
+            raise UserError(
+                _("ใบขอซื้ออยู่ในกล่องรวม กรุณารอหัวหน้าพัสดุมอบหมายงาน — เจ้าหน้าที่ไม่สามารถรับงานเองได้")
+            )
         user = self.env.user
         for rec in self:
             if rec.state != "sent_to_procurement":
@@ -322,53 +465,37 @@ class PurchaseRequest(models.Model):
                         "owner": rec.procurement_owner_id.display_name,
                     }
                 )
-        self.write(
-            {
-                "procurement_owner_id": user.id,
-                "procurement_claimed_date": fields.Datetime.now(),
-            }
-        )
-        for rec in self:
-            rec.message_post(
-                body=_("พัสดุรับงานแล้ว: %s") % user.display_name
-            )
-        self._notify_procurement_inbox_updated()
-        return True
+        return self.action_assign_procurement(user)
 
     def action_unclaim_procurement(self):
-        """คืนคิวให้พัสดุคนอื่นรับได้"""
+        """คืนคิวกลับกล่องรวม เพื่อให้หัวหน้าพัสดุมอบหมายใหม่"""
         user = self.env.user
-        is_manager = user.has_group(
-            "purchase_request.group_purchase_request_manager"
-        )
+        is_dispatcher = self._user_is_procurement_dispatcher()
         for rec in self:
             if rec.state != "sent_to_procurement":
                 raise UserError(_("คืนคิวได้เฉพาะใบขอซื้อสถานะ ส่งพัสดุแล้ว"))
             if (
                 rec.procurement_owner_id
                 and rec.procurement_owner_id != user
-                and not is_manager
+                and not is_dispatcher
             ):
-                raise UserError(_("คืนคิวได้เฉพาะใบที่ตนรับไว้ หรือผู้จัดการพัสดุ"))
+                raise UserError(_("คืนคิวได้เฉพาะใบที่ตนรับไว้ หรือหัวหน้าพัสดุ"))
+        self._clear_procurement_assign_activities()
         self.write(
             {
                 "procurement_owner_id": False,
+                "procurement_assigned_by": False,
                 "procurement_claimed_date": False,
             }
         )
         for rec in self:
-            rec.message_post(body=_("คืนคิวใบขอซื้อให้รอรับใหม่"))
+            rec.message_post(body=_("คืนคิวใบขอซื้อกลับกล่องรวม รอมอบหมายใหม่"))
         self._notify_procurement_inbox_updated()
         return True
 
     def action_open_procurement_work(self):
-        """เปิดฟอร์มใบขอซื้อเพื่อเริ่มทำงาน"""
+        """เปิดฟอร์มใบขอซื้อเพื่อเริ่มทำงาน โดยไม่รับงานจากกล่องรวมอัตโนมัติ"""
         self.ensure_one()
-        if (
-            self.state == "sent_to_procurement"
-            and not self.procurement_owner_id
-        ):
-            self.action_claim_procurement()
         return {
             "type": "ir.actions.act_window",
             "name": self.display_name,
@@ -440,7 +567,7 @@ class PurchaseRequest(models.Model):
             )
 
         by_owner = self._inbox_grouped_rows(
-            base, "procurement_owner_id", empty_label="ยังไม่มีผู้รับ"
+            base, "procurement_owner_id", empty_label="รอมอบหมาย"
         )
         aging = []
         aging_specs = [
@@ -571,13 +698,13 @@ class PurchaseRequest(models.Model):
 
     @api.model
     def get_procurement_inbox_count(self):
-        """Badge: จำนวนใบที่ยังไม่มีผู้รับงาน"""
-        return self.search_count(
-            [
-                ("state", "=", "sent_to_procurement"),
-                ("procurement_owner_id", "=", False),
-            ]
-        )
+        """Badge: กล่องรวมที่รอมอบหมาย (หัวหน้า) หรืองานที่ได้รับมอบหมาย (เจ้าหน้าที่)"""
+        domain = [("state", "=", "sent_to_procurement")]
+        if self._user_is_procurement_dispatcher():
+            domain.append(("procurement_owner_id", "=", False))
+        else:
+            domain.append(("procurement_owner_id", "=", self.env.uid))
+        return self.search_count(domain)
 
     @api.model
     def _cron_recompute_waiting_days(self):

@@ -1,6 +1,15 @@
 .o_vpk_procurement_inbox_dashboard_view .o_kanban_renderer.o_kanban_grouped {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    overflow-x: hidden;
+
     .o_kanban_group {
-        min-width: 280px;
+        flex: 0 1 380px !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: 380px !important;
         background: #f8fafc;
         border-radius: 12px;
     }
@@ -8,22 +17,88 @@
 
 .o_vpk_procurement_inbox_kanban {
     .o_vpk_inbox_card {
-        min-height: 170px;
         padding: 4px 2px;
+    }
+
+    .o_vpk_inbox_card_body {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .o_vpk_inbox_card_aside {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        flex: 0 0 auto;
+        gap: 4px;
+        font-size: 0.9rem;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .o_vpk_inbox_card_amount {
+        font-weight: 600;
+        color: #1e293b;
     }
 
     .o_vpk_inbox_card_header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        flex-wrap: wrap;
         gap: 8px;
         margin-bottom: 8px;
+
+        .badge,
+        .o_vpk_inbox_section {
+            margin-left: auto;
+        }
+
+        .o_vpk_inbox_section + .badge,
+        .badge + .badge {
+            margin-left: 0;
+        }
+    }
+
+    .o_vpk_inbox_section {
+        display: inline-flex;
+        align-items: center;
+        padding: 1px 8px;
+        border-radius: 99px;
+        background: #e8eef6;
+        color: #1d4e89;
+        font-size: 0.75rem;
+        font-weight: 600;
+        line-height: 1.4;
+
+        &[data-section="material"] {
+            background: #e7f6ec;
+            color: #1f7a45;
+        }
+
+        &[data-section="asset"] {
+            background: #e8eef8;
+            color: #1d4e89;
+        }
+
+        &[data-section="project"] {
+            background: #f3e8ff;
+            color: #6d28d9;
+        }
+
+        &[data-section="construction"] {
+            background: #fff4e6;
+            color: #b45309;
+        }
     }
 
     .o_vpk_inbox_card_meta {
         display: flex;
+        flex: 1;
         flex-direction: column;
         gap: 4px;
+        min-width: 0;
         font-size: 0.9rem;
     }
 

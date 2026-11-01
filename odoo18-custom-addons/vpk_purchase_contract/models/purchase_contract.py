@@ -15,6 +15,28 @@ class PurchaseContract(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "id desc"
 
+    def init(self):
+        """ประเภทที่ชื่อระบุไม่จำกัดจำนวน ให้ดึงราคาต่อหน่วยได้ และสัญญาเดิมตามประเภทนั้นด้วย."""
+        self.env.cr.execute(
+            """
+            UPDATE purchase_contract_type
+               SET quantity_policy = 'unlimited'
+             WHERE COALESCE(quantity_policy, 'fixed') <> 'unlimited'
+               AND name ILIKE %s
+            """,
+            ("%ไม่จำกัดจำนวน%",),
+        )
+        self.env.cr.execute(
+            """
+            UPDATE purchase_contract AS contract
+               SET quantity_policy = contract_type.quantity_policy
+              FROM purchase_contract_type AS contract_type
+             WHERE contract.contract_type_id = contract_type.id
+               AND contract_type.quantity_policy = 'unlimited'
+               AND COALESCE(contract.quantity_policy, 'fixed') <> 'unlimited'
+            """
+        )
+
     name = fields.Char(
         string="รหัสสัญญา",
         required=True,
@@ -43,6 +65,18 @@ class PurchaseContract(models.Model):
         string="หมวดสัญญา",
         store=True,
         readonly=True,
+    )
+    quantity_policy = fields.Selection(
+        selection=[
+            ("fixed", "กำหนดจำนวน"),
+            ("unlimited", "จะซื้อจะขายไม่จำกัดจำนวน"),
+        ],
+        string="ลักษณะปริมาณ",
+        default="fixed",
+        required=True,
+        tracking=True,
+        help="ไม่จำกัดจำนวน: รายการในสัญญาเป็นราคาต่อหน่วยที่ตกลงไว้ "
+        "หน่วยงานเปิดใบขอซื้อ ดึงราคานี้ แล้วใส่จำนวนที่ต้องการซื้อ",
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
@@ -79,10 +113,10 @@ class PurchaseContract(models.Model):
     )
     amount_total = fields.Monetary(
         string="มูลค่ารวมสัญญา",
-        required=True,
         currency_field="currency_id",
         tracking=True,
-        help="วงเงินสัญญารวมทั้งหมดที่ใช้เป็นฐานตรวจยอดคงเหลือ",
+        default=0.0,
+        help="วงเงินสัญญารวมที่ใช้ตรวจยอดคงเหลือ สัญญาไม่จำกัดจำนวนไม่ใช้ยอดนี้เป็นเพดาน",
     )
     date_start = fields.Date(
         string="วันเริ่มสัญญา",
@@ -298,14 +332,15 @@ class PurchaseContract(models.Model):
 
     def _compute_document_counts(self):
         for contract in self:
+            sudo_contract = contract.sudo()
             contract.purchase_request_count = len(contract.purchase_request_ids)
             contract.purchase_order_count = len(
-                contract.purchase_order_ids.filtered(
+                sudo_contract.purchase_order_ids.filtered(
                     lambda order: order.state != "cancel"
                 )
             )
             contract.vendor_bill_count = len(
-                contract.vendor_bill_ids.filtered(
+                sudo_contract.vendor_bill_ids.filtered(
                     lambda move: move.move_type in ("in_invoice", "in_refund")
                     and move.state != "cancel"
                 )
@@ -451,6 +486,17 @@ class PurchaseContract(models.Model):
         if updates:
             super(PurchaseContract, self).write(updates)
 
+    def _quantity_policy_from_type(self, contract_type_id):
+        if not contract_type_id:
+            return False
+        contract_type = self.env["purchase.contract.type"].browse(contract_type_id)
+        return contract_type.quantity_policy or False
+
+    @api.onchange("contract_type_id")
+    def _onchange_contract_type_id(self):
+        if self.contract_type_id:
+            self.quantity_policy = self.contract_type_id.quantity_policy
+
     @api.model_create_multi
     def create(self, vals_list):
         prepared = []
@@ -461,17 +507,53 @@ class PurchaseContract(models.Model):
                 )
             if not vals.get("contract_po_number"):
                 vals["contract_po_number"] = vals.get("name")
+            if vals.get("contract_type_id") and "quantity_policy" not in vals:
+                policy = self._quantity_policy_from_type(vals["contract_type_id"])
+                if policy:
+                    vals["quantity_policy"] = policy
             prepared.append(self._prepare_delivery_vals(vals))
-        return super().create(prepared)
+        records = super().create(prepared)
+        records.filtered(
+            lambda contract: contract.quantity_policy == "unlimited"
+        )._release_source_bidding_budget()
+        return records
 
     def write(self, vals):
+        if vals.get("contract_type_id") and "quantity_policy" not in vals:
+            policy = self._quantity_policy_from_type(vals["contract_type_id"])
+            if policy:
+                vals = dict(vals, quantity_policy=policy)
         delivery_keys = {"date_start", "delivery_due_date", "delivery_term_days"}
         touched = delivery_keys.intersection(vals)
         result = super().write(vals)
         if touched:
             for contract in self:
                 contract._realign_delivery(touched)
+        if {"quantity_policy", "contract_type_id", "requisition_id"} & set(vals):
+            self.filtered(
+                lambda contract: contract.quantity_policy == "unlimited"
+            )._release_source_bidding_budget()
         return result
+
+    def _source_bidding_requests(self):
+        """ใบขอซื้อประกวดราคาที่นำไปสู่สัญญานี้ ไม่รวมใบที่เปิดมาสั่งของตามสัญญา."""
+        requests = self.env["purchase.request"]
+        for contract in self:
+            requisition = contract.requisition_id
+            if not requisition:
+                continue
+            if requisition.purchase_request_id:
+                requests |= requisition.purchase_request_id
+            requests |= requisition.line_ids.mapped(
+                "purchase_request_lines.request_id"
+            )
+        return requests.filtered(
+            lambda request: request.contract_id.quantity_policy != "unlimited"
+        )
+
+    def _release_source_bidding_budget(self):
+        contracts = self.filtered(lambda contract: contract.quantity_policy == "unlimited")
+        contracts._source_bidding_requests()._mark_price_agreement_only()
 
     @api.constrains("amount_total")
     def _check_amount_total(self):
@@ -499,13 +581,68 @@ class PurchaseContract(models.Model):
             ):
                 raise ValidationError(_("วันส่งมอบของต้องไม่ก่อนวันเริ่มสัญญา"))
 
+    def _ensure_open_for_calloff(self):
+        """สัญญาจะซื้อจะขายไม่จำกัดจำนวนที่หน่วยงานดึงไปเปิดใบขอซื้อได้."""
+        self.ensure_one()
+        if self.quantity_policy != "unlimited":
+            raise UserError(
+                _("ดึงรายการราคาได้เฉพาะสัญญาจะซื้อจะขายไม่จำกัดจำนวน")
+            )
+        if self.state not in ("draft", "confirmed"):
+            raise UserError(
+                _("สัญญา %(contract)s ใช้เปิดใบขอซื้อไม่ได้ (สถานะไม่พร้อม)")
+                % {"contract": self.display_name}
+            )
+        today = fields.Date.context_today(self)
+        if self.date_start and self.date_start > today:
+            raise UserError(
+                _("สัญญา %(contract)s ยังไม่ถึงวันเริ่ม")
+                % {"contract": self.display_name}
+            )
+        if self.date_end and self.date_end < today:
+            raise UserError(
+                _("สัญญา %(contract)s สิ้นสุดแล้ว")
+                % {"contract": self.display_name}
+            )
+        if not self.line_ids:
+            raise UserError(
+                _("สัญญา %(contract)s ยังไม่มีรายการสินค้า")
+                % {"contract": self.display_name}
+            )
+        missing_price = self.line_ids.filtered(lambda line: not line.price_unit)
+        if missing_price:
+            raise UserError(
+                _("สัญญา %(contract)s ยังไม่มีราคาต่อหน่วยครบทุกรายการ")
+                % {"contract": self.display_name}
+            )
+
+    @api.depends("name", "partner_id.name")
+    def _compute_display_name(self):
+        for contract in self:
+            name = contract.name or ""
+            if contract.partner_id:
+                name = "%s — %s" % (name, contract.partner_id.name)
+            contract.display_name = name
+
     def action_confirm(self):
         for contract in self:
             if not contract.partner_id:
                 raise UserError(_("กรุณาระบุคู่ค้าก่อนยืนยันสัญญา"))
-            if not contract.amount_total:
+            if contract.quantity_policy == "unlimited":
+                if not contract.line_ids:
+                    raise UserError(
+                        _("กรุณาใส่รายการสินค้าและราคาต่อหน่วยก่อนยืนยันสัญญาไม่จำกัดจำนวน")
+                    )
+                missing_price = contract.line_ids.filtered(
+                    lambda line: not line.price_unit
+                )
+                if missing_price:
+                    raise UserError(
+                        _("กรุณาระบุราคาต่อหน่วยทุกรายการในสัญญาไม่จำกัดจำนวน")
+                    )
+            elif not contract.amount_total:
                 raise UserError(_("กรุณาระบุมูลค่ารวมสัญญาก่อนยืนยัน"))
-            if contract.installment_ids:
+            if contract.quantity_policy != "unlimited" and contract.installment_ids:
                 installment_total = sum(contract.installment_ids.mapped("amount"))
                 if abs(installment_total - contract.amount_total) > 0.01:
                     raise UserError(
@@ -607,6 +744,17 @@ class PurchaseContract(models.Model):
             "target": "current",
         }
 
+    @api.model
+    def _get_view(self, view_id=None, view_type="form", **options):
+        arch, view = super()._get_view(view_id=view_id, view_type=view_type, **options)
+        if view_type == "form" and self.env[
+            "purchase.request"
+        ]._vpk_is_department_related_viewer():
+            arch.set("edit", "false")
+            arch.set("create", "false")
+            arch.set("delete", "false")
+        return arch, view
+
 
 class PurchaseContractLine(models.Model):
     _name = "purchase.contract.line"
@@ -627,9 +775,11 @@ class PurchaseContractLine(models.Model):
     )
     name = fields.Text(string="คำอธิบายรายการ")
     product_qty = fields.Float(
-        string="ปริมาณ",
+        string="ปริมาณอ้างอิง",
         digits="Product Unit of Measure",
         default=1.0,
+        help="สัญญาไม่จำกัดจำนวนใช้ปริมาณนี้เป็นปริมาณอ้างอิงจากประกวดราคา "
+        "จำนวนที่จะซื้อแต่ละครั้งระบุในใบขอซื้อ",
     )
     product_uom_id = fields.Many2one(
         comodel_name="uom.uom",

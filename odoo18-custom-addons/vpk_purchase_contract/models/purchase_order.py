@@ -21,6 +21,82 @@ class PurchaseOrder(models.Model):
         readonly=True,
         currency_field="currency_id",
     )
+    contract_type_id = fields.Many2one(
+        related="contract_id.contract_type_id",
+        string="ประเภทสัญญา",
+    )
+    contract_quantity_policy = fields.Selection(
+        related="contract_id.quantity_policy",
+        string="ลักษณะปริมาณ",
+    )
+    contract_category_id = fields.Many2one(
+        related="contract_id.contract_category_id",
+        string="หมวดสัญญา",
+    )
+    contract_egp_control_no = fields.Char(
+        related="contract_id.egp_contract_control_no",
+        string="เลขคุมสัญญาในระบบ e-GP",
+    )
+    contract_po_number = fields.Char(
+        related="contract_id.contract_po_number",
+        string="เลขที่สัญญา / ใบสั่งซื้อ",
+    )
+    source_project_reference = fields.Char(
+        string="เลขที่โครงการ",
+        compute="_compute_source_documents",
+    )
+    source_project_name = fields.Char(
+        string="ชื่อโครงการ",
+        compute="_compute_source_documents",
+    )
+    source_requisition_id = fields.Many2one(
+        comodel_name="purchase.requisition",
+        string="การจัดซื้อ",
+        compute="_compute_source_documents",
+    )
+    source_request_ids = fields.Many2many(
+        comodel_name="purchase.request",
+        string="เลข PR",
+        compute="_compute_source_documents",
+    )
+
+    @api.depends(
+        "contract_id",
+        "contract_id.egp_reference",
+        "contract_id.requisition_id",
+        "contract_id.requisition_id.egp_reference",
+        "contract_id.requisition_id.egp_project_name",
+        "requisition_id",
+        "requisition_id.egp_reference",
+        "requisition_id.egp_project_name",
+        "order_line.purchase_request_lines.request_id",
+        "order_line.purchase_request_lines.request_id.egp_project_reference",
+        "order_line.purchase_request_lines.request_id.egp_project_name",
+        "order_line.purchase_request_lines.request_id.egp_requisition_id",
+    )
+    def _compute_source_documents(self):
+        for order in self:
+            requests = order.order_line.mapped("purchase_request_lines.request_id")
+            request = requests[:1]
+            requisition = order.contract_id.requisition_id or order.requisition_id
+            if not requisition and request:
+                requisition = request.egp_requisition_id
+            project_no = False
+            project_name = False
+            if order.contract_id and order.contract_id.egp_reference:
+                project_no = order.contract_id.egp_reference
+            elif requisition and requisition.egp_reference:
+                project_no = requisition.egp_reference
+            elif request and request.egp_project_reference:
+                project_no = request.egp_project_reference
+            if requisition and requisition.egp_project_name:
+                project_name = requisition.egp_project_name
+            elif request and request.egp_project_name:
+                project_name = request.egp_project_name
+            order.source_request_ids = requests
+            order.source_requisition_id = requisition
+            order.source_project_reference = project_no
+            order.source_project_name = project_name
 
     def _get_contract_from_purchase_request(self):
         self.ensure_one()
@@ -41,6 +117,8 @@ class PurchaseOrder(models.Model):
         for order in self:
             if not order.contract_id:
                 continue
+            if order.contract_id.quantity_policy == "unlimited":
+                continue
             # ขั้นตอนที่ 11: ตรวจก่อนยืนยัน แล้วตัดลดยอดแบบเรียลไทม์ผ่าน compute
             order.contract_id._check_amount_available(
                 required_amount=order.amount_untaxed,
@@ -48,7 +126,9 @@ class PurchaseOrder(models.Model):
             )
         res = super().button_confirm()
         for order in self.filtered(
-            lambda po: po.contract_id and po.state in ("purchase", "done")
+            lambda po: po.contract_id
+            and po.contract_id.quantity_policy != "unlimited"
+            and po.state in ("purchase", "done")
         ):
             order.contract_id.invalidate_recordset()
             order.message_post(

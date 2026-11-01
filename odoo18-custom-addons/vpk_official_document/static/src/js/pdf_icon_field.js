@@ -91,6 +91,6 @@ const vpkPdfIconField = {
     isEmpty: () => false,
 };
 
-registry.category("fields").add("vpk_pdf_icon", vpkPdfIconField);
-registry.category("fields").add("list.vpk_pdf_icon", vpkPdfIconField);
-registry.category("fields").add("kanban.vpk_pdf_icon", vpkPdfIconField);
+registry.category("fields").add("vpk_pdf_icon", vpkPdfIconField, { force: true });
+registry.category("fields").add("list.vpk_pdf_icon", vpkPdfIconField, { force: true });
+registry.category("fields").add("kanban.vpk_pdf_icon", vpkPdfIconField, { force: true });

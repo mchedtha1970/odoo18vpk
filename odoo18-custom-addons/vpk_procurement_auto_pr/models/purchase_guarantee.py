@@ -443,6 +443,17 @@ class ProcurementGuarantee(models.Model):
     def action_draft(self):
         self.write({"state": "draft"})
 
+    @api.model
+    def _get_view(self, view_id=None, view_type="form", **options):
+        arch, view = super()._get_view(view_id=view_id, view_type=view_type, **options)
+        if view_type == "form" and self.env[
+            "purchase.request"
+        ]._vpk_is_department_related_viewer():
+            arch.set("edit", "false")
+            arch.set("create", "false")
+            arch.set("delete", "false")
+        return arch, view
+
 
 class PurchaseContract(models.Model):
     _inherit = "purchase.contract"
@@ -481,9 +492,10 @@ class PurchaseContract(models.Model):
     @api.depends("guarantee_ids.state", "guarantee_ids.amount")
     def _compute_guarantee_summary(self):
         for contract in self:
-            contract.guarantee_count = len(contract.guarantee_ids)
+            guarantees = contract.sudo().guarantee_ids
+            contract.guarantee_count = len(guarantees)
             contract.active_guarantee_amount = sum(
-                contract.guarantee_ids.filtered(
+                guarantees.filtered(
                     lambda guarantee: guarantee.state
                     in ("active", "eligible_return")
                 ).mapped("amount")
@@ -520,4 +532,4 @@ class PurchaseOrder(models.Model):
     @api.depends("guarantee_ids")
     def _compute_guarantee_summary(self):
         for order in self:
-            order.guarantee_count = len(order.guarantee_ids)
+            order.guarantee_count = len(order.sudo().guarantee_ids)

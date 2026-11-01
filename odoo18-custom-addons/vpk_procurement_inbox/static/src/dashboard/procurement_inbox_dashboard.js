@@ -11,11 +11,27 @@ import { KanbanController } from "@web/views/kanban/kanban_controller";
 import { ListController } from "@web/views/list/list_controller";
 import { FormController } from "@web/views/form/form_controller";
 
+const PROMPT_FONT_ID = "vpk-inbox-prompt-font";
+const PROMPT_FONT_URL =
+    "https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap";
+
+function ensurePromptFont() {
+    if (document.getElementById(PROMPT_FONT_ID)) {
+        return;
+    }
+    const link = document.createElement("link");
+    link.id = PROMPT_FONT_ID;
+    link.rel = "stylesheet";
+    link.href = PROMPT_FONT_URL;
+    document.head.appendChild(link);
+}
+
 const inboxBus = new EventBus();
 const STORAGE_KEY = "vpk_procurement_inbox_view";
 const REFRESH_METHODS = new Set([
     "action_claim_procurement",
     "action_unclaim_procurement",
+    "action_open_assign_wizard",
     "action_open_procurement_work",
     "action_verify_procurement",
     "action_open_return_for_revision_wizard",
@@ -64,6 +80,7 @@ export class ProcurementInboxDashboard extends Component {
     static props = ["*"];
 
     setup() {
+        ensurePromptFont();
         this.orm = useService("orm");
         this.actionService = useService("action");
         const prefs = loadViewPrefs();
@@ -93,7 +110,7 @@ export class ProcurementInboxDashboard extends Component {
         this.groupByOptions = [
             { value: "procurement_inbox_stage", label: "สถานะงาน" },
             { value: "department_id", label: "หน่วยงาน" },
-            { value: "procurement_owner_id", label: "ผู้รับงาน" },
+            { value: "procurement_owner_id", label: "ผู้ได้รับมอบหมาย" },
             { value: "procurement_method_id", label: "วิธีการจัดซื้อ" },
         ];
         this.busService = useService("bus_service");

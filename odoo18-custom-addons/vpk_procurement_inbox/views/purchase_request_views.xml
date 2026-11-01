@@ -18,6 +18,7 @@
                 <field name="requested_by"/>
                 <field name="department_id"/>
                 <field name="procurement_method_id"/>
+                <field name="budget_section_key"/>
                 <field name="date_start"/>
                 <field name="estimated_cost"/>
                 <field name="currency_id"/>
@@ -25,6 +26,7 @@
                 <field name="days_waiting_procurement"/>
                 <field name="is_procurement_overdue"/>
                 <field name="procurement_owner_id"/>
+                <field name="procurement_assigned_by"/>
                 <field name="procurement_inbox_lane"/>
                 <field name="procurement_inbox_stage"/>
                 <field name="procurement_verified"/>
@@ -34,38 +36,52 @@
                              t-att-class="record.is_procurement_overdue.raw_value ? 'o_vpk_inbox_overdue' : ''">
                             <div class="o_vpk_inbox_card_header">
                                 <strong t-esc="record.name.value"/>
+                                <span
+                                    t-if="record.budget_section_key.value"
+                                    class="o_vpk_inbox_section"
+                                    t-att-data-section="record.budget_section_key.raw_value"
+                                >
+                                    <t t-esc="record.budget_section_key.value"/>
+                                </span>
                                 <span t-if="record.procurement_verified.raw_value"
                                       class="badge text-bg-primary">ตรวจสอบแล้ว</span>
                                 <span t-elif="record.is_procurement_overdue.raw_value"
                                       class="badge text-bg-danger">ค้างนาน</span>
                                 <span t-elif="!record.procurement_owner_id.raw_value"
-                                      class="badge text-bg-warning">รอรับ</span>
-                                <span t-else="" class="badge text-bg-success">มีผู้รับแล้ว</span>
+                                      class="badge text-bg-warning">รอมอบหมาย</span>
+                                <span t-else="" class="badge text-bg-success">มอบหมายแล้ว</span>
                             </div>
-                            <div class="o_vpk_inbox_card_meta text-muted">
-                                <div t-if="record.department_id.value">
-                                    <i class="fa fa-building-o me-1"/>
-                                    <t t-esc="record.department_id.value"/>
+                            <div class="o_vpk_inbox_card_body">
+                                <div class="o_vpk_inbox_card_meta text-muted">
+                                    <div t-if="record.department_id.value">
+                                        <i class="fa fa-building-o me-1"/>
+                                        <t t-esc="record.department_id.value"/>
+                                    </div>
+                                    <div t-if="record.procurement_method_id.value">
+                                        <i class="fa fa-balance-scale me-1"/>
+                                        วิธี <t t-esc="record.procurement_method_id.value"/>
+                                    </div>
+                                    <div t-if="record.requested_by.value">
+                                        <i class="fa fa-user me-1"/>
+                                        <field name="requested_by" widget="many2one_avatar_user"/>
+                                    </div>
+                                    <div t-if="record.procurement_owner_id.value">
+                                        <i class="fa fa-handshake-o me-1"/>
+                                        ผู้รับ: <t t-esc="record.procurement_owner_id.value"/>
+                                    </div>
+                                    <div t-if="record.procurement_assigned_by.value">
+                                        <i class="fa fa-user-plus me-1"/>
+                                        มอบหมายโดย: <t t-esc="record.procurement_assigned_by.value"/>
+                                    </div>
                                 </div>
-                                <div t-if="record.procurement_method_id.value">
-                                    <i class="fa fa-balance-scale me-1"/>
-                                    วิธี <t t-esc="record.procurement_method_id.value"/>
-                                </div>
-                                <div t-if="record.requested_by.value">
-                                    <i class="fa fa-user me-1"/>
-                                    <field name="requested_by" widget="many2one_avatar_user"/>
-                                </div>
-                                <div t-if="record.sent_to_procurement_date.value">
-                                    <i class="fa fa-clock-o me-1"/>
-                                    ส่งมา <t t-esc="record.days_waiting_procurement.value"/> วัน
-                                </div>
-                                <div t-if="record.estimated_cost.value">
-                                    <i class="fa fa-money me-1"/>
-                                    <field name="estimated_cost" widget="monetary"/>
-                                </div>
-                                <div t-if="record.procurement_owner_id.value">
-                                    <i class="fa fa-handshake-o me-1"/>
-                                    ผู้รับ: <t t-esc="record.procurement_owner_id.value"/>
+                                <div class="o_vpk_inbox_card_aside text-muted">
+                                    <div t-if="record.sent_to_procurement_date.value">
+                                        <i class="fa fa-clock-o me-1"/>
+                                        ส่งมา <t t-esc="record.days_waiting_procurement.value"/> วัน
+                                    </div>
+                                    <div t-if="record.estimated_cost.value" class="o_vpk_inbox_card_amount">
+                                        <field name="estimated_cost" widget="monetary"/>
+                                    </div>
                                 </div>
                             </div>
                             <div class="o_vpk_inbox_card_actions mt-2 d-flex gap-1 flex-wrap">
@@ -77,12 +93,31 @@
                                     เปิดทำรายการ
                                 </button>
                                 <button
-                                    name="action_claim_procurement"
+                                    name="action_open_assign_wizard"
                                     type="object"
                                     class="btn btn-outline-primary btn-sm"
+                                    groups="purchase_request.group_purchase_request_manager"
                                     invisible="procurement_owner_id"
                                 >
-                                    รับงาน
+                                    มอบหมายงาน
+                                </button>
+                                <button
+                                    name="action_open_assign_wizard"
+                                    type="object"
+                                    class="btn btn-outline-primary btn-sm"
+                                    groups="purchase_request.group_purchase_request_manager"
+                                    invisible="not procurement_owner_id"
+                                >
+                                    ส่งต่องาน
+                                </button>
+                                <button
+                                    name="action_claim_procurement"
+                                    type="object"
+                                    class="btn btn-outline-secondary btn-sm"
+                                    groups="purchase_request.group_purchase_request_manager"
+                                    invisible="procurement_owner_id"
+                                >
+                                    รับงานเอง
                                 </button>
                                 <button
                                     name="action_unclaim_procurement"
@@ -122,16 +157,36 @@
                 <field name="estimated_cost" optional="show" sum="รวม"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="procurement_owner_id"/>
+                <field name="procurement_assigned_by" optional="hide"/>
                 <field name="procurement_inbox_stage" optional="show" string="สถานะคิวพัสดุ"/>
                 <field name="procurement_verified" optional="show"/>
                 <field name="is_procurement_overdue" column_invisible="1"/>
                 <field name="state" optional="hide"/>
                 <button
+                    name="action_open_assign_wizard"
+                    type="object"
+                    string="มอบหมายงาน"
+                    class="btn-link"
+                    icon="fa-user-plus"
+                    groups="purchase_request.group_purchase_request_manager"
+                    invisible="procurement_owner_id"
+                />
+                <button
+                    name="action_open_assign_wizard"
+                    type="object"
+                    string="ส่งต่องาน"
+                    class="btn-link"
+                    icon="fa-share"
+                    groups="purchase_request.group_purchase_request_manager"
+                    invisible="not procurement_owner_id"
+                />
+                <button
                     name="action_claim_procurement"
                     type="object"
-                    string="รับงาน"
+                    string="รับงานเอง"
                     class="btn-link"
                     icon="fa-hand-paper-o"
+                    groups="purchase_request.group_purchase_request_manager"
                     invisible="procurement_owner_id"
                 />
                 <button
@@ -163,14 +218,15 @@
                 <field name="requested_by"/>
                 <field name="department_id"/>
                 <field name="procurement_owner_id"/>
+                <field name="procurement_assigned_by"/>
                 <filter
                     name="filter_unassigned"
-                    string="ยังไม่มีผู้รับ"
+                    string="รอมอบหมาย"
                     domain="[('procurement_owner_id', '=', False)]"
                 />
                 <filter
                     name="filter_claimed"
-                    string="รับงานแล้ว"
+                    string="มอบหมายแล้ว"
                     domain="[('procurement_owner_id', '!=', False)]"
                 />
                 <filter
@@ -196,7 +252,7 @@
                 />
                 <filter
                     name="group_owner"
-                    string="ผู้รับงาน"
+                    string="ผู้ได้รับมอบหมาย"
                     context="{'group_by': 'procurement_owner_id'}"
                 />
                 <filter
@@ -222,13 +278,31 @@
             <xpath expr="//header" position="inside">
                 <field name="procurement_verified" invisible="1"/>
                 <field name="procurement_return_reason" invisible="1"/>
+                <field name="procurement_assigned_by" invisible="1"/>
+                <field name="procurement_owner_id" invisible="1"/>
+                <button
+                    name="action_open_assign_wizard"
+                    type="object"
+                    string="มอบหมายงาน"
+                    class="btn-primary"
+                    invisible="state != 'sent_to_procurement' or procurement_owner_id"
+                    groups="purchase_request.group_purchase_request_manager"
+                />
+                <button
+                    name="action_open_assign_wizard"
+                    type="object"
+                    string="ส่งต่องาน"
+                    class="btn-primary"
+                    invisible="state not in ('sent_to_procurement', 'to_approve', 'approved', 'in_progress') or not procurement_owner_id"
+                    groups="purchase_request.group_purchase_request_manager"
+                />
                 <button
                     name="action_claim_procurement"
                     type="object"
-                    string="รับงาน"
-                    class="btn-primary"
+                    string="รับงานเอง"
+                    class="btn-secondary"
                     invisible="state != 'sent_to_procurement' or procurement_owner_id"
-                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
+                    groups="purchase_request.group_purchase_request_manager"
                 />
                 <button
                     name="action_verify_procurement"
@@ -237,7 +311,7 @@
                     class="oe_highlight"
                     icon="fa-check"
                     invisible="state != 'sent_to_procurement' or procurement_verified"
-                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
+                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
                 />
                 <button
                     name="action_open_return_for_revision_wizard"
@@ -246,7 +320,7 @@
                     class="btn-warning"
                     icon="fa-reply"
                     invisible="state != 'sent_to_procurement'"
-                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
+                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
                 />
                 <button
                     name="action_unclaim_procurement"
@@ -254,7 +328,7 @@
                     string="คืนคิว"
                     class="btn-secondary"
                     invisible="state != 'sent_to_procurement' or not procurement_owner_id"
-                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
+                    groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
                 />
             </xpath>
             <xpath expr="//div[@name='button_box']" position="after">
@@ -276,14 +350,17 @@
                     role="alert"
                     invisible="state != 'sent_to_procurement'"
                 >
-                    ใบนี้ส่งมาจากหน่วยงานแล้ว
+                    ใบนี้อยู่ในกล่องรวมงานใบขอซื้อแล้ว
                     <span invisible="not sent_to_procurement_date">
                         เมื่อ <field name="sent_to_procurement_date" readonly="1" class="oe_inline"/>
                         (ค้าง <field name="days_waiting_procurement" readonly="1" class="oe_inline"/> วัน)
                     </span>
-                    <span invisible="procurement_owner_id"> — ยังไม่มีผู้รับงาน กด <b>รับงาน</b> หรือ <b>ยืนยันการตรวจสอบ</b> เพื่อดำเนินการ</span>
+                    <span invisible="procurement_owner_id"> — รอมอบหมาย ให้หัวหน้าพัสดุตรวจสอบแล้วกด <b>มอบหมายงาน</b> ให้เจ้าหน้าที่ที่เกี่ยวข้อง</span>
                     <span invisible="not procurement_owner_id">
                         — ผู้รับงาน: <field name="procurement_owner_id" readonly="1" class="oe_inline"/>
+                        <span invisible="not procurement_assigned_by">
+                            (มอบหมายโดย <field name="procurement_assigned_by" readonly="1" class="oe_inline"/>)
+                        </span>
                     </span>
                     <span invisible="not procurement_verified" class="ms-2 badge text-bg-success">
                         <i class="fa fa-check me-1"/>พัสดุตรวจสอบความถูกต้องแล้ว พร้อมส่งเข้าระบบ e-GP
@@ -301,8 +378,14 @@
                     <group>
                         <field
                             name="procurement_owner_id"
-                            readonly="state != 'sent_to_procurement'"
-                            groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer,purchase.group_purchase_user"
+                            readonly="1"
+                            groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+                        />
+                        <field
+                            name="procurement_assigned_by"
+                            readonly="1"
+                            groups="purchase_request.group_purchase_request_manager,vpk_tier_validation.group_vpk_procurement_officer"
+                            invisible="not procurement_assigned_by"
                         />
                         <field name="procurement_verified_by" readonly="1"
                                invisible="not procurement_verified"/>
@@ -323,8 +406,8 @@
         <field name="context">{}</field>
         <field name="search_view_id" ref="view_purchase_request_search_procurement_inbox"/>
         <field name="help" type="html">
-            <p class="oe_view_nocontent_create">ยังไม่มีใบขอซื้อที่หน่วยงานส่งให้พัสดุ</p>
-            <p>เมื่อหน่วยงานกด ส่งพัสดุ ใบจะมาที่นี่ กด รับงาน หรือ เปิดทำรายการ เพื่อเริ่มดำเนินการ</p>
+            <p class="oe_view_nocontent_create">ยังไม่มีใบขอซื้อในกล่องรวม</p>
+            <p>เมื่อหน่วยงานกด ส่งพัสดุ ใบจะมาที่กล่องนี้ ให้หัวหน้าพัสดุตรวจสอบแล้วมอบหมายงานให้เจ้าหน้าที่ที่เกี่ยวข้อง</p>
         </field>
     </record>
 
@@ -342,7 +425,7 @@
     </record>
 
     <record id="action_procurement_inbox_unassigned" model="ir.actions.act_window">
-        <field name="name">ยังไม่มีผู้รับ</field>
+        <field name="name">รอมอบหมาย</field>
         <field name="res_model">purchase.request</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="domain">[('state', 'in', ('sent_to_procurement', 'to_approve', 'approved', 'in_progress')), ('procurement_owner_id', '=', False)]</field>
@@ -362,7 +445,7 @@
     </record>
 
     <record id="action_procurement_inbox_claimed" model="ir.actions.act_window">
-        <field name="name">รับงานแล้ว</field>
+        <field name="name">มอบหมายแล้ว</field>
         <field name="res_model">purchase.request</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="domain">[('state', 'in', ('sent_to_procurement', 'to_approve', 'approved', 'in_progress')), ('procurement_owner_id', '!=', False)]</field>

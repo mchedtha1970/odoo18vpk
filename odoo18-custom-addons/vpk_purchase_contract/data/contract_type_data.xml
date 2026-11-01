@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="contract_type_unlimited_qty" model="purchase.contract.type">
+        <field name="name">จะซื้อจะขายไม่จำกัดจำนวน</field>
+        <field name="code">unlimited_qty</field>
+        <field name="quantity_policy">unlimited</field>
+        <field name="description">ราคาต่อหน่วยคงที่ตามผู้ชนะประกวดราคา เมื่อหน่วยงานต้องการสินค้าให้เปิดใบขอซื้อ ดึงสัญญานี้ แล้วใส่จำนวนที่ต้องการซื้อก่อนส่งพัสดุ</field>
+    </record>
+</odoo>

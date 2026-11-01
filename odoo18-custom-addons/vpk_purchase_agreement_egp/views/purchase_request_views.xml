@@ -53,6 +53,15 @@
                     name="egp_requisition_id"
                     invisible="not is_egp_procurement_flow"
                     readonly="1"
+                    options="{'no_create': True}"
+                />
+                <button
+                    name="action_open_related_egp"
+                    type="object"
+                    string="เปิดดู e-GP"
+                    class="btn-link"
+                    icon="fa-external-link"
+                    invisible="not egp_requisition_id"
                 />
                 <field
                     name="egp_project_reference"

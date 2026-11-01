@@ -6,9 +6,9 @@
             <div class="o_vpk_procurement_inbox_dashboard h-100 d-flex flex-column">
                 <div class="o_vpk_dashboard_header">
                     <div class="o_vpk_dashboard_header_text">
-                        <h2 class="mb-1">Dashboard พัสดุรับงาน</h2>
+                        <h2 class="mb-1">กล่องรวมงานใบขอซื้อ</h2>
                         <p class="text-muted mb-0">
-                            ใบขอซื้อที่หน่วยงานส่งมาแล้ว — สลับมุมมองบอร์ด การ์ด หรือตาราง แล้วกดรับงานหรือเปิดทำรายการ
+                            เมื่อหน่วยงานส่งพัสดุ ใบขอซื้อจะรวมที่นี่ ให้หัวหน้าพัสดุตรวจสอบ แล้วมอบหมายหรือส่งต่องานให้เจ้าหน้าที่ที่เกี่ยวข้อง
                         </p>
                     </div>
                     <div class="o_vpk_dashboard_header_actions">
@@ -96,7 +96,7 @@
                         t-on-click="() => this.selectFilter('unassigned')"
                     >
                         <div class="o_vpk_inbox_kpi_value"><t t-esc="state.stats.unassigned"/></div>
-                        <div class="o_vpk_inbox_kpi_label">ยังไม่มีผู้รับ</div>
+                        <div class="o_vpk_inbox_kpi_label">รอมอบหมาย</div>
                     </button>
                     <button
                         type="button"
@@ -105,7 +105,7 @@
                         t-on-click="() => this.selectFilter('claimed')"
                     >
                         <div class="o_vpk_inbox_kpi_value"><t t-esc="state.stats.claimed"/></div>
-                        <div class="o_vpk_inbox_kpi_label">รับงานแล้ว</div>
+                        <div class="o_vpk_inbox_kpi_label">มอบหมายแล้ว</div>
                     </button>
                     <button
                         type="button"
@@ -179,7 +179,7 @@
                         </t>
                     </section>
                     <section class="o_vpk_inbox_breakdown">
-                        <h3>ตามผู้รับงาน</h3>
+                        <h3>ตามผู้ได้รับมอบหมาย</h3>
                         <t t-foreach="state.stats.by_owner" t-as="row" t-key="'owner-' + (row.id || 'none')">
                             <button
                                 type="button"
@@ -232,8 +232,8 @@
                     <t t-else="">
                         <div class="o_vpk_dashboard_empty text-center text-muted py-5">
                             <i class="fa fa-inbox fa-3x mb-3 d-block opacity-50"/>
-                            <h4>ยังไม่มีใบขอซื้อจากหน่วยงาน</h4>
-                            <p>เมื่อหน่วยงานกด ส่งพัสดุ รายการจะแสดงที่นี่</p>
+                            <h4>ยังไม่มีใบขอซื้อในกล่องรวม</h4>
+                            <p>เมื่อหน่วยงานกด ส่งพัสดุ รายการจะมาที่กล่องนี้ เพื่อให้หัวหน้าพัสดุตรวจสอบและมอบหมายงาน</p>
                         </div>
                     </t>
                 </div>

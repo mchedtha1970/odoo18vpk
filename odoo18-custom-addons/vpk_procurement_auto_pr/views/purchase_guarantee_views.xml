@@ -44,30 +44,36 @@
                             type="object"
                             string="รับหลักประกัน"
                             class="btn-primary"
-                            invisible="state != 'draft'"/>
+                            invisible="state != 'draft'"
+                            groups="purchase.group_purchase_user"/>
                     <button name="action_mark_obligation_completed"
                             type="object"
                             string="ยืนยันครบพันธะ/พร้อมคืน"
                             class="btn-primary"
-                            invisible="state != 'active'"/>
+                            invisible="state != 'active'"
+                            groups="purchase.group_purchase_user"/>
                     <button name="action_return"
                             type="object"
                             string="บันทึกส่งคืนหลักประกัน"
                             class="btn-primary"
-                            invisible="state != 'eligible_return'"/>
+                            invisible="state != 'eligible_return'"
+                            groups="purchase.group_purchase_user"/>
                     <button name="action_claim"
                             type="object"
                             string="เรียกหลักประกัน"
                             confirm="ยืนยันการเรียกหลักประกัน?"
-                            invisible="state not in ('active', 'eligible_return')"/>
+                            invisible="state not in ('active', 'eligible_return')"
+                            groups="purchase.group_purchase_user"/>
                     <button name="action_cancel"
                             type="object"
                             string="ยกเลิก"
-                            invisible="state not in ('draft', 'active')"/>
+                            invisible="state not in ('draft', 'active')"
+                            groups="purchase.group_purchase_user"/>
                     <button name="action_draft"
                             type="object"
                             string="กลับเป็นแบบร่าง"
-                            invisible="state != 'cancelled'"/>
+                            invisible="state != 'cancelled'"
+                            groups="purchase.group_purchase_user"/>
                     <field name="state"
                            widget="statusbar"
                            statusbar_visible="draft,active,eligible_return,returned"/>
@@ -78,7 +84,8 @@
                                 name="action_return"
                                 class="oe_stat_button"
                                 icon="fa-undo"
-                                invisible="state != 'eligible_return'">
+                                invisible="state != 'eligible_return'"
+                                groups="purchase.group_purchase_user">
                             <div class="o_field_widget o_stat_info">
                                 <span class="o_stat_text">ส่งคืนหลักประกัน</span>
                             </div>
@@ -224,7 +231,8 @@
                     <div class="mb-2">
                         <button name="action_open_new_guarantee" type="object"
                                 string="เพิ่มหลักประกัน" class="btn-primary"
-                                invisible="not id"/>
+                                invisible="not id"
+                                groups="purchase.group_purchase_user"/>
                     </div>
                     <field name="guarantee_ids"
                            context="{'default_contract_id': id, 'default_base_amount': amount_total, 'default_coverage_start_date': date_start, 'default_coverage_end_date': date_end}">
@@ -259,7 +267,8 @@
                     <div class="mb-2">
                         <button name="action_open_new_guarantee" type="object"
                                 string="เพิ่มหลักประกัน" class="btn-primary"
-                                invisible="not id"/>
+                                invisible="not id"
+                                groups="purchase.group_purchase_user"/>
                     </div>
                     <field name="guarantee_ids"
                            context="{'default_purchase_order_id': id, 'default_base_amount': amount_total}">

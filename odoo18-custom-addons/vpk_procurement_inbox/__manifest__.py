@@ -1,16 +1,16 @@
 {
     "name": "VPK Procurement Inbox Dashboard",
-    "version": "18.0.1.4.0",
+    "version": "18.0.1.5.2",
     "category": "Purchases",
-    "summary": "Dashboard ให้พัสดุ monitor และรับงานใบขอซื้อจากหน่วยงาน",
+    "summary": "กล่องรวมงานใบขอซื้อ ให้หัวหน้าตรวจสอบแล้วมอบหมายให้เจ้าหน้าที่",
     "description": """
-Procurement Inbox (รอรับจากหน่วยงาน)
+Procurement Inbox (กล่องรวมงานใบขอซื้อ)
 ====================================
 
-- แสดงใบขอซื้อที่หน่วยงานกด ส่งพัสดุ แล้ว
-- KPI: ทั้งหมด / ยังไม่มีผู้รับ / รับงานแล้ว / ของฉัน / ค้างเกิน 3 วัน
-- ปุ่ม รับงาน / คืนคิว เพื่อดึงมาทำงานง่าย
-- Badge จำนวนรายการบนเมนู
+- เมื่อหน่วยงานกด ส่งพัสดุ ใบขอซื้อจะรวมที่กล่องกลาง
+- หัวหน้าพัสดุ/admin ตรวจสอบ แล้วมอบหมายหรือส่งต่องานให้เจ้าหน้าที่ที่เกี่ยวข้อง
+- เจ้าหน้าที่พัสดุทำงานจากรายการที่ได้รับมอบหมาย
+- KPI: ทั้งหมด / รอมอบหมาย / มอบหมายแล้ว / ของฉัน / ค้างเกิน 3 วัน
     """,
     "author": "VPK",
     "license": "LGPL-3",
@@ -18,14 +18,18 @@ Procurement Inbox (รอรับจากหน่วยงาน)
         "purchase_request",
         "purchase_request_department",
         "vpk_tier_validation",
+        "vpk_budget",
         "vpk_purchase_agreement_egp",
         "vpk_th_purchase_menu",
         "vpk_sidebar_menu",
     ],
     "data": [
         "security/ir.model.access.csv",
+        "security/procurement_inbox_rules.xml",
         "data/ir_cron_data.xml",
+        "data/procurement_test_users.xml",
         "wizard/purchase_request_return_wizard_views.xml",
+        "wizard/purchase_request_assign_wizard_views.xml",
         "views/purchase_request_views.xml",
         "views/menu.xml",
     ],

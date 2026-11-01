@@ -67,8 +67,13 @@
                    position="after">
                 <group name="vpk_procurement_information"
                        string="ข้อมูลการจัดซื้อจัดจ้าง">
-                    <group name="vpk_pr_information"
-                           string="ประเภทและข้อมูลจาก PR">
+                    <group name="vpk_project_fields" string="โครงการ" colspan="2">
+                        <field name="source_project_reference" readonly="1"/>
+                        <field name="source_project_name" readonly="1"/>
+                        <field name="source_requisition_id" readonly="1" options="{'no_create': True}"/>
+                    </group>
+                    <group name="vpk_request_fields" string="ใบขอซื้อ">
+                        <field name="source_request_ids" readonly="1" widget="many2many_tags" options="{'no_create': True}"/>
                         <field name="procurement_urgency"/>
                         <field name="urgency_reason"
                                invisible="procurement_urgency == 'normal'"
@@ -81,8 +86,20 @@
                         <field name="pr_procurement_type_id"/>
                         <field name="pr_procurement_method_id"/>
                     </group>
+                    <group name="vpk_contract_fields" string="สัญญา">
+                        <field name="contract_id"
+                               options="{'no_create': True}"
+                               readonly="state in ('purchase', 'done', 'cancel')"/>
+                        <field name="contract_type_id" readonly="1" invisible="not contract_id"/>
+                        <field name="contract_quantity_policy" readonly="1" invisible="not contract_id"/>
+                        <field name="contract_category_id" readonly="1" invisible="not contract_id"/>
+                        <field name="contract_egp_control_no" readonly="1" invisible="not contract_id"/>
+                        <field name="contract_po_number" readonly="1" invisible="not contract_id"/>
+                        <field name="contract_amount_remaining" readonly="1" invisible="not contract_id"/>
+                    </group>
                     <group name="vpk_order_conditions"
-                           string="กำหนดการและเงื่อนไขคำสั่งซื้อ">
+                           string="กำหนดการและเงื่อนไขคำสั่งซื้อ"
+                           colspan="2">
                         <field name="procurement_fulfillment_status"
                                widget="badge"
                                decoration-info="procurement_fulfillment_status == 'awaiting_receipt'"

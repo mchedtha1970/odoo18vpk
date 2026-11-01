@@ -1,6 +1,6 @@
 {
     "name": "VPK Procurement Auto PR - แผนจัดซื้อและสร้าง PR อัตโนมัติ",
-    "version": "18.0.1.38.7",
+    "version": "18.0.1.38.13",
     "category": "Purchases",
     "summary": "แผนจัดซื้อจัดจ้างประจำปี + Auto Gen PR จากจุดสั่งซื้อและสัญญาใกล้หมดอายุ",
     "depends": [
@@ -17,6 +17,7 @@
     "data": [
         "security/credit_note_security.xml",
         "security/ir.model.access.csv",
+        "security/procurement_guarantee_security.xml",
         "data/ir_sequence_data.xml",
         "data/ir_cron_data.xml",
         "data/purchase_cancel_reason_data.xml",

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pr_make_po_hide_existing_for_unlimited" model="ir.ui.view">
+        <field name="name">purchase.request.line.make.purchase.order.unlimited</field>
+        <field name="model">purchase.request.line.make.purchase.order</field>
+        <field name="inherit_id" ref="purchase_request.view_purchase_request_line_make_purchase_order"/>
+        <field name="arch" type="xml">
+            <field name="purchase_order_id" position="before">
+                <field name="is_unlimited_contract_po" invisible="1"/>
+            </field>
+            <xpath expr="//separator[1]" position="attributes">
+                <attribute name="invisible">is_unlimited_contract_po</attribute>
+            </xpath>
+            <field name="purchase_order_id" position="attributes">
+                <attribute name="invisible">is_unlimited_contract_po</attribute>
+            </field>
+            <field name="sync_data_planned" position="attributes">
+                <attribute name="invisible">is_unlimited_contract_po</attribute>
+            </field>
+        </field>
+    </record>
+</odoo>

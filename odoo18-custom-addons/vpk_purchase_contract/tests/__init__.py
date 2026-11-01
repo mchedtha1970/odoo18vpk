@@ -3,3 +3,4 @@
 
 from . import test_purchase_contract
 from . import test_egp_winner_contract
+from . import test_department_related_readonly

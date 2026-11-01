@@ -2,13 +2,13 @@
 <odoo>
 
     <record id="action_procurement_inbox_dashboard" model="ir.actions.client">
-        <field name="name">Dashboard พัสดุรับงาน</field>
+        <field name="name">กล่องรวมงานใบขอซื้อ</field>
         <field name="tag">vpk_procurement_inbox_dashboard</field>
     </record>
 
     <menuitem
         id="menu_procurement_inbox_dashboard"
-        name="Dashboard พัสดุรับงาน"
+        name="กล่องรวมงานใบขอซื้อ"
         parent="vpk_th_purchase_menu.menu_purchase_request_data_root"
         action="action_procurement_inbox_dashboard"
         sequence="3"
@@ -17,7 +17,7 @@
 
     <menuitem
         id="menu_procurement_inbox_dashboard_pr"
-        name="Dashboard พัสดุรับงาน"
+        name="กล่องรวมงานใบขอซื้อ"
         parent="purchase_request.menu_purchase_request"
         action="action_procurement_inbox_dashboard"
         sequence="3"

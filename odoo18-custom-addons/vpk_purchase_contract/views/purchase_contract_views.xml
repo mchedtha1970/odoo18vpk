@@ -71,6 +71,7 @@
                             type="object"
                             class="oe_stat_button"
                             icon="fa-pencil-square-o"
+                            groups="purchase.group_purchase_user,account.group_account_invoice"
                         >
                             <field name="vendor_bill_count" widget="statinfo" string="ใบแจ้งหนี้"/>
                         </button>
@@ -93,6 +94,7 @@
                             />
                             <field name="partner_id" readonly="state != 'draft'"/>
                             <field name="contract_type_id" readonly="state != 'draft'"/>
+                            <field name="quantity_policy" readonly="state != 'draft'"/>
                             <field name="contract_category_id"/>
                             <field name="egp_contract_control_no" readonly="state in ('done', 'cancel')"/>
                             <field name="contract_po_number" readonly="state in ('done', 'cancel')"/>
@@ -133,15 +135,20 @@
                                 readonly="state != 'draft'"
                             />
                             <field name="currency_id" readonly="state != 'draft'"/>
-                            <field name="amount_total" readonly="state != 'draft'"/>
+                            <field name="amount_total" readonly="state != 'draft'" invisible="quantity_policy == 'unlimited'" required="quantity_policy != 'unlimited'"/>
                             <field name="amount_pr_reserved" invisible="1"/>
                             <field name="amount_po_confirmed" invisible="1"/>
                             <field name="amount_consumed" invisible="1"/>
-                            <field name="amount_remaining"/>
+                            <field name="amount_remaining" invisible="quantity_policy == 'unlimited'"/>
                         </group>
                     </group>
                     <notebook>
                         <page string="รายการสินค้าที่ตกลงซื้อขาย" name="winner_products">
+                            <div class="alert alert-info" role="alert" invisible="quantity_policy != 'unlimited'">
+                                สัญญาจะซื้อจะขายไม่จำกัดจำนวน ราคาต่อหน่วยในตารางนี้เป็นราคาที่ตกลงกับผู้ชนะ
+                                ปริมาณเป็นปริมาณอ้างอิงจากประกวดราคา
+                                เมื่อต้องการสินค้า หน่วยงานเปิดใบขอซื้อ เลือกสัญญานี้ ดึงรายการราคา แล้วใส่จำนวนที่ต้องการซื้อก่อนส่งพัสดุ
+                            </div>
                             <field name="line_ids" readonly="state != 'draft'">
                                 <list editable="bottom">
                                     <field name="product_id"/>
@@ -163,6 +170,7 @@
                                     string="สร้างรายการงวดงาน"
                                     class="btn-secondary"
                                     icon="fa-magic"
+                                    groups="purchase.group_purchase_manager"
                                 />
                             </div>
                             <field name="payment_term_note" readonly="state != 'draft'" placeholder="สรุปเงื่อนไขการแบ่งงวดจ่ายเงิน..."/>
@@ -226,7 +234,7 @@
                                 </list>
                             </field>
                             <separator string="ใบแจ้งหนี้ (Vendor Bill)"/>
-                            <field name="vendor_bill_ids" readonly="1" domain="[('move_type', 'in', ('in_invoice', 'in_refund'))]">
+                            <field name="vendor_bill_ids" readonly="1" groups="purchase.group_purchase_user,account.group_account_invoice" domain="[('move_type', 'in', ('in_invoice', 'in_refund'))]">
                                 <list>
                                     <field name="name"/>
                                     <field name="partner_id"/>
@@ -322,6 +330,7 @@
             <list string="ประเภทสัญญา">
                 <field name="name"/>
                 <field name="code"/>
+                <field name="quantity_policy"/>
                 <field name="category_id"/>
                 <field name="active"/>
             </list>
@@ -345,6 +354,7 @@
                         <group>
                             <field name="category_id"/>
                             <field name="code"/>
+                            <field name="quantity_policy"/>
                             <field name="active"/>
                         </group>
                         <group>

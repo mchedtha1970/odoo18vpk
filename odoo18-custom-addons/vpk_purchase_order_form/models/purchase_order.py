@@ -53,6 +53,69 @@ def _load_po_form_inline_css():
 class PurchaseOrder(models.Model):
     _inherit = "purchase.order"
 
+    # คำบนฟอร์มใบสั่งซื้อเป็นภาษาไทยในภาษาต้นทาง จึงเป็นค่าเริ่มต้นของทุกผู้ใช้
+    state = fields.Selection(
+        selection_add=[
+            ("draft", "ใบขอเสนอราคา"),
+            ("sent", "ส่งใบขอเสนอราคาแล้ว"),
+            ("to approve", "รออนุมัติ"),
+            ("purchase", "ใบสั่งซื้อ"),
+            ("done", "ปิดรายการ"),
+            ("cancel", "ยกเลิก"),
+        ]
+    )
+    partner_id = fields.Many2one(string="ผู้ขาย")
+    partner_ref = fields.Char(string="เลขที่อ้างอิงผู้ขาย")
+    currency_id = fields.Many2one(string="สกุลเงิน")
+    date_order = fields.Datetime(string="กำหนดยืนยันคำสั่ง")
+    date_planned = fields.Datetime(string="วันที่คาดว่าจะได้รับ")
+    date_approve = fields.Datetime(string="วันที่ยืนยัน")
+    picking_type_id = fields.Many2one(string="ส่งถึง")
+    effective_date = fields.Datetime(string="วันที่มาถึง")
+    dest_address_id = fields.Many2one(string="ที่อยู่จัดส่งตรง")
+    incoterm_id = fields.Many2one(string="เงื่อนไขการส่งมอบ")
+    incoterm_location = fields.Char(string="สถานที่ตามเงื่อนไขการส่งมอบ")
+    receipt_status = fields.Selection(string="สถานะการรับ")
+    origin = fields.Char(string="เอกสารต้นทาง")
+    user_id = fields.Many2one(string="ผู้จัดซื้อ")
+    payment_term_id = fields.Many2one(string="เงื่อนไขการชำระเงิน")
+    fiscal_position_id = fields.Many2one(string="ฐานภาษี")
+    invoice_status = fields.Selection(string="สถานะวางบิล")
+    notes = fields.Html(string="เงื่อนไขและข้อกำหนด")
+    requisition_id = fields.Many2one(string="ข้อตกลง")
+    cancel_reason_id = fields.Many2one(string="เหตุผลที่ยกเลิก")
+    exception_ids = fields.Many2many(string="ข้อยกเว้น")
+    ignore_exception = fields.Boolean(string="ไม่สนใจข้อยกเว้น")
+    exceptions_summary = fields.Html(string="สรุปข้อยกเว้น")
+
+    @api.model
+    def _vpk_apply_thai_po_state_labels(self):
+        """ใส่ป้ายสถานะภาษาไทยให้ทุกภาษาที่ติดตั้งไว้"""
+        labels = {
+            "draft": "ใบขอเสนอราคา",
+            "sent": "ส่งใบขอเสนอราคาแล้ว",
+            "to approve": "รออนุมัติ",
+            "purchase": "ใบสั่งซื้อ",
+            "done": "ปิดรายการ",
+            "cancel": "ยกเลิก",
+        }
+        field = self.env["ir.model.fields"].sudo().search(
+            [("model", "=", "purchase.order"), ("name", "=", "state")],
+            limit=1,
+        )
+        if not field:
+            return
+        selections = self.env["ir.model.fields.selection"].sudo().search(
+            [("field_id", "=", field.id)]
+        )
+        langs = [code for code, _name in self.env["res.lang"].get_installed()]
+        for selection in selections:
+            label = labels.get(selection.value)
+            if not label:
+                continue
+            for lang in langs:
+                selection.with_context(lang=lang).write({"name": label})
+
     vpk_po_delivery_days = fields.Integer(
         string="กำหนดส่งมอบ (วัน)",
         help="จำนวนวันส่งมอบนับถัดจากวันที่ผู้รับจ้างได้รับใบสั่งซื้อ",
@@ -506,3 +569,24 @@ class PurchaseOrder(models.Model):
     def _po_form_signer_position(self):
         self.ensure_one()
         return self.company_id.vpk_po_signer_position or ""
+
+
+class PurchaseOrderLine(models.Model):
+    _inherit = "purchase.order.line"
+
+    product_id = fields.Many2one(string="สินค้า")
+    name = fields.Text(string="รายละเอียด")
+    product_qty = fields.Float(string="จำนวน")
+    product_uom = fields.Many2one(string="หน่วย")
+    price_unit = fields.Float(string="ราคาต่อหน่วย")
+    product_packaging_id = fields.Many2one(string="บรรจุภัณฑ์")
+    product_packaging_qty = fields.Float(string="จำนวนบรรจุ")
+    qty_received = fields.Float(string="จำนวนที่รับ")
+    qty_invoiced = fields.Float(string="จำนวนที่วางบิล")
+    taxes_id = fields.Many2many(string="ภาษี")
+    discount = fields.Float(string="ส่วนลด (%)")
+    price_subtotal = fields.Monetary(string="มูลค่ารวม")
+    date_planned = fields.Datetime(string="วันที่คาดว่าจะได้รับ")
+    qty_to_accept = fields.Float(string="รอรับ")
+    qty_accepted = fields.Float(string="รับแล้ว")
+    vendor_moq_qty = fields.Float(string="สั่งขั้นต่ำ")

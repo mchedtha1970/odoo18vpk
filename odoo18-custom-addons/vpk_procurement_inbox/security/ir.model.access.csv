@@ -1,2 +1,3 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_purchase_request_return_wizard_user,purchase.request.return.wizard.user,model_purchase_request_return_wizard,base.group_user,1,1,1,1
+access_purchase_request_assign_wizard_manager,purchase.request.assign.wizard.manager,model_purchase_request_assign_wizard,purchase_request.group_purchase_request_manager,1,1,1,1

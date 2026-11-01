@@ -41,15 +41,20 @@ class VendorApiController(http.Controller):
         return self._json({"ok": False, "error": message}, status=status)
 
     def _parse_json_body(self):
+        cached = getattr(request, "_vpk_json_body", None)
+        if cached is not None:
+            return cached
         raw = request.httprequest.get_data(as_text=True) or ""
         if not raw.strip():
-            return {}
-        try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError as err:
-            raise UserError("Invalid JSON body") from err
-        if not isinstance(payload, dict):
-            raise UserError("JSON body must be an object")
+            payload = {}
+        else:
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError as err:
+                raise UserError("Invalid JSON body") from err
+            if not isinstance(payload, dict):
+                raise UserError("JSON body must be an object")
+        request._vpk_json_body = payload
         return payload
 
     def _bearer_token(self):
@@ -354,6 +359,7 @@ class VendorApiController(http.Controller):
         methods=["POST"],
         csrf=False,
         cors=CORS,
+        readonly=False,
     )
     def order_sign(self, order_id, **kwargs):
         def _run():

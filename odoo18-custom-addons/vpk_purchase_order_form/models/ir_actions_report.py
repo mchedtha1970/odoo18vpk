@@ -84,6 +84,6 @@ class IrActionsReport(models.Model):
             and len(set(res_ids)) == 1
         ):
             order = self.env["purchase.order"].browse(res_ids[0]).exists()
-            if order:
+            if order and not order.env.context.get("vpk_skip_po_pdf_regen"):
                 order._vpk_upsert_po_pdf(pdf_content)
         return pdf_content, report_type

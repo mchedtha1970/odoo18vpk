@@ -5,4 +5,31 @@
         <field name="model_id" ref="model_purchase_contract"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
     </record>
+    <record id="purchase_contract_pr_user_own_rule" model="ir.rule">
+        <field name="name">สัญญา: หน่วยงานดูได้เฉพาะของใบขอซื้อตนเอง</field>
+        <field name="model_id" ref="model_purchase_contract"/>
+        <field name="groups" eval="[(4, ref('purchase_request.group_purchase_request_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">
+            ['|', '|',
+             ('purchase_request_ids.requested_by', '=', user.id),
+             ('requisition_id.purchase_request_id.requested_by', '=', user.id),
+             ('requisition_id.line_ids.purchase_request_lines.request_id.requested_by', '=', user.id)]
+        </field>
+    </record>
+    <record id="purchase_contract_pr_manager_all_rule" model="ir.rule">
+        <field name="name">สัญญา: หัวหน้าพัสดุดูได้ทั้งหมด</field>
+        <field name="model_id" ref="model_purchase_contract"/>
+        <field name="groups" eval="[(4, ref('purchase_request.group_purchase_request_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="purchase_contract_purchase_user_all_rule" model="ir.rule">
+        <field name="name">สัญญา: เจ้าหน้าที่จัดซื้อดูได้ทั้งหมด</field>
+        <field name="model_id" ref="model_purchase_contract"/>
+        <field name="groups" eval="[(4, ref('purchase.group_purchase_user'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
 </odoo>

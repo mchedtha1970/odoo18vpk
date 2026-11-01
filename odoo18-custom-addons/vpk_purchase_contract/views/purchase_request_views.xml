@@ -5,24 +5,99 @@
         <field name="model">purchase.request</field>
         <field name="inherit_id" ref="purchase_request.view_purchase_request_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="%(purchase_request.action_purchase_request_line_make_purchase_order)d"
+                    type="action"
+                    string="สร้าง PO"
+                    class="oe_highlight"
+                    groups="purchase.group_purchase_user"
+                    invisible="not is_unlimited_contract or state not in ('approved', 'in_progress')"
+                />
+            </xpath>
+            <button name="action_send_to_egp" position="attributes">
+                <attribute name="invisible">not can_send_to_egp or is_unlimited_contract</attribute>
+            </button>
+            <field name="egp_flow_stage" position="attributes">
+                <attribute name="invisible">not is_egp_procurement_flow or is_unlimited_contract</attribute>
+            </field>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_open_related_contract"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-file-text"
+                    invisible="not related_contract_count"
+                >
+                    <field name="related_contract_count" widget="statinfo" string="สัญญา"/>
+                </button>
+            </xpath>
             <field name="origin" position="after">
+                <field name="is_unlimited_contract" invisible="1"/>
+                <field name="price_agreement_only" invisible="1"/>
+                <div class="alert alert-info" role="alert" invisible="not price_agreement_only" colspan="2">
+                    ใบนี้เป็นประกวดราคาเพื่อหาผู้ชนะสัญญาจะซื้อจะขายไม่จำกัดจำนวน จึงไม่จองงบประมาณ
+                    เมื่อต้องการสินค้าให้เปิดใบขอซื้อใหม่ เลือกสัญญา แล้วใส่จำนวนจริง
+                </div>
                 <field
                     name="contract_id"
                     string="เลขที่สัญญาจ้างซื้อ"
                     options="{'no_create': True}"
                     readonly="is_editable == False"
                 />
+                <button
+                    name="action_pull_contract_price_list"
+                    type="object"
+                    string="ดึงรายการราคาจากสัญญา"
+                    class="btn-secondary"
+                    invisible="not is_unlimited_contract or is_editable == False"
+                />
+                <div class="text-muted" invisible="not is_unlimited_contract" colspan="2">
+                    เลือกสัญญาจะซื้อจะขายไม่จำกัดจำนวน แล้วดึงรายการราคา ใส่จำนวนที่ต้องการซื้อ
+                    จากนั้นตรวจสอบงบประมาณและส่งพัสดุ เมื่อได้รับงานแล้วกดสร้าง PO ได้เลย
+                    ระบบใส่ผู้ขายตามสัญญาให้ ไม่ต้องเข้า e-GP ซ้ำ
+                </div>
+                <button
+                    name="action_open_related_contract"
+                    type="object"
+                    string="เปิดดูสัญญา"
+                    class="btn-link"
+                    icon="fa-external-link"
+                    invisible="not related_contract_count"
+                />
+                <field name="contract_type_id" readonly="1" invisible="not contract_id"/>
+                <field name="contract_egp_control_no" readonly="1" invisible="not contract_id"/>
+                <field name="contract_po_number" readonly="1" invisible="not contract_id"/>
                 <field name="contract_partner_id" readonly="1" invisible="not contract_id"/>
-                <field name="contract_amount_total" readonly="1" invisible="not contract_id"/>
-                <field name="contract_amount_remaining" readonly="1" invisible="not contract_id"/>
+                <field name="contract_amount_total" readonly="1" invisible="not contract_id or is_unlimited_contract"/>
+                <field name="contract_amount_remaining" readonly="1" invisible="not contract_id or is_unlimited_contract"/>
             </field>
             <xpath expr="//field[@name='line_ids']/list/field[@name='name']" position="after">
+                <field name="contract_line_id" column_invisible="1"/>
                 <field name="contract_installment_id"
                        string="งวดสัญญา"
                        optional="show"
                        readonly="1"
+                       column_invisible="parent.is_unlimited_contract"
                        invisible="not parent.contract_id"
                 />
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='product_id']" position="attributes">
+                <attribute name="readonly">contract_line_id</attribute>
+            </xpath>
+            <xpath expr="//field[@name='line_ids']/list/field[@name='estimated_cost']" position="attributes">
+                <attribute name="readonly">contract_line_id</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_purchase_request_form_contract_price" model="ir.ui.view">
+        <field name="name">purchase.request.form.contract.price</field>
+        <field name="model">purchase.request</field>
+        <field name="inherit_id" ref="vpk_budget.view_purchase_request_form_budget_reservation"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='budget_unit_price']" position="attributes">
+                <attribute name="readonly">contract_line_id</attribute>
             </xpath>
         </field>
     </record>
