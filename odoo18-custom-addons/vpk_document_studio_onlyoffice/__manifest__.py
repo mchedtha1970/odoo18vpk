@@ -3,7 +3,7 @@
 
 {
     "name": "VPK Document Studio OnlyOffice",
-    "version": "18.0.1.3.0",
+    "version": "18.0.1.3.1",
     "category": "Productivity",
     "summary": "แก้ไขไฟล์ Word ของ Document Studio ด้วย ONLYOFFICE Docs",
     "author": "VPK",
@@ -16,7 +16,9 @@
     "assets": {
         "web.assets_backend": [
             "vpk_document_studio_onlyoffice/static/src/js/onlyoffice_editor_field.js",
+            "vpk_document_studio_onlyoffice/static/src/js/onlyoffice_fullscreen_action.js",
             "vpk_document_studio_onlyoffice/static/src/xml/onlyoffice_editor_field.xml",
+            "vpk_document_studio_onlyoffice/static/src/xml/onlyoffice_fullscreen_action.xml",
             "vpk_document_studio_onlyoffice/static/src/scss/onlyoffice_editor.scss",
         ],
     },

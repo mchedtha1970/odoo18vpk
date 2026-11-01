@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_document_studio_onlyoffice.FullscreenEditor">
+        <div class="o_vpk_oo_fullscreen">
+            <div t-if="state.loading" class="o_vpk_oo_editor_status text-muted">
+                <i class="fa fa-spinner fa-spin fa-2x mb-2"/>
+                <div>กำลังเปิด OnlyOffice...</div>
+            </div>
+            <div t-if="state.error" class="alert alert-danger m-3" role="alert">
+                <t t-esc="state.error"/>
+            </div>
+            <div t-ref="editor" t-att-id="editorId" class="o_vpk_oo_fullscreen_host"/>
+        </div>
+    </t>
+</templates>
