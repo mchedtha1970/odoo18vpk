@@ -45,6 +45,7 @@ class VpkOnlyofficeConnector(Onlyoffice_Connector):
             editor["callbackUrl"] = _with_db(editor["callbackUrl"])
         editor.setdefault("customization", {})
         editor["customization"]["forcesave"] = True
+        editor["customization"]["logo"] = {"visible": False}
         if config.get("token"):
             config.pop("token", None)
             config["token"] = jwt_utils.encode_payload(request.env, config)
