@@ -15,28 +15,6 @@ class PurchaseContract(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "id desc"
 
-    def init(self):
-        """ประเภทที่ชื่อระบุไม่จำกัดจำนวน ให้ดึงราคาต่อหน่วยได้ และสัญญาเดิมตามประเภทนั้นด้วย."""
-        self.env.cr.execute(
-            """
-            UPDATE purchase_contract_type
-               SET quantity_policy = 'unlimited'
-             WHERE COALESCE(quantity_policy, 'fixed') <> 'unlimited'
-               AND name ILIKE %s
-            """,
-            ("%ไม่จำกัดจำนวน%",),
-        )
-        self.env.cr.execute(
-            """
-            UPDATE purchase_contract AS contract
-               SET quantity_policy = contract_type.quantity_policy
-              FROM purchase_contract_type AS contract_type
-             WHERE contract.contract_type_id = contract_type.id
-               AND contract_type.quantity_policy = 'unlimited'
-               AND COALESCE(contract.quantity_policy, 'fixed') <> 'unlimited'
-            """
-        )
-
     name = fields.Char(
         string="รหัสสัญญา",
         required=True,

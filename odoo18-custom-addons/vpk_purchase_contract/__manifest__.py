@@ -20,6 +20,7 @@
         "security/purchase_contract_security.xml",
         "data/ir_sequence_data.xml",
         "data/contract_type_data.xml",
+        "data/contract_quantity_policy_backfill.xml",
         "wizard/generate_installments_wizard_views.xml",
         "wizard/purchase_request_line_make_purchase_order_views.xml",
         "views/purchase_contract_views.xml",
