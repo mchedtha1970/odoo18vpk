@@ -175,7 +175,12 @@ class TierValidation(models.AbstractModel):
         View = self.env["ir.ui.view"]
         new_arch, new_models = View.postprocess_and_fields(node, self._name)
         new_node = etree.fromstring(new_arch)
-        sheets[0].append(new_node)
+        po_file_pages = (
+            doc.xpath("//page[@name='vpk_po_form']")
+            if self._name == "purchase.order"
+            else []
+        )
+        (po_file_pages[0] if po_file_pages else sheets[0]).append(new_node)
         all_models = res["models"].copy()
         for model_name, view_fields in new_models.items():
             if model_name in all_models:

@@ -17,6 +17,9 @@
             <field name="sync_data_planned" position="attributes">
                 <attribute name="invisible">is_unlimited_contract_po</attribute>
             </field>
+            <button name="make_purchase_order" position="attributes">
+                <attribute name="string">สร้างร่างใบสั่งซื้อ</attribute>
+            </button>
         </field>
     </record>
 </odoo>

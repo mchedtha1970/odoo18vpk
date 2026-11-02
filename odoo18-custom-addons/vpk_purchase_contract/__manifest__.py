@@ -3,7 +3,7 @@
 
 {
     "name": "VPK Purchase Contract",
-    "version": "18.0.1.1.34",
+    "version": "18.0.1.1.35",
     "category": "Purchases",
     "summary": "ทะเบียนสัญญาหลัก ผูกสัญญาบน PR/PO ตรวจยอดคงเหลือแบบ Hard Block และตัดลดเรียลไทม์",
     "author": "VPK",
