@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_vpk_stock_card_report"
+        name="บัญชีคุมวัสดุ"
+        parent="stock.menu_warehouse_report"
+        action="action_vpk_stock_card_report"
+        sequence="45"
+        groups="stock.group_stock_user"/>
+</odoo>

@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_vpk_stock_card" model="report.paperformat">
+        <field name="name">บัญชีคุมวัสดุ (A4 Landscape)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">8</field>
+        <field name="margin_bottom">8</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_stock_card" model="ir.actions.report">
+        <field name="name">บัญชีคุมวัสดุ</field>
+        <field name="model">vpk.stock.card.report</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_stock_card.report_stock_card</field>
+        <field name="report_file">vpk_stock_card.report_stock_card</field>
+        <field name="print_report_name">'บัญชีคุมวัสดุ'</field>
+        <field name="paperformat_id" ref="paperformat_vpk_stock_card"/>
+    </record>
+
+    <template id="report_stock_card">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="meta" t-value="doc.get_report_meta()"/>
+                <t t-set="cards" t-value="doc.get_report_cards()"/>
+                <t t-foreach="cards" t-as="card">
+                    <div class="article o_vpk_stock_card_report"
+                         t-attf-style="font-family: 'Sarabun', 'TH Sarabun New', sans-serif; font-size: 12px; color: #000;">
+                        <style type="text/css">
+                            @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&amp;display=swap');
+                            .o_vpk_stock_card_report,
+                            .o_vpk_stock_card_report * {
+                                font-family: 'Sarabun', 'TH Sarabun New', sans-serif !important;
+                                color: #000;
+                            }
+                            .vpk-sc-header {
+                                width: 100%;
+                                margin-bottom: 6px;
+                            }
+                            .vpk-sc-title {
+                                text-align: center;
+                                font-size: 16px;
+                                font-weight: 700;
+                                line-height: 1.35;
+                            }
+                            .vpk-sc-period {
+                                text-align: center;
+                                font-size: 13px;
+                                margin-top: 2px;
+                            }
+                            .vpk-sc-meta {
+                                width: 100%;
+                                margin: 8px 0 4px 0;
+                                font-size: 13px;
+                            }
+                            .vpk-sc-meta td {
+                                padding: 1px 0;
+                                vertical-align: top;
+                            }
+                            .vpk-sc-table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                table-layout: fixed;
+                                font-size: 11px;
+                            }
+                            .vpk-sc-table th,
+                            .vpk-sc-table td {
+                                border: 1px solid #000;
+                                padding: 2px 3px;
+                                vertical-align: middle;
+                            }
+                            .vpk-sc-table th {
+                                text-align: center;
+                                font-weight: 700;
+                                line-height: 1.2;
+                            }
+                            .vpk-sc-table .num {
+                                text-align: right;
+                                white-space: nowrap;
+                            }
+                            .vpk-sc-table .ctr {
+                                text-align: center;
+                            }
+                            .vpk-sc-table .subtotal {
+                                font-weight: 700;
+                            }
+                            .vpk-sc-print {
+                                text-align: right;
+                                font-size: 11px;
+                                margin-top: 4px;
+                            }
+                        </style>
+
+                        <div class="vpk-sc-header">
+                            <div class="vpk-sc-title">
+                                บัญชีคุมวัสดุกลุ่ม
+                                [<t t-esc="meta['category_label']"/>]
+                            </div>
+                            <div class="vpk-sc-period">
+                                ระหว่างวันที่
+                                <t t-esc="meta['date_from_label']"/>
+                                ถึงวันที่
+                                <t t-esc="meta['date_to_label']"/>
+                            </div>
+                        </div>
+
+                        <table class="vpk-sc-meta">
+                            <tr>
+                                <td style="width: 70%;">
+                                    รายการ
+                                    <span t-esc="card['product_name']"/>
+                                </td>
+                                <td style="width: 20%;">
+                                    หน่วยนับ
+                                    <span t-esc="card['uom_name']"/>
+                                </td>
+                                <td style="width: 10%; text-align: right;">
+                                    <span t-esc="card['product_code']"/>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table class="vpk-sc-table">
+                            <colgroup>
+                                <col style="width: 9%;"/>
+                                <col style="width: 22%;"/>
+                                <col style="width: 10%;"/>
+                                <col style="width: 8%;"/>
+                                <col style="width: 7%;"/>
+                                <col style="width: 9%;"/>
+                                <col style="width: 7%;"/>
+                                <col style="width: 9%;"/>
+                                <col style="width: 8%;"/>
+                                <col style="width: 11%;"/>
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">วันเดือนปี<br/>ที่ทำรายการ</th>
+                                    <th rowspan="2">หน่วยเบิก / รับจาก</th>
+                                    <th rowspan="2">เลขที่เบิก</th>
+                                    <th rowspan="2">ราคาขาย</th>
+                                    <th colspan="2">รับ</th>
+                                    <th colspan="2">จ่าย</th>
+                                    <th colspan="2">ยอดคงเหลือ</th>
+                                </tr>
+                                <tr>
+                                    <th>จำนวน</th>
+                                    <th>เป็นเงิน</th>
+                                    <th>จำนวน</th>
+                                    <th>เป็นเงิน</th>
+                                    <th>จำนวน</th>
+                                    <th>เป็นเงิน</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="card['opening']['lines']" t-as="line">
+                                    <tr>
+                                        <td class="ctr" t-esc="line['date_label']"/>
+                                        <td t-esc="line['party']"/>
+                                        <td class="ctr" t-esc="line['doc']"/>
+                                        <td class="num"/>
+                                        <td class="num"/>
+                                        <td class="num"/>
+                                        <td class="num"/>
+                                        <td class="num"/>
+                                        <td class="num">
+                                            <t t-esc="'{:,.2f}'.format(line['bal_qty'])"/>
+                                        </td>
+                                        <td class="num">
+                                            <t t-esc="'{:,.2f}'.format(line['bal_amount'])"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                                <t t-foreach="card['days']" t-as="day">
+                                    <t t-foreach="day['lines']" t-as="line">
+                                        <tr t-att-class="line['is_subtotal'] and 'subtotal' or None">
+                                            <td class="ctr" t-esc="line['date_label']"/>
+                                            <td t-esc="line['party']"/>
+                                            <td class="ctr" t-esc="line['doc']"/>
+                                            <td class="num">
+                                                <t t-if="not line['is_subtotal'] and line['unit_price']">
+                                                    <t t-esc="'{:,.2f}'.format(line['unit_price'])"/>
+                                                </t>
+                                            </td>
+                                            <td class="num">
+                                                <t t-if="line['in_qty']">
+                                                    <t t-esc="'{:,.2f}'.format(line['in_qty'])"/>
+                                                </t>
+                                            </td>
+                                            <td class="num">
+                                                <t t-if="line['in_amount']">
+                                                    <t t-esc="'{:,.2f}'.format(line['in_amount'])"/>
+                                                </t>
+                                            </td>
+                                            <td class="num">
+                                                <t t-if="line['out_qty']">
+                                                    <t t-esc="'{:,.2f}'.format(line['out_qty'])"/>
+                                                </t>
+                                            </td>
+                                            <td class="num">
+                                                <t t-if="line['out_amount']">
+                                                    <t t-esc="'{:,.2f}'.format(line['out_amount'])"/>
+                                                </t>
+                                            </td>
+                                            <td class="num">
+                                                <t t-esc="'{:,.2f}'.format(line['bal_qty'])"/>
+                                            </td>
+                                            <td class="num">
+                                                <t t-esc="'{:,.2f}'.format(line['bal_amount'])"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </t>
+                            </tbody>
+                        </table>
+                        <div class="vpk-sc-print">
+                            วันที่พิมพ์เอกสาร
+                            <t t-esc="meta['print_label']"/>
+                        </div>
+                        <div style="page-break-after: always;"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

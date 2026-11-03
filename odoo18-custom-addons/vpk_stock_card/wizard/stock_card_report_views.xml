@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_stock_card_report_form" model="ir.ui.view">
+        <field name="name">vpk.stock.card.report.form</field>
+        <field name="model">vpk.stock.card.report</field>
+        <field name="arch" type="xml">
+            <form string="บัญชีคุมวัสดุ">
+                <group>
+                    <group string="ช่วงวันที่">
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                    <group string="เงื่อนไข">
+                        <field name="categ_id"/>
+                        <field name="warehouse_id"/>
+                        <field name="product_ids" widget="many2many_tags"
+                                 options="{'no_create': True}"/>
+                        <field name="hide_zero"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_print_pdf" type="object"
+                            string="พิมพ์รายงาน" class="btn-primary"
+                            data-hotkey="q"/>
+                    <button string="ยกเลิก" special="cancel" data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vpk_stock_card_report" model="ir.actions.act_window">
+        <field name="name">บัญชีคุมวัสดุ</field>
+        <field name="res_model">vpk.stock.card.report</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
