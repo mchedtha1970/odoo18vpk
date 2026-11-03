@@ -1,7 +1,7 @@
 # Copyright 2026 VPK
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 
-from odoo import _, api, fields, models
+from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -387,6 +387,58 @@ class PurchaseRequest(models.Model):
             vals["product_uom_id"] = contract_line.product_uom_id.id
         return vals
 
+    def _get_contract_work_acceptance_committee_source(self):
+        """คณะกรรมการตรวจรับจาก e-GP หรือใบขอซื้อต้นทางของสัญญา."""
+        self.ensure_one()
+        contract = self.contract_id
+        if not contract:
+            return self.env["procurement.committee"]
+        requisition = contract.requisition_id
+        if requisition and requisition.work_acceptance_committee_ids:
+            return requisition.work_acceptance_committee_ids
+        source_pr = requisition.purchase_request_id if requisition else False
+        if source_pr and source_pr.work_acceptance_committee_ids:
+            return source_pr.work_acceptance_committee_ids
+        return self.env["procurement.committee"]
+
+    def _committee_commands_from_members(self, members, committee_type):
+        seen = set()
+        commands = []
+        for member in members:
+            employee = member.employee_id
+            if not employee or employee.id in seen:
+                continue
+            seen.add(employee.id)
+            commands.append(
+                Command.create(
+                    {
+                        "employee_id": employee.id,
+                        "name": member.name or employee.display_name,
+                        "approve_role": member.approve_role or "committee",
+                        "committee_type": committee_type,
+                        "note": member.note,
+                    }
+                )
+            )
+        return commands
+
+    def _pull_work_acceptance_committee_from_contract(self):
+        """ดึงคณะกรรมการตรวจรับจากสัญญา (e-GP/PR ต้นทาง) ถ้า PR ยังไม่มี."""
+        for request in self:
+            if (
+                not request.contract_id
+                or request.contract_id.quantity_policy != "unlimited"
+                or "work_acceptance_committee_ids" not in request._fields
+                or request.work_acceptance_committee_ids
+            ):
+                continue
+            members = request._get_contract_work_acceptance_committee_source()
+            commands = request._committee_commands_from_members(
+                members, "work_acceptance"
+            )
+            if commands:
+                request.work_acceptance_committee_ids = commands
+
     def _pull_unlimited_contract_lines(self):
         """ดึงรายการราคาจากสัญญาไม่จำกัดจำนวน โดยคงจำนวนที่ใส่ไว้แล้ว."""
         self.ensure_one()
@@ -416,6 +468,7 @@ class PurchaseRequest(models.Model):
                 commands.append((0, 0, vals))
         if commands:
             self.write({"line_ids": commands})
+        self._pull_work_acceptance_committee_from_contract()
 
     def action_pull_contract_price_list(self):
         """หน่วยงานดึงรายการราคาจากสัญญา แล้วใส่จำนวนที่ต้องการซื้อเอง."""
@@ -472,21 +525,48 @@ class PurchaseRequest(models.Model):
                 line.budget_unit_price = price
                 line.product_qty = 0.0
                 line.estimated_cost = 0.0
+        committee_count = 0
+        if (
+            "work_acceptance_committee_ids" in self._fields
+            and not self.work_acceptance_committee_ids
+        ):
+            committee_cmds = self._committee_commands_from_members(
+                self._get_contract_work_acceptance_committee_source(),
+                "work_acceptance",
+            )
+            if committee_cmds:
+                self.work_acceptance_committee_ids = committee_cmds
+                committee_count = len(committee_cmds)
+        message = _(
+            "ดึง %(count)s รายการจากสัญญา %(contract)s คู่ค้า %(partner)s\n"
+            "ราคาต่อหน่วยถูกล็อกตามสัญญา กรุณาใส่จำนวนที่ต้องการซื้อ "
+            "และลบรายการที่ไม่ต้องการ แล้วตรวจสอบงบประมาณก่อนส่งพัสดุ"
+        ) % {
+            "count": len(contract.line_ids),
+            "contract": contract.display_name,
+            "partner": contract.partner_id.display_name or "-",
+        }
+        if committee_count:
+            message = _(
+                "%(base)s\nดึงคณะกรรมการตรวจรับ %(committee)s คนจากสัญญา/โครงการต้นทางแล้ว"
+            ) % {
+                "base": message,
+                "committee": committee_count,
+            }
         return {
             "warning": {
                 "title": _("ดึงรายการราคาแล้ว"),
-                "message": _(
-                    "ดึง %(count)s รายการจากสัญญา %(contract)s คู่ค้า %(partner)s\n"
-                    "ราคาต่อหน่วยถูกล็อกตามสัญญา กรุณาใส่จำนวนที่ต้องการซื้อ "
-                    "และลบรายการที่ไม่ต้องการ แล้วตรวจสอบงบประมาณก่อนส่งพัสดุ"
-                )
-                % {
-                    "count": len(contract.line_ids),
-                    "contract": contract.display_name,
-                    "partner": contract.partner_id.display_name or "-",
-                },
+                "message": message,
             }
         }
+
+    def write(self, vals):
+        res = super().write(vals)
+        if vals.get("contract_id"):
+            self.filtered(
+                lambda request: request.contract_id.quantity_policy == "unlimited"
+            )._pull_work_acceptance_committee_from_contract()
+        return res
 
     @api.onchange("contract_id")
     def _onchange_contract_id(self):
