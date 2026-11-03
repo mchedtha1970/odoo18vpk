@@ -16,6 +16,18 @@
                     <setting string="รหัสหน่วยเบิกจ่าย" help="รหัสหน่วยเบิกจ่าย 10 หลัก">
                         <field name="gfmis_disbursing_unit_code"/>
                     </setting>
+                    <setting string="ผู้ลงนามใบหักภาษี ณ ที่จ่าย" help="ชื่อ-นามสกุล และตำแหน่งสำหรับแบบ 4235">
+                        <div class="content-group">
+                            <div class="row mt16">
+                                <label for="gfmis_wht_signer_name" class="col-lg-3 o_light_label" string="ชื่อผู้ลงนาม"/>
+                                <field name="gfmis_wht_signer_name" class="col-lg-9"/>
+                            </div>
+                            <div class="row">
+                                <label for="gfmis_wht_signer_position" class="col-lg-3 o_light_label" string="ตำแหน่ง"/>
+                                <field name="gfmis_wht_signer_position" class="col-lg-9"/>
+                            </div>
+                        </div>
+                    </setting>
                 </block>
             </xpath>
         </field>

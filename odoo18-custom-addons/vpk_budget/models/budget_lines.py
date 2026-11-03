@@ -127,28 +127,38 @@ class BudgetLines(models.Model):
             if not line.general_budget_id or not line.date_from or not line.date_to:
                 line.practical_amount = 0.0
                 continue
-            result = 0.0
-            acc_ids = line.general_budget_id.account_ids.ids
             date_to = self.env.context.get("wizard_date_to") or line.date_to
             date_from = self.env.context.get("wizard_date_from") or line.date_from
-            if line.analytic_account_id and acc_ids:
-                col = self._get_analytic_column(line.analytic_account_id)
-                query = """
-                    SELECT SUM(amount)
-                    FROM account_analytic_line
-                    WHERE {col} = %s
-                        AND date BETWEEN %s AND %s
-                        AND general_account_id = ANY(%s)
-                """.format(col=col)
-                params = (
-                    line.analytic_account_id.id,
-                    date_from,
-                    date_to,
-                    "{" + ",".join(map(str, acc_ids)) + "}",
-                )
-                self.env.cr.execute(query, params)
-                result = -(self.env.cr.fetchone()[0] or 0.0)
-            line.practical_amount = result
+            rows = line._vpk_analytic_amount_rows(date_from, date_to)
+            line.practical_amount = -sum(amount for _month, amount in rows)
+
+    def _vpk_analytic_amount_rows(self, date_from, date_to, by_month=False):
+        """Analytic amounts counted toward this budget line, optionally per month.
+
+        Journal items tagged with a budget line only count toward that line, so
+        two budget lines sharing department and budget post do not double count.
+        """
+        self.ensure_one()
+        acc_ids = self.general_budget_id.account_ids.ids
+        if not (self.analytic_account_id and acc_ids and date_from and date_to):
+            return []
+        col = self._get_analytic_column(self.analytic_account_id)
+        month_expr = "date_trunc('month', aal.date)::date" if by_month else "NULL::date"
+        query = """
+            SELECT {month_expr} AS month, SUM(aal.amount)
+            FROM account_analytic_line aal
+            LEFT JOIN account_move_line aml ON aml.id = aal.move_line_id
+            WHERE aal.{col} = %s
+                AND aal.date BETWEEN %s AND %s
+                AND aal.general_account_id = ANY(%s)
+                AND (aml.budget_line_id IS NULL OR aml.budget_line_id = %s)
+            GROUP BY 1
+        """.format(col=col, month_expr=month_expr)
+        self.env.cr.execute(
+            query,
+            (self.analytic_account_id.id, date_from, date_to, acc_ids, self.id),
+        )
+        return [(month, amount or 0.0) for month, amount in self.env.cr.fetchall()]
 
     @api.depends("planned_amount", "date_from", "date_to", "paid_date", "practical_amount")
     def _compute_theoretical_amount(self):

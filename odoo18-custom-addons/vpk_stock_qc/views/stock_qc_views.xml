@@ -11,6 +11,7 @@
             <list string="ตรวจคุณภาพสินค้า" decoration-success="state == 'passed'" decoration-danger="state == 'failed'">
                 <field name="name"/>
                 <field name="picking_id"/>
+                <field name="purchase_id" optional="show"/>
                 <field name="partner_id"/>
                 <field name="origin"/>
                 <field name="warehouse_id"/>
@@ -44,6 +45,7 @@
                     <group>
                         <group string="ใบรับ">
                             <field name="picking_id" readonly="state != 'draft'"/>
+                            <field name="purchase_id"/>
                             <field name="partner_id"/>
                             <field name="origin"/>
                             <field name="warehouse_id"/>
@@ -97,6 +99,7 @@
             <search>
                 <field name="name"/>
                 <field name="picking_id"/>
+                <field name="purchase_id"/>
                 <field name="partner_id"/>
                 <field name="origin"/>
                 <filter name="draft" string="รอตรวจ" domain="[('state', '=', 'draft')]"/>

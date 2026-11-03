@@ -32,6 +32,14 @@ class TierReview(models.Model):
         string="หน่วยงาน",
         compute="_compute_vpk_card_info",
     )
+    vpk_card_project_number = fields.Char(
+        string="เลขที่โครงการ",
+        compute="_compute_vpk_card_info",
+    )
+    vpk_card_project_name = fields.Char(
+        string="ชื่อโครงการ",
+        compute="_compute_vpk_card_info",
+    )
     res_display_name = fields.Char(
         string="Document",
         compute="_compute_res_display_name",
@@ -61,6 +69,8 @@ class TierReview(models.Model):
             department = ""
             document = rec._vpk_card_document()
             info = rec._vpk_document_card_info(document)
+            rec.vpk_card_project_number = info.get("project_number") or ""
+            rec.vpk_card_project_name = info.get("project_name") or ""
             if info:
                 subject = (info.get("subject") or "").strip()
                 title = ("%s %s" % (prefix, subject)).strip() if subject else prefix

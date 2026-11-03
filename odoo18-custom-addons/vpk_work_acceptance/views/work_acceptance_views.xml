@@ -24,6 +24,10 @@
                 <attribute name="string">ยกเลิก</attribute>
             </button>
 
+            <field name="state" position="attributes">
+                <attribute name="statusbar_visible">draft,accept</attribute>
+            </field>
+
             <field name="purchase_id" position="attributes">
                 <attribute name="readonly">state != 'draft'</attribute>
                 <attribute name="options">{'no_create': True}</attribute>
@@ -36,6 +40,9 @@
                 <field name="contract_installment_id"
                        readonly="state != 'draft'"
                        options="{'no_create': True}"/>
+                <field name="qc_id"
+                       readonly="1"
+                       options="{'no_create': True, 'no_open': False}"/>
             </field>
 
             <field name="date_accept" position="after">
@@ -98,12 +105,28 @@
                     </group>
                 </page>
                 <page string="คณะกรรมการตรวจรับ" name="committee">
+                    <div class="mb-2 d-flex align-items-center flex-wrap gap-2">
+                        <div class="text-muted" invisible="not committee_source">
+                            ดึงรายชื่อจาก
+                            <field name="committee_source" nolabel="1" class="oe_inline"/>
+                        </div>
+                        <div class="text-muted" invisible="committee_source">
+                            ยังไม่พบคณะกรรมการในใบขอซื้อหรือการแต่งตั้ง e-GP ของใบสั่งซื้อนี้
+                        </div>
+                        <button name="action_load_committee"
+                                type="object"
+                                string="ดึงคณะกรรมการจากใบขอซื้อ / e-GP"
+                                class="btn-secondary"
+                                icon="fa-users"
+                                invisible="state != 'draft' or not purchase_id"/>
+                    </div>
                     <field name="committee_ids" readonly="state != 'draft'">
                         <list editable="bottom">
                             <field name="sequence" widget="handle"/>
                             <field name="role"/>
                             <field name="name"/>
                             <field name="position"/>
+                            <field name="origin" optional="show"/>
                             <field name="employee_id" optional="show"/>
                             <field name="note" optional="hide"/>
                         </list>
@@ -154,6 +177,7 @@
             <field name="purchase_id" position="after">
                 <field name="contract_id" optional="show" string="สัญญา"/>
                 <field name="contract_installment_id" optional="show" string="งวดงาน"/>
+                <field name="qc_id" optional="show" string="ใบตรวจ QC"/>
                 <field name="acceptance_type" optional="show" string="ผลตรวจรับ"/>
                 <field name="amount_total" sum="รวม" optional="show"/>
                 <field name="requester_notification_status"
@@ -190,6 +214,18 @@
         sequence="35"
         groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
     />
+    <record id="action_work_acceptance_dashboard" model="ir.actions.client">
+        <field name="name">แดชบอร์ดตรวจรับมอบงาน</field>
+        <field name="tag">vpk_work_acceptance_dashboard</field>
+    </record>
+    <menuitem
+        id="menu_work_acceptance_dashboard"
+        name="แดชบอร์ดตรวจรับ"
+        parent="menu_work_acceptance_root"
+        action="action_work_acceptance_dashboard"
+        sequence="1"
+        groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
+    />
     <record id="purchase_work_acceptance.action_work_acceptance" model="ir.actions.act_window">
         <field name="name">รายการตรวจรับมอบงาน</field>
     </record>
@@ -201,4 +237,25 @@
         sequence="10"
         groups="purchase.group_purchase_user,purchase_request.group_purchase_request_user"
     />
+    <function model="work.acceptance" name="_vpk_apply_thai_wa_state_labels"/>
+
+    <record id="view_work_accepted_date_wizard_vpk" model="ir.ui.view">
+        <field name="name">work.accepted.date.wizard.form.vpk</field>
+        <field name="model">work.accepted.date.wizard</field>
+        <field name="inherit_id" ref="purchase_work_acceptance.view_work_accepted_date_wizard"/>
+        <field name="arch" type="xml">
+            <form position="attributes">
+                <attribute name="string">ลงวันที่ตรวจรับ</attribute>
+            </form>
+            <field name="date_accept" position="attributes">
+                <attribute name="string">วันที่ตรวจรับ</attribute>
+            </field>
+            <button name="button_accept" position="attributes">
+                <attribute name="string">ยืนยัน</attribute>
+            </button>
+            <button special="cancel" position="attributes">
+                <attribute name="string">ยกเลิก</attribute>
+            </button>
+        </field>
+    </record>
 </odoo>

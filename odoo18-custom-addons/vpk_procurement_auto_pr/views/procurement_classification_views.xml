@@ -305,7 +305,7 @@
                 <field name="confirmed_date"/>
             </field>
             <field name="date_end" position="attributes">
-                <attribute name="help">เว้นว่างได้ ระบบจะคำนวณจากวันเริ่มสัญญาและระยะเวลาสัญญาเมื่อกดยืนยัน</attribute>
+                <attribute name="help">คำนวณจากวันเริ่มสัญญา + ระยะเวลาสัญญา (วัน) ถ้าแก้วันที่นี้ ระบบจะคำนวณจำนวนวันกลับให้</attribute>
             </field>
         </field>
     </record>

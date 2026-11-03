@@ -59,6 +59,7 @@ class AccountMove(models.Model):
 
     def action_post(self):
         self._vpk_sync_budget_from_po()
+        self.line_ids._vpk_apply_budget_analytic()
         res = super().action_post()
         self._vpk_budget_touch_purchase_lines()
         return res
@@ -89,6 +90,20 @@ class AccountMoveLine(models.Model):
         copy=False,
         index=True,
     )
+
+    def _vpk_apply_budget_analytic(self):
+        """ยอดใช้จริงของบรรทัดงบนับจาก analytic line ของหน่วยงาน จึงต้องมี analytic เสมอ"""
+        for line in self:
+            if line.analytic_distribution or line.display_type != "product":
+                continue
+            budget_line = line.budget_line_id or line.purchase_line_id.budget_line_id
+            analytic = budget_line.analytic_account_id
+            if not analytic:
+                continue
+            vals = {"analytic_distribution": {str(analytic.id): 100}}
+            if not line.budget_line_id:
+                vals["budget_line_id"] = budget_line.id
+            line.write(vals)
 
     @api.onchange("budget_post_id")
     def _onchange_budget_post_id_set_account(self):

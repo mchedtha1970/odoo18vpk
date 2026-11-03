@@ -686,6 +686,8 @@ class DepartmentalBudgetRequest(models.Model):
     def _product_categories_for_material_load(self, subtype):
         """Prefer product categories matching subtype; else whole budget group."""
         self.ensure_one()
+        if subtype.product_categ_id:
+            return subtype.product_categ_id
         group = subtype.budget_group_id
         Category = self.env["product.category"]
         if not group:

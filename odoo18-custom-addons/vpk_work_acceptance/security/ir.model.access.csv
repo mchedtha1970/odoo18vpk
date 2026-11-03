@@ -1,2 +1,8 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_wa_committee_purchase_user,work.acceptance.committee purchase user,model_work_acceptance_committee,purchase.group_purchase_user,1,1,1,1
+access_vpk_stock_qc_wa_purchase,vpk.stock.qc wa purchase,vpk_stock_qc.model_vpk_stock_qc,purchase.group_purchase_user,1,0,0,0
+access_vpk_stock_qc_line_wa_purchase,vpk.stock.qc.line wa purchase,vpk_stock_qc.model_vpk_stock_qc_line,purchase.group_purchase_user,1,0,0,0
+access_vpk_stock_qc_check_wa_purchase,vpk.stock.qc.check wa purchase,vpk_stock_qc.model_vpk_stock_qc_check,purchase.group_purchase_user,1,0,0,0
+access_vpk_stock_qc_wa_pr_user,vpk.stock.qc wa purchase request,vpk_stock_qc.model_vpk_stock_qc,purchase_request.group_purchase_request_user,1,0,0,0
+access_vpk_stock_qc_line_wa_pr_user,vpk.stock.qc.line wa purchase request,vpk_stock_qc.model_vpk_stock_qc_line,purchase_request.group_purchase_request_user,1,0,0,0
+access_vpk_stock_qc_check_wa_pr_user,vpk.stock.qc.check wa purchase request,vpk_stock_qc.model_vpk_stock_qc_check,purchase_request.group_purchase_request_user,1,0,0,0

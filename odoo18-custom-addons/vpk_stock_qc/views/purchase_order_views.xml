@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_order_form_qc" model="ir.ui.view">
+        <field name="name">purchase.order.form.qc</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']/button[@name='action_view_picking']" position="after">
+                <button name="action_view_qc"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-check-square-o">
+                    <field name="qc_count" widget="statinfo" string="ใบตรวจ QC"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

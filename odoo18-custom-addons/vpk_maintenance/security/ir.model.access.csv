@@ -8,3 +8,5 @@ access_maintenance_request_cost_line_user,maintenance.request.cost.line user,mod
 access_maintenance_request_summary_wizard,maintenance.request.summary.wizard,model_maintenance_request_summary_wizard,base.group_user,1,1,1,1
 access_maintenance_vendor_send_user,maintenance.vendor.send user,model_maintenance_vendor_send,base.group_user,1,1,1,0
 access_maintenance_vendor_send_manager,maintenance.vendor.send manager,model_maintenance_vendor_send,maintenance.group_equipment_manager,1,1,1,1
+access_purchase_order_stock_receipt,purchase.order stock receipt,purchase.model_purchase_order,group_stock_receipt_validator,1,1,0,0
+access_purchase_order_line_stock_receipt,purchase.order.line stock receipt,purchase.model_purchase_order_line,group_stock_receipt_validator,1,1,0,0

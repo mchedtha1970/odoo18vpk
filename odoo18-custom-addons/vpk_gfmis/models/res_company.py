@@ -20,3 +20,10 @@ class ResCompany(models.Model):
         size=10,
         help="รหัสหน่วยเบิกจ่าย 10 หลัก ตัวอย่าง 0300300003",
     )
+    gfmis_wht_signer_name = fields.Char(
+        string="ชื่อผู้ลงนามใบหักภาษี ณ ที่จ่าย",
+        help="ใช้พิมพ์ในใบรับรองการหักภาษี ณ ที่จ่าย (แบบ 4235)",
+    )
+    gfmis_wht_signer_position = fields.Char(
+        string="ตำแหน่งผู้ลงนามใบหักภาษี ณ ที่จ่าย",
+    )

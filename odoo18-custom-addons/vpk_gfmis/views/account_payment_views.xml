@@ -10,7 +10,7 @@
                         type="object"
                         class="oe_stat_button"
                         icon="fa-university">
-                    <field name="gfmis_document_count" widget="statinfo" string="GFMIS"/>
+                    <field name="gfmis_document_count" widget="statinfo" string="ใบเบิกเงิน"/>
                 </button>
             </xpath>
         </field>

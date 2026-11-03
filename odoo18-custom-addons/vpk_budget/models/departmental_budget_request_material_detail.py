@@ -348,15 +348,24 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
     @api.depends(
         "product_categ_id",
         "material_sub_type_id",
+        "material_sub_type_id.product_categ_id",
         "material_sub_type_id.budget_group_id.product_categ_id",
         "budget_post_id",
     )
     def _compute_filter_product_categ_id(self):
         for detail in self:
+            request = detail.request_id
+            subtype = detail.material_sub_type_id
+            if not subtype and request and detail.budget_post_id:
+                subtype = request._resolve_material_sub_type_from_budget_post(
+                    detail.budget_post_id
+                )
+            if subtype.product_categ_id:
+                detail.filter_product_categ_id = subtype.product_categ_id
+                continue
             categ = detail.product_categ_id or detail._category_from_subtype(
                 detail.material_sub_type_id
             )
-            request = detail.request_id
             if not categ and request:
                 categ = detail._category_from_subtype(request.load_material_sub_type_id)
             if not categ and request and request.load_budget_group_id:
@@ -401,11 +410,12 @@ class DepartmentalBudgetRequestMaterialDetail(models.Model):
             post_section = budget_post.section_key
             if not section or not post_section or section == post_section:
                 self.budget_post_id = budget_post
-        if self.product_id and self.product_categ_id:
+        categ = self.filter_product_categ_id or self.product_categ_id
+        if self.product_id and categ:
             still_valid = self.env["product.product"].search_count(
                 [
                     ("id", "=", self.product_id.id),
-                    ("categ_id", "child_of", self.product_categ_id.id),
+                    ("categ_id", "child_of", categ.id),
                 ]
             )
             if not still_valid:

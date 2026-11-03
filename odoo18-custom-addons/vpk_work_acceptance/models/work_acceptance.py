@@ -11,11 +11,44 @@ from odoo.tools import float_compare
 class WorkAcceptance(models.Model):
     _inherit = "work.acceptance"
 
+    state = fields.Selection(
+        selection_add=[
+            ("draft", "ร่าง"),
+            ("accept", "ยืนยันตรวจรับ"),
+            ("cancel", "ยกเลิก"),
+        ]
+    )
+
     purchase_id = fields.Many2one(
         comodel_name="purchase.order",
         string="Purchase Order",
         readonly=False,
     )
+
+    @api.model
+    def _vpk_apply_thai_wa_state_labels(self):
+        """ใส่ป้ายสถานะภาษาไทยให้ทุกภาษาที่ติดตั้งไว้"""
+        labels = {
+            "draft": "ร่าง",
+            "accept": "ยืนยันตรวจรับ",
+            "cancel": "ยกเลิก",
+        }
+        field = self.env["ir.model.fields"].sudo().search(
+            [("model", "=", "work.acceptance"), ("name", "=", "state")],
+            limit=1,
+        )
+        if not field:
+            return
+        selections = self.env["ir.model.fields.selection"].sudo().search(
+            [("field_id", "=", field.id)]
+        )
+        langs = [code for code, _name in self.env["res.lang"].get_installed()]
+        for selection in selections:
+            label = labels.get(selection.value)
+            if not label:
+                continue
+            for lang in langs:
+                selection.with_context(lang=lang).write({"name": label})
 
     # --- Contract link ---
     contract_id = fields.Many2one(
@@ -31,6 +64,14 @@ class WorkAcceptance(models.Model):
         tracking=True,
         domain="[('contract_id', '=', contract_id)]",
     )
+    qc_id = fields.Many2one(
+        comodel_name="vpk.stock.qc",
+        string="ใบตรวจ QC",
+        compute="_compute_qc_id",
+        store=True,
+        readonly=True,
+        help="ใบตรวจคุณภาพสินค้าของใบรับเข้าคลังล่าสุดที่ผูกกับใบสั่งซื้อนี้",
+    )
 
     # --- Committee / Inspector ---
     committee_ids = fields.One2many(
@@ -38,6 +79,10 @@ class WorkAcceptance(models.Model):
         inverse_name="wa_id",
         string="คณะกรรมการตรวจรับ",
         copy=True,
+    )
+    committee_source = fields.Char(
+        string="ที่มาของคณะกรรมการ",
+        compute="_compute_committee_source",
     )
     inspector_id = fields.Many2one(
         comodel_name="res.users",
@@ -169,6 +214,42 @@ class WorkAcceptance(models.Model):
         copy=False,
     )
 
+    @api.depends("purchase_id", "purchase_id.contract_id", "committee_ids")
+    def _compute_committee_source(self):
+        for rec in self:
+            labels = (
+                rec.purchase_id._vpk_wa_committee_source_labels()
+                if rec.purchase_id
+                else []
+            )
+            rec.committee_source = " · ".join(labels)
+
+    def action_load_committee(self):
+        """ดึงคณะกรรมการตรวจรับจากใบขอซื้อ และการแต่งตั้งใน e-GP."""
+        for rec in self:
+            if rec.state != "draft":
+                continue
+            if not rec.purchase_id:
+                raise UserError(_("เลือกใบสั่งซื้อก่อน จึงจะดึงรายชื่อคณะกรรมการได้"))
+            commands = rec.purchase_id._get_wa_committee_from_pr()
+            rec.committee_ids = [Command.clear(), *commands]
+            if not commands:
+                rec.message_post(
+                    body=_("ไม่พบคณะกรรมการตรวจรับในใบขอซื้อหรือการแต่งตั้ง e-GP ของใบสั่งซื้อนี้")
+                )
+        return True
+
+    @api.depends(
+        "purchase_id",
+        "purchase_id.picking_ids",
+        "purchase_id.picking_ids.state",
+        "purchase_id.picking_ids.date_done",
+        "purchase_id.picking_ids.qc_ids",
+    )
+    def _compute_qc_id(self):
+        for rec in self:
+            rec.qc_id = rec.purchase_id._vpk_latest_receipt_qc() if rec.purchase_id else False
+
     @api.depends("acceptance_type")
     def _compute_inspection_result(self):
         for rec in self:
@@ -232,6 +313,9 @@ class WorkAcceptance(models.Model):
             if not rec.wa_line_ids:
                 raise UserError(_("กรุณาระบุรายการตรวจรับอย่างน้อย 1 รายการ"))
         result = super().button_accept(force=force)
+        if isinstance(result, dict) and result.get("res_model") == "work.accepted.date.wizard":
+            result["name"] = _("ลงวันที่ตรวจรับ")
+            return result
         self.filtered(
             lambda acceptance: acceptance.state == "accept"
             and acceptance.requester_notification_status != "queued"
@@ -367,4 +451,5 @@ class WorkAcceptanceCommittee(models.Model):
         comodel_name="res.users",
         string="ผู้ใช้งาน",
     )
+    origin = fields.Char(string="ที่มา", readonly=True)
     note = fields.Char(string="หมายเหตุ")

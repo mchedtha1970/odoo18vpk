@@ -3,3 +3,4 @@
 
 from . import work_acceptance
 from . import purchase_order
+from . import work_acceptance_dashboard

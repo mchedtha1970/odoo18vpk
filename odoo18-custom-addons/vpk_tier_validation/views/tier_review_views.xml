@@ -28,6 +28,8 @@
                 <field name="vpk_card_title"/>
                 <field name="vpk_card_number"/>
                 <field name="vpk_card_department"/>
+                <field name="vpk_card_project_number"/>
+                <field name="vpk_card_project_name"/>
                 <field name="model"/>
                 <field name="res_id"/>
                 <field name="can_review"/>
@@ -53,10 +55,25 @@
                                 <strong t-esc="record.vpk_card_title.value"/>
                             </div>
                             <div class="o_vpk_review_card_meta">
+                                <div t-if="record.model_display_name.value">
+                                    <i class="fa fa-tag me-1" title="Document type"/>
+                                    ประเภทเอกสาร
+                                    <t t-esc="record.model_display_name.value"/>
+                                </div>
                                 <div t-if="record.vpk_card_number.value">
                                     <i class="fa fa-file-text-o me-1" title="Document number"/>
                                     เลขที่เอกสาร
                                     <t t-esc="record.vpk_card_number.value"/>
+                                </div>
+                                <div t-if="record.vpk_card_project_number.value">
+                                    <i class="fa fa-hashtag me-1" title="Project number"/>
+                                    เลขที่โครงการ
+                                    <t t-esc="record.vpk_card_project_number.value"/>
+                                </div>
+                                <div t-if="record.vpk_card_project_name.value">
+                                    <i class="fa fa-folder-open-o me-1" title="Project name"/>
+                                    ชื่อโครงการ
+                                    <t t-esc="record.vpk_card_project_name.value"/>
                                 </div>
                                 <div t-if="record.vpk_card_department.value">
                                     <i class="fa fa-building-o me-1" title="Department"/>
@@ -96,6 +113,8 @@
             <field name="sequence" position="before">
                 <field name="model_display_name" string="ประเภทเอกสาร"/>
                 <field name="res_display_name" string="เลขที่เอกสาร"/>
+                <field name="vpk_card_project_number" optional="show"/>
+                <field name="vpk_card_project_name" optional="show"/>
             </field>
             <field name="comment" position="after">
                 <button

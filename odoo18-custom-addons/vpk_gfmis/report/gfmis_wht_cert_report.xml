@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_gfmis_wht_cert" model="report.paperformat">
+        <field name="name">ใบรับรองหักภาษี ณ ที่จ่าย แบบ 4235 (A4)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">12</field>
+        <field name="margin_bottom">10</field>
+        <field name="margin_left">15</field>
+        <field name="margin_right">15</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="action_report_gfmis_wht_cert" model="ir.actions.report">
+        <field name="name">ใบรับรองการหักภาษี ณ ที่จ่าย (แบบ 4235)</field>
+        <field name="model">gfmis.document</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_gfmis.report_gfmis_wht_cert</field>
+        <field name="report_file">vpk_gfmis.report_gfmis_wht_cert</field>
+        <field name="print_report_name">'WHT-Cert-%s' % (object.wht_cert_number or object.name)</field>
+        <field name="binding_model_id" ref="model_gfmis_document"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="paperformat_gfmis_wht_cert"/>
+    </record>
+
+    <template id="report_gfmis_wht_cert_digits">
+        <table class="w-digits">
+            <tr>
+                <t t-foreach="digits" t-as="digit">
+                    <td t-att-class="'grp' if digit_index in (1, 5, 10, 12) else None"><div class="d"><t t-esc="digit"/></div></td>
+                </t>
+            </tr>
+        </table>
+    </template>
+
+    <template id="report_gfmis_wht_cert">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="v" t-value="doc._vpk_wht_cert_report_values()"/>
+                <t t-call="web.basic_layout">
+                <style type="text/css">
+                        <t t-out="doc._vpk_report_font_css()"/>
+                        .w4235, .w4235 * {
+                            font-family: "THSarabunNew", sans-serif !important;
+                            color: #000;
+                        }
+                        .w4235 { font-size: 16pt; line-height: 1.1; }
+                        .w4235 b, .w4235 .bold, .w4235 .tax th {
+                            font-weight: normal !important;
+                            -webkit-text-stroke: 0.45px #000;
+                        }
+                        .w4235 table { border-collapse: collapse; }
+                        .w4235 .lay { width: 100%; table-layout: fixed; }
+                        .w4235 .lay td { padding: 0 2px; vertical-align: bottom; white-space: nowrap; }
+                        .w4235 .head td { vertical-align: top; }
+                        .w4235 .garuda img { width: 13mm; height: auto; }
+                        .w4235 .formcode { text-align: right; font-size: 16pt; }
+                        .w4235 .title { text-align: center; font-size: 18pt; padding-top: 3mm; }
+                        .w4235 .fill {
+                            border-bottom: 1px dotted #000;
+                            overflow: hidden;
+                            text-overflow: clip;
+                        }
+                        .w4235 .fill.c { text-align: center; }
+                        .w4235 .fill.r { text-align: right; }
+                        .w4235 .gap { height: 3mm; }
+                        .w4235 .certno {
+                            display: inline-block;
+                            border: 1.5px solid #000;
+                            padding: 0 4px;
+                        }
+                        .w4235 .w-digits { border-collapse: collapse; margin-left: auto; }
+                        .w4235 td.digits-cell { vertical-align: middle; }
+                        .w4235 .w-digits td {
+                            border: 1.5px solid #000;
+                            width: 4.4mm;
+                            height: 5.4mm;
+                            padding: 0;
+                            text-align: center;
+                            vertical-align: middle;
+                            font-size: 16pt;
+                            line-height: 1;
+                        }
+                        .w4235 .w-digits td.grp { border-left-width: 2.5px; }
+                        .w4235 .w-digits .d { height: 5.4mm; line-height: 5.4mm; }
+                        .w4235 .tax { width: 100%; table-layout: fixed; margin-top: 3mm; }
+                        .w4235 .tax th, .w4235 .tax td {
+                            border: 1px solid #000;
+                            padding: 0 4px;
+                            height: 6.4mm;
+                            vertical-align: middle;
+                            white-space: nowrap;
+                            overflow: hidden;
+                        }
+                        .w4235 .tax th {
+                            text-align: center;
+                            line-height: 1;
+                        }
+                        .w4235 .tax td.c { text-align: center; }
+                        .w4235 .tax td.r { text-align: right; }
+                        .w4235 .tax td.l { text-align: left; }
+                        .w4235 .tax tr.sp td { height: 3mm; border-left: none; border-right: none; border-bottom: none; }
+                        .w4235 .tax tr.sum td.nob { border: none; }
+                        .w4235 .tax tr.sum td.amt { border-bottom: 3px double #000; border-top: 1px solid #000; }
+                        .w4235 .sign td { text-align: center; }
+                </style>
+                <div class="w4235">
+
+                    <!-- หัวเอกสาร -->
+                    <table class="lay head">
+                        <colgroup><col style="width: 18%;"/><col style="width: 64%;"/><col style="width: 18%;"/></colgroup>
+                        <tr>
+                            <td class="garuda" rowspan="2">
+                                <img t-if="v.get('garuda_src')" t-att-src="v['garuda_src']" alt="ครุฑ"/>
+                            </td>
+                            <td/>
+                            <td class="formcode">(แบบ 4235)</td>
+                        </tr>
+                        <tr>
+                            <td class="title"><b>ใบรับรองการหักภาษี ณ ที่จ่าย</b></td>
+                            <td/>
+                        </tr>
+                    </table>
+
+                    <!-- ผู้มีหน้าที่หักภาษี -->
+                    <table class="lay">
+                        <colgroup>
+                            <col style="width: 13%;"/><col style="width: 30%;"/>
+                            <col style="width: 21%;"/><col style="width: 36%;"/>
+                        </colgroup>
+                        <tr><td colspan="4"><b>ผู้มีหน้าที่หักภาษี ณ ที่จ่าย</b></td></tr>
+                        <tr>
+                            <td><b>ส่วนราชการ</b></td>
+                            <td class="fill"><t t-esc="v['company_name']"/></td>
+                            <td style="text-align: right;"><b>เลขประจำตัวผู้เสียภาษี</b></td>
+                            <td class="digits-cell"><t t-call="vpk_gfmis.report_gfmis_wht_cert_digits"><t t-set="digits" t-value="v['company_vat_digits']"/></t></td>
+                        </tr>
+                        <tr>
+                            <td/>
+                            <td class="fill" colspan="3"><t t-esc="v['company_address']"/></td>
+                        </tr>
+                    </table>
+                    <div class="gap"/>
+
+                    <!-- ขอรับรอง -->
+                    <table class="lay">
+                        <colgroup>
+                            <col style="width: 13%;"/><col style="width: 7%;"/><col style="width: 10%;"/>
+                            <col style="width: 7%;"/><col style="width: 15%;"/><col style="width: 5%;"/>
+                            <col style="width: 9%;"/><col style="width: 15%;"/><col style="width: 19%;"/>
+                        </colgroup>
+                        <tr>
+                            <td><b>ขอรับรองว่า</b></td>
+                            <td colspan="3"><b>ได้หักภาษี ณ ที่จ่าย</b> <span class="certno"><b><t t-esc="v['cert_number']"/></b></span></td>
+                            <td colspan="4" style="text-align: right;"><b>ตามเอกสารขอเบิกเงินเลขที่</b></td>
+                            <td class="fill r"><b><t t-esc="v['disbursement_number']"/></b></td>
+                        </tr>
+                        <tr>
+                            <td><b>ลงวันที่</b></td>
+                            <td class="fill c"><t t-esc="v['doc_day']"/></td>
+                            <td style="text-align: right;"><b>เดือน</b></td>
+                            <td class="fill c" colspan="2"><t t-esc="v['doc_month']"/></td>
+                            <td><b>พ.ศ.</b></td>
+                            <td class="fill c"><t t-esc="v['doc_year_be']"/></td>
+                            <td style="text-align: right;"><b>ตามสัญญาเลขที่</b></td>
+                            <td class="fill c"><t t-esc="v['contract_number']"/></td>
+                        </tr>
+                        <tr>
+                            <td colspan="4"/>
+                            <td style="text-align: right;"><b>ลงวันที่</b></td>
+                            <td class="fill c"><t t-esc="v['contract_day']"/></td>
+                            <td style="text-align: right;"><b>เดือน</b></td>
+                            <td class="fill c"><t t-esc="v['contract_month']"/></td>
+                            <td><b>พ.ศ.</b> <span class="fill" style="display: inline-block; width: 60%; text-align: center;"><t t-esc="v['contract_year_be']"/></span></td>
+                        </tr>
+                    </table>
+                    <div class="gap"/>
+
+                    <!-- ผู้ถูกหักภาษี -->
+                    <table class="lay">
+                        <colgroup>
+                            <col style="width: 8%;"/><col style="width: 30%;"/>
+                            <col style="width: 26%;"/><col style="width: 36%;"/>
+                        </colgroup>
+                        <tr>
+                            <td colspan="2"><b>ผู้ถูกหักภาษี ณ ที่จ่าย</b></td>
+                            <td style="text-align: right;"><b>* เลขที่ประจำตัวประชาชน</b></td>
+                            <td class="digits-cell"><t t-call="vpk_gfmis.report_gfmis_wht_cert_digits"><t t-set="digits" t-value="v['partner_citizen_digits']"/></t></td>
+                        </tr>
+                        <tr>
+                            <td><b>ชื่อ</b></td>
+                            <td class="fill"><t t-esc="v['partner_name']"/></td>
+                            <td style="text-align: right;"><b>เลขประจำตัวผู้เสียภาษีอากร</b></td>
+                            <td class="digits-cell"><t t-call="vpk_gfmis.report_gfmis_wht_cert_digits"><t t-set="digits" t-value="v['partner_vat_digits']"/></t></td>
+                        </tr>
+                        <tr>
+                            <td><b>ที่อยู่</b></td>
+                            <td class="fill" colspan="3"><t t-esc="v['partner_address']"/></td>
+                        </tr>
+                        <tr>
+                            <td/>
+                            <td colspan="2"><b>และได้โอนสิทธิเรียกร้องในเงินดังกล่าวให้แก่</b></td>
+                            <td class="fill"/>
+                        </tr>
+                        <tr>
+                            <td><b>ที่อยู่</b></td>
+                            <td class="fill" colspan="3"/>
+                        </tr>
+                    </table>
+
+                    <!-- ตารางภาษี -->
+                    <table class="tax">
+                        <colgroup>
+                            <col style="width: 25%;"/><col style="width: 19%;"/><col style="width: 12%;"/>
+                            <col style="width: 15%;"/><col style="width: 4.5%;"/>
+                            <col style="width: 12%;"/><col style="width: 4.5%;"/>
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th rowspan="2">ประเภทภาษี</th>
+                                <th rowspan="2">ประเภทเงินได้<br/>ที่จ่าย</th>
+                                <th rowspan="2">วันเดือนปี<br/>ที่จ่าย</th>
+                                <th colspan="2">จำนวนเงินได้</th>
+                                <th colspan="2">ภาษี</th>
+                            </tr>
+                            <tr>
+                                <th>บาท</th><th>สต.</th>
+                                <th>บาท</th><th>สต.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-set="has_company" t-value="v['company_base_baht'] or v['company_tax_baht']"/>
+                            <t t-set="has_individual" t-value="v['individual_base_baht'] or v['individual_tax_baht']"/>
+                            <tr>
+                                <td class="l"><b>ภาษีเงินได้นิติบุคคล</b></td>
+                                <td class="c"><t t-if="has_company" t-esc="v['income_type']"/></td>
+                                <td class="c"><t t-if="has_company" t-esc="v['pay_date_text']"/></td>
+                                <td class="r"><t t-esc="v['company_base_baht']"/></td>
+                                <td class="c"><t t-esc="v['company_base_satang']"/></td>
+                                <td class="r"><t t-esc="v['company_tax_baht']"/></td>
+                                <td class="c"><t t-esc="v['company_tax_satang']"/></td>
+                            </tr>
+                            <tr>
+                                <td class="l"><b>ภาษีเงินได้บุคคลธรรมดา</b></td>
+                                <td class="c"><t t-if="has_individual" t-esc="v['income_type']"/></td>
+                                <td class="c"><t t-if="has_individual" t-esc="v['pay_date_text']"/></td>
+                                <td class="r"><t t-esc="v['individual_base_baht']"/></td>
+                                <td class="c"><t t-esc="v['individual_base_satang']"/></td>
+                                <td class="r"><t t-esc="v['individual_tax_baht']"/></td>
+                                <td class="c"><t t-esc="v['individual_tax_satang']"/></td>
+                            </tr>
+                            <tr>
+                                <td class="l"><b>ค่าปรับ</b></td>
+                                <td/>
+                                <td class="c"><t t-if="v['penalty_tax_baht']" t-esc="v['pay_date_text']"/></td>
+                                <td class="r"><t t-esc="v['penalty_base_baht']"/></td>
+                                <td class="c"><t t-esc="v['penalty_base_satang']"/></td>
+                                <td class="r"><t t-esc="v['penalty_tax_baht']"/></td>
+                                <td class="c"><t t-esc="v['penalty_tax_satang']"/></td>
+                            </tr>
+                            <tr>
+                                <td/><td/><td/><td/><td/><td/><td/>
+                            </tr>
+                            <tr class="sp"><td/><td/><td/><td/><td/><td/><td/></tr>
+                            <tr class="sum">
+                                <td class="nob"/>
+                                <td class="nob"/>
+                                <td class="nob" style="text-align: center;"><b>รวม</b></td>
+                                <td class="r amt"><t t-esc="v['total_base_baht']"/></td>
+                                <td class="c amt"><t t-esc="v['total_base_satang']"/></td>
+                                <td class="r amt"><t t-esc="v['total_tax_baht']"/></td>
+                                <td class="c amt"><t t-esc="v['total_tax_satang']"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="gap"/>
+                    <div class="gap"/>
+
+                    <!-- จำนวนเงินตัวอักษร -->
+                    <table class="lay">
+                        <colgroup><col style="width: 14%;"/><col style="width: 12%;"/><col style="width: 74%;"/></colgroup>
+                        <tr>
+                            <td><b>รวมเงินภาษี</b></td>
+                            <td><b>(ตัวอักษร)</b></td>
+                            <td class="fill">(<t t-esc="v['tax_amount_text']"/>)</td>
+                        </tr>
+                    </table>
+                    <div class="gap"/>
+                    <div class="gap"/>
+                    <div class="gap"/>
+
+                    <!-- ลงชื่อ -->
+                    <table class="lay sign">
+                        <colgroup>
+                            <col style="width: 40%;"/><col style="width: 15%;"/><col style="width: 45%;"/>
+                        </colgroup>
+                        <tr>
+                            <td/>
+                            <td style="text-align: right;"><b>(ลงชื่อ)</b></td>
+                            <td class="fill"/>
+                        </tr>
+                        <tr>
+                            <td/><td/>
+                            <td>(<t t-esc="v['signer_name'] or '                                        '"/>)</td>
+                        </tr>
+                        <tr>
+                            <td/>
+                            <td style="text-align: right;"><b>ตำแหน่ง</b></td>
+                            <td style="font-size: 13pt;"><t t-esc="v['signer_position']"/></td>
+                        </tr>
+                    </table>
+                </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

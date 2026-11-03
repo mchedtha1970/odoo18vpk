@@ -56,8 +56,8 @@ class PurchaseOrder(models.Model):
     # คำบนฟอร์มใบสั่งซื้อเป็นภาษาไทยในภาษาต้นทาง จึงเป็นค่าเริ่มต้นของทุกผู้ใช้
     state = fields.Selection(
         selection_add=[
-            ("draft", "ใบขอเสนอราคา"),
-            ("sent", "ส่งใบขอเสนอราคาแล้ว"),
+            ("draft", "ร่างใบสั่งซื้อ"),
+            ("sent", "ส่งร่างใบสั่งซื้อแล้ว"),
             ("to approve", "รออนุมัติ"),
             ("purchase", "ใบสั่งซื้อ"),
             ("done", "ปิดรายการ"),
@@ -92,8 +92,8 @@ class PurchaseOrder(models.Model):
     def _vpk_apply_thai_po_state_labels(self):
         """ใส่ป้ายสถานะภาษาไทยให้ทุกภาษาที่ติดตั้งไว้"""
         labels = {
-            "draft": "ใบขอเสนอราคา",
-            "sent": "ส่งใบขอเสนอราคาแล้ว",
+            "draft": "ร่างใบสั่งซื้อ",
+            "sent": "ส่งร่างใบสั่งซื้อแล้ว",
             "to approve": "รออนุมัติ",
             "purchase": "ใบสั่งซื้อ",
             "done": "ปิดรายการ",

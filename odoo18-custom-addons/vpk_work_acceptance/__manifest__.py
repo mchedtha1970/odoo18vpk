@@ -3,7 +3,7 @@
 
 {
     "name": "VPK Work Acceptance",
-    "version": "18.0.1.2.5",
+    "version": "18.0.1.3.5",
     "category": "Purchases",
     "summary": "ระบบบันทึกการรับมอบงาน เชื่อมกับสัญญาและคณะกรรมการตรวจรับ",
     "author": "VPK",
@@ -11,6 +11,7 @@
     "depends": [
         "purchase_work_acceptance",
         "vpk_purchase_contract",
+        "vpk_stock_qc",
     ],
     "data": [
         "security/ir.model.access.csv",
@@ -19,6 +20,13 @@
         "views/work_acceptance_views.xml",
         "views/purchase_order_views.xml",
     ],
+    "assets": {
+        "web.assets_backend": [
+            "vpk_work_acceptance/static/src/scss/work_acceptance_dashboard.scss",
+            "vpk_work_acceptance/static/src/dashboard/work_acceptance_dashboard.js",
+            "vpk_work_acceptance/static/src/dashboard/work_acceptance_dashboard.xml",
+        ],
+    },
     "installable": True,
     "application": False,
 }

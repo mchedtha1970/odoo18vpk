@@ -541,24 +541,17 @@ class Budget(models.Model):
     @api.model
     def _monthly_actual(self, lines, period_start, period_end):
         monthly = [0.0] * 12
-        analytic_ids = lines.mapped("analytic_account_id").ids
-        if not (period_start and period_end and analytic_ids):
+        if not (period_start and period_end):
             return monthly
-        analytic_lines = self.env["account.analytic.line"].search(
-            [
-                ("date", ">=", period_start),
-                ("date", "<=", period_end),
-                ("account_id", "in", analytic_ids),
-            ]
-        )
-        for analytic_line in analytic_lines:
-            amount = analytic_line.amount or 0.0
-            spent = abs(amount) if amount < 0 else 0.0
-            if not spent:
-                continue
-            index = self._month_index(analytic_line.date, period_start)
-            if index is not None:
-                monthly[index] += spent
+        for line in lines:
+            date_from = max(line.date_from, period_start) if line.date_from else period_start
+            date_to = min(line.date_to, period_end) if line.date_to else period_end
+            for month, amount in line._vpk_analytic_amount_rows(
+                date_from, date_to, by_month=True
+            ):
+                index = self._month_index(month, period_start)
+                if index is not None:
+                    monthly[index] += -amount
         return monthly
 
     @api.model

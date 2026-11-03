@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_work_acceptance.WorkAcceptanceDashboard">
+        <div t-att-class="props.className" class="o_vpk_wa_dash">
+            <div class="o_vpk_wa_dash_scroll" t-if="state.ready">
+                <header class="o_vpk_wa_dash_header">
+                    <div>
+                        <div class="o_vpk_wa_dash_kicker">คณะกรรมการตรวจรับ</div>
+                        <h1>แดชบอร์ดตรวจรับมอบงาน</h1>
+                        <p class="o_vpk_wa_dash_updated">
+                            ติดตามงานหลังคลังรับสินค้า และบริการที่มีใบแจ้งหนี้ส่งมา
+                            <span> · อัปเดต </span>
+                            <t t-esc="state.data.updated_at"/>
+                        </p>
+                    </div>
+                    <div class="o_vpk_wa_dash_actions">
+                        <button type="button" class="o_vpk_wa_dash_ghost" t-on-click="loadData">
+                            รีเฟรช
+                        </button>
+                        <button type="button" class="o_vpk_wa_dash_all" t-on-click="() => this.openAction(state.data.all_action)">
+                            ดูใบตรวจรับทั้งหมด
+                        </button>
+                    </div>
+                </header>
+
+                <section class="o_vpk_wa_dash_kpis">
+                    <t t-foreach="state.data.kpis" t-as="kpi" t-key="kpi.id">
+                        <button type="button"
+                                t-attf-class="o_vpk_wa_dash_kpi is-{{ kpi.tone }}"
+                                t-att-disabled="!kpi.action"
+                                t-on-click="() => this.openAction(kpi.action)">
+                            <span t-esc="kpi.label"/>
+                            <strong t-esc="kpi.value"/>
+                            <em t-esc="kpi.hint"/>
+                        </button>
+                    </t>
+                </section>
+
+                <section class="o_vpk_wa_dash_columns">
+                    <t t-call="vpk_work_acceptance.WorkAcceptanceQueue">
+                        <t t-set="queue" t-value="state.data.goods"/>
+                        <t t-set="tone" t-value="'goods'"/>
+                    </t>
+                    <t t-call="vpk_work_acceptance.WorkAcceptanceQueue">
+                        <t t-set="queue" t-value="state.data.services"/>
+                        <t t-set="tone" t-value="'services'"/>
+                    </t>
+                </section>
+
+                <section class="o_vpk_wa_dash_drafts">
+                    <t t-call="vpk_work_acceptance.WorkAcceptanceQueue">
+                        <t t-set="queue" t-value="state.data.drafts"/>
+                        <t t-set="tone" t-value="'drafts'"/>
+                    </t>
+                </section>
+            </div>
+            <div t-else="" class="o_vpk_wa_dash_loading">กำลังโหลดคิวตรวจรับมอบงาน...</div>
+        </div>
+    </t>
+
+    <t t-name="vpk_work_acceptance.WorkAcceptanceQueue">
+        <article t-attf-class="o_vpk_wa_dash_card is-{{ tone }}">
+            <header>
+                <h2 t-esc="queue.title"/>
+                <span t-esc="queue.rows.length"/>
+            </header>
+            <div class="o_vpk_wa_dash_table">
+                <div class="o_vpk_wa_dash_row is-head">
+                    <span>ใบสั่งซื้อ</span>
+                    <span>เอกสารอ้างอิง</span>
+                    <span>ผู้ขาย / กรรมการ</span>
+                    <span>จำนวน</span>
+                    <span>สถานะ</span>
+                </div>
+                <t t-if="!queue.rows.length">
+                    <div class="o_vpk_wa_dash_empty" t-esc="queue.empty"/>
+                </t>
+                <t t-foreach="queue.rows" t-as="row" t-key="row.key">
+                    <button type="button"
+                            class="o_vpk_wa_dash_row"
+                            t-on-click="() => this.openItem(row.key)">
+                        <span>
+                            <strong t-esc="row.po_name"/>
+                            <small t-if="row.amount" t-esc="row.amount"/>
+                        </span>
+                        <span>
+                            <em t-esc="row.source_label"/>
+                            <button t-if="row.qc_key"
+                                    type="button"
+                                    class="o_vpk_wa_dash_doc"
+                                    t-on-click.stop="() => this.openItem(row.qc_key)">
+                                ใบตรวจ QC <t t-esc="row.qc_label"/>
+                            </button>
+                            <small t-esc="row.when"/>
+                        </span>
+                        <span>
+                            <strong t-esc="row.vendor"/>
+                            <small t-if="row.committee" t-esc="row.committee"/>
+                        </span>
+                        <span t-esc="row.qty"/>
+                        <span t-attf-class="o_vpk_wa_dash_status is-{{ row.status }}" t-esc="row.status_label"/>
+                    </button>
+                </t>
+            </div>
+        </article>
+    </t>
+</templates>

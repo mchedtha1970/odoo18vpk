@@ -8,7 +8,7 @@ class AccountPayment(models.Model):
     gfmis_document_ids = fields.One2many(
         "gfmis.document",
         "payment_id",
-        string="เอกสาร GFMIS",
+        string="ใบเบิกเงิน",
     )
     gfmis_document_count = fields.Integer(compute="_compute_gfmis_document_count")
 
@@ -21,7 +21,7 @@ class AccountPayment(models.Model):
         self.ensure_one()
         return {
             "type": "ir.actions.act_window",
-            "name": _("เอกสาร GFMIS"),
+            "name": _("ใบเบิกเงิน"),
             "res_model": "gfmis.document",
             "view_mode": "list,form",
             "domain": [("payment_id", "=", self.id)],

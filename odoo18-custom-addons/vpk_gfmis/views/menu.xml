@@ -9,6 +9,15 @@
     />
 
     <menuitem
+        id="menu_gfmis_dashboard"
+        name="ติดตามสถานะการเบิกจ่าย"
+        parent="menu_gfmis_root"
+        action="action_vpk_disbursement_dashboard"
+        sequence="1"
+        groups="group_gfmis_user"
+    />
+
+    <menuitem
         id="menu_gfmis_request"
         name="ขอเบิกเงิน"
         parent="menu_gfmis_root"

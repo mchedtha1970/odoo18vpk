@@ -303,6 +303,22 @@ class DocumentStudioDocument(models.Model):
         source = self.request_id or self.requisition_id or self.wa_id or self.purchase_id
         return source.display_name if source else super()._vpk_review_card_context()
 
+    def _vpk_project_requisition(self):
+        self.ensure_one()
+        purchase = self.purchase_id or self.wa_id.purchase_id
+        return (
+            self.requisition_id
+            or self.request_id.egp_requisition_id
+            or purchase.requisition_id
+        )
+
+    def _vpk_review_card_info(self):
+        info = super()._vpk_review_card_info()
+        requisition = self._vpk_project_requisition().sudo()
+        info["project_number"] = requisition.egp_reference or ""
+        info["project_name"] = requisition.egp_project_name or ""
+        return info
+
     def action_delete_from_source(self):
         for rec in self:
             if rec.state in ("to_approve", "approved"):

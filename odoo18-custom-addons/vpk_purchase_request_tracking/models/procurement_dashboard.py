@@ -36,19 +36,11 @@ class PurchaseRequestProcurementDashboard(models.Model):
         prev_start, prev_end = self._proc_period(str(int(fiscal_year) - 1))
 
         requests = self.search(
-            [
-                ("date_start", ">=", period_start),
-                ("date_start", "<=", period_end),
-                ("state", "!=", "rejected"),
-            ],
+            self._proc_budget_request_domain(period_start, period_end),
             order="date_start desc, id desc",
         )
         previous = self.search_count(
-            [
-                ("date_start", ">=", prev_start),
-                ("date_start", "<=", prev_end),
-                ("state", "!=", "rejected"),
-            ]
+            self._proc_budget_request_domain(prev_start, prev_end)
         )
 
         stage_counts = {key: 0 for key, _label in STAGES}
@@ -77,7 +69,7 @@ class PurchaseRequestProcurementDashboard(models.Model):
                 lambda order: order.state != "cancel"
             )
             confirmed = pos.filtered(lambda order: order.state in ("purchase", "done"))
-            requisitions = self._proc_requisitions(request)
+            requisitions = self._proc_requisitions(request, pos)
             stage = self._proc_stage(request, confirmed, requisitions)
             method_key = self._proc_method_key(
                 request.procurement_method_id.name
@@ -135,7 +127,15 @@ class PurchaseRequestProcurementDashboard(models.Model):
                 stage_counts[stage] += 1
             projects.append(
                 self._proc_project_row(
-                    request, stage, status_key, status_label, amount, due, method_key
+                    request,
+                    stage,
+                    status_key,
+                    status_label,
+                    amount,
+                    due,
+                    method_key,
+                    orders=pos,
+                    requisitions=requisitions,
                 )
             )
             for order in confirmed[:3]:
@@ -215,7 +215,18 @@ class PurchaseRequestProcurementDashboard(models.Model):
             "contracts": contracts[:40],
         }
 
-    def _proc_project_row(self, request, stage, status_key, status_label, amount, due, method_key):
+    def _proc_project_row(
+        self,
+        request,
+        stage,
+        status_key,
+        status_label,
+        amount,
+        due,
+        method_key,
+        orders=None,
+        requisitions=None,
+    ):
         method_label = dict(METHODS).get(method_key, "ไม่ระบุวิธี")
         if "procurement_method_id" in request._fields and request.procurement_method_id:
             method_label = request.procurement_method_id.name
@@ -226,10 +237,19 @@ class PurchaseRequestProcurementDashboard(models.Model):
         department = ""
         if "department_id" in request._fields and request.department_id:
             department = request.department_id.name
+        orders = orders if orders is not None else self.env["purchase.order"].browse()
+        requisitions = requisitions if requisitions is not None else self.env["purchase.requisition"].browse()
         index = STAGE_INDEX[stage]
         return {
             "id": request.id,
             "name": request.name,
+            "project_no": self._proc_project_number(request, requisitions),
+            "project_name": self._proc_project_title(request, requisitions, description),
+            "pos": self._proc_po_rows(orders),
+            "contracts": self._proc_contract_rows(request, orders),
+            "contract_control": self._proc_contract_control(request, orders),
+            "wa_name": self._proc_wa_label(orders),
+            "vendor": self._proc_vendor_label(request, orders),
             "description": description,
             "department": department or "ไม่ระบุหน่วยงาน",
             "method": method_label,
@@ -245,11 +265,129 @@ class PurchaseRequestProcurementDashboard(models.Model):
             "status_label": status_label,
         }
 
+    def _proc_unique_join(self, values):
+        seen = []
+        for value in values:
+            text = (value or "").strip()
+            if text and text not in seen:
+                seen.append(text)
+        return " · ".join(seen) if seen else "—"
+
+    def _proc_project_number(self, request, requisitions):
+        if "egp_project_reference" in request._fields and request.egp_project_reference:
+            return request.egp_project_reference
+        if requisitions and "egp_reference" in requisitions._fields:
+            number = next((ref for ref in requisitions.mapped("egp_reference") if ref), "")
+            if number:
+                return number
+        return request.name or "—"
+
+    def _proc_project_title(self, request, requisitions, description):
+        if "egp_project_name" in request._fields and request.egp_project_name:
+            return request.egp_project_name
+        if requisitions and "egp_project_name" in requisitions._fields:
+            title = next((name for name in requisitions.mapped("egp_project_name") if name), "")
+            if title:
+                return title
+        return description or "—"
+
+    def _proc_contract_type_name(self, record):
+        if not record or "contract_type_id" not in record._fields:
+            return ""
+        return record.contract_type_id.name or ""
+
+    def _proc_contract_rows(self, request, orders):
+        rows = []
+        seen = set()
+
+        def add_row(number, type_name):
+            number = (number or "").strip()
+            type_name = (type_name or "").strip()
+            if not number and not type_name:
+                return
+            key = (number, type_name)
+            if key in seen:
+                return
+            seen.add(key)
+            rows.append({"number": number or "—", "type": type_name})
+
+        if orders and "contract_id" in orders._fields:
+            for contract in orders.mapped("contract_id"):
+                add_row(
+                    contract.egp_contract_control_no
+                    if "egp_contract_control_no" in contract._fields
+                    else "",
+                    self._proc_contract_type_name(contract),
+                )
+        if "contract_id" in request._fields and request.contract_id:
+            contract = request.contract_id
+            add_row(
+                contract.egp_contract_control_no
+                if "egp_contract_control_no" in contract._fields
+                else "",
+                self._proc_contract_type_name(contract),
+            )
+        if orders and "contract_egp_control_no" in orders._fields:
+            for order in orders:
+                add_row(order.contract_egp_control_no, self._proc_contract_type_name(order))
+        if "contract_egp_control_no" in request._fields:
+            add_row(request.contract_egp_control_no, self._proc_contract_type_name(request))
+        return rows
+
+    def _proc_contract_control(self, request, orders):
+        numbers = [row["number"] for row in self._proc_contract_rows(request, orders) if row.get("number") and row["number"] != "—"]
+        return self._proc_unique_join(numbers)
+
+    def _proc_wa_label(self, orders):
+        names = []
+        if orders and "wa_ids" in orders._fields:
+            acceptances = orders.mapped("wa_ids").filtered(
+                lambda wa: wa.state != "cancel"
+            )
+            names.extend(acceptances.mapped("name"))
+        elif orders and "work.acceptance" in self.env:
+            acceptances = self.env["work.acceptance"].search(
+                [("purchase_id", "in", orders.ids), ("state", "!=", "cancel")]
+            )
+            names.extend(acceptances.mapped("name"))
+        return self._proc_unique_join(names)
+
+    def _proc_po_rows(self, orders):
+        return [
+            {"id": order.id, "name": order.name}
+            for order in orders.filtered(lambda rec: rec.state in ("purchase", "done"))
+        ]
+
+    def _proc_vendor_label(self, request, orders):
+        names = []
+        if orders:
+            names.extend(orders.mapped("partner_id.name"))
+        if "contract_id" in request._fields and request.contract_id:
+            names.append(request.contract_id.partner_id.name)
+        return self._proc_unique_join(names)
+
     @api.model
-    def _proc_requisitions(self, request):
-        if "requisition_lines" not in request.line_ids._fields:
-            return self.env["purchase.requisition"].browse()
-        return request.line_ids.requisition_lines.requisition_id
+    def _proc_requisitions(self, request, orders=None):
+        recs = self.env["purchase.requisition"].browse()
+        if "requisition_lines" in request.line_ids._fields:
+            recs |= request.line_ids.requisition_lines.requisition_id
+        if hasattr(request, "_get_egp_requisitions"):
+            recs |= request._get_egp_requisitions()
+        if "egp_requisition_id" in request._fields:
+            recs |= request.egp_requisition_id
+        if "contract_id" in request._fields and request.contract_id:
+            contract = request.contract_id
+            if "requisition_id" in contract._fields:
+                recs |= contract.requisition_id
+        orders = orders if orders is not None else self.env["purchase.order"].browse()
+        for order in orders:
+            for name in ("source_requisition_id", "requisition_id"):
+                if name in order._fields and order[name]:
+                    recs |= order[name]
+            if "contract_id" in order._fields and order.contract_id:
+                if "requisition_id" in order.contract_id._fields:
+                    recs |= order.contract_id.requisition_id
+        return recs
 
     @api.model
     def _proc_stage(self, request, confirmed, requisitions):
@@ -344,6 +482,24 @@ class PurchaseRequestProcurementDashboard(models.Model):
         if "emarket" in text or "e-market" in (name or "").lower() or "ตลาด" in (name or ""):
             return "emarket"
         return "specific" if not name else "ebidding" if "bid" in text else "specific"
+
+    @api.model
+    def _proc_budget_request_domain(self, period_start, period_end):
+        """ใบขอซื้อในช่วงปีงบที่จองงบแล้ว หรือย้ายไปผูกพันในใบสั่งซื้อแล้ว."""
+        domain = [
+            ("date_start", ">=", period_start),
+            ("date_start", "<=", period_end),
+            ("state", "!=", "rejected"),
+        ]
+        if "price_agreement_only" in self._fields:
+            domain.append(("price_agreement_only", "=", False))
+        if "budget_reservation_active" in self._fields:
+            domain += [
+                "|",
+                ("budget_reservation_active", "=", True),
+                ("line_ids.purchase_lines.order_id.state", "in", ("purchase", "done")),
+            ]
+        return domain
 
     @api.model
     def _proc_fiscal_year(self, day):

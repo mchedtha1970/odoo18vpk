@@ -163,6 +163,7 @@
                                 <header class="o_vpk_proc_table_head">
                                     <div>
                                         <h2>รายการโครงการล่าสุด</h2>
+                                        <small>เฉพาะรายการที่จองงบประมาณ</small>
                                         <div class="o_vpk_proc_filters">
                                             <t t-foreach="filters" t-as="item" t-key="item.key">
                                                 <button t-att-class="state.filter === item.key ? 'active' : ''" t-on-click="() => this.setFilter(item.key)">
@@ -171,12 +172,18 @@
                                             </t>
                                         </div>
                                     </div>
-                                    <input class="form-control form-control-sm" placeholder="ค้นหาเลขที่หรือชื่อโครงการ" t-on-input="onSearch"/>
+                                    <input class="form-control form-control-sm" placeholder="ค้นหาเลขที่ ชื่อโครงการ เลข PO ผู้ขาย" t-on-input="onSearch"/>
                                 </header>
+                                <div class="o_vpk_proc_table_wrap">
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>เลขที่ / โครงการ</th>
+                                            <th>เลขที่โครงการ</th>
+                                            <th>ชื่อโครงการ</th>
+                                            <th>เลข PO</th>
+                                            <th>เลขคุมสัญญา</th>
+                                            <th>เลขใบตรวจรับงาน</th>
+                                            <th>ผู้ขาย</th>
                                             <th>หน่วยงาน</th>
                                             <th>วิธีจัดหา</th>
                                             <th class="num">วงเงิน (บาท)</th>
@@ -188,10 +195,27 @@
                                     <tbody>
                                         <t t-foreach="visibleProjects" t-as="project" t-key="project.id">
                                             <tr t-on-click="() => this.openProject(project.id)">
+                                                <td><strong><t t-esc="project.project_no"/></strong></td>
+                                                <td><span class="o_vpk_proc_project_name"><t t-esc="project.project_name"/></span></td>
                                                 <td>
-                                                    <strong><t t-esc="project.name"/></strong>
-                                                    <small><t t-esc="project.description"/></small>
+                                                    <t t-foreach="project.pos or []" t-as="po" t-key="po.id">
+                                                        <a href="#" class="o_vpk_proc_po_link" t-on-click.stop.prevent="() => this.openPurchaseOrder(po.id)">
+                                                            <t t-esc="po.name"/>
+                                                        </a>
+                                                    </t>
+                                                    <t t-if="!(project.pos or []).length">—</t>
                                                 </td>
+                                                <td>
+                                                    <t t-foreach="project.contracts or []" t-as="contract" t-key="contract.number + '-' + (contract.type || '')">
+                                                        <div class="o_vpk_proc_contract">
+                                                            <strong><t t-esc="contract.number"/></strong>
+                                                            <span t-if="contract.type" class="o_vpk_proc_contract_tag" t-esc="contract.type"/>
+                                                        </div>
+                                                    </t>
+                                                    <t t-if="!(project.contracts or []).length">—</t>
+                                                </td>
+                                                <td><t t-esc="project.wa_name"/></td>
+                                                <td><t t-esc="project.vendor"/></td>
                                                 <td><t t-esc="project.department"/></td>
                                                 <td><t t-esc="project.method"/></td>
                                                 <td class="num"><t t-esc="formatBaht(project.amount)"/></td>
@@ -208,10 +232,11 @@
                                             </tr>
                                         </t>
                                         <tr t-if="!visibleProjects.length">
-                                            <td colspan="7">ไม่พบโครงการตามเงื่อนไขนี้</td>
+                                            <td colspan="12">ไม่พบโครงการที่จองงบประมาณตามเงื่อนไขนี้</td>
                                         </tr>
                                     </tbody>
                                 </table>
+                                </div>
                                 <footer>แสดง <t t-esc="visibleProjects.length"/> รายการจาก <t t-esc="state.data.project_total"/> โครงการ</footer>
                             </section>
                         </t>

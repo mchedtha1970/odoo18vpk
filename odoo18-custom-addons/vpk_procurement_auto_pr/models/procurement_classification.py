@@ -523,7 +523,8 @@ class PurchaseContract(models.Model):
         string="ระยะเวลาสัญญา (วัน)",
         default=365,
         tracking=True,
-        help="ใช้คำนวณวันสิ้นสุดสัญญาอัตโนมัติเมื่อยืนยัน",
+        help="จำนวนวันนับจากวันเริ่มสัญญาถึงวันสิ้นสุดสัญญา "
+        "แก้จำนวนวันระบบจะคำนวณวันสิ้นสุดให้ แก้วันสิ้นสุดระบบจะคำนวณจำนวนวันกลับให้",
     )
     confirmed_date = fields.Date(
         string="วันที่ยืนยันสัญญา",
@@ -537,6 +538,52 @@ class PurchaseContract(models.Model):
         default_days = {"buy": 365, "hire": 180, "lease": 365}
         if self.contract_kind:
             self.contract_term_days = default_days[self.contract_kind]
+
+    @api.onchange("date_start", "contract_term_days")
+    def _onchange_contract_term_days(self):
+        if self.date_start and self.contract_term_days not in (False, None):
+            self.date_end = self.date_start + timedelta(
+                days=self.contract_term_days or 0
+            )
+
+    @api.onchange("date_end")
+    def _onchange_date_end_term(self):
+        if self.date_start and self.date_end:
+            self.contract_term_days = (self.date_end - self.date_start).days
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        for contract, vals in zip(records, vals_list):
+            touched = {"date_end", "contract_term_days"}.intersection(vals)
+            contract._realign_contract_term(touched or {"contract_term_days"})
+        return records
+
+    def write(self, vals):
+        term_keys = {"date_start", "date_end", "contract_term_days"}
+        touched = term_keys.intersection(vals)
+        result = super().write(vals)
+        if touched:
+            for contract in self:
+                contract._realign_contract_term(touched)
+        return result
+
+    def _realign_contract_term(self, touched):
+        self.ensure_one()
+        if not self.date_start:
+            return
+        updates = {}
+        if "date_end" in touched and "contract_term_days" not in touched:
+            if self.date_end:
+                days = (self.date_end - self.date_start).days
+                if days != self.contract_term_days:
+                    updates["contract_term_days"] = days
+        elif "date_end" not in touched:
+            end = self.date_start + timedelta(days=self.contract_term_days or 0)
+            if end != self.date_end:
+                updates["date_end"] = end
+        if updates:
+            super(PurchaseContract, self).write(updates)
 
     def action_confirm(self):
         result = super().action_confirm()

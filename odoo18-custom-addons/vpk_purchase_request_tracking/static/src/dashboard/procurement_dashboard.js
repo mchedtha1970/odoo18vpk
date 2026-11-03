@@ -142,7 +142,18 @@ export class VpkProcurementDashboard extends Component {
             if (!query) {
                 return true;
             }
-            return [project.name, project.description, project.department, project.method]
+            return [
+                project.name,
+                project.project_no,
+                project.project_name,
+                (project.pos || []).map((po) => po.name).join(" "),
+                project.contract_control,
+                (project.contracts || []).map((contract) => [contract.number, contract.type].join(" ")).join(" "),
+                project.wa_name,
+                project.vendor,
+                project.department,
+                project.method,
+            ]
                 .join(" ")
                 .toLowerCase()
                 .includes(query);
@@ -158,6 +169,17 @@ export class VpkProcurementDashboard extends Component {
             type: "ir.actions.act_window",
             res_model: "purchase.request",
             res_id: projectId,
+            views: [[false, "form"]],
+            target: "current",
+        });
+    }
+
+    openPurchaseOrder(orderId) {
+        this.actionService.doAction({
+            type: "ir.actions.act_window",
+            name: "ใบสั่งซื้อ",
+            res_model: "purchase.order",
+            res_id: orderId,
             views: [[false, "form"]],
             target: "current",
         });

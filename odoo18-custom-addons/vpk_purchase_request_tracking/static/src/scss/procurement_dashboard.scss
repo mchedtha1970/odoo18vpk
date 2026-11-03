@@ -300,10 +300,59 @@
         .active { background: #111827; color: #fff; }
     }
 
+    .o_vpk_proc_table_wrap {
+        overflow-x: auto;
+    }
+
+    .o_vpk_proc_project_name {
+        display: block;
+        max-width: 280px;
+        line-height: 1.35;
+    }
+
+    .o_vpk_proc_po_link {
+        display: block;
+        color: #1d4ed8;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .o_vpk_proc_po_link:hover {
+        text-decoration: underline;
+    }
+
+    .o_vpk_proc_contract {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        max-width: 240px;
+
+        strong {
+            display: block;
+            white-space: nowrap;
+        }
+    }
+
+    .o_vpk_proc_contract_tag {
+        display: inline-block;
+        max-width: 100%;
+        padding: 1px 8px;
+        border-radius: 99px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.45;
+        white-space: normal;
+    }
+
     table {
         width: 100%;
         border-collapse: collapse;
         font-size: 13px;
+        min-width: 1100px;
 
         th {
             text-align: left;

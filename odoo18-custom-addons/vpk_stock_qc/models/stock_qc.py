@@ -24,6 +24,13 @@ class StockQc(models.Model):
         index=True,
         tracking=True,
     )
+    purchase_id = fields.Many2one(
+        related="picking_id.purchase_id",
+        comodel_name="purchase.order",
+        string="ใบสั่งซื้อ",
+        store=True,
+        index=True,
+    )
     picking_state = fields.Selection(
         related="picking_id.state",
         string="สถานะใบรับ",

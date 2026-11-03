@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_gfmis_document_approve_wizard_form" model="ir.ui.view">
+        <field name="name">gfmis.document.approve.wizard.form</field>
+        <field name="model">gfmis.document.approve.wizard</field>
+        <field name="arch" type="xml">
+            <form string="อนุมัติ / ไม่อนุมัติใบเบิกเงิน">
+                <group>
+                    <group>
+                        <field name="approval_label" readonly="1"/>
+                        <field name="document_count" readonly="1"/>
+                    </group>
+                    <group>
+                        <field name="amount_total" readonly="1"/>
+                        <field name="currency_id" invisible="1"/>
+                        <field name="approval_state" invisible="1"/>
+                    </group>
+                </group>
+                <separator string="รายการที่เลือก"/>
+                <field name="document_ids" nolabel="1" readonly="1" force_save="1" options="{'no_create': True, 'no_open': True}">
+                    <list create="false" delete="false" edit="false" open_form_view="false">
+                        <field name="name"/>
+                        <field name="document_date"/>
+                        <field name="form_code"/>
+                        <field name="partner_id"/>
+                        <field name="reference"/>
+                        <field name="amount_net" sum="รวม"/>
+                        <field name="state" widget="badge"/>
+                        <field name="currency_id" column_invisible="1"/>
+                    </list>
+                </field>
+                <group string="กรณีไม่อนุมัติ">
+                    <field
+                        name="reject_reason"
+                        placeholder="ระบุเหตุผลเมื่อกดไม่อนุมัติ เช่น เอกสารไม่ครบ / ยอดไม่ตรง / ข้อมูลบัญชีไม่ถูกต้อง"
+                    />
+                </group>
+                <footer>
+                    <button
+                        name="action_approve"
+                        type="object"
+                        string="อนุมัติ"
+                        class="btn-primary"
+                        groups="vpk_gfmis.group_gfmis_manager"
+                    />
+                    <button
+                        name="action_reject"
+                        type="object"
+                        string="ไม่อนุมัติ"
+                        class="btn-secondary"
+                        groups="vpk_gfmis.group_gfmis_manager"
+                    />
+                    <button string="ปิด" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_gfmis_document_approve_wizard" model="ir.actions.act_window">
+        <field name="name">อนุมัติ / ไม่อนุมัติ</field>
+        <field name="res_model">gfmis.document.approve.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_gfmis_document"/>
+        <field name="binding_view_types">list,form</field>
+        <field name="groups_id" eval="[(4, ref('group_gfmis_manager'))]"/>
+    </record>
+</odoo>

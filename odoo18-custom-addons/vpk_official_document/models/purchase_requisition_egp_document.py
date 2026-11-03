@@ -157,6 +157,8 @@ class PurchaseRequisitionEgpDocument(models.Model):
             "view_mode": "form",
             "views": [(view.id, "form")],
             "target": "new",
+            # เปิดจากหน้าดูอย่างเดียว (create/edit = False) ต้องยังเพิ่มผู้อนุมัติได้
+            "context": {"create": True, "edit": True, "delete": True},
         }
 
     def _seed_default_egp_signers(self):

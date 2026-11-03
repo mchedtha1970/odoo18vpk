@@ -1,5 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_vpk_stock_qc_user,vpk.stock.qc user,model_vpk_stock_qc,stock.group_stock_user,1,0,0,0
+access_vpk_stock_qc_purchase,vpk.stock.qc purchase,model_vpk_stock_qc,purchase.group_purchase_user,1,0,0,0
 access_vpk_stock_qc_qc,vpk.stock.qc inspector,model_vpk_stock_qc,group_qc_user,1,1,1,0
 access_vpk_stock_qc_manager,vpk.stock.qc manager,model_vpk_stock_qc,stock.group_stock_manager,1,1,1,1
 access_vpk_stock_qc_line_user,vpk.stock.qc.line user,model_vpk_stock_qc_line,stock.group_stock_user,1,0,0,0

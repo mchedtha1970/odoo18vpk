@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="vpk_gfmis.DisbursementDashboard">
+        <div t-att-class="props.className" class="o_vpk_pay_action">
+            <Layout display="display">
+                <div class="o_vpk_pay">
+                    <header class="o_vpk_pay_top">
+                        <div class="o_vpk_pay_brand">
+                            <span class="o_vpk_pay_logo">เบิก</span>
+                            <div>
+                                <strong>ระบบติดตามสถานะการเบิกจ่าย</strong>
+                                <small>ใบเบิกเงิน GFMIS · ปีงบประมาณ พ.ศ. <t t-esc="state.data.fiscal_year"/></small>
+                            </div>
+                        </div>
+                        <nav>
+                            <button t-att-class="state.tab === 'overview' ? 'active' : ''" t-on-click="() => this.setTab('overview')">ภาพรวม</button>
+                            <button t-att-class="state.tab === 'documents' ? 'active' : ''" t-on-click="() => this.setTab('documents')">ใบเบิกเงิน</button>
+                            <button t-att-class="state.tab === 'waiting' ? 'active' : ''" t-on-click="() => this.setTab('waiting')">รอเบิก</button>
+                        </nav>
+                    </header>
+
+                    <t t-if="!state.ready">
+                        <div class="o_vpk_pay_loading">กำลังโหลดข้อมูล...</div>
+                    </t>
+                    <t t-else="">
+                        <div class="o_vpk_pay_page_head">
+                            <div>
+                                <h1>ภาพรวมสถานะการเบิกจ่าย</h1>
+                                <p><t t-esc="state.data.as_of_label"/> · ข้อมูลจากใบเบิกเงินในระบบ</p>
+                            </div>
+                            <div class="o_vpk_pay_actions">
+                                <label>
+                                    ปีงบประมาณ
+                                    <select class="form-select form-select-sm" t-on-change="onYearChange">
+                                        <t t-foreach="state.data.year_options" t-as="year" t-key="year">
+                                            <option t-att-value="year" t-att-selected="year === state.data.fiscal_year"><t t-esc="year"/></option>
+                                        </t>
+                                    </select>
+                                </label>
+                                <button class="btn o_vpk_pay_btn_primary" t-on-click="createDocument">+ สร้างใบเบิกเงิน</button>
+                            </div>
+                        </div>
+
+                        <div class="o_vpk_pay_kpis">
+                            <article>
+                                <span>ใบเบิกทั้งหมด</span>
+                                <strong><t t-esc="formatCount(state.data.kpis.total)"/></strong>
+                                <small>รอสร้างจาก PO <t t-esc="formatCount(state.data.kpis.waiting_create)"/> ใบ</small>
+                            </article>
+                            <article>
+                                <span>วงเงินขอเบิก</span>
+                                <strong>฿<t t-esc="formatMillion(state.data.kpis.amount)"/></strong>
+                                <small>สุทธิหลังหักภาษี ฿<t t-esc="formatMillion(state.data.kpis.net)"/></small>
+                            </article>
+                            <article>
+                                <span>อยู่ระหว่างดำเนินการ</span>
+                                <strong><t t-esc="formatCount(state.data.kpis.in_progress)"/></strong>
+                                <small>รออนุมัติ <t t-esc="formatCount(state.data.kpis.waiting_approve)"/> รายการ</small>
+                            </article>
+                            <article>
+                                <span>ภาษีหัก ณ ที่จ่าย</span>
+                                <strong>฿<t t-esc="formatMillion(state.data.kpis.wht)"/></strong>
+                                <small>หัก 1% จากรายการที่เลือกเบิก</small>
+                            </article>
+                            <article class="o_vpk_pay_paid">
+                                <span>จ่ายแล้ว</span>
+                                <div class="o_vpk_pay_ring" t-att-style="paidStyle()">
+                                    <b><t t-esc="Math.round(state.data.kpis.paid_pct)"/>%</b>
+                                </div>
+                            </article>
+                        </div>
+
+                        <t t-if="state.tab === 'overview'">
+                            <div class="o_vpk_pay_grid">
+                                <section>
+                                    <header>
+                                        <h2>ใบเบิกตามขั้นตอน</h2>
+                                        <small>รายการที่ยังไม่จ่าย (<t t-esc="state.data.open_stage_count"/> รายการ)</small>
+                                    </header>
+                                    <t t-foreach="state.data.stages" t-as="stage" t-key="stage.key">
+                                        <div class="o_vpk_pay_stage">
+                                            <span><t t-esc="stage_index + 1"/> <t t-esc="stage.label"/></span>
+                                            <div><i t-att-style="'width:' + stageWidth(stage)"/></div>
+                                            <b><t t-esc="stage.count"/></b>
+                                        </div>
+                                    </t>
+                                </section>
+                                <section>
+                                    <header>
+                                        <h2>ขอเบิก vs จ่ายแล้ว</h2>
+                                        <small>หน่วย: บาท รายไตรมาส</small>
+                                    </header>
+                                    <div class="o_vpk_pay_legend">
+                                        <span><i class="plan"/>วงเงินขอเบิก</span>
+                                        <span><i class="actual"/>ยอดสุทธิที่จ่าย</span>
+                                    </div>
+                                    <div class="o_vpk_pay_quarters">
+                                        <t t-foreach="state.data.quarters" t-as="quarter" t-key="quarter.label">
+                                            <div>
+                                                <div class="o_vpk_pay_qbars">
+                                                    <em t-att-style="'height:' + barHeight(quarter.request)"><t t-esc="formatMillion(quarter.request)"/></em>
+                                                    <em class="actual" t-att-style="'height:' + barHeight(quarter.paid)"><t t-esc="formatMillion(quarter.paid)"/></em>
+                                                </div>
+                                                <small><t t-esc="quarter.label"/></small>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </section>
+                                <section>
+                                    <header>
+                                        <h2>วิธีการจ่าย</h2>
+                                        <small>สัดส่วนตามวงเงิน</small>
+                                    </header>
+                                    <t t-foreach="state.data.methods" t-as="method" t-key="method.key">
+                                        <div class="o_vpk_pay_method">
+                                            <div>
+                                                <span><t t-esc="method.label"/> · <t t-esc="method.count"/> รายการ</span>
+                                                <b>฿<t t-esc="formatMillion(method.amount)"/></b>
+                                            </div>
+                                            <div class="track"><i t-att-style="'width:' + methodWidth(method)"/></div>
+                                        </div>
+                                    </t>
+                                    <div class="o_vpk_pay_alerts">
+                                        <h3>ต้องดำเนินการ</h3>
+                                        <t t-foreach="state.data.alerts" t-as="alert" t-key="alert.text">
+                                            <p t-att-class="alert.tone"><t t-esc="alert.text"/></p>
+                                        </t>
+                                    </div>
+                                </section>
+                            </div>
+                        </t>
+
+                        <t t-if="state.tab !== 'waiting'">
+                            <section class="o_vpk_pay_panel">
+                                <header class="o_vpk_pay_table_head">
+                                    <div>
+                                        <h2>รายการใบเบิกเงิน</h2>
+                                        <small>กดแถวเพื่อเปิดใบเบิก · กดเลข PO เพื่อเปิดใบสั่งซื้อ</small>
+                                        <div class="o_vpk_pay_filters">
+                                            <t t-foreach="filters" t-as="item" t-key="item.key">
+                                                <button t-att-class="state.filter === item.key ? 'active' : ''" t-on-click="() => this.setFilter(item.key)">
+                                                    <t t-esc="item.label"/> (<t t-esc="filterCount(item.key)"/>)
+                                                </button>
+                                            </t>
+                                        </div>
+                                    </div>
+                                    <input class="form-control form-control-sm" placeholder="ค้นหาเลขใบเบิก เลข PO ผู้ขาย" t-on-input="onSearch"/>
+                                </header>
+                                <div class="o_vpk_pay_table_wrap">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>เลขที่ใบเบิก</th>
+                                                <th>เลข PO</th>
+                                                <th>ผู้ขาย</th>
+                                                <th>แบบฟอร์ม</th>
+                                                <th class="num">วงเงิน</th>
+                                                <th class="num">ภาษี 1%</th>
+                                                <th class="num">ยอดสุทธิ</th>
+                                                <th>ความคืบหน้า</th>
+                                                <th>วันที่เอกสาร</th>
+                                                <th>สถานะ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="visibleDocuments" t-as="item" t-key="item.id">
+                                                <tr t-on-click="() => this.openDocument(item.id)">
+                                                    <td>
+                                                        <a href="#" class="o_vpk_pay_po_link" t-on-click.stop.prevent="() => this.openDocument(item.id)">
+                                                            <t t-esc="item.name"/>
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <a t-if="item.po_id" href="#" class="o_vpk_pay_po_link" t-on-click.stop.prevent="() => this.openPurchaseOrder(item.po_id)">
+                                                            <t t-esc="item.po_name"/>
+                                                        </a>
+                                                        <t t-else="">—</t>
+                                                    </td>
+                                                    <td><t t-esc="item.vendor"/></td>
+                                                    <td><t t-esc="item.form"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(item.amount)"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(item.wht)"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(item.net)"/></td>
+                                                    <td>
+                                                        <div class="o_vpk_pay_dots">
+                                                            <t t-foreach="dots(item)" t-as="dot" t-key="item.id + '-' + dot_index">
+                                                                <i t-att-class="dot"/>
+                                                            </t>
+                                                        </div>
+                                                    </td>
+                                                    <td><t t-esc="item.date"/></td>
+                                                    <td><span t-att-class="'pill ' + item.status_key"><t t-esc="item.status_label"/></span></td>
+                                                </tr>
+                                            </t>
+                                            <tr t-if="!visibleDocuments.length">
+                                                <td colspan="10">ไม่พบใบเบิกเงินตามเงื่อนไขนี้</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <footer>แสดง <t t-esc="visibleDocuments.length"/> รายการ</footer>
+                            </section>
+                        </t>
+
+                        <t t-if="state.tab === 'waiting'">
+                            <section class="o_vpk_pay_panel">
+                                <header>
+                                    <h2>ใบสั่งซื้อที่ยืนยันแล้ว รอสร้างใบเบิกเงิน</h2>
+                                    <small>กดแถวเพื่อเปิดใบสั่งซื้อ แล้วใช้ปุ่มขอเบิกเงิน</small>
+                                </header>
+                                <div class="o_vpk_pay_table_wrap">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>เลข PO</th>
+                                                <th>ผู้ขาย</th>
+                                                <th>เลขใบตรวจรับ</th>
+                                                <th class="num">วงเงิน</th>
+                                                <th>วันที่ยืนยัน</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="state.data.waiting" t-as="order" t-key="order.id">
+                                                <tr t-on-click="() => this.openPurchaseOrder(order.id)">
+                                                    <td>
+                                                        <a href="#" class="o_vpk_pay_po_link" t-on-click.stop.prevent="() => this.openPurchaseOrder(order.id)">
+                                                            <t t-esc="order.name"/>
+                                                        </a>
+                                                    </td>
+                                                    <td><t t-esc="order.vendor"/></td>
+                                                    <td><t t-esc="order.wa_name"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(order.amount)"/></td>
+                                                    <td><t t-esc="order.date"/></td>
+                                                </tr>
+                                            </t>
+                                            <tr t-if="!state.data.waiting.length">
+                                                <td colspan="5">ไม่มีใบสั่งซื้อที่รอสร้างใบเบิกในปีงบประมาณนี้</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        </t>
+                    </t>
+                </div>
+            </Layout>
+        </div>
+    </t>
+
+</templates>

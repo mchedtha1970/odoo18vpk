@@ -3,7 +3,7 @@
 
 {
     "name": "VPK Purchase Contract",
-    "version": "18.0.1.1.35",
+    "version": "18.0.1.1.36",
     "category": "Purchases",
     "summary": "ทะเบียนสัญญาหลัก ผูกสัญญาบน PR/PO ตรวจยอดคงเหลือแบบ Hard Block และตัดลดเรียลไทม์",
     "author": "VPK",
@@ -14,6 +14,7 @@
         "account",
         "vpk_budget",
         "vpk_purchase_agreement_egp",
+        "vpk_tier_validation",
     ],
     "data": [
         "security/ir.model.access.csv",

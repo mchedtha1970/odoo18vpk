@@ -8,7 +8,7 @@ class AccountMove(models.Model):
     gfmis_document_ids = fields.One2many(
         "gfmis.document",
         "invoice_id",
-        string="เอกสาร GFMIS",
+        string="ใบเบิกเงิน",
     )
     gfmis_document_count = fields.Integer(compute="_compute_gfmis_document_count")
 
@@ -21,7 +21,7 @@ class AccountMove(models.Model):
         self.ensure_one()
         action = {
             "type": "ir.actions.act_window",
-            "name": _("เอกสาร GFMIS"),
+            "name": _("ใบเบิกเงิน"),
             "res_model": "gfmis.document",
             "view_mode": "list,form",
             "domain": [("invoice_id", "=", self.id)],
@@ -35,6 +35,7 @@ class AccountMove(models.Model):
     def action_create_gfmis_document(self):
         self.ensure_one()
         doc = self.env["gfmis.document"].action_create_from_invoice(self)
+        doc._vpk_ensure_default_wht()
         return {
             "type": "ir.actions.act_window",
             "res_model": "gfmis.document",

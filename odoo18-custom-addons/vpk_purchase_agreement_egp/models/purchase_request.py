@@ -213,14 +213,15 @@ class PurchaseRequest(models.Model):
             "name": name,
             "res_model": records._name,
             "target": "current",
-            "context": {
+        }
+        # context นี้ส่งต่อไปยังทุกปุ่มในหน้าที่เปิด จึงใส่เฉพาะผู้ใช้หน่วยงาน
+        if self._vpk_is_department_related_viewer():
+            action["context"] = {
                 "create": False,
                 "edit": False,
                 "delete": False,
                 "duplicate": False,
-            },
-        }
-        if self._vpk_is_department_related_viewer():
+            }
             action["flags"] = {"mode": "readonly", "create": False}
         if len(records) == 1:
             action["res_id"] = records.id

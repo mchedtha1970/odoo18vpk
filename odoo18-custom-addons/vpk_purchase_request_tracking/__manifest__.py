@@ -1,6 +1,6 @@
 {
     "name": "VPK Purchase Request Tracking - ติดตามสถานะและรายงานขอซื้อ/สั่งซื้อ",
-    "version": "18.0.1.2.0",
+    "version": "18.0.1.2.4",
     "category": "Purchases",
     "summary": "ติดตาม PR ที่ออก/ยังไม่ออกใบสั่งซื้อ และ Export รายงานประจำวัน สัปดาห์ เดือน ปี",
     "depends": [

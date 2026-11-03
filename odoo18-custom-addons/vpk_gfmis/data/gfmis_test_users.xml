@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="user_uat_gfmis" model="res.users">
+            <field name="name">ผู้ทดสอบบัญชี / เบิกเงิน</field>
+            <field name="login">uat.gfmis</field>
+            <field name="email">uat.gfmis@vpk.local</field>
+            <field name="lang">th_TH</field>
+            <field name="tz">Asia/Bangkok</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="company_ids" eval="[(4, ref('base.main_company'))]"/>
+            <field name="groups_id" eval="[
+                (4, ref('base.group_user')),
+                (4, ref('purchase.group_purchase_user')),
+                (4, ref('account.group_account_user')),
+                (4, ref('account.group_account_manager')),
+                (4, ref('vpk_gfmis.group_gfmis_user')),
+                (4, ref('vpk_gfmis.group_gfmis_manager')),
+            ]"/>
+        </record>
+    </data>
+    <function model="res.users" name="_vpk_setup_gfmis_test_user"/>
+</odoo>

@@ -1,9 +1,32 @@
 # -*- coding: utf-8 -*-
 import base64
 import io
+import re
+from pathlib import Path
 
-from odoo import _, api, fields, models
+from markupsafe import Markup
+
+from odoo import Command, _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
+from odoo.modules.module import get_module_path
+
+_REPORT_FONT_CSS = None
+
+THAI_MONTHS = (
+    "",
+    "มกราคม",
+    "กุมภาพันธ์",
+    "มีนาคม",
+    "เมษายน",
+    "พฤษภาคม",
+    "มิถุนายน",
+    "กรกฎาคม",
+    "สิงหาคม",
+    "กันยายน",
+    "ตุลาคม",
+    "พฤศจิกายน",
+    "ธันวาคม",
+)
 
 
 class GfmisDocument(models.Model):
@@ -12,6 +35,9 @@ class GfmisDocument(models.Model):
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "document_date desc, id desc"
     _check_company_auto = True
+
+    _VPK_WHT_RATE = 0.01
+    _VPK_WHT_NOTE = "หักภาษี ณ ที่จ่าย 1%"
 
     name = fields.Char(
         string="เลขที่ ERP",
@@ -59,7 +85,7 @@ class GfmisDocument(models.Model):
     state = fields.Selection(
         [
             ("draft", "ร่าง"),
-            ("recorded", "บันทึกใน GFMIS"),
+            ("recorded", "รอส่งอนุมัติขอเบิก"),
             ("wait_approve_request", "รออนุมัติขอเบิก (อม.01)"),
             ("wait_approve_pay", "รออนุมัติสั่งจ่าย (อม.02)"),
             ("sent_treasury", "ส่งกรมบัญชีกลาง/คลังจังหวัด"),
@@ -160,6 +186,17 @@ class GfmisDocument(models.Model):
     description = fields.Char(string="คำอธิบายเอกสาร", size=99)
     dika_number = fields.Char(string="ฎีกาที่", tracking=True, index=True)
     transfer_date = fields.Date(string="วันที่โอน", tracking=True, index=True)
+    wht_cert_number = fields.Char(
+        string="เลขที่หนังสือรับรองหักภาษี",
+        copy=False,
+        tracking=True,
+        help="เลขที่ใบรับรองการหักภาษี ณ ที่จ่าย (แบบ 4235) เช่น 7240/2567",
+    )
+    wht_income_type = fields.Char(
+        string="ประเภทเงินได้ที่จ่าย",
+        help="ระบุในใบหักภาษี ณ ที่จ่าย เช่น ค่ายา / ค่าบริการ",
+        default="ค่าสินค้า/บริการ",
+    )
 
     # ERP links
     purchase_id = fields.Many2one(
@@ -238,13 +275,26 @@ class GfmisDocument(models.Model):
         for rec in self:
             rec.period = rec.document_date.strftime("%m/%Y") if rec.document_date else False
 
-    @api.depends("line_ids.amount", "wht_ids.wht_amount", "wht_ids.penalty_amount")
+    @api.depends(
+        "line_ids.amount",
+        "line_ids.include_in_payment",
+        "wht_ids.wht_amount",
+        "wht_ids.penalty_amount",
+    )
     def _compute_amounts(self):
         for rec in self:
-            rec.amount_untaxed = sum(rec.line_ids.mapped("amount"))
+            rec.amount_untaxed = rec._vpk_selected_amount()
             rec.amount_wht = sum(rec.wht_ids.mapped("wht_amount"))
             rec.amount_penalty = sum(rec.wht_ids.mapped("penalty_amount"))
             rec.amount_net = rec.amount_untaxed - rec.amount_wht - rec.amount_penalty
+
+    def _vpk_selected_lines(self):
+        self.ensure_one()
+        return self.line_ids.filtered(lambda line: line.include_in_payment)
+
+    def _vpk_selected_amount(self):
+        self.ensure_one()
+        return sum(self._vpk_selected_lines().mapped("amount"))
 
     @api.onchange("company_id")
     def _onchange_company_id(self):
@@ -276,6 +326,112 @@ class GfmisDocument(models.Model):
         else:
             self.partner_bank_id = False
 
+    @api.model
+    def _vpk_wht_person_type(self, partner):
+        if partner and not partner.is_company:
+            return "individual"
+        return "company"
+
+    @api.model
+    def _prepare_wht_commands(self, base_amount, partner=None, currency=None):
+        base = base_amount or 0.0
+        if base <= 0:
+            return []
+        currency = currency or self.env.company.currency_id
+        return [
+            (
+                0,
+                0,
+                {
+                    "person_type": self._vpk_wht_person_type(partner),
+                    "wht_base": base,
+                    "wht_amount": currency.round(base * self._VPK_WHT_RATE),
+                    "note": self._VPK_WHT_NOTE,
+                },
+            )
+        ]
+
+    def _vpk_apply_default_wht_onchange(self):
+        self.ensure_one()
+        auto = self.wht_ids.filtered(lambda rec: (rec.note or "") == self._VPK_WHT_NOTE)
+        others = self.wht_ids - auto
+        if others.filtered(lambda rec: rec.wht_amount or rec.wht_base) and not auto:
+            return
+        commands = self._prepare_wht_commands(
+            self._vpk_selected_amount(),
+            self.partner_id,
+            self.currency_id,
+        )
+        keep = [
+            (
+                0,
+                0,
+                {
+                    "person_type": line.person_type,
+                    "wht_base": line.wht_base,
+                    "wht_amount": line.wht_amount,
+                    "penalty_type": line.penalty_type,
+                    "penalty_base": line.penalty_base,
+                    "penalty_amount": line.penalty_amount,
+                    "note": line.note,
+                },
+            )
+            for line in others
+        ]
+        self.wht_ids = commands + keep
+
+    def _vpk_sync_default_wht(self):
+        """ปรับหักภาษี ณ ที่จ่าย 1% ตามยอดบรรทัดที่เลือกเบิก."""
+        for rec in self:
+            if rec.doc_class != "request" or rec.state != "draft":
+                continue
+            auto = rec.wht_ids.filtered(lambda item: (item.note or "") == rec._VPK_WHT_NOTE)
+            custom = (rec.wht_ids - auto).filtered(lambda item: item.wht_amount or item.wht_base)
+            if custom and not auto:
+                continue
+            commands = rec._prepare_wht_commands(
+                rec._vpk_selected_amount(),
+                rec.partner_id,
+                rec.currency_id,
+            )
+            if auto:
+                if commands:
+                    auto[:1].write(commands[0][2])
+                    extra = auto[1:]
+                    if extra:
+                        extra.unlink()
+                else:
+                    auto.unlink()
+            elif commands:
+                rec.write({"wht_ids": commands})
+
+    def _vpk_ensure_default_wht(self):
+        self._vpk_sync_default_wht()
+
+    @api.model
+    def _vpk_backfill_default_wht(self):
+        docs = self.search(
+            [
+                ("doc_class", "=", "request"),
+                ("state", "=", "draft"),
+                ("wht_ids", "=", False),
+            ]
+        )
+        docs._vpk_ensure_default_wht()
+
+    @api.onchange("purchase_id")
+    def _onchange_purchase_id(self):
+        order = self.purchase_id
+        if not order:
+            return
+        if not self.partner_id:
+            self.partner_id = order.partner_id
+        if not self.reference:
+            self.reference = order.name
+        if not self.line_ids:
+            self.line_ids = self._prepare_lines_from_purchase(order)
+        self._vpk_apply_default_wht_onchange()
+
     @api.onchange("invoice_id")
     def _onchange_invoice_id(self):
         invoice = self.invoice_id
@@ -288,6 +444,7 @@ class GfmisDocument(models.Model):
             self.document_date = invoice.invoice_date
         if not self.line_ids:
             self.line_ids = self._prepare_lines_from_invoice(invoice)
+        self._vpk_apply_default_wht_onchange()
 
     @api.model
     def _receipt_doc_number_from_invoice(self, invoice):
@@ -320,6 +477,7 @@ class GfmisDocument(models.Model):
                         "bill_number": invoice.ref or invoice.name or False,
                         "invoice_line_id": line.id,
                         "purchase_line_id": line.purchase_line_id.id,
+                        "include_in_payment": True,
                     },
                 )
             )
@@ -334,7 +492,9 @@ class GfmisDocument(models.Model):
             vals.setdefault("disbursing_unit_code", company.gfmis_disbursing_unit_code)
             if vals.get("name", "/") == "/":
                 vals["name"] = self.env["ir.sequence"].next_by_code("gfmis.document") or "/"
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        records._vpk_ensure_default_wht()
+        return records
 
     @api.constrains("form_type_id", "purchase_id", "gfmis_po_number")
     def _check_requires_po(self):
@@ -351,32 +511,217 @@ class GfmisDocument(models.Model):
             if rec.state not in allowed:
                 raise UserError(_("ไม่สามารถทำรายการนี้ในสถานะ %s") % rec.state)
 
+    def _vpk_accepted_wa(self):
+        self.ensure_one()
+        order = self.purchase_id
+        if order and "wa_ids" in order._fields:
+            return order.wa_ids.filtered(lambda rec: rec.state == "accept")[:1]
+        return self.env["work.acceptance"] if "work.acceptance" in self.env else False
+
+    def _vpk_bill_expense_account(self, product=None):
+        self.ensure_one()
+        if product:
+            accounts = product.product_tmpl_id.with_company(self.company_id)._get_product_accounts()
+            if accounts.get("expense"):
+                return accounts["expense"].id
+        journal = self.env["account.journal"].search(
+            [("type", "=", "purchase"), ("company_id", "=", self.company_id.id)],
+            limit=1,
+        )
+        if journal.default_account_id:
+            return journal.default_account_id.id
+        Account = self.env["account.account"]
+        domain = [("account_type", "=", "expense")]
+        if "company_ids" in Account._fields:
+            domain.append(("company_ids", "in", [self.company_id.id]))
+        elif "company_id" in Account._fields:
+            domain.append(("company_id", "=", self.company_id.id))
+        account = Account.search(domain, limit=1)
+        if not account:
+            raise UserError(_("ไม่พบบัญชีค่าใช้จ่ายสำหรับสร้างใบแจ้งหนี้ กรุณาตรวจสอบผังบัญชี"))
+        return account.id
+
+    def _vpk_prepare_bill_line_vals(self, line):
+        self.ensure_one()
+        qty = line.quantity or 1.0
+        price = line.price_unit
+        if not price and qty:
+            price = (line.amount or 0.0) / qty
+        po_line = line.purchase_line_id
+        if po_line:
+            vals = po_line._prepare_account_move_line()
+            vals.update({
+                "name": line.name or vals.get("name") or "/",
+                "quantity": qty,
+                "price_unit": price,
+            })
+            return vals
+        return {
+            "name": line.name or "/",
+            "quantity": qty,
+            "price_unit": price,
+            "display_type": "product",
+            "account_id": self._vpk_bill_expense_account(),
+        }
+
+    def _vpk_ensure_vendor_bill(self):
+        """สร้างใบแจ้งหนี้ผู้ขายจากบรรทัดที่เลือกเบิก ถ้ายังไม่มีใบแจ้งหนี้ผูกไว้"""
+        self.ensure_one()
+        if self.doc_class != "request":
+            return self.invoice_id
+        if self.invoice_id and self.invoice_id.state != "cancel":
+            return self.invoice_id
+        linked = self._vpk_selected_lines().mapped("invoice_line_id").move_id.filtered(
+            lambda move: move.move_type in ("in_invoice", "in_refund") and move.state != "cancel"
+        )
+        if linked:
+            self.invoice_id = linked[:1]
+            return self.invoice_id
+        return self._vpk_create_vendor_bill()
+
+    def _vpk_create_vendor_bill(self):
+        self.ensure_one()
+        selected = self._vpk_selected_lines()
+        if not selected:
+            raise UserError(_("กรุณาเลือกบรรทัดที่จะเบิกอย่างน้อย 1 รายการ"))
+        wa = self._vpk_accepted_wa()
+        prepare_doc = self.with_context(wa_id=wa.id) if wa else self
+        vals = {
+            "move_type": "in_invoice",
+            "partner_id": self.partner_id.id,
+            "invoice_date": self.document_date,
+            "date": self.posting_date or self.document_date,
+            "ref": self.reference or self.name,
+            "invoice_origin": " / ".join(part for part in (self.purchase_id.name, self.name) if part),
+            "company_id": self.company_id.id,
+            "currency_id": self.currency_id.id,
+            "narration": self.description or False,
+            "invoice_line_ids": [
+                Command.create(prepare_doc._vpk_prepare_bill_line_vals(line)) for line in selected
+            ],
+        }
+        if self.partner_bank_id:
+            vals["partner_bank_id"] = self.partner_bank_id.id
+        if wa and "wa_id" in self.env["account.move"]._fields:
+            vals["wa_id"] = wa.id
+            if wa.name:
+                vals["ref"] = "%s / %s" % (vals["ref"], wa.name) if vals.get("ref") else wa.name
+        try:
+            move = self.env["account.move"].with_company(self.company_id).with_context(
+                default_move_type="in_invoice",
+                wa_id=wa.id if wa else False,
+            ).create(vals)
+        except (UserError, ValidationError):
+            raise
+        except Exception as err:
+            raise UserError(_("ไม่สามารถสร้างใบแจ้งหนี้ได้: %s") % err) from err
+        bill_lines = move.invoice_line_ids.filtered(lambda aml: aml.display_type == "product")
+        for gf_line, bill_line in zip(selected, bill_lines):
+            gf_line.write({
+                "invoice_line_id": bill_line.id,
+                "bill_number": gf_line.bill_number or move.ref or move.name,
+            })
+        self.invoice_id = move
+        return move
+
     def action_record_gfmis(self):
-        self._ensure_draftish(("draft",))
+        """สร้างใบแจ้งหนี้ฉบับร่าง (ยังไม่ post) แล้วส่งรออนุมัติขอเบิก"""
+        self._ensure_draftish(("draft", "recorded"))
         for rec in self:
-            if not rec.line_ids and rec.doc_class == "request":
-                raise UserError(_("กรุณาบันทึกรายการขอเบิกอย่างน้อย 1 บรรทัด"))
-            rec.state = "recorded"
-            rec.message_post(
-                body=_("บันทึกเอกสารในกระบวนการ GFMIS แล้ว กรอกเลขที่เอกสาร GFMIS เมื่อระบบออกเลขให้")
-            )
+            if rec.doc_class == "request" and not rec._vpk_selected_lines():
+                raise UserError(_("กรุณาเลือกบรรทัดที่จะเบิกอย่างน้อย 1 รายการ"))
+            bill = rec._vpk_ensure_vendor_bill()
+            if bill and bill.state == "posted":
+                raise UserError(
+                    _("ใบแจ้งหนี้ %s ลงรายการแล้ว กรุณาใช้ใบแจ้งหนี้ฉบับร่าง")
+                    % (bill.name or bill.display_name)
+                )
+            rec.state = "wait_approve_request"
+            if bill:
+                rec.message_post(
+                    body=_(
+                        "สร้างใบแจ้งหนี้ฉบับร่าง %s แล้ว ส่งรออนุมัติขอเบิก (อม.01)"
+                    )
+                    % (bill.name or bill.ref or bill.display_name)
+                )
+            else:
+                rec.message_post(body=_("ส่งรออนุมัติขอเบิก (อม.01)"))
 
     def action_submit_approve(self):
-        self._ensure_draftish(("recorded",))
-        self.write({"state": "wait_approve_request"})
-        self.message_post(body=_("ส่งรออนุมัติขอเบิก (อม.01)"))
+        """รองรับเอกสารเก่าที่ค้างสถานะบันทึก — ไปรออนุมัติขอเบิก"""
+        return self.action_record_gfmis()
 
     def action_approve_request(self):
-        """อม.01 อนุมัติเอกสารขอเบิก"""
+        """อม.01 อนุมัติเอกสารขอเบิก และ post ใบแจ้งหนี้"""
         self._ensure_draftish(("wait_approve_request",))
-        self.write({"state": "wait_approve_pay"})
-        self.message_post(body=_("อนุมัติขอเบิก (อม.01) แล้ว"))
+        for rec in self:
+            bill = rec.invoice_id
+            if not bill or bill.state == "cancel":
+                bill = rec._vpk_ensure_vendor_bill()
+            if bill and bill.state == "draft":
+                try:
+                    bill.action_post()
+                except (UserError, ValidationError):
+                    raise
+                except Exception as err:
+                    raise UserError(_("ไม่สามารถลงรายการใบแจ้งหนี้ได้: %s") % err) from err
+            rec.state = "wait_approve_pay"
+            if bill:
+                rec.message_post(
+                    body=_("อนุมัติขอเบิก (อม.01) แล้ว และลงรายการใบแจ้งหนี้ %s")
+                    % (bill.name or bill.display_name)
+                )
+            else:
+                rec.message_post(body=_("อนุมัติขอเบิก (อม.01) แล้ว"))
 
     def action_approve_pay(self):
         """อม.02 อนุมัติเอกสารเพื่อสั่งจ่าย"""
         self._ensure_draftish(("wait_approve_pay",))
         self.write({"state": "sent_treasury"})
         self.message_post(body=_("อนุมัติสั่งจ่าย (อม.02) แล้ว ส่งกรมบัญชีกลาง/คลังจังหวัด"))
+
+    def action_reject_approval(self, reason, from_state=None):
+        """ไม่อนุมัติ อม.01 / อม.02 พร้อมเหตุผล"""
+        reason = (reason or "").strip()
+        if not reason:
+            raise UserError(_("กรุณาระบุเหตุผลไม่อนุมัติ"))
+        for rec in self:
+            state = from_state or rec.state
+            if state == "wait_approve_request":
+                rec._ensure_draftish(("wait_approve_request",))
+                had_bill = bool(rec.invoice_id)
+                rec._vpk_unlink_draft_bill()
+                rec.state = "draft"
+                body = _("ไม่อนุมัติขอเบิก (อม.01): %s") % reason
+                if had_bill:
+                    body = _("%s และลบใบแจ้งหนี้ฉบับร่าง") % body
+                rec.message_post(body=body)
+            elif state == "wait_approve_pay":
+                rec._ensure_draftish(("wait_approve_pay",))
+                rec.state = "wait_approve_request"
+                rec.message_post(body=_("ไม่อนุมัติสั่งจ่าย (อม.02): %s") % reason)
+            else:
+                raise UserError(
+                    _("ไม่อนุมัติได้เฉพาะรายการที่รออนุมัติขอเบิก (อม.01) หรือรออนุมัติสั่งจ่าย (อม.02)")
+                )
+
+    def action_open_approve_wizard(self):
+        docs = self or self.browse(self.env.context.get("active_ids") or [])
+        if not docs:
+            raise UserError(_("กรุณาเลือกรายการใบเบิกเงินอย่างน้อย 1 รายการ"))
+        self.env["gfmis.document.approve.wizard"]._vpk_check_same_approvable_state(docs)
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("อนุมัติ / ไม่อนุมัติ"),
+            "res_model": "gfmis.document.approve.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "active_ids": docs.ids,
+                "active_id": docs[:1].id,
+                "default_document_ids": [(6, 0, docs.ids)],
+            },
+        }
 
     def action_mark_paid(self):
         self._ensure_draftish(("sent_treasury", "wait_agency_pay"))
@@ -400,9 +745,30 @@ class GfmisDocument(models.Model):
         self._ensure_draftish(("draft", "recorded", "wait_approve_request", "wait_approve_pay"))
         self.write({"state": "cancelled"})
 
+    def _vpk_unlink_draft_bill(self):
+        """ตัดลิงก์และลบใบแจ้งหนี้ฉบับร่างที่สร้างจากใบเบิก"""
+        for rec in self:
+            bill = rec.invoice_id
+            rec.line_ids.write({"invoice_line_id": False, "bill_number": False})
+            if not bill:
+                continue
+            rec.invoice_id = False
+            if bill.state == "posted":
+                continue
+            if bill.state not in ("draft", "cancel"):
+                bill.button_cancel()
+            if bill.state in ("draft", "cancel"):
+                bill.with_context(force_delete=True).unlink()
+
     def action_draft(self):
-        self._ensure_draftish(("cancelled", "recorded"))
+        self._ensure_draftish(("cancelled", "recorded", "wait_approve_request"))
+        had_bill = bool(self.filtered("invoice_id"))
+        self._vpk_unlink_draft_bill()
         self.write({"state": "draft"})
+        if had_bill:
+            self.message_post(body=_("ถอยเป็นร่างแล้ว และลบใบแจ้งหนี้ฉบับร่างที่สร้างจากใบเบิก"))
+        else:
+            self.message_post(body=_("ถอยเป็นร่างแล้ว"))
 
     def action_open_invoice(self):
         self.ensure_one()
@@ -415,6 +781,230 @@ class GfmisDocument(models.Model):
             "view_mode": "form",
             "target": "current",
         }
+
+    @api.model
+    def _vpk_vat_digit_list(self, vat):
+        digits = [c for c in (vat or "") if c.isdigit()]
+        digits = (digits + [""] * 13)[:13]
+        return digits
+
+    @api.model
+    def _vpk_split_baht_satang(self, amount):
+        value = abs(amount or 0.0)
+        baht = int(value)
+        satang = int(round((value - baht) * 100))
+        if satang >= 100:
+            baht += satang // 100
+            satang = satang % 100
+        return baht, satang
+
+    def _vpk_partner_address_text(self, partner):
+        partner = partner.sudo()
+        parts = [
+            partner.street or "",
+            partner.street2 or "",
+            partner.city or "",
+            partner.state_id.name if partner.state_id else "",
+            partner.zip or "",
+        ]
+        return " ".join(part for part in parts if part).strip()
+
+    def _vpk_amount_to_thai_text(self, amount):
+        self.ensure_one()
+        currency = self.currency_id or self.company_id.currency_id
+        try:
+            text = currency.with_context(lang="th_TH").amount_to_text(amount or 0.0)
+        except Exception:
+            text = currency.amount_to_text(amount or 0.0)
+        return (text or "").strip()
+
+    def _vpk_ensure_wht_cert_number(self):
+        today = fields.Date.context_today(self)
+        year_be = today.year + 543
+        for rec in self:
+            if rec.wht_cert_number:
+                continue
+            seq = self.env["ir.sequence"].next_by_code("gfmis.wht.cert") or str(rec.id)
+            rec.wht_cert_number = "%s/%s" % (seq, year_be)
+
+    def action_print_wht_cert(self):
+        docs = self.filtered(lambda rec: rec.doc_class == "request")
+        if not docs:
+            raise UserError(_("พิมพ์ใบหักภาษี ณ ที่จ่ายได้เฉพาะเอกสารขอเบิกเงิน"))
+        if docs.filtered(lambda rec: not rec.wht_ids and not rec.amount_wht):
+            raise UserError(_("ไม่พบยอดภาษีหัก ณ ที่จ่ายในเอกสารที่เลือก"))
+        docs._vpk_ensure_wht_cert_number()
+        return self.env.ref("vpk_gfmis.action_report_gfmis_wht_cert").report_action(docs)
+
+    @api.model
+    def _vpk_report_font_css(self):
+        """TH Sarabun New แบบ data-URI ให้ wkhtmltopdf ฝังฟอนต์ราชการได้โดยไม่ต้องโหลดผ่านเครือข่าย"""
+        global _REPORT_FONT_CSS
+        if _REPORT_FONT_CSS is None:
+            module_path = get_module_path("vpk_tier_validation")
+            path = Path(module_path) / "static/src/scss/thai_fonts_embedded.scss" if module_path else None
+            css = path.read_text(encoding="utf-8") if path and path.is_file() else ""
+            # ไฟล์ตัวหนาทำให้สระ/วรรณยุกต์เยื้องในโปรแกรมเปิด PDF บางตัว ใช้เฉพาะตัวปกติ
+            css = re.sub(
+                r'@font-face\s*\{[^}]*"THSarabunNew-Bold"[^}]*\}',
+                "",
+                css,
+            )
+            _REPORT_FONT_CSS = Markup(css)
+        return _REPORT_FONT_CSS
+
+    @api.model
+    def _vpk_wht_cert_garuda_src(self):
+        module_path = get_module_path("vpk_gfmis")
+        if not module_path:
+            return ""
+        image_path = Path(module_path) / "static" / "src" / "img" / "garuda.jpeg"
+        if not image_path.is_file():
+            return ""
+        encoded = base64.b64encode(image_path.read_bytes()).decode("ascii")
+        return "data:image/jpeg;base64,%s" % encoded
+
+    def _vpk_wht_cert_report_values(self):
+        """ข้อมูลสำหรับรายงานใบรับรองการหักภาษี ณ ที่จ่าย (แบบ 4235)"""
+        self.ensure_one()
+        if not self.wht_cert_number:
+            self._vpk_ensure_wht_cert_number()
+        company = self.company_id
+        company_partner = company.partner_id
+        pay_date = self.transfer_date or self.posting_date or self.document_date
+        company_wht = self.wht_ids.filtered(lambda line: line.person_type == "company")
+        individual_wht = self.wht_ids.filtered(lambda line: line.person_type == "individual")
+        if not company_wht and not individual_wht and self.amount_wht:
+            # fallback จากยอดรวมเมื่อยังไม่มีบรรทัดย่อย
+            if self._vpk_wht_person_type(self.partner_id) == "individual":
+                individual_wht_base = self.amount_untaxed
+                individual_wht_tax = self.amount_wht
+                company_wht_base = company_wht_tax = 0.0
+            else:
+                company_wht_base = self.amount_untaxed
+                company_wht_tax = self.amount_wht
+                individual_wht_base = individual_wht_tax = 0.0
+        else:
+            company_wht_base = sum(company_wht.mapped("wht_base"))
+            company_wht_tax = sum(company_wht.mapped("wht_amount"))
+            individual_wht_base = sum(individual_wht.mapped("wht_base"))
+            individual_wht_tax = sum(individual_wht.mapped("wht_amount"))
+        penalty_base = sum(self.wht_ids.mapped("penalty_base")) or 0.0
+        penalty_amount = self.amount_penalty or sum(self.wht_ids.mapped("penalty_amount"))
+        total_tax = company_wht_tax + individual_wht_tax + penalty_amount
+        company_base_b, company_base_s = self._vpk_split_baht_satang(company_wht_base)
+        company_tax_b, company_tax_s = self._vpk_split_baht_satang(company_wht_tax)
+        ind_base_b, ind_base_s = self._vpk_split_baht_satang(individual_wht_base)
+        ind_tax_b, ind_tax_s = self._vpk_split_baht_satang(individual_wht_tax)
+        pen_base_b, pen_base_s = self._vpk_split_baht_satang(penalty_base)
+        pen_tax_b, pen_tax_s = self._vpk_split_baht_satang(penalty_amount)
+        total_base = company_wht_base + individual_wht_base + penalty_base
+        total_base_b, total_base_s = self._vpk_split_baht_satang(total_base)
+        total_tax_b, total_tax_s = self._vpk_split_baht_satang(total_tax)
+        income_type = (self.wht_income_type or self.description or "ค่าสินค้า/บริการ").strip()
+        disbursement_no = self.gfmis_doc_number or self.dika_number or self.name or ""
+        doc_date = self.document_date
+        purchase = self.purchase_id.sudo()
+        contract_date = purchase.date_approve or purchase.date_order if purchase else False
+        is_individual = self._vpk_wht_person_type(self.partner_id) == "individual"
+        partner_vat = self._vpk_vat_digit_list(self.partner_id.vat)
+        empty_digits = [""] * 13
+        return {
+            "garuda_src": self._vpk_wht_cert_garuda_src(),
+            "company_name": company.name or "",
+            "company_vat_digits": self._vpk_vat_digit_list(company_partner.vat or company.vat),
+            "company_address": self._vpk_partner_address_text(company_partner),
+            "partner_name": self.partner_id.name or "",
+            "partner_vat_digits": empty_digits if is_individual else partner_vat,
+            "partner_citizen_digits": partner_vat if is_individual else empty_digits,
+            "partner_address": self._vpk_partner_address_text(self.partner_id),
+            "cert_number": self.wht_cert_number or "",
+            "disbursement_number": disbursement_no,
+            "doc_day": doc_date.day if doc_date else "",
+            "doc_month": THAI_MONTHS[doc_date.month] if doc_date else "",
+            "doc_year_be": (doc_date.year + 543) if doc_date else "",
+            "contract_number": purchase.name if purchase else "",
+            "contract_day": contract_date.day if contract_date else "",
+            "contract_month": THAI_MONTHS[contract_date.month] if contract_date else "",
+            "contract_year_be": (contract_date.year + 543) if contract_date else "",
+            "pay_date_text": (
+                "%d/%d/%d" % (pay_date.day, pay_date.month, pay_date.year + 543) if pay_date else ""
+            ),
+            "income_type": income_type,
+            "company_base_baht": "{:,}".format(company_base_b) if company_wht_base else "",
+            "company_base_satang": "%02d" % company_base_s if company_wht_base else "",
+            "company_tax_baht": "{:,}".format(company_tax_b) if company_wht_tax else "",
+            "company_tax_satang": "%02d" % company_tax_s if company_wht_tax else "",
+            "individual_base_baht": "{:,}".format(ind_base_b) if individual_wht_base else "",
+            "individual_base_satang": "%02d" % ind_base_s if individual_wht_base else "",
+            "individual_tax_baht": "{:,}".format(ind_tax_b) if individual_wht_tax else "",
+            "individual_tax_satang": "%02d" % ind_tax_s if individual_wht_tax else "",
+            "penalty_base_baht": "{:,}".format(pen_base_b) if penalty_amount or penalty_base else "",
+            "penalty_base_satang": "%02d" % pen_base_s if penalty_amount or penalty_base else "",
+            "penalty_tax_baht": "{:,}".format(pen_tax_b) if penalty_amount else "",
+            "penalty_tax_satang": "%02d" % pen_tax_s if penalty_amount else "",
+            "total_base_baht": "{:,}".format(total_base_b) if total_base else "",
+            "total_base_satang": "%02d" % total_base_s if total_base else "",
+            "total_tax_baht": "{:,}".format(total_tax_b) if total_tax else "",
+            "total_tax_satang": "%02d" % total_tax_s if total_tax else "",
+            "tax_amount_text": self._vpk_amount_to_thai_text(total_tax),
+            "signer_name": company.gfmis_wht_signer_name or "",
+            "signer_position": company.gfmis_wht_signer_position or "",
+        }
+
+    @api.model
+    def _prepare_lines_from_purchase(self, order):
+        wa = False
+        if "wa_ids" in order._fields:
+            wa = order.wa_ids.filtered(lambda rec: rec.state == "accept")[:1]
+        receipt = (wa.name or "").strip() if wa else ""
+        if receipt in ("New", "/"):
+            receipt = ""
+        lines = []
+        for line in order.order_line.filtered(lambda item: not item.display_type):
+            lines.append(
+                (
+                    0,
+                    0,
+                    {
+                        "name": line.name,
+                        "quantity": line.product_qty,
+                        "price_unit": line.price_unit,
+                        "amount": line.price_subtotal,
+                        "receipt_doc_number": receipt or False,
+                        "purchase_line_id": line.id,
+                        "include_in_payment": True,
+                    },
+                )
+            )
+        return lines
+
+    @api.model
+    def action_create_from_purchase(self, order):
+        order.ensure_one()
+        form = self.env["gfmis.form.type"].search([("code", "=", "ขบ.01")], limit=1)
+        if not form:
+            form = self.env["gfmis.form.type"].search(
+                [("doc_class", "=", "request"), ("requires_po", "=", True)],
+                limit=1,
+            )
+        if not form:
+            form = self.env["gfmis.form.type"].search([("doc_class", "=", "request")], limit=1)
+        if not form:
+            raise UserError(_("ไม่พบแบบฟอร์มขอเบิกเงิน"))
+        return self.create(
+            {
+                "doc_class": "request",
+                "form_type_id": form.id,
+                "partner_id": order.partner_id.id,
+                "purchase_id": order.id,
+                "reference": order.name,
+                "description": (order.name or "")[:99],
+                "line_ids": self._prepare_lines_from_purchase(order),
+                "payment_method": "direct",
+                "fund_type": "budget",
+            }
+        )
 
     @api.model
     def action_create_from_invoice(self, invoice):
@@ -494,6 +1084,11 @@ class GfmisDocumentLine(models.Model):
     budget_code = fields.Char(string="รหัสงบประมาณ")
     purchase_line_id = fields.Many2one("purchase.order.line", string="บรรทัด PO")
     invoice_line_id = fields.Many2one("account.move.line", string="บรรทัดใบแจ้งหนี้")
+    include_in_payment = fields.Boolean(
+        string="เบิก",
+        default=True,
+        help="เลือกบรรทัดที่จะรวมในใบเบิกเงินรอบนี้ หากส่งมอบยังไม่ครบให้ติ๊กเฉพาะรายการที่เบิกได้",
+    )
 
     group_amount = fields.Monetary(
         string="เป็นเงิน",
@@ -505,14 +1100,34 @@ class GfmisDocumentLine(models.Model):
         string="ค่าปรับ",
     )
 
-    @api.depends("document_id.line_ids.amount")
+    @api.depends("document_id.line_ids.amount", "document_id.line_ids.include_in_payment")
     def _compute_group_amount(self):
         for line in self:
-            line.group_amount = sum(line.document_id.line_ids.mapped("amount"))
+            document = line.document_id
+            line.group_amount = document._vpk_selected_amount() if document else 0.0
 
     @api.onchange("quantity", "price_unit")
     def _onchange_amount(self):
         self.amount = (self.quantity or 0.0) * (self.price_unit or 0.0)
+        if self.document_id:
+            self.document_id._vpk_apply_default_wht_onchange()
+
+    @api.onchange("include_in_payment", "amount")
+    def _onchange_include_in_payment(self):
+        if self.document_id:
+            self.document_id._vpk_apply_default_wht_onchange()
+
+    def write(self, vals):
+        res = super().write(vals)
+        if {"include_in_payment", "amount", "quantity", "price_unit"} & set(vals):
+            self.mapped("document_id")._vpk_sync_default_wht()
+        return res
+
+    def unlink(self):
+        documents = self.mapped("document_id")
+        res = super().unlink()
+        documents._vpk_sync_default_wht()
+        return res
 
     def action_export_gf_excel(self):
         if self:

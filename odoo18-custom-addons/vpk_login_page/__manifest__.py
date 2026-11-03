@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "VPK Login Page",
-    "version": "18.0.1.3.2",
+    "version": "18.0.1.3.4",
     "category": "Tools",
     "summary": "Full screen hospital branded login / signup / reset password page",
     "description": """

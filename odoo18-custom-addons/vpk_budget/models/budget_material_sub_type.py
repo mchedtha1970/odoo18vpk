@@ -15,6 +15,11 @@ class VpkBudgetMaterialSubType(models.Model):
         required=True,
         ondelete="restrict",
     )
+    product_categ_id = fields.Many2one(
+        comodel_name="product.category",
+        string="หมวดสินค้า",
+        help="ใช้หมวดสินค้านี้เลือกรายการแทนหมวดสินค้าของกลุ่มงบประมาณ",
+    )
     active = fields.Boolean(default=True)
     description = fields.Text(string="รายละเอียด")
 

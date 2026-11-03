@@ -9,6 +9,7 @@
                 <field name="code"/>
                 <field name="name"/>
                 <field name="budget_group_id"/>
+                <field name="product_categ_id" optional="show"/>
                 <field name="active"/>
             </list>
         </field>
@@ -32,6 +33,7 @@
                         <group>
                             <field name="budget_group_id"/>
                             <field name="code"/>
+                            <field name="product_categ_id" options="{'no_create': True}"/>
                         </group>
                         <group>
                             <field name="sequence"/>

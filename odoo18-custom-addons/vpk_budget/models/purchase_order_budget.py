@@ -341,4 +341,7 @@ class PurchaseOrderLine(models.Model):
                 res["account_id"] = accounts[:1].id
         if self.budget_line_id:
             res["budget_line_id"] = self.budget_line_id.id
+            analytic = self.budget_line_id.analytic_account_id
+            if analytic and not res.get("analytic_distribution"):
+                res["analytic_distribution"] = {str(analytic.id): 100}
         return res
