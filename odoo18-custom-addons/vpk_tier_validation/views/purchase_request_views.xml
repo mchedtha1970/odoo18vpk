@@ -112,7 +112,7 @@
                 <button
                     name="action_send_to_procurement"
                     type="object"
-                    string="ส่งพัสดุ"
+                    string="ส่งจัดซื้อ"
                     class="oe_highlight"
                     invisible="state != 'draft'"
                 />
@@ -149,7 +149,7 @@
             <filter name="state_draft" position="after">
                 <filter
                     name="state_sent_to_procurement"
-                    string="ส่งพัสดุแล้ว"
+                    string="ส่งจัดซื้อแล้ว"
                     domain="[('state','=','sent_to_procurement')]"
                     help="ใบขอซื้อที่หน่วยงานส่งให้พัสดุแล้ว"
                 />
@@ -174,7 +174,7 @@
                 ยังไม่มีใบขอซื้อที่หน่วยงานส่งให้พัสดุ
             </p>
             <p>
-                เมื่อหน่วยงานกดปุ่ม ส่งพัสดุ ใบขอซื้อจะปรากฏที่นี่ สถานะ ส่งพัสดุแล้ว
+                เมื่อหน่วยงานกดปุ่ม ส่งจัดซื้อ ใบขอซื้อจะปรากฏที่นี่ สถานะ ส่งจัดซื้อแล้ว
             </p>
         </field>
     </record>

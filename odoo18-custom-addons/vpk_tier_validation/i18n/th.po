@@ -75,11 +75,11 @@ msgstr "ใบขอซื้อจากหน่วยงาน"
 
 #. module: vpk_tier_validation
 #: model_terms:ir.ui.view,arch_db:vpk_tier_validation.view_purchase_request_form_send_to_procurement
-msgid "ส่งพัสดุ"
-msgstr "ส่งพัสดุ"
+msgid "ส่งจัดซื้อ"
+msgstr "ส่งจัดซื้อ"
 
 #. module: vpk_tier_validation
 #: model:ir.model.fields.selection,name:vpk_tier_validation.selection__purchase_request__state__sent_to_procurement
 #: model_terms:ir.ui.view,arch_db:vpk_tier_validation.view_purchase_request_search_send_to_procurement
-msgid "ส่งพัสดุแล้ว"
-msgstr "ส่งพัสดุแล้ว"
+msgid "ส่งจัดซื้อแล้ว"
+msgstr "ส่งจัดซื้อแล้ว"

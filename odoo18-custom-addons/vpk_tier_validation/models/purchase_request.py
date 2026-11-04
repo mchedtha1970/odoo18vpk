@@ -20,7 +20,7 @@ class PurchaseRequest(models.Model):
 
     state = fields.Selection(
         selection_add=[
-            ("sent_to_procurement", "ส่งพัสดุแล้ว"),
+            ("sent_to_procurement", "ส่งจัดซื้อแล้ว"),
             ("to_approve",),
         ],
         ondelete={"sent_to_procurement": "set default"},
@@ -87,7 +87,7 @@ class PurchaseRequest(models.Model):
         ).button_approved()
 
     def _compute_need_validation(self):
-        """ขออนุมัติได้หลังหน่วยงานกดส่งพัสดุแล้วเท่านั้น"""
+        """ขออนุมัติได้หลังหน่วยงานกดส่งจัดซื้อแล้วเท่านั้น"""
         super()._compute_need_validation()
         for rec in self:
             if rec.state == "draft":
@@ -101,20 +101,20 @@ class PurchaseRequest(models.Model):
                 rec.is_editable = False
 
     def action_send_to_procurement(self):
-        """หน่วยงานส่งใบขอซื้อให้พัสดุ เปลี่ยนสถานะเป็น ส่งพัสดุแล้ว และจองงบประมาณ"""
+        """หน่วยงานส่งใบขอซื้อให้พัสดุ เปลี่ยนสถานะเป็น ส่งจัดซื้อแล้ว และจองงบประมาณ"""
         for rec in self:
             if rec.state != "draft":
-                raise UserError(_("ส่งพัสดุได้เฉพาะใบขอซื้อสถานะร่าง"))
+                raise UserError(_("ส่งจัดซื้อได้เฉพาะใบขอซื้อสถานะร่าง"))
             active_lines = rec.line_ids.filtered(
                 lambda line: not line.cancelled and line.product_qty
             )
             if not active_lines:
-                raise UserError(_("กรุณาเพิ่มรายการสินค้าก่อนส่งพัสดุ"))
+                raise UserError(_("กรุณาเพิ่มรายการสินค้าก่อนส่งจัดซื้อ"))
             if (
                 "budget_check_state" in rec._fields
                 and rec.budget_check_state != "enough"
             ):
-                raise UserError(_("กรุณาเช็คงบประมาณให้ผ่านก่อนส่งพัสดุ"))
+                raise UserError(_("กรุณาเช็คงบประมาณให้ผ่านก่อนส่งจัดซื้อ"))
             if hasattr(rec, "_check_budget_available_before_submit"):
                 action = rec._check_budget_available_before_submit()
                 if isinstance(action, dict):

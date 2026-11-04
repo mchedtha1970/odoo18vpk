@@ -127,7 +127,7 @@ def load_flow(path):
         "committee": "คณะกรรมการ" in note_text,
         "committee_role": "ประธาน" if "ประธาน" in note_text else "คณะกรรมการ",
         "budget": "ตรวจสอบงบ" in note_text,
-        "send": "ส่งพัสดุ" in note_text,
+        "send": ("ส่งจัดซื้อ" in note_text or "ส่งพัสดุ" in note_text),
         "to_egp": "e-GP" in " ".join(procurement_notes),
         "procurement_user": "uat.procurement",
         "documents": documents,
@@ -271,7 +271,7 @@ async def check_budget(page):
     if "ฟิลด์ไม่ถูกต้อง" in text:
         raise RuntimeError(text)
     if "ไม่เพียงพอ" in text or "ไม่พอ" in text:
-        raise RuntimeError("งบประมาณไม่พอ จึงไม่ส่งพัสดุ: %s" % text)
+        raise RuntimeError("งบประมาณไม่พอ จึงไม่ส่งจัดซื้อ: %s" % text)
     await page.locator(".o_form_view").wait_for(state="visible")
     await page.wait_for_timeout(800)
 
@@ -449,7 +449,7 @@ async def create_purchase_request(page, order, products, steps):
     if steps["send"]:
         await page.locator('button[name="action_send_to_procurement"]').click()
         await page.wait_for_timeout(1200)
-        print("ส่งพัสดุแล้ว")
+        print("ส่งจัดซื้อแล้ว")
     return name
 
 

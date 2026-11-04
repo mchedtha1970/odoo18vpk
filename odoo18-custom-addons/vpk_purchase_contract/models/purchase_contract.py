@@ -273,6 +273,25 @@ class PurchaseContract(models.Model):
         currency_field="currency_id",
         store=True,
     )
+    source_request_id = fields.Many2one(
+        comodel_name="purchase.request",
+        string="PR e-bidding ต้นทาง",
+        related="requisition_id.purchase_request_id",
+        readonly=True,
+        help="ใบขอซื้อที่เปิดกระบวนการ e-GP จนได้สัญญานี้",
+    )
+    all_request_ids = fields.Many2many(
+        comodel_name="purchase.request",
+        string="ใบขอซื้อที่เกี่ยวข้อง",
+        compute="_compute_related_documents",
+        help="PR e-bidding ต้นทาง และ PR ที่เปิดตามสัญญานี้",
+    )
+    picking_ids = fields.Many2many(
+        comodel_name="stock.picking",
+        string="ใบรับสินค้า",
+        compute="_compute_related_documents",
+    )
+    picking_count = fields.Integer(compute="_compute_document_counts")
     purchase_request_count = fields.Integer(compute="_compute_document_counts")
     purchase_order_count = fields.Integer(compute="_compute_document_counts")
     vendor_bill_count = fields.Integer(compute="_compute_document_counts")
@@ -308,10 +327,34 @@ class PurchaseContract(models.Model):
             contract.amount_consumed = consumed
             contract.amount_remaining = (contract.amount_total or 0.0) - consumed
 
+    @api.depends(
+        "requisition_id.purchase_request_id",
+        "purchase_request_ids",
+        "purchase_order_ids.picking_ids",
+    )
+    def _compute_related_documents(self):
+        for contract in self:
+            sudo_contract = contract.sudo()
+            contract.all_request_ids = (
+                sudo_contract.requisition_id.purchase_request_id
+                | sudo_contract.purchase_request_ids
+            )
+            contract.picking_ids = sudo_contract.purchase_order_ids.filtered(
+                lambda order: order.state != "cancel"
+            ).mapped("picking_ids")
+
     def _compute_document_counts(self):
         for contract in self:
             sudo_contract = contract.sudo()
-            contract.purchase_request_count = len(contract.purchase_request_ids)
+            contract.purchase_request_count = len(
+                sudo_contract.requisition_id.purchase_request_id
+                | sudo_contract.purchase_request_ids
+            )
+            contract.picking_count = len(
+                sudo_contract.purchase_order_ids.filtered(
+                    lambda order: order.state != "cancel"
+                ).mapped("picking_ids")
+            )
             contract.purchase_order_count = len(
                 sudo_contract.purchase_order_ids.filtered(
                     lambda order: order.state != "cancel"
@@ -665,8 +708,18 @@ class PurchaseContract(models.Model):
             "type": "ir.actions.act_window",
             "res_model": "purchase.request",
             "view_mode": "list,form",
-            "domain": [("contract_id", "=", self.id)],
+            "domain": [("id", "in", self.sudo().all_request_ids.ids)],
             "context": {"default_contract_id": self.id},
+        }
+
+    def action_view_pickings(self):
+        self.ensure_one()
+        return {
+            "name": _("ใบรับสินค้าของสัญญา"),
+            "type": "ir.actions.act_window",
+            "res_model": "stock.picking",
+            "view_mode": "list,form",
+            "domain": [("id", "in", self.sudo().picking_ids.ids)],
         }
 
     def action_view_purchase_orders(self):

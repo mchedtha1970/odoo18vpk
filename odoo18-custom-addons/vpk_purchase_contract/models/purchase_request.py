@@ -74,6 +74,36 @@ class PurchaseRequest(models.Model):
             return False
         return super()._vpk_can_send_to_egp()
 
+    def _vpk_approve_unlimited_contract_request(self):
+        """PR ตามสัญญาไม่จำกัดจำนวนไม่เข้า e-GP จึงอนุมัติ PR หลังพัสดุตรวจสอบ
+        เพื่อให้ปุ่ม สร้าง PO ปรากฏ (ผู้ขาย/ราคาล็อกตามสัญญาแล้ว)."""
+        for request in self:
+            if (
+                not request.is_unlimited_contract
+                or request.state != "sent_to_procurement"
+                or not request.procurement_verified
+            ):
+                continue
+            result = request.with_user(self.env.user).sudo().with_context(
+                skip_validation_check=True,
+                skip_check_state_condition=True,
+                vpk_in_auto_confirm=True,
+            ).button_approved()
+            if isinstance(result, dict):
+                return result
+            request.message_post(
+                body=_(
+                    "ใบขอซื้อตามสัญญาไม่จำกัดจำนวน: อนุมัติใบขอซื้อหลังพัสดุตรวจสอบแล้ว "
+                    "ไม่ต้องส่งเข้า e-GP พร้อมให้กด สร้าง PO"
+                )
+            )
+        return None
+
+    def action_verify_procurement(self):
+        res = super().action_verify_procurement()
+        action = self._vpk_approve_unlimited_contract_request()
+        return action if isinstance(action, dict) else res
+
     @api.depends(
         "state",
         "to_create",
@@ -483,7 +513,7 @@ class PurchaseRequest(models.Model):
                 "message": _(
                     "ดึงราคาจากสัญญา %(contract)s แล้ว "
                     "ใส่จำนวนเฉพาะรายการที่ต้องการซื้อ ลบรายการที่ไม่ต้องการ "
-                    "จากนั้นตรวจสอบงบประมาณและส่งพัสดุ"
+                    "จากนั้นตรวจสอบงบประมาณและส่งจัดซื้อ"
                 )
                 % {"contract": request.contract_id.display_name},
                 "type": "success",
@@ -540,7 +570,7 @@ class PurchaseRequest(models.Model):
         message = _(
             "ดึง %(count)s รายการจากสัญญา %(contract)s คู่ค้า %(partner)s\n"
             "ราคาต่อหน่วยถูกล็อกตามสัญญา กรุณาใส่จำนวนที่ต้องการซื้อ "
-            "และลบรายการที่ไม่ต้องการ แล้วตรวจสอบงบประมาณก่อนส่งพัสดุ"
+            "และลบรายการที่ไม่ต้องการ แล้วตรวจสอบงบประมาณก่อนส่งจัดซื้อ"
         ) % {
             "count": len(contract.line_ids),
             "contract": contract.display_name,

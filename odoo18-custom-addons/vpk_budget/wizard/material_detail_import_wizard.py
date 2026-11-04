@@ -188,6 +188,7 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
         Detail = self.env["departmental.budget.request.material.detail"]
         to_create = []
         created = updated = skipped = errors = 0
+        no_qty = 0
         logs = []
         base_seq = max(request.material_detail_ids.mapped("sequence") or [0])
 
@@ -212,6 +213,7 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
             quantity = row.get("quantity")
             if quantity is None:
                 skipped += 1
+                no_qty += 1
                 continue
             if quantity is False:
                 errors += 1
@@ -266,6 +268,12 @@ class VpkBudgetMaterialDetailImportWizard(models.TransientModel):
             )
             created += 1
 
+        if no_qty:
+            logs.insert(
+                0,
+                _("ข้าม %s แถว เพราะคอลัมน์ ปริมาณที่ขอ ว่าง ให้กรอกปริมาณในไฟล์แล้วนำเข้าใหม่")
+                % no_qty,
+            )
         if to_create:
             Detail.with_context(skip_material_amount_sync=True).create(to_create)
         for post, subtype in targets:

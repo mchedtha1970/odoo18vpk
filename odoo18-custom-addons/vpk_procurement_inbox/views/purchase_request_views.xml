@@ -269,7 +269,7 @@
         </field>
     </record>
 
-    <!-- Form: แสดงผู้รับงาน + ปุ่มบนสถานะส่งพัสดุ -->
+    <!-- Form: แสดงผู้รับงาน + ปุ่มบนสถานะส่งจัดซื้อ -->
     <record id="view_purchase_request_form_procurement_inbox" model="ir.ui.view">
         <field name="name">purchase.request.form.procurement.inbox</field>
         <field name="model">purchase.request</field>
@@ -407,7 +407,7 @@
         <field name="search_view_id" ref="view_purchase_request_search_procurement_inbox"/>
         <field name="help" type="html">
             <p class="oe_view_nocontent_create">ยังไม่มีใบขอซื้อในกล่องรวม</p>
-            <p>เมื่อหน่วยงานกด ส่งพัสดุ ใบจะมาที่กล่องนี้ ให้หัวหน้าพัสดุตรวจสอบแล้วมอบหมายงานให้เจ้าหน้าที่ที่เกี่ยวข้อง</p>
+            <p>เมื่อหน่วยงานกด ส่งจัดซื้อ ใบจะมาที่กล่องนี้ ให้หัวหน้าพัสดุตรวจสอบแล้วมอบหมายงานให้เจ้าหน้าที่ที่เกี่ยวข้อง</p>
         </field>
     </record>
 

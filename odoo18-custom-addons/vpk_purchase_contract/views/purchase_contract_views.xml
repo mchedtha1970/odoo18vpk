@@ -67,6 +67,15 @@
                             <field name="purchase_order_count" widget="statinfo" string="ใบสั่งซื้อ"/>
                         </button>
                         <button
+                            name="action_view_pickings"
+                            type="object"
+                            class="oe_stat_button"
+                            icon="fa-truck"
+                            groups="stock.group_stock_user,purchase.group_purchase_user"
+                        >
+                            <field name="picking_count" widget="statinfo" string="ใบรับสินค้า"/>
+                        </button>
+                        <button
                             name="action_view_vendor_bills"
                             type="object"
                             class="oe_stat_button"
@@ -85,6 +94,7 @@
                     <group>
                         <group string="ข้อมูลสัญญา" name="contract_info">
                             <field name="requisition_id" readonly="state != 'draft'"/>
+                            <field name="source_request_id" invisible="not source_request_id"/>
                             <field name="egp_reference"/>
                             <field
                                 name="egp_consideration_type"
@@ -147,7 +157,7 @@
                             <div class="alert alert-info" role="alert" invisible="quantity_policy != 'unlimited'">
                                 สัญญาจะซื้อจะขายไม่จำกัดจำนวน ราคาต่อหน่วยในตารางนี้เป็นราคาที่ตกลงกับผู้ชนะ
                                 ปริมาณเป็นปริมาณอ้างอิงจากประกวดราคา
-                                เมื่อต้องการสินค้า หน่วยงานเปิดใบขอซื้อ เลือกสัญญานี้ ดึงรายการราคา แล้วใส่จำนวนที่ต้องการซื้อก่อนส่งพัสดุ
+                                เมื่อต้องการสินค้า หน่วยงานเปิดใบขอซื้อ เลือกสัญญานี้ ดึงรายการราคา แล้วใส่จำนวนที่ต้องการซื้อก่อนส่งจัดซื้อ
                             </div>
                             <field name="line_ids" readonly="state != 'draft'">
                                 <list editable="bottom">
@@ -208,13 +218,16 @@
                                     <field name="amount_remaining"/>
                                 </group>
                                 <group string="เอกสารที่เกี่ยวข้อง">
+                                    <field name="requisition_id" readonly="1"/>
+                                    <field name="source_request_id" invisible="not source_request_id"/>
                                     <field name="purchase_request_count"/>
                                     <field name="purchase_order_count"/>
+                                    <field name="picking_count" groups="stock.group_stock_user,purchase.group_purchase_user"/>
                                     <field name="vendor_bill_count"/>
                                 </group>
                             </group>
-                            <separator string="ใบขอซื้อ (PR)"/>
-                            <field name="purchase_request_ids" readonly="1">
+                            <separator string="ใบขอซื้อ (PR e-bidding ต้นทาง และ PR ตามสัญญา)"/>
+                            <field name="all_request_ids" readonly="1">
                                 <list>
                                     <field name="name"/>
                                     <field name="requested_by"/>
@@ -230,6 +243,16 @@
                                     <field name="partner_id"/>
                                     <field name="date_order"/>
                                     <field name="amount_total" sum="รวม"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                            <separator string="ใบรับสินค้า (Receipt)" groups="stock.group_stock_user,purchase.group_purchase_user"/>
+                            <field name="picking_ids" readonly="1" groups="stock.group_stock_user,purchase.group_purchase_user">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="origin"/>
+                                    <field name="partner_id"/>
+                                    <field name="scheduled_date"/>
                                     <field name="state"/>
                                 </list>
                             </field>

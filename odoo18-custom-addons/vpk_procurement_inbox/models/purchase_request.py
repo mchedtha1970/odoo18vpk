@@ -13,11 +13,11 @@ class PurchaseRequest(models.Model):
     _inherit = "purchase.request"
 
     sent_to_procurement_date = fields.Datetime(
-        string="วันที่ส่งพัสดุ",
+        string="วันที่ส่งจัดซื้อ",
         readonly=True,
         copy=False,
         index=True,
-        help="วันเวลาที่หน่วยงานกดส่งพัสดุ",
+        help="วันเวลาที่หน่วยงานกดส่งจัดซื้อ",
     )
     procurement_owner_id = fields.Many2one(
         "res.users",
@@ -44,7 +44,7 @@ class PurchaseRequest(models.Model):
         string="วันค้างที่พัสดุ",
         compute="_compute_days_waiting_procurement",
         store=True,
-        help="จำนวนวันนับจากวันที่ส่งพัสดุจนถึงวันนี้ (เฉพาะสถานะส่งพัสดุแล้ว)",
+        help="จำนวนวันนับจากวันที่ส่งจัดซื้อจนถึงวันนี้ (เฉพาะสถานะส่งจัดซื้อแล้ว)",
     )
     procurement_inbox_lane = fields.Selection(
         [
@@ -315,7 +315,7 @@ class PurchaseRequest(models.Model):
         self.ensure_one()
         if self.state not in ("sent_to_procurement", "to_approve"):
             raise UserError(
-                _("ส่งกลับให้แก้ไขได้เฉพาะใบขอซื้อสถานะ ส่งพัสดุแล้ว")
+                _("ส่งกลับให้แก้ไขได้เฉพาะใบขอซื้อสถานะ ส่งจัดซื้อแล้ว")
             )
         if hasattr(self, "_get_egp_requisitions") and self._get_egp_requisitions():
             raise UserError(
@@ -339,7 +339,7 @@ class PurchaseRequest(models.Model):
         for rec in self:
             if rec.state not in ("sent_to_procurement", "to_approve"):
                 raise UserError(
-                    _("ส่งกลับให้แก้ไขได้เฉพาะใบขอซื้อสถานะ ส่งพัสดุแล้ว")
+                    _("ส่งกลับให้แก้ไขได้เฉพาะใบขอซื้อสถานะ ส่งจัดซื้อแล้ว")
                 )
             rec.with_context(
                 vpk_keep_return_reason=True,
@@ -456,7 +456,7 @@ class PurchaseRequest(models.Model):
         user = self.env.user
         for rec in self:
             if rec.state != "sent_to_procurement":
-                raise UserError(_("รับงานได้เฉพาะใบขอซื้อสถานะ ส่งพัสดุแล้ว"))
+                raise UserError(_("รับงานได้เฉพาะใบขอซื้อสถานะ ส่งจัดซื้อแล้ว"))
             if rec.procurement_owner_id and rec.procurement_owner_id != user:
                 raise UserError(
                     _("ใบ %(name)s มี %(owner)s รับงานแล้ว")
@@ -473,7 +473,7 @@ class PurchaseRequest(models.Model):
         is_dispatcher = self._user_is_procurement_dispatcher()
         for rec in self:
             if rec.state != "sent_to_procurement":
-                raise UserError(_("คืนคิวได้เฉพาะใบขอซื้อสถานะ ส่งพัสดุแล้ว"))
+                raise UserError(_("คืนคิวได้เฉพาะใบขอซื้อสถานะ ส่งจัดซื้อแล้ว"))
             if (
                 rec.procurement_owner_id
                 and rec.procurement_owner_id != user

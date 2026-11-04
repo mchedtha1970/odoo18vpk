@@ -11,6 +11,8 @@
     "depends": [
         "purchase",
         "purchase_request",
+        "purchase_stock",
+        "vpk_procurement_inbox",
         "account",
         "vpk_budget",
         "vpk_purchase_agreement_egp",
