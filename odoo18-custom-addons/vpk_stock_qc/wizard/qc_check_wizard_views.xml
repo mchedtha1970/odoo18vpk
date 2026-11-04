@@ -8,6 +8,7 @@
                 <field name="current_check_id" invisible="1"/>
                 <field name="test_type" invisible="1"/>
                 <field name="quality_state" invisible="1"/>
+                <field name="change_mode" invisible="1"/>
                 <field name="uses_tolerance" invisible="1"/>
                 <field name="is_last_check" invisible="1"/>
                 <div class="d-flex justify-content-between">
@@ -22,7 +23,7 @@
                     <field name="note" readonly="1" invisible="not note"/>
                     <label for="measure" invisible="test_type != 'measure'"/>
                     <div invisible="test_type != 'measure'" class="o_row">
-                        <field name="measure" readonly="quality_state != 'none'"/>
+                        <field name="measure" readonly="quality_state != 'none' and not change_mode"/>
                         <field name="uom" readonly="1"/>
                     </div>
                     <field name="tolerance_min" readonly="1" invisible="not uses_tolerance"/>
@@ -30,11 +31,11 @@
                 </group>
                 <footer>
                     <button name="do_measure" type="object" string="ยืนยันค่า" class="btn-primary"
-                            invisible="quality_state != 'none' or not uses_tolerance"/>
+                            invisible="(quality_state != 'none' and not change_mode) or not uses_tolerance"/>
                     <button name="do_pass" type="object" string="ผ่าน" class="btn-success"
-                            invisible="quality_state != 'none' or uses_tolerance"/>
+                            invisible="(quality_state != 'none' and not change_mode) or uses_tolerance"/>
                     <button name="do_fail" type="object" string="ไม่ผ่าน" class="btn-danger"
-                            invisible="quality_state != 'none' or uses_tolerance"/>
+                            invisible="(quality_state != 'none' and not change_mode) or uses_tolerance"/>
                     <button name="action_previous" type="object" string="ก่อนหน้า" class="btn-secondary"
                             invisible="position_current_check == 1"/>
                     <button string="ปิด" special="cancel" class="btn-secondary"/>

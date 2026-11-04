@@ -35,6 +35,7 @@ class StockQcCheckWizard(models.TransientModel):
     uom = fields.Char(related="current_check_id.uom")
     uses_tolerance = fields.Boolean(compute="_compute_uses_tolerance")
     failure_message = fields.Char()
+    change_mode = fields.Boolean(string="เปลี่ยนผลตรวจ")
 
     @api.depends("current_check_id", "check_ids")
     def _compute_position(self):
@@ -54,17 +55,21 @@ class StockQcCheckWizard(models.TransientModel):
                 wizard.current_check_id and wizard.current_check_id._uses_tolerance()
             )
 
+    def _check(self):
+        """จุดควบคุมปัจจุบัน ถ้าเป็นโหมดเปลี่ยนผลให้แก้ใบที่บันทึกผลแล้วได้"""
+        return self.current_check_id.with_context(vpk_qc_change=self.change_mode)
+
     def do_pass(self):
-        self.current_check_id.do_pass()
+        self._check().do_pass()
         return self._next_window()
 
     def do_fail(self):
-        self.current_check_id.do_fail()
+        self._check().do_fail()
         return self._next_window()
 
     def do_measure(self):
         self.ensure_one()
-        check = self.current_check_id
+        check = self._check()
         if check._measure_passes():
             check.do_pass()
             return self._next_window()
@@ -93,7 +98,7 @@ class StockQcCheckWizard(models.TransientModel):
         }
 
     def confirm_fail(self):
-        self.current_check_id.do_fail()
+        self._check().do_fail()
         return self._next_window()
 
     def correct_measure(self):
@@ -125,6 +130,8 @@ class StockQcCheckWizard(models.TransientModel):
         index = ids.index(self.current_check_id.id)
         if index + 1 < len(ids):
             return self._window(self.env["vpk.stock.qc.check"].browse(ids[index + 1]))
+        if self.change_mode:
+            return {"type": "ir.actions.client", "tag": "soft_reload"}
         if self.env.context.get("vpk_qc_from_validate"):
             pickings = self.check_ids.qc_id.picking_id
             failed = self.check_ids.filtered(lambda check: check.quality_state == "fail")
@@ -150,6 +157,7 @@ class StockQcCheckWizard(models.TransientModel):
             "context": {
                 "default_check_ids": self.check_ids.ids,
                 "default_current_check_id": check.id,
+                "default_change_mode": self.change_mode,
                 "vpk_qc_from_validate": self.env.context.get("vpk_qc_from_validate"),
             },
         }

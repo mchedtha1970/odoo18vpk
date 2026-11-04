@@ -287,6 +287,7 @@ class StockQcCheck(models.Model):
     user_id = fields.Many2one(comodel_name="res.users", string="ผู้ตรวจ", copy=False)
     control_date = fields.Datetime(string="วันที่ตรวจ", copy=False)
     picking_id = fields.Many2one(related="qc_id.picking_id", store=True)
+    picking_state = fields.Selection(related="picking_id.state", string="สถานะใบรับ")
 
     def _uses_tolerance(self):
         self.ensure_one()
@@ -297,22 +298,56 @@ class StockQcCheck(models.Model):
         return self.tolerance_min <= self.measure <= self.tolerance_max
 
     def _ensure_draft(self):
+        if self.env.context.get("vpk_qc_change"):
+            return
         locked = self.filtered(lambda check: check.qc_id.state != "draft")
         if locked:
             raise UserError(_("ใบที่บันทึกผลแล้ว แก้ได้หลังกดตรวจใหม่"))
 
+    def action_change_result(self):
+        """เปิดหน้าต่างให้เปลี่ยนผลของจุดควบคุมที่ไม่ผ่าน (กดจากแถวรายการ)"""
+        self.ensure_one()
+        if self.quality_state != "fail":
+            raise UserError(_("เปลี่ยนผลได้เฉพาะรายการที่ไม่ผ่าน"))
+        if self.picking_id.state in ("done", "cancel"):
+            raise UserError(_("ใบรับปิดแล้ว ไม่สามารถเปลี่ยนผลตรวจได้"))
+        return self.with_context(vpk_qc_change=True).action_open_wizard()
+
+    def _vpk_log_result_change(self, old_states):
+        """บันทึกการเปลี่ยนผลตรวจ แล้วเปิดใบตรวจที่ไม่ผ่านกลับมาให้สรุปผลใหม่"""
+        labels = dict(self._fields["quality_state"].selection)
+        changed = self.filtered(lambda check: old_states.get(check.id) != check.quality_state)
+        for check in changed:
+            check.qc_id.message_post(
+                body=_("เปลี่ยนผลตรวจ %(title)s ของ %(product)s จาก %(old)s เป็น %(new)s")
+                % {
+                    "title": check.title,
+                    "product": check.product_id.display_name,
+                    "old": labels.get(old_states.get(check.id), ""),
+                    "new": labels.get(check.quality_state, ""),
+                }
+            )
+        for qc in changed.qc_id.filtered(lambda record: record.state == "failed"):
+            qc.write({"state": "draft", "date_done": False})
+            if not qc.check_ids.filtered(lambda check: check.quality_state in ("none", "fail")):
+                qc.action_confirm()
+
     def do_pass(self):
         self._ensure_draft()
+        old_states = {check.id: check.quality_state for check in self}
         self.write({
             "quality_state": "pass",
             "user_id": self.env.uid,
             "control_date": fields.Datetime.now(),
         })
         self.line_id._refresh_result_from_checks()
+        if self.env.context.get("vpk_qc_change"):
+            self._vpk_log_result_change(old_states)
         return True
 
     def do_fail(self):
         self._ensure_draft()
+        old_states = {check.id: check.quality_state for check in self}
         self.write({
             "quality_state": "fail",
             "user_id": self.env.uid,
@@ -320,10 +355,14 @@ class StockQcCheck(models.Model):
         })
         self.line_id._refresh_result_from_checks()
         for check in self:
+            if old_states.get(check.id) == "fail":
+                continue
             check.qc_id.message_post(
                 body=_("ไม่ผ่านจุดควบคุม %(title)s ของ %(product)s")
                 % {"title": check.title, "product": check.product_id.display_name}
             )
+        if self.env.context.get("vpk_qc_change"):
+            self._vpk_log_result_change(old_states)
         return True
 
     def do_measure(self):
@@ -348,6 +387,7 @@ class StockQcCheck(models.Model):
             "context": {
                 "default_check_ids": checks.ids,
                 "default_current_check_id": current.id,
+                "default_change_mode": bool(self.env.context.get("vpk_qc_change")),
                 "vpk_qc_from_validate": self.env.context.get("vpk_qc_from_validate"),
             },
         }
