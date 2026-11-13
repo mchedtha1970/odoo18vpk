@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "บัญชีคุมเงินฝากธนาคาร",
-    "version": "18.0.1.1.0",
+    "version": "18.0.1.1.1",
     "category": "Accounting/Localizations",
     "summary": "เก็บยอดรับ จ่าย และคงเหลือของแต่ละบัญชีธนาคารที่ยุบเข้าผังบัญชีเดียวกัน",
     "description": """

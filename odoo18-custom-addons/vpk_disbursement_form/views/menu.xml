@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_vpk_disbursement_form"
+        name="ใบขอเบิกเงิน"
+        parent="vpk_finance_flow.menu_vpk_finance_root"
+        action="action_vpk_disbursement_form"
+        sequence="5"
+        groups="group_disbursement_form_user"/>
+</odoo>

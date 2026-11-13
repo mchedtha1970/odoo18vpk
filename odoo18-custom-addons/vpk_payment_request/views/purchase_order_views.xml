@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="purchase_order_form_payment_request" model="ir.ui.view">
+        <field name="name">purchase.order.form.payment.request</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="can_request_payment" invisible="1"/>
+                <field name="can_send_payment_to_ap" invisible="1"/>
+                <button name="action_send_payment_to_ap" type="object"
+                        string="ส่งหน่วยงานเจ้าหนี้" class="btn-primary" icon="fa-share"
+                        groups="purchase.group_purchase_user"
+                        confirm="ส่งใบขออนุมัติเบิกจ่ายที่ลงนามครบแล้วให้หน่วยงานเจ้าหนี้ดำเนินการต่อ?"
+                        invisible="not can_send_payment_to_ap"/>
+                <button name="action_request_payment_approval" type="object"
+                        string="ขออนุมัติเบิกจ่าย" class="btn-primary" icon="fa-file-text-o"
+                        groups="purchase.group_purchase_user"
+                        invisible="not can_request_payment"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_payment_requests" type="object"
+                        class="oe_stat_button" icon="fa-check-square-o"
+                        invisible="payment_request_count == 0">
+                    <field name="payment_request_count" widget="statinfo" string="ขออนุมัติเบิกจ่าย"/>
+                </button>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="ขออนุมัติเบิกจ่าย" name="payment_requests">
+                    <div class="text-muted mb-2">
+                        ขออนุมัติเบิกจ่ายได้หลังตรวจรับมอบงานเสร็จแล้ว (ใบตรวจรับยืนยันตรวจรับ)
+                        ส่งลงนามภายในก่อน เมื่อลงนามครบให้กด "ส่งหน่วยงานเจ้าหนี้" เจ้าหนี้จึงดึงรายการไปตั้งหนี้
+                    </div>
+                    <field name="payment_request_ids" readonly="1"
+                           context="{'list_view_ref': 'vpk_payment_request.view_document_studio_document_list_payment_request_po'}"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

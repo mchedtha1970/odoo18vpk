@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_wht_cert_4235_list" model="ir.ui.view">
+        <field name="name">vpk.wht.cert.4235.list</field>
+        <field name="model">vpk.wht.cert.4235</field>
+        <field name="arch" type="xml">
+            <list string="ใบรับรองการหักภาษี ณ ที่จ่าย">
+                <field name="name"/>
+                <field name="form_type" widget="badge"
+                       decoration-info="form_type == '4235'"
+                       decoration-warning="form_type == 'general'"/>
+                <field name="wht_cert_no"/>
+                <field name="date"/>
+                <field name="payment_voucher_id"/>
+                <field name="wht_vendor_name"/>
+                <field name="wht_taxpayer_type" widget="badge"
+                       decoration-info="wht_taxpayer_type == 'corp'"
+                       decoration-warning="wht_taxpayer_type == 'person'"/>
+                <field name="wht_income_type"/>
+                <field name="wht_base_amount" sum="รวมเงินได้"/>
+                <field name="wht_tax_amount" sum="รวมภาษี"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'confirmed'"
+                       decoration-muted="state == 'cancel'"/>
+                <button name="action_print_wht_cert" type="object"
+                        string="พิมพ์" icon="fa-print"
+                        invisible="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_wht_cert_4235_form" model="ir.ui.view">
+        <field name="name">vpk.wht.cert.4235.form</field>
+        <field name="model">vpk.wht.cert.4235</field>
+        <field name="arch" type="xml">
+            <form string="ใบรับรองการหักภาษี ณ ที่จ่าย">
+                <header>
+                    <button name="action_print_wht_cert" type="object"
+                            string="พิมพ์ใบหักภาษี (ตามแบบที่เลือก)" class="btn-primary"
+                            invisible="state == 'cancel'"/>
+                    <button name="action_print_wht_cert_4235" type="object"
+                            string="พิมพ์แบบ 4235 (GFMIS)" class="btn-secondary"
+                            invisible="state == 'cancel'"/>
+                    <button name="action_print_wht_cert_general" type="object"
+                            string="พิมพ์แบบทั่วไป (รพ.จ่ายเอง)" class="btn-secondary"
+                            invisible="state == 'cancel'"/>
+                    <button name="action_confirm" type="object"
+                            string="ยืนยัน" class="btn-secondary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object"
+                            string="ตั้งเป็นร่าง"
+                            invisible="state not in ('confirmed', 'cancel')"/>
+                    <button name="action_cancel" type="object"
+                            string="ยกเลิก"
+                            invisible="state == 'cancel'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,confirmed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_studio_documents" type="object"
+                                class="oe_stat_button" icon="fa-file-pdf-o">
+                            <field name="studio_document_count" widget="statinfo" string="เอกสารใบหักภาษี"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="เลือกแบบฟอร์มและอ้างอิงเอกสาร">
+                            <field name="form_type" widget="radio"/>
+                            <field name="payment_voucher_id"/>
+                            <field name="date"/>
+                            <field name="wht_cert_no" invisible="form_type == 'general'"/>
+                            <field name="wht_disbursement_no" invisible="form_type == 'general'"/>
+                            <field name="wht_cheque_no" invisible="form_type == '4235'"/>
+                            <field name="wht_doc_date"/>
+                            <field name="wht_contract_no" invisible="form_type == 'general'"/>
+                            <field name="wht_contract_date" invisible="form_type == 'general'"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="ผู้ถูกหักภาษี ณ ที่จ่าย">
+                            <field name="wht_partner_id"/>
+                            <field name="wht_taxpayer_type" widget="radio" options="{'horizontal': true}"/>
+                            <field name="wht_vendor_name"/>
+                            <field name="wht_vendor_vat"/>
+                            <field name="wht_vendor_address"/>
+                            <field name="wht_transferee_name" invisible="form_type == 'general'"/>
+                            <field name="wht_transferee_address" invisible="form_type == 'general'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="จำนวนเงินได้และภาษีที่หักไว้">
+                            <field name="wht_income_type"/>
+                            <field name="wht_pay_date"/>
+                            <field name="wht_rate"/>
+                            <field name="wht_base_amount"/>
+                            <field name="wht_tax_amount"/>
+                            <field name="wht_total_tax_text" readonly="1"/>
+                        </group>
+                        <group string="ค่าปรับและผู้ลงนามใบรับรอง">
+                            <field name="wht_fine_income_type" invisible="form_type == 'general'"/>
+                            <field name="wht_fine_base_amount" invisible="form_type == 'general'"/>
+                            <field name="wht_fine_tax_amount" invisible="form_type == 'general'"/>
+                            <field name="wht_signer_name"/>
+                            <field name="wht_signer_position"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="เอกสารใบรับรองหักภาษี" name="wht_studio_documents">
+                            <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+                                <button name="action_print_wht_cert" type="object"
+                                        string="พิมพ์ใบหักภาษี (ตามแบบที่เลือก)" class="btn-primary"
+                                        invisible="state == 'cancel'"/>
+                                <button name="action_print_wht_cert_4235" type="object"
+                                        string="พิมพ์แบบ 4235 (GFMIS)" class="btn-secondary"
+                                        invisible="state == 'cancel'"/>
+                                <button name="action_print_wht_cert_general" type="object"
+                                        string="พิมพ์แบบทั่วไป (รพ.จ่ายเอง)" class="btn-secondary"
+                                        invisible="state == 'cancel'"/>
+                            </div>
+                            <field name="studio_document_ids" readonly="1"
+                                   context="{'default_wht_cert_4235_id': id, 'default_source_mode': 'uploaded'}">
+                                <list create="false" delete="false" edit="false">
+                                    <field name="document_type_id" string="ประเภทแบบฟอร์ม"/>
+                                    <field name="name" string="เลขที่เอกสาร"/>
+                                    <field name="date"/>
+                                    <field name="source_mode" string="ที่มา"/>
+                                    <field name="pdf_filename" string="ไฟล์"/>
+                                    <field name="signature_state" string="สถานะการลงนาม" widget="badge"
+                                           decoration-muted="signature_state == 'not_sent'"
+                                           decoration-warning="signature_state == 'waiting'"
+                                           decoration-success="signature_state == 'signed'"/>
+                                    <field name="state" string="สถานะ" widget="badge"
+                                           decoration-info="state == 'draft'"
+                                           decoration-success="state in ('generated', 'approved')"
+                                           decoration-warning="state == 'to_approve'"
+                                           decoration-muted="state == 'cancelled'"/>
+                                    <button name="action_open_form" type="object"
+                                            string="เปิด" icon="fa-external-link"/>
+                                    <button name="action_open_pdf" type="object"
+                                            string="ดู PDF" icon="fa-file-pdf-o"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="ใบเรียกเก็บอ้างอิง" name="bills">
+                            <field name="bill_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="partner_id"/>
+                                    <field name="amount_total"/>
+                                    <field name="amount_residual"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="หมายเหตุ" name="notes">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_wht_cert_4235_search" model="ir.ui.view">
+        <field name="name">vpk.wht.cert.4235.search</field>
+        <field name="model">vpk.wht.cert.4235</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="wht_cert_no"/>
+                <field name="payment_voucher_id"/>
+                <field name="wht_vendor_name"/>
+                <field name="wht_disbursement_no"/>
+                <field name="wht_contract_no"/>
+                <filter name="form_4235" string="แบบ 4235 (GFMIS)" domain="[('form_type', '=', '4235')]"/>
+                <filter name="form_general" string="แบบทั่วไป (รพ.จ่ายเอง)" domain="[('form_type', '=', 'general')]"/>
+                <separator/>
+                <filter name="draft" string="ร่าง" domain="[('state', '=', 'draft')]"/>
+                <filter name="confirmed" string="ยืนยันแล้ว" domain="[('state', '=', 'confirmed')]"/>
+                <group>
+                    <filter name="group_form_type" string="แบบฟอร์ม" context="{'group_by': 'form_type'}"/>
+                    <filter name="group_state" string="สถานะ" context="{'group_by': 'state'}"/>
+                    <filter name="group_date" string="วันที่" context="{'group_by': 'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_wht_cert_4235" model="ir.actions.act_window">
+        <field name="name">ใบรับรองการหักภาษี ณ ที่จ่าย (4235 / ทั่วไป)</field>
+        <field name="res_model">vpk.wht.cert.4235</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_vpk_wht_cert_4235"
+              name="ใบรับรองหักภาษี ณ ที่จ่าย"
+              parent="vpk_finance_flow.menu_vpk_finance_root"
+              action="action_vpk_wht_cert_4235"
+              sequence="16"
+              groups="account.group_account_invoice"/>
+</odoo>

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_payment_request.FinanceDashboard">
+        <div t-att-class="props.className" class="o_vpk_ap">
+            <div class="o_vpk_ap_scroll">
+                <header class="o_vpk_ap_head">
+                    <div>
+                        <h1>งานการเงิน: รายการตั้งเจ้าหนี้รอทำจ่าย</h1>
+                        <p>รายการที่เจ้าหนี้อนุมัติตั้งเจ้าหนี้ (POST) และส่งการเงินมาแล้ว → ดึงรายการมาทำรายการจ่าย</p>
+                    </div>
+                    <button class="btn btn-light" t-on-click="() => this.loadData()">
+                        <i class="fa fa-refresh"/> รีเฟรช
+                    </button>
+                </header>
+
+                <t t-if="!state.ready">
+                    <div class="o_vpk_ap_loading">กำลังโหลดข้อมูล...</div>
+                </t>
+                <t t-else="">
+                    <section class="o_vpk_ap_kpis o_vpk_ap_kpis_3">
+                        <t t-foreach="state.data.kpis" t-as="kpi" t-key="kpi.key">
+                            <button type="button"
+                                    t-att-class="'o_vpk_ap_kpi tone-' + kpi.tone + (state.filter === kpi.key ? ' active' : '')"
+                                    t-on-click="() => this.setFilter(kpi.key)">
+                                <span class="label" t-esc="kpi.label"/>
+                                <strong t-esc="kpi.count"/>
+                                <small>฿<t t-esc="formatMoney(kpi.amount)"/></small>
+                                <em t-esc="kpi.hint"/>
+                            </button>
+                        </t>
+                    </section>
+
+                    <section class="o_vpk_ap_card">
+                        <header>
+                            <h2><t t-esc="currentKpi ? currentKpi.label : 'ทั้งหมด'"/> (<t t-esc="visibleRows.length"/>)</h2>
+                            <input class="form-control form-control-sm" placeholder="ค้นหาเลขที่ใบขอ PO ผู้ขาย ใบเรียกเก็บ ใบขอเบิกเงิน"
+                                   t-on-input="onSearch"/>
+                        </header>
+                        <div class="o_vpk_ap_table_wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ใบขออนุมัติเบิกจ่าย</th>
+                                        <th>PO</th>
+                                        <th>ผู้ขาย</th>
+                                        <th>ใบเรียกเก็บ (เจ้าหนี้)</th>
+                                        <th>ใบขอเบิกเงิน</th>
+                                        <th class="num">ยอดตั้งหนี้ (บาท)</th>
+                                        <th class="num">คงค้าง (บาท)</th>
+                                        <th>ครบกำหนดจ่าย</th>
+                                        <th>เจ้าหนี้ส่งเมื่อ</th>
+                                        <th>รอมาแล้ว</th>
+                                        <th>สถานะใบเรียกเก็บ (เจ้าหนี้)</th>
+                                        <th>ใบสำคัญจ่าย</th>
+                                        <th class="act">ดำเนินการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="visibleRows" t-as="row" t-key="row.id">
+                                        <tr>
+                                            <td><a href="#" t-on-click.prevent="() => this.openDocument(row)"><strong t-esc="row.name"/></a></td>
+                                            <td>
+                                                <div class="d-flex flex-column gap-1">
+                                                    <a href="#" t-if="row.po_id" t-on-click.prevent="() => this.openPurchaseOrder(row)">
+                                                        <strong t-esc="row.po_name"/>
+                                                    </a>
+                                                    <span t-else="" class="text-muted">—</span>
+                                                    <span t-if="row.po_disbursement_label"
+                                                          t-att-class="'o_vpk_ap_pill pay-' + (row.po_disbursement_type || 'none')"
+                                                          t-esc="row.po_disbursement_label"/>
+                                                </div>
+                                            </td>
+                                            <td t-esc="row.vendor"/>
+                                            <td><a href="#" t-if="row.bill_id" t-on-click.prevent="() => this.openBill(row)" t-esc="row.bill_name || 'ใบเรียกเก็บ'"/></td>
+                                            <td>
+                                                <div class="d-flex flex-column gap-1">
+                                                    <t t-if="row.kb_id">
+                                                        <a href="#" t-on-click.prevent="() => this.openDisbursementForm(row)">
+                                                            <strong t-esc="row.kb_name"/>
+                                                        </a>
+                                                    </t>
+                                                    <span t-else="" class="text-muted">—</span>
+                                                    <span t-att-class="'o_vpk_ap_pill ' + (row.kb_state ? ('kb-' + row.kb_state) : 'kb-none')"
+                                                          t-esc="row.kb_state_label || 'ยังไม่มีใบขอเบิกเงิน'"/>
+                                                </div>
+                                            </td>
+                                            <td class="num" t-esc="formatMoney(row.amount)"/>
+                                            <td class="num" t-esc="formatMoney(row.residual)"/>
+                                            <td t-att-class="row.overdue ? 'o_vpk_ap_overdue' : ''" t-esc="formatDate(row.due_date)"/>
+                                            <td t-esc="formatDate(row.sent_on)"/>
+                                            <td t-esc="row.state === 'paid' ? '—' : waitingLabel(row)"/>
+                                            <td><span t-att-class="'o_vpk_ap_pill st-' + row.state" t-esc="row.state_label"/></td>
+                                            <td>
+                                                <t t-if="row.memo_voucher_id">
+                                                    <div class="d-flex flex-column gap-1">
+                                                        <a href="#" t-on-click.prevent="() => this.openMemoVoucher(row)">
+                                                            <strong t-esc="row.memo_voucher_name || 'ใบสำคัญจ่าย'"/>
+                                                        </a>
+                                                        <span t-if="row.memo_voucher_state === 'approved'"
+                                                              class="o_vpk_ap_pill st-approved"
+                                                              t-esc="row.memo_voucher_state_label || 'อนุมัติแล้ว'"/>
+                                                    </div>
+                                                </t>
+                                                <span t-else="" class="text-muted">—</span>
+                                            </td>
+                                            <td class="act">
+                                                <div class="d-flex flex-column gap-1">
+                                                    <button t-if="row.state === 'to_finance' and !row.memo_voucher_id and row.bill_id"
+                                                            class="btn btn-sm btn-primary"
+                                                            t-on-click="() => this.openMemoVoucher(row)"
+                                                            title="สร้างใบสำคัญจ่าย เพื่อพิมพ์บันทึกข้อความขออนุมัติ">
+                                                        <i class="fa fa-file-text-o"/> สร้างใบสำคัญจ่าย
+                                                    </button>
+
+                                                    <button t-if="row.state === 'to_finance' and row.draft_payment_id"
+                                                            class="btn btn-sm btn-outline-warning"
+                                                            t-on-click="() => this.openDraftPayment(row)"
+                                                            t-att-title="row.draft_payment_name || 'รายการจ่ายฉบับร่าง'">
+                                                        <i class="fa fa-money"/> เปิดรายการจ่าย (รอบันทึกบัญชี)
+                                                    </button>
+                                                    <button t-elif="row.state === 'to_finance' and row.can_register_payment"
+                                                            class="btn btn-sm btn-outline-primary"
+                                                            t-att-disabled="state.busyId === row.id"
+                                                            t-on-click="() => this.openPayment(row)"
+                                                            title="สร้างรายการชำระเงินฉบับร่างทันที ส่งให้บัญชีบันทึก">
+                                                        <i class="fa fa-money"/> ยืนยันรายการจ่าย
+                                                    </button>
+                                                    <button t-elif="row.state === 'to_finance' and !row.bill_id"
+                                                            class="btn btn-sm btn-secondary"
+                                                            disabled="disabled"
+                                                            title="กดได้เมื่อมีใบเรียกเก็บที่ POST แล้ว">
+                                                        <i class="fa fa-file-text-o"/> สร้างใบสำคัญจ่าย
+                                                    </button>
+                                                    <button t-if="row.state !== 'to_finance'"
+                                                            class="btn btn-sm btn-light"
+                                                            t-on-click="() => this.openBill(row)">
+                                                        <i class="fa fa-file-text-o"/> เปิดใบเรียกเก็บ
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <tr t-if="!visibleRows.length">
+                                        <td colspan="13" class="empty">ไม่มีรายการในสถานะนี้</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

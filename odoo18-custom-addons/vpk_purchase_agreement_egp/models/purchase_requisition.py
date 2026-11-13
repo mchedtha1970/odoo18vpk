@@ -647,7 +647,7 @@ class PurchaseRequisition(models.Model):
             ]
             if part
         ]
-        return {
+        vals = {
             "requisition_id": self.id,
             "partner_id": partner.id,
             "fiscal_position_id": fpos.id,
@@ -665,6 +665,18 @@ class PurchaseRequisition(models.Model):
             ),
             "order_line": self._prepare_rfq_order_line_values(partner),
         }
+        # ผูกสัญญาที่สร้างจาก e-GP ชุดเดียวกัน (ถ้ามี) ให้เปิดจาก PO ได้
+        if "contract_ids" in self._fields and "contract_id" in self.env["purchase.order"]._fields:
+            contracts = self.contract_ids.filtered(
+                lambda contract: contract.state in ("draft", "confirmed", "done")
+            )
+            matched = contracts.filtered(
+                lambda contract: not contract.partner_id or contract.partner_id == partner
+            )
+            contract = matched[:1] or contracts[:1]
+            if contract:
+                vals["contract_id"] = contract.id
+        return vals
 
     def action_open_create_rfq_wizard(self):
         self.ensure_one()
@@ -746,6 +758,45 @@ class PurchaseRequisition(models.Model):
                 )
             for bid in requisition.egp_bid_ids:
                 bid.amount_total = totals.get(bid, 0.0)
+
+    def action_open_egp_bid_import_wizard(self):
+        self.ensure_one()
+        if self.egp_consideration_type != "line":
+            raise UserError(
+                _("ปุ่มนี้ใช้เมื่อเลือกการพิจารณาเป็นราคาต่อรายการ")
+            )
+        plan_lines = self.line_ids.filtered("product_id")
+        if not plan_lines:
+            raise UserError(_("ยังไม่มีรายการสินค้าในแผนให้เลือก"))
+        wizard = self.env["purchase.requisition.egp.bid.import.wizard"].create(
+            {
+                "requisition_id": self.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "selected": True,
+                            "requisition_line_id": line.id,
+                            "product_id": line.product_id.id,
+                            "name": line.product_description_variants
+                            or line.product_id.display_name,
+                            "product_qty": line.product_qty,
+                            "product_uom_id": line.product_uom_id.id,
+                        },
+                    )
+                    for line in plan_lines
+                ],
+            }
+        )
+        return {
+            "name": _("เพิ่มผู้เสนอราคา"),
+            "type": "ir.actions.act_window",
+            "res_model": "purchase.requisition.egp.bid.import.wizard",
+            "view_mode": "form",
+            "res_id": wizard.id,
+            "target": "new",
+        }
 
     def action_summarize_offered_totals(self):
         self._summarize_offered_totals()

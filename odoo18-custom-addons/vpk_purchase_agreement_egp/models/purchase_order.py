@@ -22,6 +22,19 @@ class PurchaseOrder(models.Model):
         related="requisition_id.egp_project_name",
         readonly=True,
     )
+    egp_disbursement_type = fields.Selection(
+        selection=[
+            ("gfmis", "ผ่าน GFMIS"),
+            ("non_gfmis", "ไม่ผ่าน GFMIS"),
+        ],
+        string="วิธีการเบิกจ่าย",
+        compute="_compute_egp_disbursement_type",
+    )
+
+    @api.depends("requisition_id", "requisition_id.egp_disbursement_type")
+    def _compute_egp_disbursement_type(self):
+        for order in self:
+            order.egp_disbursement_type = order.requisition_id.egp_disbursement_type
 
     @api.onchange("requisition_id")
     def _onchange_requisition_id(self):

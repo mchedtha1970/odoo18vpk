@@ -307,10 +307,11 @@ class DocumentStudioTemplate(models.Model):
         """Create form fields for `{{codes}}` used by the blocks."""
         self.ensure_one()
         Field = self.env["vpk.document.studio.field"]
-        known = set(self.field_ids.mapped("code"))
+        known = {Field._normalize_field_code(code) for code in self.field_ids.mapped("code")}
         sequence = max(self.field_ids.mapped("sequence") or [0])
         created = []
         for code in codes:
+            code = Field._normalize_field_code(code)
             if code in known or not CODE_RE.match(code):
                 continue
             if code in _RESERVED_CODES or _DERIVED_CODE_RE.match(code):
@@ -478,9 +479,12 @@ class DocumentStudioTemplate(models.Model):
                 found = extract_placeholders(rec._template_bytes())
             except DocxMergeError:
                 continue
-            known = set(rec.field_ids.mapped("code"))
+            known = {
+                Field._normalize_field_code(code) for code in rec.field_ids.mapped("code")
+            }
             sequence = max(rec.field_ids.mapped("sequence") or [0])
             for code in found:
+                code = Field._normalize_field_code(code)
                 if code in known or not CODE_RE.match(code):
                     continue
                 sequence += 10

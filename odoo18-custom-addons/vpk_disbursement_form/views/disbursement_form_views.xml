@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_disbursement_form_search" model="ir.ui.view">
+        <field name="name">vpk.disbursement.form.search</field>
+        <field name="model">vpk.disbursement.form</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="reference"/>
+                <field name="invoice_id"/>
+                <field name="gfmis_po_number"/>
+                <field name="gfmis_doc_number"/>
+                <field name="partner_id"/>
+                <filter name="filter_draft" string="ร่าง" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_confirmed" string="ยืนยันข้อมูลแล้ว" domain="[('state', '=', 'confirmed')]"/>
+                <filter name="filter_uploaded" string="อัปโหลดแล้ว" domain="[('state', '=', 'uploaded')]"/>
+                <separator/>
+                <filter name="filter_my" string="ที่ฉันสร้าง" domain="[('create_uid', '=', uid)]"/>
+                <group>
+                    <filter name="group_state" string="สถานะ" context="{'group_by': 'state'}"/>
+                    <filter name="group_partner" string="ผู้ขาย" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_month" string="เดือนที่ทำเอกสาร" context="{'group_by': 'document_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_vpk_disbursement_form_list" model="ir.ui.view">
+        <field name="name">vpk.disbursement.form.list</field>
+        <field name="model">vpk.disbursement.form</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'" decoration-success="state == 'uploaded'">
+                <field name="name"/>
+                <field name="form_type" optional="show"/>
+                <field name="document_date"/>
+                <field name="partner_id"/>
+                <field name="invoice_id" optional="show"/>
+                <field name="reference"/>
+                <field name="gfmis_po_number"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="amount_request" sum="รวมขอเบิก"/>
+                <field name="wht_amount" optional="hide" sum="รวมภาษี"/>
+                <field name="amount_net" sum="รวมขอรับ"/>
+                <field name="file_count" string="ไฟล์" optional="show"/>
+                <field name="gfmis_doc_number" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'confirmed'"
+                       decoration-success="state == 'uploaded'"
+                       decoration-muted="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_disbursement_form_form" model="ir.ui.view">
+        <field name="name">vpk.disbursement.form.form</field>
+        <field name="model">vpk.disbursement.form</field>
+        <field name="arch" type="xml">
+            <form string="ใบขอเบิกเงิน">
+                <header>
+                    <button name="action_generate_excel" type="object"
+                            string="บันทึกข้อมูลเข้า template Excel" class="btn-primary" icon="fa-file-excel-o"
+                            invisible="state in ('uploaded', 'cancel') or not id"/>
+                    <button name="action_download_latest" type="object"
+                            string="ดาวน์โหลดไฟล์ล่าสุด" icon="fa-download"
+                            invisible="not last_generated_on"/>
+                    <button name="action_confirm" type="object" string="ยืนยันข้อมูล"
+                            invisible="state != 'draft'"/>
+                    <button name="action_mark_uploaded" type="object"
+                            string="บันทึกว่าอัปโหลดกรมบัญชีกลางแล้ว" icon="fa-cloud-upload"
+                            invisible="state != 'confirmed'"/>
+                    <button name="action_draft" type="object" string="ตั้งเป็นร่าง"
+                            invisible="state not in ('confirmed', 'cancel')"/>
+                    <button name="action_cancel" type="object" string="ยกเลิก"
+                            confirm="ต้องการยกเลิกใบขอเบิกเงินนี้?"
+                            invisible="state in ('cancel', 'uploaded')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,uploaded"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" title="ยกเลิก" bg_color="text-bg-danger" invisible="state != 'cancel'"/>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_invoice" type="object"
+                                class="oe_stat_button" icon="fa-pencil-square-o"
+                                invisible="not invoice_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">ใบเรียกเก็บ</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="ข้อมูลหน่วยงาน (ส่วนหัวแบบฟอร์ม)">
+                            <field name="form_type" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="state != 'draft'"/>
+                            <field name="agency_code" readonly="state != 'draft'"/>
+                            <field name="agency_name" readonly="state != 'draft'"/>
+                            <field name="province_code" readonly="state != 'draft'"/>
+                            <field name="province_name" readonly="state != 'draft'"/>
+                            <field name="unit_code" readonly="state != 'draft'"/>
+                            <field name="unit_name" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="ประเภทรายการขอเบิก">
+                            <field name="budget_type" widget="radio" readonly="state != 'draft'"/>
+                            <field name="gfmis_po_number" readonly="state != 'draft'"/>
+                            <field name="earmark" readonly="state != 'draft'"/>
+                            <field name="reservation_number" readonly="state != 'draft'"/>
+                            <field name="payment_method" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <group string="เอกสารต้นทาง">
+                        <group>
+                            <field name="invoice_id" readonly="1"/>
+                            <field name="payment_request_id" readonly="1" invisible="not payment_request_id"/>
+                        </group>
+                        <group>
+                            <field name="purchase_id" readonly="1" invisible="not purchase_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="วันที่และการอ้างอิง">
+                            <field name="document_date" readonly="state != 'draft'"/>
+                            <field name="posting_date" readonly="state != 'draft'"/>
+                            <field name="reference" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="ผู้ขาย / คำอธิบายรายการ">
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="description" readonly="state != 'draft'" placeholder="เช่น ค่ายา บริษัท ... จำกัด เป็นเงิน 270,500 บาท"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="จำนวนเงิน / ภาษี / ค่าปรับ" name="amounts">
+                            <group>
+                                <group string="จำนวนเงินขอเบิก">
+                                    <field name="amount_request" readonly="state != 'draft'"/>
+                                    <field name="vat_rate" readonly="state != 'draft'"/>
+                                </group>
+                                <group string="เงินหักผลักส่ง">
+                                    <field name="tax_type" widget="radio" readonly="state != 'draft'"/>
+                                    <field name="wht_rate" invisible="tax_type == 'none'" readonly="state != 'draft'"/>
+                                    <field name="wht_base" invisible="tax_type == 'none'" readonly="state != 'draft'"/>
+                                    <field name="wht_amount" invisible="tax_type == 'none'" readonly="state != 'draft'"/>
+                                    <field name="penalty_type" widget="radio" readonly="state != 'draft'"/>
+                                    <field name="penalty_base" invisible="penalty_type == 'none'" readonly="state != 'draft'"/>
+                                    <field name="penalty_amount" invisible="penalty_type == 'none'" readonly="state != 'draft'"/>
+                                </group>
+                            </group>
+                            <group class="oe_subtotal_footer oe_right">
+                                <field name="currency_id" invisible="1"/>
+                                <field name="amount_net" class="oe_subtotal_footer_separator"/>
+                            </group>
+                            <group>
+                                <field name="amount_text"/>
+                            </group>
+                        </page>
+                        <page string="ผู้ตรวจสอบ / ผู้อนุมัติ" name="signers">
+                            <group>
+                                <group string="ผู้ตรวจสอบ">
+                                    <field name="checker_name" readonly="state != 'draft'"/>
+                                    <field name="checker_position" readonly="state != 'draft'"/>
+                                    <field name="checker_date" readonly="state != 'draft'"/>
+                                </group>
+                                <group string="ผู้อนุมัติ">
+                                    <field name="approver_name" readonly="state != 'draft'"/>
+                                    <field name="approver_position" readonly="state != 'draft'"/>
+                                    <field name="approver_date" readonly="state != 'draft'"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="ไฟล์แนบ" name="files">
+                            <div class="text-muted mb-2">
+                                ไฟล์ที่สร้างจากปุ่ม "บันทึกข้อมูลเข้า template Excel" จะถูกแนบไว้ที่นี่อัตโนมัติ
+                                และแนบไฟล์อื่น (เช่น ฉบับที่ลงนามแล้ว) เพิ่มได้ที่ตารางนี้
+                            </div>
+                            <field name="file_ids" readonly="state == 'cancel'" context="{'default_kind': 'uploaded'}">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="kind" readonly="1"/>
+                                    <field name="version" readonly="1" optional="show"/>
+                                    <field name="name"/>
+                                    <field name="file" filename="filename" widget="binary"/>
+                                    <field name="filename" column_invisible="1"/>
+                                    <field name="created_by" optional="show"/>
+                                    <field name="created_on" optional="show"/>
+                                    <field name="note" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="การอัปโหลด / หมายเหตุ" name="upload">
+                            <group>
+                                <group>
+                                    <field name="gfmis_doc_number"/>
+                                    <field name="uploaded_on"/>
+                                    <field name="uploaded_by"/>
+                                    <field name="last_generated_on"/>
+                                    <field name="file_count" invisible="1"/>
+                                </group>
+                                <group>
+                                    <field name="note" placeholder="หมายเหตุภายใน"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vpk_disbursement_form" model="ir.actions.act_window">
+        <field name="name">ใบขอเบิกเงิน</field>
+        <field name="res_model">vpk.disbursement.form</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_vpk_disbursement_form_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">สร้างใบขอเบิกเงิน (ขบ.01)</p>
+            <p>กรอกข้อมูลในระบบ แล้วกด "บันทึกข้อมูลเข้า template Excel" เพื่อสร้างไฟล์ .xls พร้อมอัปโหลดเข้ากรมบัญชีกลาง</p>
+        </field>
+    </record>
+</odoo>

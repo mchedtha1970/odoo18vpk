@@ -45,7 +45,9 @@ services:
       - onlyoffice-data:/var/www/onlyoffice/Data
       - onlyoffice-lib:/var/lib/onlyoffice
       - onlyoffice-logs:/var/log/onlyoffice
+      - ./odoo18-custom-addons/l10n-thailand-18.0/l10n_th_base_utils/static/fonts/thai:/usr/share/fonts/truetype/thai:ro
       - ./odoo18-custom-addons/l10n-thailand-18.0/l10n_th_base_utils/static/fonts/thai/THSarabunNew:/usr/share/fonts/truetype/thsarabun:ro
+      - ./odoo18-custom-addons/l10n-thailand-18.0/l10n_th_base_utils/static/fonts/thai/THSarabun:/usr/share/fonts/truetype/thsarabunpsk:ro
     shm_size: "1gb"
 
 volumes:

@@ -4,7 +4,7 @@
 import re
 
 from odoo import _, api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 
 CODE_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 PLACEHOLDER_RE = re.compile(r"\{\{\s*([a-z][a-z0-9_]*)\s*\}\}")
@@ -173,16 +173,98 @@ class DocumentStudioField(models.Model):
         ),
     ]
 
+    @api.model
+    def _normalize_field_code(self, code):
+        return (code or "").strip().lower()
+
     @api.model_create_multi
     def create(self, vals_list):
+        """Create fields; merge duplicates of (template_id, code) instead of failing."""
+        normalized = []
         for vals in vals_list:
+            vals = dict(vals)
             if vals.get("code"):
-                vals["code"] = vals["code"].strip().lower()
-        return super().create(vals_list)
+                vals["code"] = self._normalize_field_code(vals["code"])
+            normalized.append(vals)
+
+        # Keep last vals per (template_id, code) within this batch
+        batch_index = {}
+        for idx, vals in enumerate(normalized):
+            template_id = vals.get("template_id")
+            code = vals.get("code")
+            if template_id and code:
+                batch_index[(template_id, code)] = idx
+
+        result_by_index = {}
+        to_create = []
+        create_indexes = []
+        for idx, vals in enumerate(normalized):
+            template_id = vals.get("template_id")
+            code = vals.get("code")
+            if template_id and code:
+                if batch_index.get((template_id, code)) != idx:
+                    # superseded by a later row with the same code
+                    continue
+                existing = self.search(
+                    [("template_id", "=", template_id), ("code", "=", code)],
+                    limit=1,
+                )
+                if existing:
+                    write_vals = {
+                        key: value
+                        for key, value in vals.items()
+                        if key not in ("template_id", "code")
+                    }
+                    if write_vals:
+                        existing.write(write_vals)
+                    result_by_index[idx] = existing
+                    continue
+            to_create.append(vals)
+            create_indexes.append(idx)
+
+        created = super().create(to_create) if to_create else self.browse()
+        for idx, record in zip(create_indexes, created):
+            result_by_index[idx] = record
+
+        # Fill skipped duplicate indexes with the surviving record
+        for idx, vals in enumerate(normalized):
+            if idx in result_by_index:
+                continue
+            template_id = vals.get("template_id")
+            code = vals.get("code")
+            survivor_idx = batch_index.get((template_id, code))
+            if survivor_idx is not None and survivor_idx in result_by_index:
+                result_by_index[idx] = result_by_index[survivor_idx]
+
+        ordered = self.browse()
+        for idx in range(len(normalized)):
+            if idx in result_by_index:
+                ordered |= result_by_index[idx]
+        return ordered
 
     def write(self, vals):
+        vals = dict(vals)
         if vals.get("code"):
-            vals = dict(vals, code=vals["code"].strip().lower())
+            vals["code"] = self._normalize_field_code(vals["code"])
+            code = vals["code"]
+            for rec in self:
+                clash = self.search(
+                    [
+                        ("template_id", "=", rec.template_id.id),
+                        ("code", "=", code),
+                        ("id", "!=", rec.id),
+                    ],
+                    limit=1,
+                )
+                if clash:
+                    raise UserError(
+                        _(
+                            'รหัสฟิลด์ "%(code)s" ซ้ำในแบบฟอร์มเดียวกัน '
+                            "(มีอยู่แล้วที่ฟิลด์ %(name)s) — กรุณาใช้รหัสอื่นหรือลบแถวที่ซ้ำ",
+                            code=code,
+                            name=clash.name or clash.code,
+                        )
+                    )
         return super().write(vals)
 
     @api.depends("template_id.source_model_id")

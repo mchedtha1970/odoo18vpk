@@ -137,15 +137,29 @@ class PurchaseRequisition(models.Model):
             "price_unit": req_line.price_unit or 0.0,
         }
 
+    def _egp_contract_is_asset_procurement(self):
+        """ครุภัณฑ์ (budget_section_key=asset) บน PR ที่ผูกกับเอกสาร e-GP นี้."""
+        self.ensure_one()
+        requests = self.env["purchase.request"]
+        if self.purchase_request_id:
+            requests |= self.purchase_request_id
+        requests |= self.line_ids.mapped("purchase_request_lines.request_id")
+        return any(
+            request.budget_section_key == "asset"
+            for request in requests
+            if "budget_section_key" in request._fields
+        )
+
     def _egp_upsert_winner_contract(self, group):
         partner = group["partner"]
         contract = self.contract_ids.filtered(
             lambda rec: rec.partner_id == partner and rec.state == "draft"
         )[:1]
         line_commands = [(0, 0, vals) for vals in group["line_vals"]]
+        amount_total = group["amount"] or 0.0
         values = {
             "partner_id": partner.id if partner else False,
-            "amount_total": group["amount"] or 0.0,
+            "amount_total": amount_total,
             "company_id": self.company_id.id,
             "currency_id": self.currency_id.id,
             "requisition_id": self.id,
@@ -153,12 +167,18 @@ class PurchaseRequisition(models.Model):
             "payment_term_note": _("สร้างจากเอกสาร e-GP %(ref)s")
             % {"ref": self.egp_reference or self.name},
         }
+        # ครุภัณฑ์: default จ่ายครั้งเดียว (1 งวด) ไม่ต้องตั้งแบ่งงวดหลายงวด
+        if self._egp_contract_is_asset_procurement():
+            values["payment_type"] = "once"
         if contract:
             contract.write(dict(values, line_ids=[(5, 0, 0)] + line_commands))
+            contract._egp_ensure_single_installment_for_once()
             return contract
-        return self.env["purchase.contract"].create(
+        created = self.env["purchase.contract"].create(
             dict(values, line_ids=line_commands)
         )
+        created._egp_ensure_single_installment_for_once()
+        return created
 
     def _egp_open_created_contracts(self, contracts):
         action = {

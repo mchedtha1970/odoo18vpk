@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_purchase_requisition_egp_bid_import_wizard_form" model="ir.ui.view">
+        <field name="name">purchase.requisition.egp.bid.import.wizard.form</field>
+        <field name="model">purchase.requisition.egp.bid.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="เพิ่มผู้เสนอราคา">
+                <group>
+                    <field name="requisition_id" invisible="1"/>
+                    <field
+                        name="partner_id"
+                        placeholder="เลือกชื่อผู้ขาย"
+                        required="1"
+                        options="{'no_create': True, 'no_create_edit': True}"
+                        context="{'res_partner_search_mode': 'supplier'}"
+                    />
+                </group>
+                <separator string="รายการสินค้าในแผน"/>
+                <field name="line_ids">
+                    <list editable="bottom" create="0" delete="0">
+                        <field name="selected"/>
+                        <field name="requisition_line_id" column_invisible="1"/>
+                        <field name="product_id" readonly="1"/>
+                        <field name="name" readonly="1"/>
+                        <field name="product_qty" readonly="1"/>
+                        <field name="product_uom_id" readonly="1" groups="uom.group_uom"/>
+                    </list>
+                </field>
+                <footer>
+                    <button
+                        name="action_confirm"
+                        string="ตกลง"
+                        type="object"
+                        class="btn-primary"
+                        data-hotkey="q"
+                    />
+                    <button string="ยกเลิก" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

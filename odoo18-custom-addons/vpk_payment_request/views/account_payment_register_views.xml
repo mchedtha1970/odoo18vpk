@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_payment_register_form_vpk_bank" model="ir.ui.view">
+        <field name="name">account.payment.register.form.vpk.company.bank</field>
+        <field name="model">account.payment.register</field>
+        <field name="inherit_id" ref="account.view_account_payment_register_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='available_partner_bank_ids']" position="after">
+                <field name="available_company_bank_ids" invisible="1"/>
+                <field name="vpk_filtered_journal_ids" invisible="1"/>
+                <field name="has_company_bank_choices" invisible="1"/>
+                <field name="is_gfmis_vendor_direct" invisible="1"/>
+            </xpath>
+            <!-- แสดงผู้ขาย และลำดับ: ผู้ขาย → วิธีการชำระเงิน → สมุดบันทึก → บัญชีธนาคารที่ตัดจ่าย -->
+            <xpath expr="//field[@name='partner_id']" position="attributes">
+                <attribute name="string">ผู้ขาย</attribute>
+                <attribute name="readonly">1</attribute>
+                <attribute name="force_save">1</attribute>
+                <attribute name="options">{"no_open": True, "no_create": True}</attribute>
+                <attribute name="invisible">payment_type != 'outbound'</attribute>
+            </xpath>
+            <xpath expr="//group[@name='group1']/field[@name='journal_id']" position="before">
+                <field name="partner_id" position="move"/>
+                <field name="payment_method_line_id" position="move"/>
+            </xpath>
+            <xpath expr="//group[@name='group1']/field[@name='journal_id']" position="attributes">
+                <attribute name="domain">[('id', 'in', vpk_filtered_journal_ids)]</attribute>
+                <attribute name="placeholder">เลือกสมุดบันทึกหลังเลือกวิธีชำระเงิน</attribute>
+            </xpath>
+            <xpath expr="//group[@name='group1']/field[@name='journal_id']" position="after">
+                <field name="company_bank_id"
+                         options="{'no_create': True, 'no_open': True}"
+                         domain="[('id', 'in', available_company_bank_ids)]"
+                         invisible="payment_type != 'outbound' or not has_company_bank_choices"
+                         required="payment_type == 'outbound' and has_company_bank_choices"
+                         placeholder="เลือกบัญชีธนาคารที่ผูกกับสมุดบันทึก"/>
+            </xpath>
+            <!-- อ้างอิงเอกสารต้นทาง: Bill / PO / ใบตรวจรับ / สัญญา -->
+            <xpath expr="//group[@name='group2']/label[@for='amount']" position="before">
+                <field name="vpk_ref_bill_number" readonly="1" force_save="1"/>
+                <field name="vpk_ref_po_number" readonly="1" force_save="1"/>
+                <field name="vpk_ref_wa_number" readonly="1" force_save="1"/>
+                <field name="vpk_ref_contract_number" readonly="1" force_save="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

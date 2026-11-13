@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="document_type_payment_voucher" model="vpk.document.studio.document.type">
+            <field name="name">ใบสำคัญจ่าย</field>
+            <field name="code">payment_voucher</field>
+            <field name="sequence">240</field>
+            <field name="description">บันทึกข้อความใบสำคัญจ่าย (กลุ่มงานการเงิน)</field>
+            <field name="company_id" eval="False"/>
+        </record>
+    </data>
+    <data noupdate="0">
+        <!-- Always refresh Word content so print never uses purchase-approval wording. -->
+        <function model="vpk.document.studio.template" name="_vpk_install_payment_voucher_template"/>
+    </data>
+</odoo>

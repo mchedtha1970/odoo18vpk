@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_disbursement_form_user,vpk.disbursement.form user,model_vpk_disbursement_form,group_disbursement_form_user,1,1,1,0
+access_vpk_disbursement_form_manager,vpk.disbursement.form manager,model_vpk_disbursement_form,group_disbursement_form_manager,1,1,1,1
+access_vpk_disbursement_form_invoice,vpk.disbursement.form invoice,model_vpk_disbursement_form,account.group_account_invoice,1,1,1,0
+access_vpk_disbursement_form_file_user,vpk.disbursement.form.file user,model_vpk_disbursement_form_file,group_disbursement_form_user,1,1,1,1
+access_vpk_disbursement_form_file_manager,vpk.disbursement.form.file manager,model_vpk_disbursement_form_file,group_disbursement_form_manager,1,1,1,1
+access_vpk_disbursement_form_file_invoice,vpk.disbursement.form.file invoice,model_vpk_disbursement_form_file,account.group_account_invoice,1,1,1,1

@@ -1,0 +1,80 @@
+/* VPK Payment Voucher — TH Sarabun New (ราชการ) + table layout */
+.vpk-official-memo,
+.vpk-official-memo *,
+.vpk-pv-table,
+.vpk-pv-table th,
+.vpk-pv-table td,
+.vpk-pv-baht-text,
+.vpk-pv-purpose,
+.vpk-pv-closing,
+.vpk-pv-approval,
+.vpk-pv-signs,
+.vpk-pv-signs td {
+    font-family: "THSarabunNew", "TH Sarabun New", sans-serif !important;
+}
+
+.vpk-official-memo strong,
+.vpk-memo-title,
+.vpk-pv-table th,
+.vpk-pv-table .row-total td,
+.vpk-pv-approval strong {
+    font-family: "THSarabunNew-Bold", "THSarabunNew", "TH Sarabun New", sans-serif !important;
+}
+
+.vpk-pv-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 8px 0;
+    font-size: 15pt;
+}
+.vpk-pv-table th,
+.vpk-pv-table td {
+    border: 1px solid #000;
+    padding: 4px 6px;
+    vertical-align: middle;
+}
+.vpk-pv-table th {
+    text-align: center;
+    font-weight: bold;
+}
+.vpk-pv-table .col-no { width: 12%; text-align: center; }
+.vpk-pv-table .col-partner { width: 38%; text-align: left; }
+.vpk-pv-table .col-bill { width: 25%; text-align: center; }
+.vpk-pv-table .col-amount { width: 25%; text-align: right; }
+.vpk-pv-table .row-total td {
+    font-weight: bold;
+}
+.vpk-pv-baht-text {
+    margin: 4px 0 12px 0;
+    font-size: 15pt;
+}
+.vpk-pv-purpose {
+    text-indent: 2.5em;
+    text-align: justify;
+    margin: 8px 0;
+    font-size: 15pt;
+    line-height: 1.6;
+}
+.vpk-pv-closing {
+    text-indent: 2.5em;
+    margin: 16px 0 24px 0;
+    font-size: 15pt;
+}
+.vpk-pv-approval {
+    margin-top: 28px;
+    font-size: 15pt;
+}
+.vpk-pv-signs {
+    width: 100%;
+    margin-top: 36px;
+}
+.vpk-pv-signs td {
+    width: 50%;
+    text-align: center;
+    vertical-align: top;
+    font-size: 14pt;
+    line-height: 1.5;
+}
+.vpk-pv-sign-space {
+    height: 64px;
+}

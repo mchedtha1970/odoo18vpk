@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_payment_request.ApDashboard">
+        <div t-att-class="props.className" class="o_vpk_ap">
+            <div class="o_vpk_ap_scroll">
+                <header class="o_vpk_ap_head">
+                    <div>
+                        <h1>งานเจ้าหนี้: รายการขอเบิกจ่ายจากจัดซื้อ</h1>
+                        <p>ใบขออนุมัติเบิกจ่ายที่ลงนามครบและจัดซื้อส่งมาแล้ว → ดึงรายการตั้งเจ้าหนี้ (Draft) → อนุมัติ/POST → ส่งการเงิน</p>
+                    </div>
+                    <button class="btn btn-light" t-on-click="() => this.loadData()">
+                        <i class="fa fa-refresh"/> รีเฟรช
+                    </button>
+                </header>
+
+                <t t-if="!state.ready">
+                    <div class="o_vpk_ap_loading">กำลังโหลดข้อมูล...</div>
+                </t>
+                <t t-else="">
+                    <section class="o_vpk_ap_kpis">
+                        <t t-foreach="state.data.kpis" t-as="kpi" t-key="kpi.key">
+                            <button type="button"
+                                    t-att-class="'o_vpk_ap_kpi tone-' + kpi.tone + (state.filter === kpi.key ? ' active' : '')"
+                                    t-on-click="() => this.setFilter(kpi.key)">
+                                <span class="label" t-esc="kpi.label"/>
+                                <strong t-esc="kpi.count"/>
+                                <small>฿<t t-esc="formatMoney(kpi.amount)"/></small>
+                                <em t-esc="kpi.hint"/>
+                            </button>
+                        </t>
+                    </section>
+
+                    <div t-if="state.data.waiting_purchase_send" class="o_vpk_ap_note">
+                        <i class="fa fa-info-circle"/>
+                        มี <strong t-esc="state.data.waiting_purchase_send"/> ใบที่ลงนามครบแล้ว แต่จัดซื้อยังไม่กด "ส่งหน่วยงานเจ้าหนี้"
+                    </div>
+
+                    <section class="o_vpk_ap_card">
+                        <header>
+                            <h2><t t-esc="currentKpi ? currentKpi.label : 'ทั้งหมด'"/> (<t t-esc="visibleRows.length"/>)</h2>
+                            <input class="form-control form-control-sm" placeholder="ค้นหาเลขที่ใบขอ PO ผู้ขาย ใบตรวจรับ"
+                                   t-on-input="onSearch"/>
+                        </header>
+                        <div class="o_vpk_ap_table_wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ใบขออนุมัติเบิกจ่าย</th>
+                                        <th>PO</th>
+                                        <th>ผู้ขาย</th>
+                                        <th>ใบตรวจรับ</th>
+                                        <th class="num">จำนวนเงิน (บาท)</th>
+                                        <th>ส่งเจ้าหนี้เมื่อ</th>
+                                        <th t-esc="state.filter === 'to_finance' ? 'ส่งการเงินเมื่อ' : 'รอมาแล้ว'"/>
+                                        <th>ใบเรียกเก็บ</th>
+                                        <th>สถานะ</th>
+                                        <th class="act">ดำเนินการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="visibleRows" t-as="row" t-key="row.id">
+                                        <tr>
+                                            <td><a href="#" t-on-click.prevent="() => this.openDocument(row)"><strong t-esc="row.name"/></a></td>
+                                            <td><a href="#" t-if="row.po_id" t-on-click.prevent="() => this.openPurchaseOrder(row)" t-esc="row.po_name"/></td>
+                                            <td t-esc="row.vendor"/>
+                                            <td t-esc="row.wa"/>
+                                            <td class="num" t-esc="formatMoney(row.amount)"/>
+                                            <td t-esc="formatDate(row.forwarded_on)"/>
+                                            <td t-esc="waitingLabel(row)"/>
+                                            <td>
+                                                <a href="#" t-if="row.bill_id" t-on-click.prevent="() => this.openBill(row)" t-esc="row.bill_name"/>
+                                                <t t-else="">—</t>
+                                            </td>
+                                            <td><span t-att-class="'o_vpk_ap_pill st-' + (row.status_key || row.state)" t-esc="row.state_label"/></td>
+                                            <td class="act">
+                                                <button t-if="row.state === 'wait_ap'" class="btn btn-sm btn-primary"
+                                                        t-att-disabled="state.busyId === row.id"
+                                                        t-on-click="() => this.createBill(row)">
+                                                    <i class="fa fa-download"/> ดึงรายการตั้งเจ้าหนี้ (Draft)
+                                                </button>
+                                                <button t-if="row.state === 'billed'" class="btn btn-sm btn-outline-primary"
+                                                        t-on-click="() => this.openBill(row)">
+                                                    <i class="fa fa-file-text-o"/> เปิดใบเรียกเก็บ
+                                                </button>
+                                                <button t-if="row.state === 'posted'" class="btn btn-sm btn-primary"
+                                                        t-att-disabled="state.busyId === row.id"
+                                                        t-on-click="() => this.sendToFinance(row)">
+                                                    <i class="fa fa-share"/> ส่งการเงิน
+                                                </button>
+                                                <button t-if="row.state === 'to_finance'" class="btn btn-sm btn-light"
+                                                        t-on-click="() => this.openBill(row)">
+                                                    <i class="fa fa-file-text-o"/> เปิดใบเรียกเก็บ
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <tr t-if="!visibleRows.length">
+                                        <td colspan="10" class="empty">ไม่มีรายการในสถานะนี้</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -272,10 +272,18 @@
                         class="oe_egp_compare_actions d-flex flex-wrap gap-1 mb-2"
                     >
                         <button
+                            name="action_open_egp_bid_import_wizard"
+                            type="object"
+                            string="เพิ่มผู้เสนอราคา"
+                            class="btn-primary"
+                            icon="fa-plus"
+                            invisible="egp_consideration_type != 'line'"
+                        />
+                        <button
                             name="action_summarize_offered_totals"
                             type="object"
                             string="สรุปราคารวมที่เสนอ"
-                            class="btn-primary"
+                            class="btn-secondary"
                             icon="fa-calculator"
                             invisible="egp_consideration_type not in ('line', 'unit')"
                         />
@@ -287,8 +295,11 @@
                             icon="fa-print"
                         />
                     </div>
-                    <div class="text-muted mb-2" invisible="egp_consideration_type not in ('line', 'unit')">
-                        โหมดเปรียบเทียบต่อรายการ — ใส่ผู้เสนอราคา รายการสินค้า และราคารวม ระบบจะทอนเป็นราคาต่อหน่วยให้อัตโนมัติ
+                    <div class="text-muted mb-2" invisible="egp_consideration_type != 'line'">
+                        กดเพิ่มผู้เสนอราคา เลือกชื่อผู้ขายจากข้อมูลผู้ขาย แล้วเลือกรายการสินค้าในแผน จากนั้นกดตกลง ระบบจะดึงผู้ขายและรายการสินค้าเข้าตาราง
+                    </div>
+                    <div class="text-muted mb-2" invisible="egp_consideration_type != 'unit'">
+                        โหมดเปรียบเทียบต่อหน่วย — ใส่ผู้เสนอราคา รายการสินค้า และราคาต่อหน่วย
                     </div>
                     <field
                         name="egp_bid_line_ids"

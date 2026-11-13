@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_payment_voucher_form_wht_cert_4235" model="ir.ui.view">
+        <field name="name">vpk.payment.voucher.form.wht.cert.4235</field>
+        <field name="model">vpk.payment.voucher</field>
+        <field name="inherit_id" ref="vpk_payment_voucher.view_vpk_payment_voucher_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_print_voucher']" position="after">
+                <button name="action_print_wht_cert" type="object"
+                        string="พิมพ์ใบหักภาษี (ตามเงื่อนไข)" class="btn-secondary"
+                        invisible="state == 'cancel'"/>
+                <button name="action_print_wht_cert_4235" type="object"
+                        string="พิมพ์แบบ 4235 (GFMIS)" class="btn-secondary"
+                        invisible="state == 'cancel'"/>
+                <button name="action_print_wht_cert_general" type="object"
+                        string="พิมพ์แบบทั่วไป (รพ.จ่ายเอง)" class="btn-secondary"
+                        invisible="state == 'cancel'"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_wht_cert_4235" type="object"
+                        class="oe_stat_button" icon="fa-certificate">
+                    <field name="wht_cert_4235_count" widget="statinfo" string="ใบหักภาษี"/>
+                </button>
+            </xpath>
+            <xpath expr="//page[@name='voucher_studio_documents']" position="before">
+                <page string="ใบรับรองหักภาษี ณ ที่จ่าย" name="wht_cert_4235">
+                    <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+                        <button name="action_print_wht_cert" type="object"
+                                string="พิมพ์ใบหักภาษี (ตามเงื่อนไข)" class="btn-primary"
+                                invisible="state == 'cancel'"/>
+                        <button name="action_print_wht_cert_4235" type="object"
+                                string="พิมพ์แบบ 4235 (GFMIS)" class="btn-secondary"
+                                invisible="state == 'cancel'"/>
+                        <button name="action_print_wht_cert_general" type="object"
+                                string="พิมพ์แบบทั่วไป (รพ.จ่ายเอง)" class="btn-secondary"
+                                invisible="state == 'cancel'"/>
+                        <button name="action_view_wht_cert_4235" type="object"
+                                string="เปิดฟอร์มใบรับรองหักภาษี" class="btn-outline-primary"
+                                invisible="state == 'cancel'"/>
+                    </div>
+                    <group>
+                        <field name="wht_recommended_form_type" readonly="1"/>
+                    </group>
+                    <field name="wht_cert_4235_ids"
+                           context="{'default_payment_voucher_id': id, 'default_bill_ids': bill_ids, 'default_form_type': wht_recommended_form_type}">
+                        <list>
+                            <field name="name"/>
+                            <field name="form_type" widget="badge"
+                                   decoration-info="form_type == '4235'"
+                                   decoration-warning="form_type == 'general'"/>
+                            <field name="wht_cert_no"/>
+                            <field name="date"/>
+                            <field name="wht_vendor_name"/>
+                            <field name="wht_income_type"/>
+                            <field name="wht_base_amount" sum="รวมเงินได้"/>
+                            <field name="wht_tax_amount" sum="รวมภาษี"/>
+                            <field name="state" widget="badge"
+                                   decoration-info="state == 'draft'"
+                                   decoration-success="state == 'confirmed'"
+                                   decoration-muted="state == 'cancel'"/>
+                            <button name="action_open_form" type="object"
+                                    string="เปิด" icon="fa-external-link"/>
+                            <button name="action_print_wht_cert" type="object"
+                                    string="พิมพ์ PDF" icon="fa-file-pdf-o"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

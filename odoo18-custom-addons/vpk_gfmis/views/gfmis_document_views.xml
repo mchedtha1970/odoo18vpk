@@ -184,6 +184,26 @@
                                 </list>
                             </field>
                         </page>
+                        <page string="เอกสารอนุมัติเบิกจ่าย" name="approval_docs">
+                            <group name="gfmis_files" string="ไฟล์ Excel ขบ.01 / ขบ.11 สำหรับอัปโหลดเข้าระบบ GFMIS ของกรมบัญชีกลาง">
+                                <field name="file_ids" nolabel="1" colspan="2"
+                                       readonly="state == 'cancelled'"
+                                       context="{'default_document_id': id}">
+                                    <list editable="bottom">
+                                        <field name="file_type"/>
+                                        <field name="name" optional="show"/>
+                                        <field name="file" filename="filename" widget="binary"/>
+                                        <field name="filename" column_invisible="1"/>
+                                        <field name="uploaded_by" optional="show"/>
+                                        <field name="uploaded_on" optional="show"/>
+                                        <field name="gfmis_uploaded" widget="boolean_toggle"
+                                               groups="vpk_gfmis.group_gfmis_user"/>
+                                        <field name="gfmis_uploaded_on" optional="show"/>
+                                        <field name="note" optional="show"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
                         <page string="ผลการตรวจสอบ / หมายเหตุ" name="notes">
                             <field name="gfmis_message" placeholder="รหัสข้อความจาก GFMIS หลังจำลองบันทึก"/>
                             <field name="note" placeholder="หมายเหตุภายใน"/>

@@ -226,6 +226,18 @@ class GfmisDocument(models.Model):
         index=True,
     )
 
+    file_ids = fields.One2many(
+        "gfmis.document.file",
+        "document_id",
+        string="ไฟล์ Excel อัปโหลด GFMIS",
+    )
+    file_count = fields.Integer(compute="_compute_file_count")
+
+    @api.depends("file_ids")
+    def _compute_file_count(self):
+        for rec in self:
+            rec.file_count = len(rec.file_ids)
+
     line_ids = fields.One2many(
         "gfmis.document.line",
         "document_id",

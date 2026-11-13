@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from . import gfmis_form_type
 from . import gfmis_document
+from . import gfmis_document_file
 from . import disbursement_dashboard
 from . import res_company
 from . import res_config_settings

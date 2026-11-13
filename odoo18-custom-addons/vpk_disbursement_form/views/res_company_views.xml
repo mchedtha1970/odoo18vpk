@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_company_form_disbursement" model="ir.ui.view">
+        <field name="name">res.company.form.disbursement</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="ใบขอเบิกเงิน" name="disbursement_form">
+                    <group string="ข้อมูลหน่วยงานที่ใช้ในแบบฟอร์ม">
+                        <group>
+                            <field name="vpk_dr_agency_code"/>
+                            <field name="vpk_dr_agency_name"/>
+                            <field name="vpk_dr_province_code"/>
+                            <field name="vpk_dr_province_name"/>
+                        </group>
+                        <group>
+                            <field name="vpk_dr_unit_code"/>
+                            <field name="vpk_dr_unit_name"/>
+                        </group>
+                    </group>
+                    <group string="โหลดไฟล์ template Excel (ทำก่อนใช้งาน)">
+                        <group>
+                            <field name="vpk_dr_template_kb01" filename="vpk_dr_template_kb01_filename"/>
+                            <field name="vpk_dr_template_kb01_filename" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="vpk_dr_template_kb11" filename="vpk_dr_template_kb11_filename"/>
+                            <field name="vpk_dr_template_kb11_filename" invisible="1"/>
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        โหลดไฟล์ template ขบ.01 และ ขบ.11 เข้าไว้ในระบบก่อน
+                        เมื่อกรอกใบขอเบิกเงินครบแล้ว กดบันทึกข้อมูลเข้า template Excel
+                        ระบบจะเติมข้อมูลลงไฟล์และแนบไว้ให้ดาวน์โหลดไปอัปโหลดกรมบัญชีกลาง
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

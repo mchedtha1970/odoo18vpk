@@ -3,7 +3,7 @@
 
 {
     "name": "VPK Document Studio",
-    "version": "18.0.1.18.0",
+    "version": "18.0.1.18.4",
     "category": "Productivity",
     "summary": "สร้างแบบฟอร์มเอง กำหนดฟิลด์ อัปโหลด Word แล้วพิมพ์เป็น Word/PDF",
     "author": "VPK",

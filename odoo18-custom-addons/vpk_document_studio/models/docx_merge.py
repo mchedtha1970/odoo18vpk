@@ -1,11 +1,20 @@
 # Copyright 2026 VPK
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 
-"""Fill a Word template by replacing {{placeholder}} tokens."""
+"""Fill a Word template by replacing {{placeholder}} tokens.
+
+Merge is done surgically inside the .docx ZIP so OnlyOffice styles, theme
+fonts, headers and numbering stay intact. A full python-docx round-trip
+rewrites styles.xml and makes the printed PDF look different from the editor.
+"""
 
 import copy
 import io
+import logging
 import re
+import zipfile
+
+from lxml import etree
 
 try:
     from docx import Document
@@ -16,6 +25,10 @@ except ImportError:  # pragma: no cover
     qn = None
     Paragraph = None
 
+_logger = logging.getLogger(__name__)
+
+W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+W = "{%s}" % W_NS
 THAI_PDF_FONT = "TH Sarabun New"
 PLACEHOLDER_RE = re.compile(
     r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*)\s*\}\}"
@@ -46,26 +59,59 @@ def _paragraph_text(paragraph):
     return "".join(run.text or "" for run in paragraph.runs)
 
 
-def _replace_in_paragraph_runs(paragraph, mapping):
-    """Replace {{code}} inside individual runs when possible so run-level
-    formatting (e.g. dotted underline on a fill-line) is preserved."""
-    runs = paragraph.runs
-    if not runs:
-        return
-    # First coalesce adjacent runs if a {{placeholder}} was split across runs
+def _coalesce_split_placeholders(runs):
+    """Join adjacent runs when {{placeholder}} was split (incl. `{` + `{code` + `}}`)."""
     i = 0
     while i < len(runs):
         txt = runs[i].text or ""
+        needs_join = False
         if "{{" in txt and "}}" not in txt.split("{{")[-1]:
+            needs_join = True
+        elif txt.endswith("{") and i + 1 < len(runs):
+            # Word/OnlyOffice often splits "{{code}}" into "{", "{code", "}}"
+            needs_join = True
+        elif "{" in txt and "}}" not in txt and i + 1 < len(runs):
+            joined_preview = txt + "".join((runs[j].text or "") for j in range(i + 1, min(i + 6, len(runs))))
+            if PLACEHOLDER_RE.search(joined_preview) and (
+                "{{" not in txt or "}}" not in txt.split("{{")[-1]
+            ):
+                needs_join = True
+        if needs_join:
             j = i + 1
             while j < len(runs):
-                txt += runs[j].text or ""
+                nxt = runs[j].text or ""
+                txt += nxt
                 runs[j].text = ""
-                if "}}" in txt.split("{{")[-1]:
-                    break
                 j += 1
+                if PLACEHOLDER_RE.search(txt) and txt.count("{{") <= txt.count("}}"):
+                    break
+                if j - i > 12:
+                    break
             runs[i].text = txt
         i += 1
+
+
+def _replace_in_paragraph_runs(paragraph, mapping):
+    """Replace {{code}} inside runs; coalesce split placeholders first."""
+    runs = paragraph.runs
+    if not runs:
+        return
+    full = "".join(run.text or "" for run in runs)
+    if "{{" not in full and "{" not in full:
+        return
+    _coalesce_split_placeholders(runs)
+    full = "".join(run.text or "" for run in runs)
+    if "{{" not in full:
+        return
+    for code in PLACEHOLDER_RE.findall(full):
+        mapping.setdefault(code, "")
+    new_full = _replace_in_text(full, mapping)
+    if new_full != full:
+        # Reliable path when placeholders spanned many runs
+        runs[0].text = new_full
+        for run in runs[1:]:
+            run.text = ""
+        return
     for run in runs:
         r_pr = run._element.find(qn("w:rPr"))
         if r_pr is not None:
@@ -113,6 +159,37 @@ def _set_run_font(run, font_name=THAI_PDF_FONT):
         r_pr.insert(0, r_fonts)
     for attr in ("w:ascii", "w:hAnsi", "w:eastAsia", "w:cs"):
         r_fonts.set(qn(attr), font_name)
+    # LibreOffice needs complex-script bold/size to embed TH Sarabun Bold.
+    sz = r_pr.find(qn("w:sz"))
+    if sz is not None and r_pr.find(qn("w:szCs")) is None:
+        sz_cs = OxmlElement("w:szCs")
+        sz_cs.set(qn("w:val"), sz.get(qn("w:val")))
+        sz.addnext(sz_cs)
+    if r_pr.find(qn("w:b")) is not None and r_pr.find(qn("w:bCs")) is None:
+        r_pr.append(OxmlElement("w:bCs"))
+    if r_pr.find(qn("w:i")) is not None and r_pr.find(qn("w:iCs")) is None:
+        r_pr.append(OxmlElement("w:iCs"))
+
+
+def _ensure_complex_script_fonts(document):
+    """Mirror Latin ↔ complex-script props so Thai PDF matches the Word template."""
+    from .word_layout import _mirror_complex_script_formatting
+
+    parts = [document.element.body]
+    for section in document.sections:
+        for header_footer in (
+            section.header,
+            section.footer,
+            section.first_page_header,
+            section.first_page_footer,
+        ):
+            if header_footer is None:
+                continue
+            element = getattr(header_footer, "_element", None)
+            if element is not None:
+                parts.append(element)
+    for part in parts:
+        _mirror_complex_script_formatting(part, qn)
 
 
 def _iter_container_paragraphs(container):
@@ -279,16 +356,116 @@ def _replace_in_text(text, mapping):
     return PLACEHOLDER_RE.sub(replacer, text)
 
 
+def _is_mergeable_xml_part(name):
+    if not name.startswith("word/") or not name.endswith(".xml"):
+        return False
+    base = name.rsplit("/", 1)[-1]
+    return (
+        base == "document.xml"
+        or base.startswith("header")
+        or base.startswith("footer")
+        or base.startswith("footnotes")
+        or base.startswith("endnotes")
+    )
+
+
+def _paragraph_w_t_nodes(paragraph):
+    nodes = []
+    for node in paragraph.iter():
+        if node.tag != W + "t":
+            continue
+        # Skip text inside nested paragraphs/hyperlinks? include all w:t under p
+        nodes.append(node)
+    return nodes
+
+
+def _set_paragraph_text_preserve_runs(paragraph, new_text):
+    """Put replaced text into the first w:t and clear the rest (keeps rPr)."""
+    texts = _paragraph_w_t_nodes(paragraph)
+    if not texts:
+        # Create a minimal run/text if paragraph had only placeholders as drawings etc.
+        run = etree.SubElement(paragraph, W + "r")
+        node = etree.SubElement(run, W + "t")
+        node.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+        node.text = new_text
+        return
+    first = texts[0]
+    first.text = new_text
+    first.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+    for node in texts[1:]:
+        node.text = ""
+
+
+def _fill_paragraph_xml(paragraph, mapping):
+    texts = _paragraph_w_t_nodes(paragraph)
+    if not texts:
+        return
+    full = "".join(node.text or "" for node in texts)
+    if "{{" not in full and "{" not in full:
+        return
+    # Coalesce split placeholders already represented as adjacent w:t
+    for code in PLACEHOLDER_RE.findall(full):
+        mapping.setdefault(code, "")
+    new = _replace_in_text(full, mapping)
+    if new == full:
+        return
+    in_table = False
+    parent = paragraph.getparent()
+    while parent is not None:
+        if parent.tag == W + "tc":
+            in_table = True
+            break
+        parent = parent.getparent()
+    if PLACEHOLDER_ONLY_RE.match(full) and not (new or "").strip():
+        # Keep the paragraph for layout; use NBSP inside tables so cells stay visible.
+        _set_paragraph_text_preserve_runs(paragraph, "\u00a0" if in_table else "")
+        return
+    _set_paragraph_text_preserve_runs(paragraph, new)
+
+
+def _expand_tbl_xml(tbl, rows):
+    for tr in list(tbl.findall(W + "tr")):
+        text = "".join(tr.itertext())
+        code = _repeat_code_for_text(text, rows)
+        if not code:
+            continue
+        items = list(rows.get(code) or []) or [{}]
+        parent = tr.getparent()
+        index = list(parent).index(tr)
+        parent.remove(tr)
+        for offset, item in enumerate(items):
+            new_tr = copy.deepcopy(tr)
+            row_map = _row_token_mapping(code, item)
+            for paragraph in new_tr.iter(W + "p"):
+                _fill_paragraph_xml(paragraph, row_map)
+            parent.insert(index + offset, new_tr)
+
+
+def _merge_word_xml(xml_bytes, mapping, rows):
+    root = etree.fromstring(xml_bytes)
+    if rows:
+        seen = set()
+        for tbl in root.iter(W + "tbl"):
+            if id(tbl) in seen:
+                continue
+            seen.add(id(tbl))
+            _expand_tbl_xml(tbl, rows)
+    for paragraph in list(root.iter(W + "p")):
+        _fill_paragraph_xml(paragraph, mapping)
+    return etree.tostring(
+        root,
+        xml_declaration=True,
+        encoding="UTF-8",
+        standalone=True,
+    )
+
+
 def merge_docx_bytes(template_bytes, mapping, known_codes=None, rows=None):
     """Replace {{code}} tokens and return filled .docx bytes.
 
-    Placeholders without a form field are filled with a blank. Paragraphs
-    that contain only an empty placeholder are removed.
-
-    `rows` is {field_code: [row dict, ...]} used to clone Word table rows
-    that contain {{items.product_id}} / {{line.qty}} / {{no}}.
+    Preserves the original OnlyOffice/Word package (styles, theme, numbering).
+    `rows` clones table rows that contain {{items.*}} / {{line.*}}.
     """
-    _require_docx()
     if not template_bytes:
         raise DocxMergeError("ไม่มีไฟล์ Word สำหรับพิมพ์")
     mapping = {
@@ -298,46 +475,27 @@ def merge_docx_bytes(template_bytes, mapping, known_codes=None, rows=None):
     if known_codes:
         for code in known_codes:
             mapping.setdefault(code, "")
-    document = Document(io.BytesIO(template_bytes))
-    _expand_repeat_table_rows(document, rows or {})
-    for paragraph in list(_iter_paragraphs(document)):
-        for run in paragraph.runs:
-            r_pr = run._element.find(qn("w:rPr"))
-            if r_pr is not None:
-                bdr = r_pr.find(qn("w:bdr"))
-                if bdr is not None:
-                    from docx.oxml import OxmlElement
+    rows = rows or {}
 
-                    val = (bdr.get(qn("w:val")) or "dotted").lower()
-                    u_val = "dotted" if val in ("dotted", "dashed", "dotdash") else "single"
-                    r_pr.remove(bdr)
-                    u_el = r_pr.find(qn("w:u"))
-                    if u_el is None:
-                        u_el = OxmlElement("w:u")
-                        r_pr.append(u_el)
-                    u_el.set(qn("w:val"), u_val)
-        text = _paragraph_text(paragraph)
-        if "{{" not in text:
-            continue
-        for code in PLACEHOLDER_RE.findall(text):
-            mapping.setdefault(code, "")
-        placeholder_only = bool(PLACEHOLDER_ONLY_RE.match(text))
-        new = _replace_in_text(text, mapping)
-        in_table_cell = paragraph._element.getparent() is not None and paragraph._element.getparent().tag.endswith("}tc")
-        if placeholder_only and not (new or "").strip():
-            if in_table_cell:
-                for idx, run in enumerate(paragraph.runs):
-                    run.text = "\u00a0" if idx == 0 else ""
-            else:
-                _remove_paragraph(paragraph)
-            continue
-        if new != text:
-            _replace_in_paragraph_runs(paragraph, mapping)
-    _apply_thai_font(document)
+    try:
+        source = zipfile.ZipFile(io.BytesIO(template_bytes))
+    except zipfile.BadZipFile as error:
+        raise DocxMergeError("ไฟล์ Word เสียหาย") from error
+
     output = io.BytesIO()
-    document.save(output)
+    with source, zipfile.ZipFile(output, "w") as target:
+        for info in source.infolist():
+            data = source.read(info.filename)
+            if _is_mergeable_xml_part(info.filename):
+                try:
+                    data = _merge_word_xml(data, mapping, rows)
+                except Exception:
+                    _logger.exception(
+                        "ZIP merge failed for %s, leaving part unchanged", info.filename
+                    )
+            # Preserve compression method/time from the OnlyOffice package.
+            target.writestr(info, data)
     return output.getvalue()
-
 
 def build_placeholder_guide_docx(title, fields):
     """Build a starter Word file listing each {{code}} for the user to rearrange."""

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_move_form_disbursement_form" model="ir.ui.view">
+        <field name="name">account.move.form.disbursement.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="vpk_gfmis.view_move_form_gfmis"/>
+        <field name="arch" type="xml">
+            <!-- ฟิลด์สำหรับเงื่อนไขปุ่ม (ใส่ครั้งเดียว ห้ามซ้ำกับ stat button) -->
+            <xpath expr="//header" position="inside">
+                <field name="vpk_sent_to_finance" invisible="1"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_disbursement_forms"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-file-text-o"
+                        invisible="disbursement_form_count == 0">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value"><field name="disbursement_form_count"/></span>
+                        <span class="o_stat_text">ใบขอเบิกเงิน</span>
+                    </div>
+                </button>
+            </xpath>
+            <!-- บิลที่ส่งการเงินแล้ว: ปุ่มขออนุมัติเบิกจ่าย → สร้างใบขอเบิกเงิน -->
+            <xpath expr="//button[@name='action_create_gfmis_document']" position="attributes">
+                <attribute name="invisible">move_type not in ('in_invoice', 'in_refund') or (vpk_sent_to_finance and disbursement_form_count) or (not vpk_sent_to_finance and gfmis_document_count)</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -750,6 +750,26 @@ class PurchaseContract(models.Model):
             },
         }
 
+    def _egp_ensure_single_installment_for_once(self):
+        """เมื่อจ่ายครั้งเดียว ให้มีงวดเดียวเต็มมูลค่าสัญญา (ถ้ายังไม่มีงวด)."""
+        Installment = self.env["purchase.contract.installment"]
+        for contract in self.filtered(lambda rec: rec.payment_type == "once"):
+            if contract.installment_ids:
+                continue
+            amount = contract.amount_total or 0.0
+            if amount <= 0:
+                continue
+            Installment.create(
+                {
+                    "contract_id": contract.id,
+                    "name": _("งวดที่ 1"),
+                    "sequence": 1,
+                    "amount": amount,
+                    "percent": 100.0,
+                    "note": _("จ่ายครั้งเดียวตามสัญญา"),
+                }
+            )
+
     def action_open_generate_installments(self):
         """เปิด wizard สร้างรายการงวดงาน."""
         self.ensure_one()

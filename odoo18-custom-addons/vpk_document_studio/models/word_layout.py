@@ -952,21 +952,28 @@ p {{ margin-top: 0; margin-bottom: 0; line-height: 100% }}
 
 
 def _mirror_complex_script_formatting(body, qn):
-    """LibreOffice stores Thai bold/italic/size only as complex-script
-    properties; copy them so Latin text in the same run matches.
-    Also convert run-level `<w:bdr>` (which renders as a 4-sided box around
-    text) into `<w:u w:val="dotted|single"/>` so fill-lines render as clean
-    bottom underlines instead of boxes."""
+    """Keep Latin and complex-script (Thai) formatting in sync.
+
+    LibreOffice embeds Thai bold only when ``w:bCs`` is set. python-docx and
+    many Word templates set ``w:b`` alone, so PDF print falls back to Regular
+    and looks different from the template editor. Mirror both directions.
+    Also convert run-level ``<w:bdr>`` boxes into underline fill-lines.
+    """
     pairs = (("w:bCs", "w:b"), ("w:iCs", "w:i"), ("w:szCs", "w:sz"))
     for rpr in body.iter(qn("w:rPr")):
         for cs_tag, latin_tag in pairs:
             cs_el = rpr.find(qn(cs_tag))
-            if cs_el is None or rpr.find(qn(latin_tag)) is not None:
-                continue
-            latin_el = etree.Element(qn(latin_tag))
-            for key, value in cs_el.attrib.items():
-                latin_el.set(key, value)
-            cs_el.addprevious(latin_el)
+            latin_el = rpr.find(qn(latin_tag))
+            if cs_el is not None and latin_el is None:
+                latin_el = etree.Element(qn(latin_tag))
+                for key, value in cs_el.attrib.items():
+                    latin_el.set(key, value)
+                cs_el.addprevious(latin_el)
+            elif latin_el is not None and cs_el is None:
+                cs_el = etree.Element(qn(cs_tag))
+                for key, value in latin_el.attrib.items():
+                    cs_el.set(key, value)
+                latin_el.addnext(cs_el)
         bdr = rpr.find(qn("w:bdr"))
         if bdr is not None:
             val = (bdr.get(qn("w:val")) or "dotted").lower()

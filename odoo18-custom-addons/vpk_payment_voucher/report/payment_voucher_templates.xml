@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_payment_voucher_memo">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="vpk_payment_voucher.report_payment_voucher_memo_document"/>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_payment_voucher_memo_document">
+        <t t-set="memo_asset_base" t-value="env['ir.config_parameter'].sudo().get_param('report.url') or env['ir.config_parameter'].sudo().get_param('web.base.url') or ''"/>
+        <style type="text/css" t-out="doc._get_official_memo_inline_css()"/>
+        <div class="vpk-official-memo">
+            <div class="vpk-memo-page">
+                <!-- Header: Garuda + บันทึกข้อความ -->
+                <div class="vpk-memo-header-row">
+                    <div class="vpk-memo-garuda">
+                        <img t-att-src="memo_asset_base + '/vpk_tier_validation/static/src/img/garuda_emblem.svg'"
+                             alt="Garuda"/>
+                    </div>
+                    <div class="vpk-memo-title-wrap">
+                        <h1 class="vpk-memo-title">บันทึกข้อความ</h1>
+                    </div>
+                </div>
+
+                <div class="vpk-memo-meta">
+                    <div class="vpk-memo-agency">
+                        <span class="vpk-label">ส่วนราชการ</span>
+                        <span class="vpk-dots" t-esc="doc._get_agency_display()"/>
+                    </div>
+                    <div class="vpk-memo-ref-date">
+                        <div class="vpk-ref">
+                            <span class="vpk-label">ที่</span>
+                            <span class="vpk-dots" t-esc="doc._get_ref_display()"/>
+                        </div>
+                        <div class="vpk-date">
+                            <span class="vpk-label">วันที่</span>
+                            <span class="vpk-dots" t-esc="doc._thai_digits(doc._format_date_thai())"/>
+                        </div>
+                    </div>
+                    <div class="vpk-memo-subject">
+                        <span class="vpk-label">เรื่อง</span>
+                        <span class="vpk-dots" t-esc="doc.memo_subject"/>
+                    </div>
+                    <div class="vpk-memo-to">
+                        <span class="vpk-label">เรียน</span>
+                        <span class="vpk-dots" t-esc="doc.memo_to"/>
+                    </div>
+                </div>
+
+                <div class="vpk-memo-opening">
+                    <p class="vpk-pv-purpose" t-esc="doc.intro_text"/>
+                </div>
+
+                <!-- ตารางรายการ -->
+                <table class="vpk-pv-table">
+                    <thead>
+                        <tr>
+                            <th class="col-no">ลำดับที่</th>
+                            <th class="col-partner">บริษัท</th>
+                            <th class="col-bill">บิลเลขที่</th>
+                            <th class="col-amount">จำนวนเงิน บาท</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="doc.line_ids" t-as="line">
+                            <tr>
+                                <td class="col-no" t-esc="doc._thai_digits(line_index + 1)"/>
+                                <td class="col-partner" t-esc="line.partner_name"/>
+                                <td class="col-bill" t-esc="line.bill_ref"/>
+                                <td class="col-amount" t-esc="doc._format_amount(line.amount)"/>
+                            </tr>
+                        </t>
+                        <tr class="row-total">
+                            <td colspan="3" style="text-align:center;">รวมเป็นเงิน</td>
+                            <td class="col-amount" t-esc="doc._format_amount(doc.amount_total)"/>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="vpk-pv-baht-text">
+                    (<span t-esc="doc.amount_total_text"/>)
+                </div>
+
+                <p class="vpk-pv-purpose" t-esc="doc._filled_purpose_text()"/>
+
+                <p class="vpk-pv-closing">จึงเรียนมาเพื่อโปรดพิจารณาอนุมัติ</p>
+
+                <div class="vpk-pv-approval">
+                    <strong t-esc="doc.approval_text or 'อนุมัติให้เบิกจ่ายได้'"/>
+                </div>
+
+                <table class="vpk-pv-signs">
+                    <tr>
+                        <td>
+                            <div class="vpk-pv-sign-space"/>
+                            <div>(<span t-esc="doc.proposer_name or '........................................'"/>)</div>
+                            <div t-esc="doc.proposer_position or 'เจ้าพนักงานการเงินและบัญชี'"/>
+                        </td>
+                        <td>
+                            <div class="vpk-pv-sign-space"/>
+                            <div>(<span t-esc="doc.approver_name or '........................................'"/>)</div>
+                            <div t-esc="doc.approver_position or 'ผู้อำนวยการโรงพยาบาลวชิระภูเก็ต'"/>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </template>
+</odoo>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_payment_voucher_create_wizard_form" model="ir.ui.view">
+        <field name="name">vpk.payment.voucher.create.wizard.form</field>
+        <field name="model">vpk.payment.voucher.create.wizard</field>
+        <field name="arch" type="xml">
+            <form string="สร้างใบสำคัญจ่าย">
+                <group>
+                    <field name="voucher_id" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <field name="company_partner_id" invisible="1"/>
+                    <field name="available_bank_account_ids" invisible="1"/>
+                    <field name="memo_subject"/>
+                    <field name="journal_id" options="{'no_create': True}"
+                              placeholder="เลือก Bank Journal / แหล่งเงิน"/>
+                    <field name="bank_account_id" options="{'no_create': True}"/>
+                </group>
+                <group string="ใบเรียกเก็บที่ POST แล้ว">
+                    <field name="bill_ids" nolabel="1" colspan="2">
+                        <list>
+                            <field name="name"/>
+                            <field name="partner_id"/>
+                            <field name="invoice_date"/>
+                            <field name="amount_residual"/>
+                            <field name="amount_total"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                </group>
+                <footer>
+                    <button name="action_create_voucher" type="object"
+                            string="สร้างใบสำคัญจ่าย" class="btn-primary"/>
+                    <button string="ยกเลิก" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vpk_payment_voucher_create_wizard" model="ir.actions.act_window">
+        <field name="name">สร้างใบสำคัญจ่ายจากใบเรียกเก็บ</field>
+        <field name="res_model">vpk.payment.voucher.create.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_view_types">list</field>
+    </record>
+</odoo>

@@ -198,6 +198,8 @@ class PurchaseRequest(models.Model):
             "งบจะถูกจองเมื่อเปิดใบขอซื้อเพื่อสั่งของตามจำนวนจริง"
         )
         for request in self:
+            # ผู้บันทึกสัญญาอาจไม่ใช่ผู้เปิดใบขอซื้อ สิทธิ์ใบขอซื้อจึงไม่ครอบคลุมใบต้นทาง
+            request = request.sudo()
             was_holding = bool(request.budget_reservation_active)
             already = bool(request.price_agreement_only)
             if was_holding and hasattr(request, "_release_budget_reservation"):

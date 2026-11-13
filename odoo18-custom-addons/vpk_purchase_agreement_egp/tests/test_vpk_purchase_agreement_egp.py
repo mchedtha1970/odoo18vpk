@@ -811,3 +811,20 @@ class TestVpkPurchaseAgreementEgp(TransactionCase):
         action = self.requisition.action_print_contract_essence()
         self.assertEqual(action["type"], "ir.actions.report")
         self.assertIn("contract_essence", action["report_name"])
+
+    @tagged("post_install", "-at_install", "egp_bid_line_entry")
+    def test_bid_import_wizard_pulls_vendor_and_plan_lines(self):
+        self.requisition.egp_consideration_type = "line"
+        action = self.requisition.action_open_egp_bid_import_wizard()
+        wizard = self.env["purchase.requisition.egp.bid.import.wizard"].browse(
+            action["res_id"]
+        )
+        self.assertEqual(len(wizard.line_ids), 1)
+        self.assertTrue(wizard.line_ids.selected)
+        wizard.partner_id = self.partner
+        wizard.action_confirm()
+        self.assertEqual(self.requisition.egp_bid_ids.partner_id, self.partner)
+        self.assertEqual(
+            self.requisition.egp_bid_line_ids.product_id, self.product
+        )
+        self.assertEqual(self.requisition.egp_bid_line_ids.product_qty, 5.0)

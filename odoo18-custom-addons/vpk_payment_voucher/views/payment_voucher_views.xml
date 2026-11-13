@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_payment_voucher_tree" model="ir.ui.view">
+        <field name="name">vpk.payment.voucher.list</field>
+        <field name="model">vpk.payment.voucher</field>
+        <field name="arch" type="xml">
+            <list string="ใบสำคัญจ่าย">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="memo_subject"/>
+                <field name="journal_id" optional="show"/>
+                <field name="fund_name" optional="hide" column_invisible="1"/>
+                <field name="amount_total" sum="รวม"/>
+                <field name="state" widget="badge"
+                         decoration-info="state == 'draft'"
+                         decoration-warning="state == 'to_approve'"
+                         decoration-success="state == 'approved'"
+                         decoration-muted="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_payment_voucher_form" model="ir.ui.view">
+        <field name="name">vpk.payment.voucher.form</field>
+        <field name="model">vpk.payment.voucher</field>
+        <field name="arch" type="xml">
+            <form string="ใบสำคัญจ่าย">
+                <header>
+                    <button name="action_submit" type="object" string="ส่งขออนุมัติ"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_approve" type="object" string="อนุมัติ"
+                            class="btn-primary" invisible="state != 'to_approve'"
+                            groups="account.group_account_manager"/>
+                    <button name="action_draft" type="object" string="ตั้งเป็นร่าง"
+                            invisible="state not in ('to_approve', 'approved', 'cancel')"/>
+                    <button name="action_cancel" type="object" string="ยกเลิก"
+                            invisible="state == 'cancel'"/>
+                    <button name="action_print_voucher" type="object"
+                            string="พิมพ์บันทึกข้อความ" class="btn-secondary"/>
+                    <button name="action_open_print_cheque_wizard" type="object"
+                            string="พิมพ์เช็ค" class="btn-secondary"
+                            invisible="state == 'cancel' or disbursement_type == 'gfmis'"/>
+                    <button name="action_add_bills" type="object"
+                            string="เพิ่มใบเรียกเก็บ" invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,to_approve,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_studio_documents" type="object"
+                                class="oe_stat_button" icon="fa-file-text-o">
+                            <field name="studio_document_count" widget="statinfo" string="เอกสารใบสำคัญจ่าย"/>
+                        </button>
+                        <button name="action_view_cheque_leaves" type="object"
+                                class="oe_stat_button" icon="fa-money"
+                                invisible="disbursement_type == 'gfmis'">
+                            <field name="cheque_leaf_count" widget="statinfo" string="เช็คสั่งจ่าย"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="หัวหนังสือ">
+                            <field name="date"/>
+                            <field name="memo_agency"/>
+                            <field name="memo_phone"/>
+                            <field name="memo_ref_prefix"/>
+                            <field name="memo_ref"/>
+                            <field name="memo_subject"/>
+                            <field name="memo_to"/>
+                        </group>
+                        <group string="แหล่งเงิน / บัญชี">
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="company_partner_id" invisible="1"/>
+                            <field name="available_bank_account_ids" invisible="1"/>
+                            <field name="journal_id"
+                                      options="{'no_create': True, 'no_open': False}"
+                                      placeholder="เลือก Bank Journal / แหล่งเงิน"/>
+                            <field name="fund_name" invisible="1"/>
+                            <field name="bank_account_id"
+                                      options="{'no_create': True}"
+                                      context="{'default_partner_id': company_partner_id}"/>
+                            <field name="bank_display"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="amount_total"/>
+                            <field name="amount_total_text"/>
+                            <field name="attachment_count"/>
+                            <field name="disbursement_type" readonly="1"/>
+                            <field name="cheque_numbers" readonly="1" invisible="not cheque_numbers"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="intro_text" colspan="2"/>
+                        <field name="purpose_text" colspan="2"/>
+                    </group>
+                    <notebook>
+                        <page string="รายการ" name="lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="partner_id"/>
+                                    <field name="partner_name"/>
+                                    <field name="bill_ref"/>
+                                    <field name="amount" sum="รวม"/>
+                                    <field name="move_id" optional="show"/>
+                                    <field name="note" optional="hide"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="ใบเรียกเก็บอ้างอิง" name="bills">
+                            <field name="bill_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="partner_id"/>
+                                    <field name="amount_total"/>
+                                    <field name="amount_residual"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="ผู้ลงนาม" name="signers">
+                            <group>
+                                <group string="ผู้เสนอ">
+                                    <field name="proposer_name"/>
+                                    <field name="proposer_position"/>
+                                </group>
+                                <group string="ผู้อนุมัติ">
+                                    <field name="approval_text"/>
+                                    <field name="approver_name"/>
+                                    <field name="approver_position"/>
+                                </group>
+                            </group>
+                            <field name="note"/>
+                        </page>
+                        <page string="เช็คสั่งจ่าย" name="cheques" invisible="disbursement_type == 'gfmis'">
+                            <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+                                <button name="action_open_print_cheque_wizard" type="object"
+                                        string="พิมพ์เช็ค" class="btn-primary"
+                                        invisible="state == 'cancel'"/>
+                                <span class="text-muted">
+                                    สำหรับการจ่ายตรงจากโรงพยาบาล (ไม่ผ่าน GFMIS) — ดึงผู้ขายและยอดจ่ายสุทธิ (หลังหักภาษี ณ ที่จ่าย) เข้าหน้าต่างพิมพ์เช็คอัตโนมัติ
+                                </span>
+                            </div>
+                            <field name="cheque_leaf_ids" readonly="1">
+                                <list create="false" delete="false" edit="false">
+                                    <field name="book_id"/>
+                                    <field name="cheque_number"/>
+                                    <field name="paid_to"/>
+                                    <field name="issue_date"/>
+                                    <field name="amount" sum="รวม"/>
+                                    <field name="state" widget="badge"
+                                           decoration-info="state == 'blank'"
+                                           decoration-success="state == 'printed'"
+                                           decoration-muted="state == 'cancelled'"/>
+                                    <button name="action_print" type="object" string="พิมพ์เช็ค" icon="fa-print" invisible="state == 'cancelled'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="เอกสารใบสำคัญจ่าย" name="voucher_studio_documents">
+                            <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+                                <button name="action_print_voucher" type="object"
+                                        string="พิมพ์บันทึกข้อความ" class="btn-primary"
+                                        invisible="state == 'cancel'"/>
+                                <span class="text-muted">
+                                    พิมพ์จากแบบฟอร์ม Document Studio ใบสำคัญจ่าย ที่ตั้งค่าไว้
+                                    แล้วเก็บไฟล์ PDF ไว้ในรายการด้านล่าง
+                                </span>
+                            </div>
+                            <field name="studio_document_ids" readonly="1"
+                                    context="{'default_payment_voucher_id': id, 'default_source_mode': 'uploaded'}">
+                                <list create="false" delete="false" edit="false">
+                                    <field name="document_type_id" string="ประเภท"/>
+                                    <field name="name" string="เลขที่เอกสาร"/>
+                                    <field name="date"/>
+                                    <field name="source_mode" string="ที่มา"/>
+                                    <field name="pdf_filename" string="ไฟล์"/>
+                                    <field name="signature_state" string="สถานะการลงนาม" widget="badge"
+                                             decoration-muted="signature_state == 'not_sent'"
+                                             decoration-warning="signature_state == 'waiting'"
+                                             decoration-success="signature_state == 'signed'"/>
+                                    <field name="state" string="สถานะ" widget="badge"
+                                             decoration-info="state == 'draft'"
+                                             decoration-success="state in ('generated', 'approved')"
+                                             decoration-warning="state == 'to_approve'"
+                                             decoration-muted="state == 'cancelled'"/>
+                                    <button name="action_open_form" type="object"
+                                            string="เปิด" icon="fa-external-link"/>
+                                    <button name="action_open_pdf" type="object"
+                                            string="ดู PDF" icon="fa-file-pdf-o"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_payment_voucher_search" model="ir.ui.view">
+        <field name="name">vpk.payment.voucher.search</field>
+        <field name="model">vpk.payment.voucher</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="memo_subject"/>
+                <field name="journal_id"/>
+                <field name="fund_name"/>
+                <filter name="draft" string="ร่าง" domain="[('state', '=', 'draft')]"/>
+                <filter name="to_approve" string="รออนุมัติ" domain="[('state', '=', 'to_approve')]"/>
+                <filter name="approved" string="อนุมัติแล้ว" domain="[('state', '=', 'approved')]"/>
+                <group>
+                    <filter name="group_state" string="สถานะ" context="{'group_by': 'state'}"/>
+                    <filter name="group_date" string="วันที่" context="{'group_by': 'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_payment_voucher" model="ir.actions.act_window">
+        <field name="name">ใบสำคัญจ่าย</field>
+        <field name="res_model">vpk.payment.voucher</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                สร้างใบสำคัญจ่ายจากใบเรียกเก็บที่ POST แล้ว
+            </p>
+            <p>
+                ใช้พิมพ์บันทึกข้อความส่งขออนุมัติเบิกจ่าย
+            </p>
+        </field>
+    </record>
+</odoo>

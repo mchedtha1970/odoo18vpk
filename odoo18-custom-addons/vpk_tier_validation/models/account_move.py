@@ -1,9 +1,34 @@
 # -*- coding: utf-8 -*-
 from odoo import models
 
+# ฟิลด์ที่ Odoo อาจเขียนบนบิลอื่นในลำดับเดียวกันตอน reset เป็นร่าง
+_SEQUENCE_GAP_EXCEPTIONS = ["made_sequence_gap"]
+
 
 class AccountMove(models.Model):
     _inherit = "account.move"
+
+    def _get_after_validation_exceptions(self):
+        """อนุญาตอัปเดต made_sequence_gap หลังอนุมัติแล้ว.
+
+        ตอน button_draft ของบิลหนึ่ง Odoo จะเขียน made_sequence_gap ให้บิลถัดไป
+        ในลำดับเดียวกัน ซึ่งยังอยู่ในสถานะ validated → ถ้าไม่ยกเว้นจะ error
+        "You are not allowed to write those fields after validation".
+        """
+        return list(
+            set(super()._get_after_validation_exceptions() + _SEQUENCE_GAP_EXCEPTIONS)
+        )
+
+    def _get_under_validation_exceptions(self):
+        return list(
+            set(super()._get_under_validation_exceptions() + _SEQUENCE_GAP_EXCEPTIONS)
+        )
+
+    def button_draft(self):
+        """รีเซ็ตเป็นร่างได้แม้เคยผ่าน tier validation แล้ว."""
+        return super(
+            AccountMove, self.with_context(skip_validation_check=True)
+        ).button_draft()
 
     def _tier_validation_check_state_on_write(self, vals):
         """Allow auto-post for depreciation / skip_validation_check flows.

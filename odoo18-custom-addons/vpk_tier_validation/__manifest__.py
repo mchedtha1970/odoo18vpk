@@ -1,6 +1,6 @@
 {
     "name": "VPK Sequential Approval Workflow",
-    "version": "18.0.1.6.1",
+    "version": "18.0.1.6.3",
     "category": "Tools",
     "summary": "Multi-level sequential approval for Purchase, Stock, Bills and more",
     "description": """
@@ -16,6 +16,7 @@ Supported documents out of the box:
 - Vendor Bill / Invoice (บิล/ใบแจ้งหนี้)
 - Stock Transfer (การรับ-จ่ายสินค้า)
 - Expense (ค่าใช้จ่าย)
+- Payment / ใบสำคัญจ่าย (account.payment)
 
 Configure at: Settings → กล่องอนุมัติเอกสาร → กำหนดลำดับการอนุมัติ
     """,
@@ -28,6 +29,7 @@ Configure at: Settings → กล่องอนุมัติเอกสา�
         "purchase_request_tier_validation",
         "purchase_tier_validation",
         "account_move_tier_validation",
+        "account_payment_tier_validation",
         "stock_picking_tier_validation",
         "hr_expense_tier_validation",
         "l10n_th_tier_department",

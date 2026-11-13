@@ -3,9 +3,9 @@
 
 {
     "name": "VPK Document Studio OnlyOffice",
-    "version": "18.0.1.3.2",
+    "version": "18.0.1.4.0",
     "category": "Productivity",
-    "summary": "แก้ไขไฟล์ Word ของ Document Studio ด้วย ONLYOFFICE Docs",
+    "summary": "แก้ไขไฟล์ Word ของ Document Studio ด้วย ONLYOFFICE Docs และแปลง PDF ด้วย ConvertService",
     "author": "VPK",
     "license": "LGPL-3",
     "depends": ["vpk_document_studio", "onlyoffice_odoo"],

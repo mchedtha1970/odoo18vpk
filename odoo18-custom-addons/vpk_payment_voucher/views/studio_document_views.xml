@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_document_studio_document_list_payment_voucher" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.list.payment.voucher</field>
+        <field name="model">vpk.document.studio.document</field>
+        <field name="priority">35</field>
+        <field name="arch" type="xml">
+            <list create="false" delete="false" edit="false" string="เอกสารใบสำคัญจ่าย">
+                <field name="document_type_id" string="ประเภท"/>
+                <field name="name" string="เลขที่เอกสาร"/>
+                <field name="date"/>
+                <field name="payment_voucher_id" string="ใบสำคัญจ่าย" optional="show"/>
+                <field name="source_mode" string="ที่มา"/>
+                <field name="pdf_filename" string="ไฟล์"/>
+                <field name="signature_state" string="สถานะการลงนาม" widget="badge"
+                         decoration-muted="signature_state == 'not_sent'"
+                         decoration-warning="signature_state == 'waiting'"
+                         decoration-success="signature_state == 'signed'"/>
+                <field name="state" string="สถานะ" widget="badge"
+                         decoration-info="state == 'draft'"
+                         decoration-success="state in ('generated', 'approved')"
+                         decoration-warning="state == 'to_approve'"
+                         decoration-muted="state == 'cancelled'"/>
+                <button name="action_open_form" type="object" string="เปิด" icon="fa-external-link"/>
+                <button name="action_open_pdf" type="object" string="ดู PDF" icon="fa-file-pdf-o"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_document_studio_document_form_payment_voucher" model="ir.ui.view">
+        <field name="name">vpk.document.studio.document.form.payment.voucher</field>
+        <field name="model">vpk.document.studio.document</field>
+        <field name="inherit_id" ref="vpk_document_studio.view_document_studio_document_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='source_ref']" position="after">
+                <field name="payment_voucher_id" readonly="1"
+                         invisible="not payment_voucher_id"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

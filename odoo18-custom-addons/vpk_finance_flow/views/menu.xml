@@ -12,4 +12,30 @@
         action="action_vpk_finance_flow_dashboard"
         sequence="1"
         groups="account.group_account_invoice"/>
+
+    <!-- ระบบการเงิน: แยกเมนูออกมา และย้ายเมนูการชำระเงินมาอยู่ภายใต้ -->
+    <menuitem
+        id="menu_vpk_finance_root"
+        name="ระบบการเงิน"
+        parent="account.menu_finance"
+        sequence="5"/>
+
+    <record id="account.menu_action_account_payments_receivable" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_vpk_finance_root"/>
+        <field name="sequence">10</field>
+    </record>
+    <record id="account.menu_action_account_payments_payable" model="ir.ui.menu">
+        <field name="parent_id" ref="menu_vpk_finance_root"/>
+        <field name="sequence">20</field>
+    </record>
+
+    <!-- ชื่อเมนูภาษาไทย: แยกให้ชัดว่ารับชำระ (ลูกค้า) หรือจ่ายชำระ (ผู้ขาย) -->
+    <function model="ir.ui.menu" name="write" context="{'lang': 'th_TH'}">
+        <value eval="[ref('account.menu_action_account_payments_receivable')]"/>
+        <value eval="{'name': 'การรับชำระเงิน (ลูกหนี้/ลูกค้า)'}"/>
+    </function>
+    <function model="ir.ui.menu" name="write" context="{'lang': 'th_TH'}">
+        <value eval="[ref('account.menu_action_account_payments_payable')]"/>
+        <value eval="{'name': 'การจ่ายชำระเงิน (เจ้าหนี้/ผู้ขาย)'}"/>
+    </function>
 </odoo>

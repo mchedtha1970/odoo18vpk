@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_payment_voucher_accountant,vpk.payment.voucher accountant,model_vpk_payment_voucher,account.group_account_invoice,1,1,1,1
+access_vpk_payment_voucher_manager,vpk.payment.voucher manager,model_vpk_payment_voucher,account.group_account_manager,1,1,1,1
+access_vpk_payment_voucher_line_accountant,vpk.payment.voucher.line accountant,model_vpk_payment_voucher_line,account.group_account_invoice,1,1,1,1
+access_vpk_payment_voucher_line_manager,vpk.payment.voucher.line manager,model_vpk_payment_voucher_line,account.group_account_manager,1,1,1,1
+access_vpk_payment_voucher_create_wizard,vpk.payment.voucher.create.wizard,model_vpk_payment_voucher_create_wizard,account.group_account_invoice,1,1,1,1

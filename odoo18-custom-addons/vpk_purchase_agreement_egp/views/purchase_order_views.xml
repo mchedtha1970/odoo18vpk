@@ -24,6 +24,12 @@
                     invisible="not requisition_id or requisition_type != 'egp_procurement'"
                     readonly="1"
                 />
+                <field
+                    name="egp_disbursement_type"
+                    string="วิธีการเบิกจ่าย"
+                    invisible="not egp_disbursement_type and (not requisition_id or requisition_type != 'egp_procurement')"
+                    readonly="1"
+                />
             </field>
         </field>
     </record>

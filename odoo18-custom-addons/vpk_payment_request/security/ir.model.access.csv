@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_payment_request_wizard_purchase,vpk.payment.request.wizard purchase,model_vpk_payment_request_wizard,purchase.group_purchase_user,1,1,1,1

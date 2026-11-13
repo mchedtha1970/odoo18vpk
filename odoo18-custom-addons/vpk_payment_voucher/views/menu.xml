@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_vpk_payment_voucher_root"
+              name="ใบสำคัญจ่าย"
+              parent="vpk_finance_flow.menu_vpk_finance_root"
+              sequence="15"
+              groups="account.group_account_invoice"/>
+
+    <menuitem id="menu_vpk_payment_voucher"
+              name="ใบสำคัญจ่าย"
+              parent="menu_vpk_payment_voucher_root"
+              action="action_vpk_payment_voucher"
+              sequence="10"/>
+
+    <menuitem id="menu_vpk_payment_voucher_create"
+              name="สร้างจากใบเรียกเก็บ"
+              parent="menu_vpk_payment_voucher_root"
+              action="action_vpk_payment_voucher_create_wizard"
+              sequence="20"/>
+</odoo>

@@ -165,6 +165,43 @@ class AccountPayment(models.Model):
                 payment.company_id, subledger.acc_number
             ).account_id
 
+    @api.model
+    def _vpk_find_bank_subledger(self, company, journal=None, bank=None):
+        """หาบัญชีเงินฝากจากเลขบัญชีธนาคารของสมุด/บัญชีตัดจ่าย."""
+        Slice = self.env["vpk.bank.subledger.account"]
+        bank = bank or (journal.bank_account_id if journal else False)
+        if not company or not bank or not bank.acc_number:
+            return Slice
+        slices = Slice._slices_for(company, bank.acc_number)
+        if not slices:
+            return slices
+        if len(slices) == 1:
+            return slices
+        if journal and journal.default_account_id:
+            by_gl = slices.filtered(lambda s: s.account_id == journal.default_account_id)
+            if len(by_gl) == 1:
+                return by_gl
+        jname = (journal.name or "").strip() if journal else ""
+        if jname:
+            matched = slices.filtered(
+                lambda s: s.name and (s.name in jname or jname.startswith(s.name))
+            )
+            if matched:
+                plain = matched.filtered(
+                    lambda s: " - " not in (s.name or "") and "(" not in (s.name or "")
+                )
+                return (plain or matched).sorted("sequence")[:1]
+        return slices.sorted("sequence")[:1]
+
+    @api.onchange("journal_id")
+    def _onchange_journal_vpk_bank_subledger(self):
+        if self.vpk_bank_subledger_id or not self.journal_id:
+            return
+        subledger = self._vpk_find_bank_subledger(self.company_id, journal=self.journal_id)
+        if subledger:
+            self.vpk_bank_subledger_id = subledger
+            self.vpk_bank_gl_account_id = subledger.account_id
+
     @api.onchange("vpk_bank_subledger_id")
     def _onchange_vpk_bank_subledger_id(self):
         if self.vpk_bank_subledger_id:
@@ -197,6 +234,17 @@ class AccountPayment(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("vpk_bank_subledger_id") or not vals.get("journal_id"):
+                continue
+            journal = self.env["account.journal"].browse(vals["journal_id"])
+            company = self.env["res.company"].browse(
+                vals.get("company_id") or journal.company_id.id
+            )
+            subledger = self._vpk_find_bank_subledger(company, journal=journal)
+            if subledger:
+                vals["vpk_bank_subledger_id"] = subledger.id
+                vals.setdefault("vpk_bank_gl_account_id", subledger.account_id.id)
         payments = super().create(vals_list)
         payments._vpk_align_payment_slice()
         return payments

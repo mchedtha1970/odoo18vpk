@@ -427,6 +427,69 @@ class TestPurchaseContract(TransactionCase):
         self.assertTrue(bidding.price_agreement_only)
         self.assertFalse(bidding.budget_reservation_active)
 
+    def test_purchase_user_save_unlimited_without_pr_write_right(self):
+        buyer = self.env["res.users"].create(
+            {
+                "name": "เจ้าหน้าที่จัดซื้อบันทึกสัญญา",
+                "login": "vpk_contract_buyer_save",
+                "email": "vpk_contract_buyer_save@test.vpk",
+                "groups_id": [
+                    (
+                        6,
+                        0,
+                        [
+                            self.env.ref("base.group_user").id,
+                            self.env.ref("purchase.group_purchase_user").id,
+                            self.env.ref(
+                                "purchase_request.group_purchase_request_user"
+                            ).id,
+                        ],
+                    )
+                ],
+            }
+        )
+        owner = self.env["res.users"].create(
+            {
+                "name": "ผู้เปิดใบขอซื้อสัญญา",
+                "login": "vpk_contract_pr_owner",
+                "email": "vpk_contract_pr_owner@test.vpk",
+                "groups_id": [(6, 0, [self.env.ref("base.group_user").id])],
+            }
+        )
+        bidding = self.env["purchase.request"].create(
+            {
+                "requested_by": owner.id,
+                "line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "product_id": self.product.id,
+                            "name": self.product.name,
+                            "product_qty": 1.0,
+                            "estimated_cost": 100.0,
+                        },
+                    )
+                ],
+            }
+        )
+        requisition = self.env["purchase.requisition"].create(
+            {
+                "requisition_type": "egp_procurement",
+                "purchase_request_id": bidding.id,
+            }
+        )
+        contract = self.env["purchase.contract"].create(
+            {
+                "partner_id": self.partner.id,
+                "requisition_id": requisition.id,
+                "quantity_policy": "fixed",
+                "amount_total": 100.0,
+            }
+        )
+        contract.with_user(buyer).write({"quantity_policy": "unlimited"})
+        self.assertTrue(bidding.price_agreement_only)
+
         calloff = self.env["purchase.request"].create(
             {
                 "requested_by": self.env.user.id,

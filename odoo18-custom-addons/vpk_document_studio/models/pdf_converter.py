@@ -149,6 +149,21 @@ def _soffice_convert(source_bytes, source_ext, convert_to, output_ext,
         fonts_conf = os.path.join(tmp, "fonts.conf")
         os.makedirs(output_dir)
         os.makedirs(profile_dir)
+        # Seed LibreOffice user fonts so Bold/Italic Thai faces are discoverable.
+        lo_fonts = os.path.join(profile_dir, "user", "fonts")
+        os.makedirs(lo_fonts, exist_ok=True)
+        for font_dir in thai_font_dirs():
+            try:
+                for name in os.listdir(font_dir):
+                    if not name.lower().endswith((".ttf", ".otf")):
+                        continue
+                    src = os.path.join(font_dir, name)
+                    dst = os.path.join(lo_fonts, name)
+                    if os.path.isfile(src) and not os.path.exists(dst):
+                        with open(src, "rb") as handle_src, open(dst, "wb") as handle_dst:
+                            handle_dst.write(handle_src.read())
+            except OSError:
+                _logger.debug("Could not seed LibreOffice fonts from %s", font_dir, exc_info=True)
         with open(source_path, "wb") as handle:
             handle.write(source_bytes)
         with open(fonts_conf, "w", encoding="utf-8") as handle:
@@ -157,6 +172,7 @@ def _soffice_convert(source_bytes, source_ext, convert_to, output_ext,
         env = os.environ.copy()
         env["HOME"] = tmp
         env["FONTCONFIG_FILE"] = fonts_conf
+        env["FONTCONFIG_PATH"] = tmp
         env["SAL_USE_VCLPLUGIN"] = "svp"
         profile_uri = Path(profile_dir).resolve().as_uri()
         command = [

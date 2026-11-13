@@ -7,6 +7,20 @@ from odoo import _, api, fields, models
 class PurchaseOrder(models.Model):
     _inherit = "purchase.order"
 
+    @api.depends(
+        "requisition_id",
+        "requisition_id.requisition_type",
+        "contract_id",
+    )
+    def _compute_require_vendor_signature(self):
+        """ใบสั่งซื้อตามสัญญาก็ต้องให้ผู้ขายยืนยันในแอปเหมือนใบ e-GP."""
+        for order in self:
+            is_egp = (
+                order.requisition_id
+                and order.requisition_id.requisition_type == "egp_procurement"
+            )
+            order.require_vendor_signature = bool(is_egp or order.contract_id)
+
     contract_id = fields.Many2one(
         comodel_name="purchase.contract",
         string="รหัสสัญญาอ้างอิง",
@@ -37,6 +51,20 @@ class PurchaseOrder(models.Model):
         related="contract_id.egp_contract_control_no",
         string="เลขคุมสัญญาในระบบ e-GP",
     )
+
+    @api.depends(
+        "requisition_id",
+        "requisition_id.egp_disbursement_type",
+        "contract_id",
+        "contract_id.requisition_id",
+        "contract_id.requisition_id.egp_disbursement_type",
+    )
+    def _compute_egp_disbursement_type(self):
+        for order in self:
+            requisition = order.requisition_id or order.contract_id.requisition_id
+            order.egp_disbursement_type = (
+                requisition.egp_disbursement_type if requisition else False
+            )
     contract_po_number = fields.Char(
         related="contract_id.contract_po_number",
         string="เลขที่สัญญา / ใบสั่งซื้อ",
@@ -59,6 +87,18 @@ class PurchaseOrder(models.Model):
         string="เลข PR",
         compute="_compute_source_documents",
     )
+    source_request_count = fields.Integer(
+        string="จำนวนใบขอซื้อ",
+        compute="_compute_source_documents",
+    )
+    source_requisition_count = fields.Integer(
+        string="จำนวน e-GP",
+        compute="_compute_source_documents",
+    )
+    source_contract_count = fields.Integer(
+        string="จำนวนสัญญา",
+        compute="_compute_source_documents",
+    )
 
     @api.depends(
         "contract_id",
@@ -77,10 +117,16 @@ class PurchaseOrder(models.Model):
     def _compute_source_documents(self):
         for order in self:
             requests = order.order_line.mapped("purchase_request_lines.request_id")
-            request = requests[:1]
             requisition = order.contract_id.requisition_id or order.requisition_id
-            if not requisition and request:
-                requisition = request.egp_requisition_id
+            if not requisition and requests[:1] and "egp_requisition_id" in requests._fields:
+                requisition = requests[:1].egp_requisition_id
+            if (
+                not requests
+                and requisition
+                and requisition.purchase_request_id
+            ):
+                requests = requisition.purchase_request_id
+            request = requests[:1]
             project_no = False
             project_name = False
             if order.contract_id and order.contract_id.egp_reference:
@@ -97,6 +143,9 @@ class PurchaseOrder(models.Model):
             order.source_requisition_id = requisition
             order.source_project_reference = project_no
             order.source_project_name = project_name
+            order.source_request_count = len(requests)
+            order.source_requisition_count = 1 if requisition else 0
+            order.source_contract_count = 1 if order.contract_id else 0
 
     def _get_contract_from_purchase_request(self):
         self.ensure_one()
@@ -104,13 +153,79 @@ class PurchaseOrder(models.Model):
             "purchase_request_lines.request_id.contract_id"
         )[:1]
 
+    def _get_contract_from_requisition(self):
+        """ดึงสัญญาที่สร้างจากเอกสาร e-GP เดียวกัน (และคู่ค้าตรงกันถ้ามี)."""
+        self.ensure_one()
+        requisition = self.requisition_id
+        if not requisition or "contract_ids" not in requisition._fields:
+            return self.env["purchase.contract"]
+        contracts = requisition.contract_ids.filtered(
+            lambda contract: contract.state in ("draft", "confirmed", "done")
+        )
+        if self.partner_id:
+            matched = contracts.filtered(
+                lambda contract: not contract.partner_id
+                or contract.partner_id == self.partner_id
+            )
+            if matched:
+                return matched[:1]
+        return contracts[:1]
+
     def _sync_contract_from_purchase_request(self):
         for order in self:
             if order.contract_id:
                 continue
-            contract = order._get_contract_from_purchase_request()
+            contract = (
+                order._get_contract_from_purchase_request()
+                or order._get_contract_from_requisition()
+            )
             if contract:
                 order.contract_id = contract
+
+    def action_view_source_purchase_requests(self):
+        self.ensure_one()
+        requests = self.source_request_ids
+        if not requests and "purchase_request_ids" in self._fields:
+            requests = self.purchase_request_ids
+        action = {
+            "name": _("ใบขอซื้อ"),
+            "type": "ir.actions.act_window",
+            "res_model": "purchase.request",
+            "view_mode": "list,form",
+            "domain": [("id", "in", requests.ids)],
+            "context": {"create": False},
+        }
+        if len(requests) == 1:
+            action["view_mode"] = "form"
+            action["res_id"] = requests.id
+        return action
+
+    def action_view_source_requisition(self):
+        self.ensure_one()
+        requisition = self.source_requisition_id or self.requisition_id
+        if not requisition:
+            return False
+        return {
+            "name": _("เอกสารกระบวนการ e-GP"),
+            "type": "ir.actions.act_window",
+            "res_model": "purchase.requisition",
+            "view_mode": "form",
+            "res_id": requisition.id,
+            "context": {"create": False},
+        }
+
+    def action_view_source_contract(self):
+        self.ensure_one()
+        if not self.contract_id:
+            return False
+        return {
+            "name": _("สัญญา"),
+            "type": "ir.actions.act_window",
+            "res_model": "purchase.contract",
+            "view_mode": "form",
+            "res_id": self.contract_id.id,
+            "context": {"create": False},
+        }
 
     def button_confirm(self):
         self._sync_contract_from_purchase_request()
@@ -186,9 +301,18 @@ class PurchaseOrder(models.Model):
             vals["contract_id"] = self.contract_id.id
         return vals
 
-    @api.onchange("order_line")
+    @api.onchange("order_line", "requisition_id", "partner_id")
     def _onchange_order_line_sync_contract(self):
         if not self.contract_id:
-            contract = self._get_contract_from_purchase_request()
+            contract = (
+                self._get_contract_from_purchase_request()
+                or self._get_contract_from_requisition()
+            )
             if contract:
                 self.contract_id = contract
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        orders = super().create(vals_list)
+        orders._sync_contract_from_purchase_request()
+        return orders

@@ -14,3 +14,6 @@ access_gfmis_document_wht_user,gfmis.document.wht user,model_gfmis_document_wht,
 access_gfmis_document_wht_purchase,gfmis.document.wht purchase,model_gfmis_document_wht,purchase.group_purchase_user,1,1,1,0
 access_gfmis_document_approve_wizard_manager,gfmis.document.approve.wizard manager,model_gfmis_document_approve_wizard,group_gfmis_manager,1,1,1,1
 access_gfmis_document_approve_wizard_user,gfmis.document.approve.wizard user,model_gfmis_document_approve_wizard,group_gfmis_user,1,0,0,0
+access_gfmis_document_file_internal,gfmis.document.file internal read,model_gfmis_document_file,base.group_user,1,0,0,0
+access_gfmis_document_file_user,gfmis.document.file user,model_gfmis_document_file,group_gfmis_user,1,1,1,1
+access_gfmis_document_file_manager,gfmis.document.file manager,model_gfmis_document_file,group_gfmis_manager,1,1,1,1

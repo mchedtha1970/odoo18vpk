@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- ค่าตั้งต้นของหน่วยงาน ตาม template ขบ.01 ของโรงพยาบาลวชิระภูเก็ต -->
+    <record id="base.main_company" model="res.company">
+        <field name="vpk_dr_agency_code">2102</field>
+        <field name="vpk_dr_agency_name">สำนักงานปลัดกระทรวงสาธารณสุข</field>
+        <field name="vpk_dr_province_code">8300</field>
+        <field name="vpk_dr_province_name">ภูเก็ต</field>
+        <field name="vpk_dr_unit_code">2100200231</field>
+        <field name="vpk_dr_unit_name">โรงพยาบาลวชิระภูเก็ต</field>
+    </record>
+</odoo>
