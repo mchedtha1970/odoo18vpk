@@ -3,7 +3,7 @@
 
 {
     "name": "Thai Localization - VAT and Withholding Tax",
-    "version": "18.0.1.6.2",
+    "version": "18.0.1.6.4",
     "author": "Ecosoft, Odoo Community Association (OCA)",
     "license": "AGPL-3",
     "website": "https://github.com/OCA/l10n-thailand",

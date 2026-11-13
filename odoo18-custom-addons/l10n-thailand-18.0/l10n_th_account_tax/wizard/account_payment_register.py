@@ -22,6 +22,19 @@ class AccountPaymentRegister(models.TransientModel):
         help="Based amount for the tax amount",
     )
 
+    def _l10n_th_default_payment_difference_handling(self):
+        """ค่าเริ่มต้นเมื่อมีการหักภาษี ณ ที่จ่าย — ใช้ multi deduct (option 3) ถ้ามี."""
+        self.ensure_one()
+        selection = {
+            value
+            for value, _label in self._fields[
+                "payment_difference_handling"
+            ]._description_selection(self.env)
+        }
+        if "reconcile_multi_deduct" in selection:
+            return "reconcile_multi_deduct"
+        return "reconcile"
+
     @api.depends("early_payment_discount_mode")
     def _compute_payment_difference_handling(self):
         res = super()._compute_payment_difference_handling()
@@ -31,7 +44,41 @@ class AccountPaymentRegister(models.TransientModel):
                 and wizard.wht_tax_id
                 and wizard.payment_difference
             ):
-                wizard.payment_difference_handling = "reconcile"
+                wizard.payment_difference_handling = (
+                    wizard._l10n_th_default_payment_difference_handling()
+                )
+        return res
+
+    @api.depends(
+        "early_payment_discount_mode",
+        "can_edit_wizard",
+        "can_group_payments",
+        "group_payment",
+        "payment_method_line_id",
+        "payment_method_line_id.payment_account_id",
+        "payment_difference",
+        "wht_tax_id",
+        "wht_amount_base",
+    )
+    def _compute_show_payment_difference(self):
+        """แสดงส่วนต่าง (Price Diff) เมื่อหักภาษี ณ ที่จ่าย.
+
+        Core Odoo ซ่อนบล็อกนี้ถ้า payment method line ไม่มี Outstanding Account
+        แต่โรงพยาบาลมักยังไม่ตั้งค่า outstanding บนทุกวิธีจ่าย (เช่น GFMIS)
+        ทำให้ส่วนต่าง WHT คำนวณแล้ว (เช่น 8400→8316) แต่ไม่โชว์บนหน้าจอ.
+        """
+        res = super()._compute_show_payment_difference()
+        for wizard in self:
+            if wizard.show_payment_difference:
+                continue
+            if (
+                wizard.payment_difference
+                and not wizard.early_payment_discount_mode
+                and wizard.can_edit_wizard
+                and (not wizard.can_group_payments or wizard.group_payment)
+                and (wizard.wht_tax_id or wizard.wht_amount_base)
+            ):
+                wizard.show_payment_difference = True
         return res
 
     @api.depends("wht_tax_id", "wht_amount_base")
@@ -205,7 +252,10 @@ class AccountPaymentRegister(models.TransientModel):
         # For case calculate tax invoice partial payment
         if self.payment_difference_handling == "open":
             self = self.with_context(partial_payment=True)
-        elif self.payment_difference_handling == "reconcile":
+        elif self.payment_difference_handling in (
+            "reconcile",
+            "reconcile_multi_deduct",
+        ):
             self = self.with_context(skip_account_move_synchronization=True)
         # Find original moves
         model = self.env.context.get("active_model")

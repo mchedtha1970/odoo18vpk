@@ -3,16 +3,15 @@
 
 from odoo import Command, api, fields, models
 from odoo.exceptions import UserError
-from odoo.tools import float_is_zero
+from odoo.tools import float_compare, float_is_zero
 from odoo.tools.misc import format_date
 
 
 class AccountPaymentRegister(models.TransientModel):
     _inherit = "account.payment.register"
 
-    @api.depends("early_payment_discount_mode")
-    def _compute_payment_difference_handling(self):
-        res = super()._compute_payment_difference_handling()
+    def _l10n_th_get_wht_move_lines(self):
+        """บรรทัดที่มีภาษีหัก ณ ที่จ่าย จาก context ของ wizard."""
         active_ids = self.env.context.get("active_ids", [])
         model = self.env.context.get("active_model")
         if model == "account.move":
@@ -20,45 +19,92 @@ class AccountPaymentRegister(models.TransientModel):
         elif model == "account.move.line":
             move_lines = self.env[model].browse(active_ids)
         else:
-            raise UserError(self.env._("Unsupported model %s") % model)
+            return self.env["account.move.line"]
+        return move_lines.filtered("wht_tax_id")
 
-        wht_move_lines = move_lines.filtered("wht_tax_id")
+    def _l10n_th_load_wht_multi_deductions(self):
+        """เติมรายการหัก (deduction_ids) จาก WHT บนใบเรียกเก็บ."""
+        self.ensure_one()
+        move_lines = self._l10n_th_get_wht_move_lines()
+        if not move_lines:
+            return False
+        deduction_list, amount_deduct = move_lines._prepare_deduction_list(
+            self.payment_date, self.currency_id
+        )
+        deduct_list = []
+        for deduct in deduction_list:
+            deduct = dict(deduct)
+            deduct["analytic_distribution"] = self.deduct_analytic_distribution
+            deduct_list.append(Command.create(deduct))
+        self.deduction_ids = [Command.clear()] + deduct_list
+        # ลดจำนวนจ่ายเฉพาะครั้งแรกที่ยังไม่หักส่วนต่าง
+        if float_is_zero(self.payment_difference, precision_digits=2):
+            self.amount -= amount_deduct
+            self._compute_payment_difference()
+        return True
+
+    @api.depends(
+        "early_payment_discount_mode",
+        "payment_difference",
+        "wht_tax_id",
+        "wht_amount_base",
+    )
+    def _compute_payment_difference_handling(self):
+        res = super()._compute_payment_difference_handling()
         for wizard in self:
-            # Auto default reconcile multi when 'Keep Open' only
-            if len(wht_move_lines) > 1 and wizard.payment_difference_handling == "open":
+            wht_move_lines = wizard._l10n_th_get_wht_move_lines()
+            # มีการหัก WHT → default เป็น option 3 (multi deduct) ทุกครั้ง
+            if wht_move_lines and (
+                wizard.payment_difference
+                or wizard.wht_amount_base
+                or wizard.wht_tax_id
+            ):
                 wizard.payment_difference_handling = "reconcile_multi_deduct"
         return res
+
+    @api.constrains("deduction_ids", "payment_difference_handling")
+    def _check_deduction_amount(self):
+        """อนุญาตช่วง init ที่ยังไม่มีบรรทัดหัก — create() จะเติมให้ทันที."""
+        prec_digits = self.env.user.company_id.currency_id.decimal_places
+        for rec in self:
+            if rec.payment_difference_handling != "reconcile_multi_deduct":
+                continue
+            if not rec.deduction_ids:
+                continue
+            if (
+                float_compare(
+                    rec.payment_difference,
+                    sum(rec.deduction_ids.mapped("amount")),
+                    precision_digits=prec_digits,
+                )
+                != 0
+            ):
+                raise UserError(
+                    self.env._(
+                        "The total deduction should be %s"
+                    )
+                    % rec.payment_difference
+                )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        for wizard in records:
+            if (
+                wizard.payment_difference_handling == "reconcile_multi_deduct"
+                and not wizard.deduction_ids
+            ):
+                wizard._l10n_th_load_wht_multi_deductions()
+        return records
 
     @api.onchange("payment_difference_handling")
     def _onchange_payment_difference_handling(self):
         if self.payment_difference_handling != "reconcile_multi_deduct":
             return
-
         model = self.env.context.get("active_model")
-        active_ids = self.env.context.get("active_ids", [])
-        if model == "account.move":
-            move_lines = self.env[model].browse(active_ids).mapped("line_ids")
-        elif model == "account.move.line":
-            move_lines = self.env[model].browse(active_ids)
-        else:
+        if model not in ("account.move", "account.move.line"):
             raise UserError(self.env._("Unsupported model %s") % model)
-
-        move_lines = move_lines.filtered("wht_tax_id")
-        if move_lines:
-            # Case WHT only, ensure only 1 wizard
-            self.ensure_one()
-            (deduction_list, amount_deduct) = move_lines._prepare_deduction_list(
-                self.payment_date, self.currency_id
-            )
-            deduct_list = []
-            for deduct in deduction_list:
-                deduct["analytic_distribution"] = self.deduct_analytic_distribution
-                deduct_list.append(Command.create(deduct))
-            self.deduction_ids = [Command.clear()] + deduct_list
-            # Set amount only first time
-            if float_is_zero(self.payment_difference, precision_digits=2):
-                self.amount -= amount_deduct
-                self._compute_payment_difference()
+        self._l10n_th_load_wht_multi_deductions()
 
     def _prepare_deduct_move_line(self, deduct):
         res = super()._prepare_deduct_move_line(deduct)
