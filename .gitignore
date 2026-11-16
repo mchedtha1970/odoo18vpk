@@ -68,3 +68,7 @@ odoo18vpk-docker/VPK_S1/filestore/
 ~$*
 **/~$*
 scripts/playwright/reports/
+
+# SSL private keys (never commit)
+ssl_24erp/*_key.txt
+ssl_24erp/*.key
