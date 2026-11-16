@@ -249,6 +249,7 @@ class PurchaseRequestProcurementDashboard(models.Model):
             "contracts": self._proc_contract_rows(request, orders),
             "contract_control": self._proc_contract_control(request, orders),
             "wa_name": self._proc_wa_label(orders),
+            "payment_approval": self._proc_payment_approval(orders),
             "vendor": self._proc_vendor_label(request, orders),
             "description": description,
             "department": department or "ไม่ระบุหน่วยงาน",
@@ -351,6 +352,44 @@ class PurchaseRequestProcurementDashboard(models.Model):
             )
             names.extend(acceptances.mapped("name"))
         return self._proc_unique_join(names)
+
+    def _proc_payment_approval(self, orders):
+        """สถานะเอกสารขออนุมัติเบิกจ่าย (vpk_payment_request) ของ PO ในโครงการ
+
+        ยังไม่มีเอกสาร -> ยังไม่ส่งลงนาม -> รอลงนาม -> อนุมัติ -> ส่งเจ้าหนี้แล้ว
+        หลายเอกสาร (หลายงวด/หลายใบตรวจรับ) แสดงสถานะที่คืบหน้าน้อยที่สุด
+        """
+        purchase_orders = orders.filtered(lambda rec: rec.state in ("purchase", "done"))
+        if not purchase_orders:
+            return {"key": "none", "label": "—", "tone": "na"}
+        if "payment_request_ids" not in purchase_orders._fields:
+            return {"key": "none", "label": "ยังไม่มีเอกสาร", "tone": "none"}
+        docs = purchase_orders.sudo().mapped("payment_request_ids").filtered(
+            lambda doc: doc.state != "cancelled"
+        )
+        if not docs:
+            return {"key": "none", "label": "ยังไม่มีเอกสาร", "tone": "none"}
+        levels = [
+            ("draft", "ยังไม่ส่งลงนาม", "draft"),
+            ("to_approve", "รอลงนาม", "wait"),
+            ("approved", "อนุมัติ", "done"),
+            ("forwarded", "ส่งเจ้าหนี้แล้ว", "ap"),
+        ]
+        rank = {"draft": 0, "generated": 0, "to_approve": 1, "approved": 2}
+
+        def doc_rank(doc):
+            level = rank.get(doc.state, 0)
+            if level == 2 and "payment_ap_forwarded_on" in doc._fields and doc.payment_ap_forwarded_on:
+                return 3
+            return level
+
+        lowest = min(doc_rank(doc) for doc in docs)
+        key, label, tone = levels[lowest]
+        if len(docs) > 1:
+            done = len(docs.filtered(lambda doc: doc_rank(doc) > lowest))
+            if done:
+                label = "%s (+%s/%s ใบคืบหน้ากว่า)" % (label, done, len(docs))
+        return {"key": key, "label": label, "tone": tone}
 
     def _proc_po_rows(self, orders):
         return [

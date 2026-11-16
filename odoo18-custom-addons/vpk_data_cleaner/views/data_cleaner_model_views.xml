@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_data_cleaner_model_list" model="ir.ui.view">
+        <field name="name">vpk.data.cleaner.model.list</field>
+        <field name="model">vpk.data.cleaner.model</field>
+        <field name="arch" type="xml">
+            <list string="โมเดลข้อมูลแยกตาม Module" create="0" delete="0">
+                <header>
+                    <button name="action_open_clear_wizard"
+                            type="object"
+                            string="ล้างข้อมูลโมเดลที่เลือก..."
+                            class="btn-danger"
+                            icon="fa-trash"/>
+                </header>
+                <field name="cleaner_module_id"/>
+                <field name="data_type" widget="badge"
+                       decoration-warning="data_type == 'transaction'"
+                       decoration-info="data_type == 'master'"/>
+                <field name="name"/>
+                <field name="model_name"/>
+                <field name="table_name" optional="hide"/>
+                <field name="parent_model_name" optional="show"/>
+                <field name="classification_reason"/>
+                <field name="record_count" sum="รวมจำนวนแถว"/>
+                <field name="protect_note" optional="hide"/>
+                <field name="last_cleared_at" optional="hide"/>
+                <button name="action_open_records"
+                        type="object"
+                        string="ดูข้อมูล"
+                        icon="fa-external-link"
+                        class="btn-link"/>
+                <button name="action_open_clear_wizard"
+                        type="object"
+                        string="ล้างข้อมูล"
+                        icon="fa-trash"
+                        class="btn-link text-danger"
+                        invisible="record_count == 0"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_data_cleaner_model_form" model="ir.ui.view">
+        <field name="name">vpk.data.cleaner.model.form</field>
+        <field name="model">vpk.data.cleaner.model</field>
+        <field name="arch" type="xml">
+            <form string="รายละเอียดโมเดลข้อมูล" create="0" delete="0">
+                <header>
+                    <button name="action_open_records"
+                            type="object"
+                            string="เปิดดูข้อมูลจริงในโมเดลนี้"
+                            class="btn-secondary"
+                            icon="fa-external-link"/>
+                    <button name="action_open_clear_wizard"
+                            type="object"
+                            string="ล้างข้อมูลโมเดลนี้..."
+                            class="btn-danger"
+                            icon="fa-trash"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <span class="text-muted"><field name="cleaner_module_id" readonly="1"/></span>
+                        <h1><field name="name" readonly="1"/></h1>
+                        <h3><code><field name="model_name" readonly="1"/></code></h3>
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="not protect_note">
+                        <i class="fa fa-shield me-1" title="ป้องกันระบบ"/>
+                        <field name="protect_note" readonly="1"/>
+                    </div>
+                    <group>
+                        <group string="การจำแนกประเภทข้อมูล (Master vs Transaction)">
+                            <field name="data_type" widget="radio"/>
+                            <field name="is_type_overridden"/>
+                            <field name="classification_reason"/>
+                        </group>
+                        <group string="โครงสร้างตารางและปริมาณข้อมูล">
+                            <field name="table_name" readonly="1"/>
+                            <field name="parent_model_name" readonly="1"/>
+                            <field name="record_count" readonly="1"/>
+                            <field name="last_cleared_at" readonly="1"/>
+                            <field name="last_cleared_by" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_data_cleaner_model_search" model="ir.ui.view">
+        <field name="name">vpk.data.cleaner.model.search</field>
+        <field name="model">vpk.data.cleaner.model</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาโมเดลข้อมูล">
+                <searchpanel view_types="list">
+                    <field name="data_type"
+                           string="ประเภทโมเดล"
+                           icon="fa-tag"
+                           enable_counters="1"/>
+                    <field name="module_group"
+                           string="กลุ่มที่มาโมดูล"
+                           icon="fa-cubes"
+                           enable_counters="1"/>
+                    <field name="cleaner_module_id"
+                           string="แยกตาม Module"
+                           icon="fa-folder-open"
+                           enable_counters="1"
+                           limit="500"/>
+                </searchpanel>
+                <field name="name" string="ชื่อโมเดล / รหัสเทคนิค"
+                       filter_domain="['|', '|', ('name', 'ilike', self), ('model_name', 'ilike', self), ('table_name', 'ilike', self)]"/>
+                <field name="cleaner_module_id"/>
+                <field name="classification_reason"/>
+                <separator/>
+                <filter name="filter_transaction"
+                        string="เฉพาะ Transaction (ข้อมูลรายการ)"
+                        domain="[('data_type', '=', 'transaction')]"/>
+                <filter name="filter_master"
+                        string="เฉพาะ Master (ข้อมูลหลัก)"
+                        domain="[('data_type', '=', 'master')]"/>
+                <separator/>
+                <filter name="filter_has_data"
+                        string="มีข้อมูลค้างอยู่ (&gt; 0 แถว)"
+                        domain="[('record_count', '&gt;', 0)]"/>
+                <filter name="filter_vpk"
+                        string="เฉพาะโมดูล VPK"
+                        domain="[('module_group', '=', 'vpk')]"/>
+                <group expand="1" string="จัดกลุ่มตาม">
+                    <filter name="group_module"
+                            string="โมดูล (Module)"
+                            context="{'group_by': 'cleaner_module_id'}"/>
+                    <filter name="group_data_type"
+                            string="ประเภทข้อมูล (Master / Transaction)"
+                            context="{'group_by': 'data_type'}"/>
+                    <filter name="group_module_group"
+                            string="กลุ่มโมดูล"
+                            context="{'group_by': 'module_group'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_data_cleaner_models" model="ir.actions.act_window">
+        <field name="name">โมเดลข้อมูลแยกตาม Module (Master / Transaction)</field>
+        <field name="res_model">vpk.data.cleaner.model</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_module': 1}</field>
+    </record>
+</odoo>

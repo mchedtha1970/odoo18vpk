@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_asset_depreciation_report_wizard_form" model="ir.ui.view">
+        <field name="name">vpk.asset.depreciation.report.wizard.form</field>
+        <field name="model">vpk.asset.depreciation.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="รายงานค่าเสื่อมประจำปีโรงพยาบาลวชิระภูเก็ต">
+                <group>
+                    <group string="ปีงบประมาณและช่วงเวลา">
+                        <field name="company_id" invisible="1"/>
+                        <field name="fiscal_year_be"/>
+                        <field name="date_start"/>
+                        <field name="date_end"/>
+                        <field name="state_filter"/>
+                        <field name="exclude_zero_value"/>
+                    </group>
+                    <group string="การเลือกประเภทครุภัณฑ์ (Asset Profile) และรูปแบบ Excel">
+                        <field name="filter_mode" widget="radio"/>
+                        <field name="sheet_mode" widget="radio"/>
+                        <field name="max_rows_per_profile"/>
+                    </group>
+                </group>
+                <group string="เลือกประเภทครุภัณฑ์ (Asset Profile)"
+                       invisible="filter_mode != 'by_profile'">
+                    <field name="profile_ids" nolabel="1" colspan="2"
+                           options="{'no_create': True}">
+                        <list>
+                            <field name="name" string="ประเภทครุภัณฑ์ (Asset Profile)"/>
+                            <field name="method_number" string="อายุการใช้งาน (ปี)"/>
+                        </list>
+                    </field>
+                </group>
+                <footer>
+                    <button name="action_export_excel" type="object"
+                            string="ส่งออก Excel (.xlsx)" class="btn-primary"
+                            icon="fa-file-excel-o"/>
+                    <button string="ปิด" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vpk_asset_depreciation_report_wizard" model="ir.actions.act_window">
+        <field name="name">รายงานค่าเสื่อมประจำปีโรงพยาบาลวชิระภูเก็ต</field>
+        <field name="res_model">vpk.asset.depreciation.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- เมนูภายใต้ ระบบจัดการสินทรัพย์ -> รายงาน -->
+    <menuitem id="menu_vpk_asset_depreciation_report_assets"
+              name="รายงานค่าเสื่อมประจำปี (Excel)"
+              parent="account_asset_management.account_asset_report_menu"
+              action="action_vpk_asset_depreciation_report_wizard"
+              sequence="5"
+              groups="account.group_account_readonly,account.group_account_invoice,account.group_account_user"/>
+
+    <!-- เมนูภายใต้ ระบบบัญชี -> การรายงาน -->
+    <menuitem id="menu_vpk_asset_depreciation_report_accounting"
+              name="รายงานค่าเสื่อมประจำปี (Excel)"
+              parent="account.menu_finance_reports"
+              action="action_vpk_asset_depreciation_report_wizard"
+              sequence="35"
+              groups="account.group_account_readonly,account.group_account_invoice,account.group_account_user"/>
+</odoo>

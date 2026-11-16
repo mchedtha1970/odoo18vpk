@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_data_cleaner_wizard_form" model="ir.ui.view">
+        <field name="name">vpk.data.cleaner.wizard.form</field>
+        <field name="model">vpk.data.cleaner.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ยืนยันการล้างข้อมูลโมเดล">
+                <field name="has_master_selected" invisible="1"/>
+
+                <div class="alert alert-info mb-3" role="alert" invisible="has_master_selected">
+                    <strong>สรุปรายการที่จะล้าง (เฉพาะ Transaction):</strong>
+                    เลือกไว้ <field name="selected_model_count" readonly="1" class="fw-bold"/> โมเดล
+                    (ประมาณการ <field name="estimated_row_count" readonly="1" class="fw-bold"/> แถว)
+                    — ข้อมูล Master Data จะไม่ถูกกระทบ
+                </div>
+
+                <div class="alert alert-danger mb-3" role="alert" invisible="not has_master_selected">
+                    <div>
+                        <i class="fa fa-exclamation-triangle me-1" title="คำเตือน"/>
+                        <strong>คำเตือนสำคัญ: มีโมเดลประเภท Master Data รวมอยู่ในรายการที่จะลบ!</strong>
+                    </div>
+                    <div class="mt-1">
+                        เลือกไว้ทั้งหมด <field name="selected_model_count" readonly="1" class="fw-bold"/> โมเดล
+                        (Transaction <field name="selected_tx_count" readonly="1"/> โมเดล /
+                        Master <field name="selected_master_count" readonly="1" class="fw-bold"/> โมเดล ·
+                        รวมประมาณ <field name="estimated_row_count" readonly="1" class="fw-bold"/> แถว)
+                    </div>
+                    <div class="mt-2">
+                        <button name="action_select_only_transactions"
+                                type="object"
+                                string="เปลี่ยนเป็นเลือกเฉพาะ Transaction เท่านั้น"
+                                class="btn btn-sm btn-warning"/>
+                    </div>
+                </div>
+
+                <notebook>
+                    <page string="รายการโมเดลที่จะล้างข้อมูล" name="models_page">
+                        <field name="line_ids">
+                            <list editable="bottom" create="0" delete="0"
+                                  decoration-danger="data_type == 'master' and is_selected"
+                                  decoration-muted="not is_selected">
+                                <field name="is_selected" widget="boolean_toggle"/>
+                                <field name="cleaner_module_id" readonly="1"/>
+                                <field name="data_type" widget="badge"
+                                       decoration-warning="data_type == 'transaction'"
+                                       decoration-info="data_type == 'master'"/>
+                                <field name="name" readonly="1"/>
+                                <field name="model_name" readonly="1"/>
+                                <field name="record_count" sum="รวมแถว" readonly="1"/>
+                                <field name="is_auto_child" readonly="1" optional="show"/>
+                                <field name="protect_note" readonly="1" optional="show"/>
+                            </list>
+                        </field>
+                    </page>
+                    <page string="ตัวเลือกการลบข้อมูล" name="options_page">
+                        <group>
+                            <field name="clean_related_chatter"/>
+                            <field name="force_sql_delete"/>
+                            <field name="reset_sequences"/>
+                        </group>
+                    </page>
+                </notebook>
+
+                <group string="การยืนยันความปลอดภัย">
+                    <field name="confirm_master_delete"
+                           invisible="not has_master_selected"/>
+                    <field name="confirm_text"
+                           placeholder="พิมพ์ CLEAR ตัวพิมพ์ใหญ่เพื่อยืนยันการลบข้อมูล"/>
+                </group>
+
+                <footer>
+                    <button name="action_execute_clear"
+                            type="object"
+                            string="ยืนยันล้างข้อมูลเดี๋ยวนี้"
+                            class="btn-danger"
+                            icon="fa-trash"/>
+                    <button string="ยกเลิก" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

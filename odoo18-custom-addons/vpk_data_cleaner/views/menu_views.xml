@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_vpk_data_cleaner_root"
+        name="ล้างข้อมูลระบบ"
+        web_icon="base,static/description/settings.png"
+        sequence="560"
+        groups="base.group_system"
+    />
+
+    <menuitem
+        id="menu_vpk_data_cleaner_by_module"
+        name="แยกตาม Module"
+        parent="menu_vpk_data_cleaner_root"
+        action="action_vpk_data_cleaner_modules"
+        sequence="10"
+        groups="base.group_system"
+    />
+
+    <menuitem
+        id="menu_vpk_data_cleaner_by_model"
+        name="รายการ Model ทั้งหมด (Master / Transaction)"
+        parent="menu_vpk_data_cleaner_root"
+        action="action_vpk_data_cleaner_models"
+        sequence="20"
+        groups="base.group_system"
+    />
+
+    <menuitem
+        id="menu_vpk_discuss_cleaner"
+        name="ล้างข้อความในแชท (Discuss)"
+        parent="menu_vpk_data_cleaner_root"
+        action="action_vpk_discuss_cleaner_wizard"
+        sequence="25"
+        groups="base.group_system"
+    />
+
+    <menuitem
+        id="menu_vpk_data_cleaner_sync"
+        name="ซิงค์โมดูลและนับข้อมูลใหม่"
+        parent="menu_vpk_data_cleaner_root"
+        action="action_server_vpk_data_cleaner_sync"
+        sequence="30"
+        groups="base.group_system"
+    />
+
+    <menuitem
+        id="menu_vpk_data_cleaner_logs"
+        name="ประวัติการล้างข้อมูล"
+        parent="menu_vpk_data_cleaner_root"
+        action="action_vpk_data_cleaner_logs"
+        sequence="40"
+        groups="base.group_system"
+    />
+
+    <!-- เมนูภายใต้ การตั้งค่า -> เทคนิค สำหรับผู้ดูแลระบบ -->
+    <menuitem
+        id="menu_vpk_data_cleaner_settings_shortcut"
+        name="ล้างข้อมูลตามโมดูล (Data Cleaner)"
+        parent="base.menu_custom"
+        action="action_vpk_data_cleaner_modules"
+        sequence="95"
+        groups="base.group_system"
+    />
+</odoo>

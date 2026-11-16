@@ -403,6 +403,20 @@
     .pill.approve { background: #eff6ff; color: #1d4ed8; }
     .pill.done { background: #ecfdf3; color: #15803d; }
 
+    .o_vpk_proc_pay {
+        display: inline-block;
+        border-radius: 99px;
+        padding: 3px 8px;
+        font-size: 12px;
+        white-space: nowrap;
+        background: #f1f5f9;
+        color: #64748b;
+    }
+    .o_vpk_proc_pay.pay_draft { background: #fff7ed; color: #c2410c; }
+    .o_vpk_proc_pay.pay_wait { background: #eff6ff; color: #1d4ed8; }
+    .o_vpk_proc_pay.pay_done { background: #ecfdf3; color: #15803d; }
+    .o_vpk_proc_pay.pay_ap { background: #f5f3ff; color: #6d28d9; }
+
     footer {
         margin-top: 10px;
         color: var(--muted);

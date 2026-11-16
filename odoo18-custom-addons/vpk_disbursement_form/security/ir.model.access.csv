@@ -5,3 +5,5 @@ access_vpk_disbursement_form_invoice,vpk.disbursement.form invoice,model_vpk_dis
 access_vpk_disbursement_form_file_user,vpk.disbursement.form.file user,model_vpk_disbursement_form_file,group_disbursement_form_user,1,1,1,1
 access_vpk_disbursement_form_file_manager,vpk.disbursement.form.file manager,model_vpk_disbursement_form_file,group_disbursement_form_manager,1,1,1,1
 access_vpk_disbursement_form_file_invoice,vpk.disbursement.form.file invoice,model_vpk_disbursement_form_file,account.group_account_invoice,1,1,1,1
+access_vpk_disbursement_cover_wizard_user,vpk.disbursement.cover.wizard user,model_vpk_disbursement_cover_wizard,base.group_user,1,1,1,1
+access_vpk_disbursement_cover_wizard_line_user,vpk.disbursement.cover.wizard.line user,model_vpk_disbursement_cover_wizard_line,base.group_user,1,1,1,1

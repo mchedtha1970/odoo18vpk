@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_data_cleaner_module_kanban" model="ir.ui.view">
+        <field name="name">vpk.data.cleaner.module.kanban</field>
+        <field name="model">vpk.data.cleaner.module</field>
+        <field name="arch" type="xml">
+            <kanban create="0" delete="0" records_draggable="0">
+                <field name="name"/>
+                <field name="technical_name"/>
+                <field name="module_group"/>
+                <field name="total_model_count"/>
+                <field name="transaction_model_count"/>
+                <field name="master_model_count"/>
+                <field name="transaction_record_count"/>
+                <field name="master_record_count"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click d-flex flex-column justify-content-between h-100">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <strong class="fs-6"><field name="name"/></strong>
+                                </div>
+                                <div class="mb-2">
+                                    <field name="module_group" widget="badge"
+                                           decoration-primary="module_group == 'vpk'"
+                                           decoration-info="module_group == 'oca_th'"
+                                           decoration-muted="module_group == 'standard'"/>
+                                </div>
+                                <div class="row g-2 mt-1 mb-2">
+                                    <div class="col-6">
+                                        <div class="p-2 rounded border bg-warning bg-opacity-10">
+                                            <div class="small text-muted">Transaction</div>
+                                            <div class="fw-bold">
+                                                <field name="transaction_model_count"/> โมเดล
+                                            </div>
+                                            <div class="small">
+                                                รวม <field name="transaction_record_count"/> แถว
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-2 rounded border bg-info bg-opacity-10">
+                                            <div class="small text-muted">Master Data</div>
+                                            <div class="fw-bold">
+                                                <field name="master_model_count"/> โมเดล
+                                            </div>
+                                            <div class="small">
+                                                รวม <field name="master_record_count"/> แถว
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <footer class="pt-2 border-top d-flex justify-content-between align-items-center gap-1">
+                                <button name="action_view_module_models"
+                                        type="object"
+                                        class="btn btn-sm btn-outline-primary">
+                                    ดูโมเดล (<field name="total_model_count"/>)
+                                </button>
+                                <button name="action_open_discuss_cleaner"
+                                        type="object"
+                                        class="btn btn-sm btn-danger"
+                                        invisible="technical_name != 'mail'">
+                                    ล้างแชท Discuss
+                                </button>
+                                <button name="action_open_clear_transactions_wizard"
+                                        type="object"
+                                        class="btn btn-sm btn-outline-danger"
+                                        invisible="transaction_model_count == 0 or technical_name == 'mail'">
+                                    ล้าง Transaction
+                                </button>
+                            </footer>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_vpk_data_cleaner_module_list" model="ir.ui.view">
+        <field name="name">vpk.data.cleaner.module.list</field>
+        <field name="model">vpk.data.cleaner.module</field>
+        <field name="arch" type="xml">
+            <list string="รายการโมดูลในระบบ" create="0" delete="0">
+                <header>
+                    <button name="action_sync_all"
+                            type="object"
+                            string="ซิงค์โมดูลและนับข้อมูลใหม่ทั้งหมด"
+                            class="btn-primary"
+                            display="always"/>
+                    <button name="action_open_discuss_cleaner"
+                            type="object"
+                            string="ล้างข้อความในแชท (Discuss)..."
+                            class="btn-secondary"
+                            display="always"/>
+                    <button name="action_open_clear_transactions_wizard"
+                            type="object"
+                            string="ล้างเฉพาะ Transaction ของโมดูลที่เลือก..."
+                            class="btn-danger"/>
+                </header>
+                <field name="name"/>
+                <field name="technical_name"/>
+                <field name="module_group" widget="badge"
+                       decoration-primary="module_group == 'vpk'"
+                       decoration-info="module_group == 'oca_th'"
+                       decoration-muted="module_group == 'standard'"/>
+                <field name="transaction_model_count" sum="รวมโมเดล Transaction"/>
+                <field name="transaction_record_count" sum="รวมแถว Transaction"/>
+                <field name="master_model_count" sum="รวมโมเดล Master"/>
+                <field name="master_record_count" sum="รวมแถว Master"/>
+                <field name="last_sync_at" optional="show"/>
+                <button name="action_view_module_models"
+                        type="object"
+                        string="ดูโมเดล"
+                        icon="fa-list"
+                        class="btn-link"/>
+                <button name="action_open_clear_transactions_wizard"
+                        type="object"
+                        string="ล้าง Transaction"
+                        icon="fa-trash"
+                        class="btn-link text-danger"
+                        invisible="transaction_model_count == 0"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_data_cleaner_module_form" model="ir.ui.view">
+        <field name="name">vpk.data.cleaner.module.form</field>
+        <field name="model">vpk.data.cleaner.module</field>
+        <field name="arch" type="xml">
+            <form string="จัดการล้างข้อมูลรายโมดูล" create="0" delete="0">
+                <header>
+                    <field name="technical_name" invisible="1"/>
+                    <button name="%(action_vpk_discuss_cleaner_wizard)d"
+                            type="action"
+                            string="ล้างข้อความในแชท (Discuss)..."
+                            class="btn-danger"
+                            icon="fa-comments-o"
+                            invisible="technical_name != 'mail'"/>
+                    <button name="action_open_clear_transactions_wizard"
+                            type="object"
+                            string="ล้างเฉพาะ Transaction ของโมดูลนี้..."
+                            class="btn-primary"
+                            icon="fa-eraser"
+                            invisible="transaction_model_count == 0"/>
+                    <button name="action_open_clear_all_wizard"
+                            type="object"
+                            string="เลือกล้างข้อมูลทั้งหมดในโมดูลนี้ (รวม Master)..."
+                            class="btn-secondary"
+                            icon="fa-trash"/>
+                    <button name="action_refresh_module_counts"
+                            type="object"
+                            string="นับจำนวนแถวใหม่"
+                            class="btn-secondary"
+                            icon="fa-refresh"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <field name="module_group" widget="badge"
+                               decoration-primary="module_group == 'vpk'"
+                               decoration-info="module_group == 'oca_th'"
+                               decoration-muted="module_group == 'standard'"/>
+                        <h1 class="mt-1"><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="สรุปโมเดลเก็บ Transaction (ข้อมูลรายการเคลื่อนไหว)">
+                            <field name="transaction_model_count" readonly="1"/>
+                            <field name="transaction_record_count" readonly="1"/>
+                        </group>
+                        <group string="สรุปโมเดลเก็บ Master Data (ข้อมูลหลัก / ตั้งค่า)">
+                            <field name="master_model_count" readonly="1"/>
+                            <field name="master_record_count" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="โมเดลทั้งหมดในโมดูลนี้" name="all_models">
+                            <field name="model_line_ids" readonly="1">
+                                <list create="0" delete="0">
+                                    <field name="data_type" widget="badge"
+                                           decoration-warning="data_type == 'transaction'"
+                                           decoration-info="data_type == 'master'"/>
+                                    <field name="name"/>
+                                    <field name="model_name"/>
+                                    <field name="parent_model_name" optional="show"/>
+                                    <field name="classification_reason"/>
+                                    <field name="record_count" sum="รวมจำนวนแถว"/>
+                                    <button name="action_open_records"
+                                            type="object"
+                                            string="ดูข้อมูล"
+                                            icon="fa-external-link"
+                                            class="btn-link"/>
+                                    <button name="action_open_clear_wizard"
+                                            type="object"
+                                            string="ล้างข้อมูล"
+                                            icon="fa-trash"
+                                            class="btn-link text-danger"
+                                            invisible="record_count == 0"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="เฉพาะโมเดล Transaction" name="tx_models">
+                            <field name="transaction_model_ids" readonly="1">
+                                <list create="0" delete="0">
+                                    <field name="name"/>
+                                    <field name="model_name"/>
+                                    <field name="parent_model_name"/>
+                                    <field name="classification_reason"/>
+                                    <field name="record_count" sum="รวมแถว Transaction"/>
+                                    <button name="action_open_records"
+                                            type="object"
+                                            string="ดูข้อมูล"
+                                            icon="fa-external-link"
+                                            class="btn-link"/>
+                                    <button name="action_open_clear_wizard"
+                                            type="object"
+                                            string="ล้างข้อมูล"
+                                            icon="fa-trash"
+                                            class="btn-link text-danger"
+                                            invisible="record_count == 0"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="เฉพาะโมเดล Master Data" name="master_models">
+                            <field name="master_model_ids" readonly="1">
+                                <list create="0" delete="0">
+                                    <field name="name"/>
+                                    <field name="model_name"/>
+                                    <field name="classification_reason"/>
+                                    <field name="protect_note"/>
+                                    <field name="record_count" sum="รวมแถว Master"/>
+                                    <button name="action_open_records"
+                                            type="object"
+                                            string="ดูข้อมูล"
+                                            icon="fa-external-link"
+                                            class="btn-link"/>
+                                    <button name="action_open_clear_wizard"
+                                            type="object"
+                                            string="ล้างข้อมูล"
+                                            icon="fa-trash"
+                                            class="btn-link text-danger"
+                                            invisible="record_count == 0"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vpk_data_cleaner_module_search" model="ir.ui.view">
+        <field name="name">vpk.data.cleaner.module.search</field>
+        <field name="model">vpk.data.cleaner.module</field>
+        <field name="arch" type="xml">
+            <search string="ค้นหาโมดูล">
+                <searchpanel view_types="kanban,list">
+                    <field name="module_group"
+                           string="กลุ่มโมดูล"
+                           icon="fa-cubes"
+                           enable_counters="1"/>
+                </searchpanel>
+                <field name="name" string="ชื่อโมดูล / รหัสโมดูล"
+                       filter_domain="['|', '|', ('name', 'ilike', self), ('technical_name', 'ilike', self), ('summary', 'ilike', self)]"/>
+                <separator/>
+                <filter name="has_tx_data"
+                        string="มีข้อมูล Transaction ค้างอยู่ (&gt; 0 แถว)"
+                        domain="[('transaction_record_count', '&gt;', 0)]"/>
+                <filter name="has_any_data"
+                        string="มีข้อมูลค้างอยู่ (&gt; 0 แถว)"
+                        domain="[('total_record_count', '&gt;', 0)]"/>
+                <separator/>
+                <filter name="group_vpk" string="เฉพาะโมดูล VPK" domain="[('module_group', '=', 'vpk')]"/>
+                <filter name="group_oca_th" string="เฉพาะโมดูลไทย / OCA" domain="[('module_group', '=', 'oca_th')]"/>
+                <filter name="group_standard" string="เฉพาะโมดูลมาตรฐาน Odoo" domain="[('module_group', '=', 'standard')]"/>
+                <group expand="0" string="จัดกลุ่มตาม">
+                    <filter name="gb_module_group"
+                            string="กลุ่มโมดูล"
+                            context="{'group_by': 'module_group'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_vpk_data_cleaner_modules" model="ir.actions.act_window">
+        <field name="name">ล้างข้อมูลแยกตาม Module</field>
+        <field name="res_model">vpk.data.cleaner.module</field>
+        <field name="view_mode">kanban,list,form</field>
+    </record>
+
+    <record id="action_server_vpk_data_cleaner_sync" model="ir.actions.server">
+        <field name="name">ซิงค์โมดูลและนับข้อมูลใหม่ทั้งหมด</field>
+        <field name="model_id" ref="model_vpk_data_cleaner_module"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_sync_all()</field>
+    </record>
+</odoo>

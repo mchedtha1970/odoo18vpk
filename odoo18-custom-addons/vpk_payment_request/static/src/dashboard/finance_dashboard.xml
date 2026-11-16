@@ -8,9 +8,17 @@
                         <h1>งานการเงิน: รายการตั้งเจ้าหนี้รอทำจ่าย</h1>
                         <p>รายการที่เจ้าหนี้อนุมัติตั้งเจ้าหนี้ (POST) และส่งการเงินมาแล้ว → ดึงรายการมาทำรายการจ่าย</p>
                     </div>
-                    <button class="btn btn-light" t-on-click="() => this.loadData()">
-                        <i class="fa fa-refresh"/> รีเฟรช
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary" t-on-click="() => this.openDisbursementCoverWizard()">
+                            <i class="fa fa-table"/> ใบปะหน้าขออนุมัติเบิกจ่าย (GFMIS)
+                        </button>
+                        <button class="btn btn-primary" t-on-click="() => this.openCreateMultiVoucherWizard()">
+                            <i class="fa fa-files-o"/> สร้างใบสำคัญจ่าย (รวมหลายใบตั้งหนี้)
+                        </button>
+                        <button class="btn btn-light" t-on-click="() => this.loadData()">
+                            <i class="fa fa-refresh"/> รีเฟรช
+                        </button>
+                    </div>
                 </header>
 
                 <t t-if="!state.ready">

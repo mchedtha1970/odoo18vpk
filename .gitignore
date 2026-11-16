@@ -72,3 +72,7 @@ scripts/playwright/reports/
 # SSL private keys (never commit)
 ssl_24erp/*_key.txt
 ssl_24erp/*.key
+
+# Local compare scratch
+odoo18-custom-addons/_cmp.out
+odoo18-custom-addons/_cmp.err

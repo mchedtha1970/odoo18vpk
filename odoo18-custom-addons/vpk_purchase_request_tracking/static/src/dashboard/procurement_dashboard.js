@@ -150,6 +150,7 @@ export class VpkProcurementDashboard extends Component {
                 project.contract_control,
                 (project.contracts || []).map((contract) => [contract.number, contract.type].join(" ")).join(" "),
                 project.wa_name,
+                project.payment_approval && project.payment_approval.label,
                 project.vendor,
                 project.department,
                 project.method,

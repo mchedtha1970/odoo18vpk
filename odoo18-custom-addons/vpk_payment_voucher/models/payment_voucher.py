@@ -54,6 +54,16 @@ class VpkPaymentVoucher(models.Model):
         default=lambda self: _("New"),
         tracking=True,
     )
+    voucher_type = fields.Selection(
+        selection=[
+            ("standard", "ใบสำคัญจ่ายทั่วไป (บริษัท / บิลเลขที่)"),
+            ("hospital_cheque", "ใบสำคัญจ่ายรวมหลายผู้ขาย / โรงพยาบาล (เช็คเลขที่)"),
+        ],
+        string="รูปแบบใบสำคัญจ่าย",
+        default="standard",
+        required=True,
+        tracking=True,
+    )
     state = fields.Selection(
         selection=[
             ("draft", "ร่าง"),
@@ -162,6 +172,30 @@ class VpkPaymentVoucher(models.Model):
         string="ใบเรียกเก็บอ้างอิง",
         domain="[('move_type', '=', 'in_invoice'), ('state', '=', 'posted')]",
     )
+    show_wht_deduction = fields.Boolean(
+        string="แสดงหักภาษี ณ ที่จ่ายในเอกสาร",
+        default=True,
+        tracking=True,
+        help="เมื่อเปิดใช้งานและมีภาษีหัก ณ ที่จ่าย จะแสดงบรรทัด 'ภาษี ณ ที่จ่าย' ในตารางเอกสารและหักออกจากยอดรวมเป็นเงิน",
+    )
+    wht_deduction_label = fields.Char(
+        string="รายการหักภาษี ณ ที่จ่าย",
+        default="ภาษี ณ ที่จ่าย",
+    )
+    amount_gross = fields.Monetary(
+        string="รวมจำนวนเงิน (ก่อนหักภาษี)",
+        compute="_compute_amount_total",
+        store=True,
+        currency_field="currency_id",
+    )
+    wht_deduction_amount = fields.Monetary(
+        string="ภาษี ณ ที่จ่าย",
+        compute="_compute_wht_deduction_amount",
+        store=True,
+        readonly=False,
+        currency_field="currency_id",
+        tracking=True,
+    )
     amount_total = fields.Monetary(
         string="รวมเป็นเงิน",
         compute="_compute_amount_total",
@@ -264,10 +298,88 @@ class VpkPaymentVoucher(models.Model):
         for voucher in self:
             voucher.studio_document_count = counts.get(voucher.id, 0)
 
-    @api.depends("line_ids.amount")
+    @api.depends("bill_ids", "line_ids.move_id", "line_ids.amount")
+    def _compute_wht_deduction_amount(self):
+        HasDisbursement = "vpk.disbursement.form" in self.env
+        for voucher in self:
+            bills = voucher.bill_ids | voucher.line_ids.mapped("move_id")
+            wht_amt = 0.0
+            if "wht_cert_4235_ids" in voucher._fields and voucher.wht_cert_4235_ids:
+                certs = voucher.wht_cert_4235_ids.filtered(lambda c: c.state != "cancel")
+                if certs:
+                    wht_amt = sum(certs.mapped("wht_tax_amount"))
+            if not wht_amt and HasDisbursement and bills:
+                forms = (
+                    self.env["vpk.disbursement.form"]
+                    .sudo()
+                    .search(
+                        [
+                            ("invoice_id", "in", bills.ids),
+                            ("state", "!=", "cancel"),
+                        ]
+                    )
+                )
+                if forms:
+                    wht_amt = sum(forms.mapped("wht_amount"))
+            if not wht_amt and bills:
+                for bill in bills:
+                    wht_lines = bill.invoice_line_ids.filtered(
+                        lambda l: bool(getattr(l, "wht_tax_id", False))
+                    )
+                    if not wht_lines:
+                        continue
+                    rate = getattr(wht_lines[0].wht_tax_id, "amount", 1.0) or 1.0
+                    raw_total = sum(wht_lines.mapped("price_subtotal"))
+                    base_amt = (
+                        round(raw_total / 1.07, 2)
+                        if not any(wht_lines.mapped("tax_ids"))
+                        else round(raw_total, 2)
+                    )
+                    wht_amt += round(base_amt * rate / 100.0, 2)
+            voucher.wht_deduction_amount = round(wht_amt, 2)
+
+    @api.depends("line_ids.amount", "show_wht_deduction", "wht_deduction_amount")
     def _compute_amount_total(self):
         for voucher in self:
-            voucher.amount_total = sum(voucher.line_ids.mapped("amount"))
+            gross = round(sum(voucher.line_ids.mapped("amount")), 2)
+            voucher.amount_gross = gross
+            deduct = (
+                round(voucher.wht_deduction_amount or 0.0, 2)
+                if voucher.show_wht_deduction
+                else 0.0
+            )
+            net = round(gross - deduct, 2)
+            voucher.amount_total = net if net >= 0 else gross
+
+    def _vpk_studio_extra_table_rows(self, field_code):
+        """เพิ่มบรรทัด 'ภาษี ณ ที่จ่าย' ต่อท้ายตารางในเอกสารใบสำคัญจ่ายเมื่อมีการหักภาษี ณ ที่จ่าย."""
+        self.ensure_one()
+        if not (
+            self.show_wht_deduction
+            and self.wht_deduction_amount
+            and self.wht_deduction_amount > 0
+        ):
+            return []
+        label = self.wht_deduction_label or "ภาษี ณ ที่จ่าย"
+        amt_str = f"{self.wht_deduction_amount:,.2f}"
+        return [
+            {
+                "no": "",
+                "name": label,
+                "line": label,
+                "partner_name": label,
+                "bill_ref": "",
+                "cheque_no": "",
+                "amount": amt_str,
+                "amount_value": float(self.wht_deduction_amount),
+                f"{field_code}.no": "",
+                f"{field_code}.name": label,
+                f"{field_code}.partner_name": label,
+                f"{field_code}.bill_ref": "",
+                f"{field_code}.cheque_no": "",
+                f"{field_code}.amount": amt_str,
+            }
+        ]
 
     @api.depends("amount_total", "currency_id")
     def _compute_amount_total_text(self):
@@ -370,6 +482,36 @@ class VpkPaymentVoucher(models.Model):
             text,
         )
 
+    @api.onchange("voucher_type")
+    def _onchange_voucher_type(self):
+        if self.voucher_type == "hospital_cheque":
+            if not self.memo_subject or self.memo_subject == self._default_memo_subject():
+                self.memo_subject = "ขออนุมัติเบิกจ่ายเงินประกันสังคม รพ. วชิระภูเก็ต"
+            if not self.intro_text or self.intro_text == self._default_intro_text():
+                self.intro_text = (
+                    "ขอส่งใบสำคัญค่าใช้จ่ายประจำวัน เพื่อเบิกเงินประกันสังคม รพ. วชิระภูเก็ต"
+                )
+            if not self.journal_id:
+                sso_journal = self.env["account.journal"].search(
+                    [
+                        ("type", "=", "bank"),
+                        ("company_id", "=", self.company_id.id),
+                        ("name", "ilike", "ประกันสังคม"),
+                    ],
+                    limit=1,
+                )
+                if sso_journal:
+                    self.journal_id = sso_journal
+                    self._onchange_journal_id()
+        elif self.voucher_type == "standard":
+            if self.memo_subject == "ขออนุมัติเบิกจ่ายเงินประกันสังคม รพ. วชิระภูเก็ต":
+                self.memo_subject = self._default_memo_subject()
+            if (
+                self.intro_text
+                == "ขอส่งใบสำคัญค่าใช้จ่ายประจำวัน เพื่อเบิกเงินประกันสังคม รพ. วชิระภูเก็ต"
+            ):
+                self.intro_text = self._default_intro_text()
+
     @api.onchange("journal_id")
     def _onchange_journal_id(self):
         banks = self._banks_linked_to_journal(self.journal_id)
@@ -408,7 +550,80 @@ class VpkPaymentVoucher(models.Model):
                 )
             if not vals.get("memo_ref"):
                 vals["memo_ref"] = vals.get("name")
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        records._vpk_sync_bills_and_lines()
+        if not self.env.context.get("skip_voucher_bill_check"):
+            records._vpk_validate_posted_bills()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get("vpk_syncing_voucher_bills") and (
+            "line_ids" in vals or "bill_ids" in vals
+        ):
+            self._vpk_sync_bills_and_lines()
+            if not self.env.context.get("skip_voucher_bill_check"):
+                self._vpk_validate_posted_bills()
+        return res
+
+    def _vpk_sync_bills_and_lines(self):
+        """ซิงค์ความสัมพันธ์ 2 ทางระหว่างใบตั้งเจ้าหนี้ (bill_ids) และบรรทัดรายการ (line_ids.move_id)."""
+        for voucher in self.with_context(vpk_syncing_voucher_bills=True):
+            line_moves = voucher.line_ids.mapped("move_id")
+            missing_in_bills = line_moves - voucher.bill_ids
+            if missing_in_bills:
+                voucher.bill_ids = [(4, m.id) for m in missing_in_bills]
+
+            missing_in_lines = voucher.bill_ids.filtered(
+                lambda m: m.move_type == "in_invoice" and m.state == "posted"
+            ) - line_moves
+            if missing_in_lines:
+                seq = max(voucher.line_ids.mapped("sequence") or [0]) + 10
+                new_lines = []
+                for bill in missing_in_lines:
+                    new_lines.append(
+                        (
+                            0,
+                            0,
+                            {
+                                "sequence": seq,
+                                "move_id": bill.id,
+                                "partner_id": bill.partner_id.id,
+                                "partner_name": bill.partner_id.name or "",
+                                "bill_ref": (
+                                    bill.name
+                                    if bill.name and bill.name != "/"
+                                    else (bill.ref or "")
+                                ),
+                                "amount": bill.amount_residual or bill.amount_total,
+                            },
+                        )
+                    )
+                    seq += 10
+                voucher.line_ids = new_lines
+
+    def _vpk_validate_posted_bills(self):
+        """บังคับหลักการ: ก่อนทำใบสำคัญจ่าย ต้องมีการตั้งเจ้าหนี้ที่อนุมัติและ POST แล้วก่อน."""
+        for voucher in self:
+            if voucher.state == "cancel":
+                continue
+            for line in voucher.line_ids:
+                if not line.move_id:
+                    raise UserError(
+                        _(
+                            "ก่อนทำใบสำคัญจ่าย ต้องมีการตั้งเจ้าหนี้ที่ผ่านการอนุมัติและ POST แล้วก่อน\n"
+                            "กรุณาเลือกใบตั้งเจ้าหนี้ (ใบเรียกเก็บ) ในรายการของ \"%s\""
+                        )
+                        % (line.partner_name or voucher.display_name)
+                    )
+                if line.move_id.state != "posted":
+                    raise UserError(
+                        _(
+                            "ใบตั้งเจ้าหนี้ %s ยังไม่ได้อนุมัติและ POST — "
+                            "ต้องผ่านการอนุมัติตั้งเจ้าหนี้และ POST ก่อนจึงจะทำใบสำคัญจ่ายได้"
+                        )
+                        % line.move_id.display_name
+                    )
 
     def _thai_digits(self, value):
         if value is None:
@@ -474,15 +689,94 @@ class VpkPaymentVoucher(models.Model):
         return Markup(_load_memo_inline_css())
 
     def action_submit(self):
+        self._vpk_validate_posted_bills()
         for voucher in self:
             if not voucher.line_ids:
-                raise UserError(_("กรุณาเพิ่มรายการในใบสำคัญจ่ายก่อนส่งอนุมัติ"))
+                raise UserError(_("กรุณาเพิ่มรายการใบตั้งเจ้าหนี้ในใบสำคัญจ่ายก่อนส่งอนุมัติ"))
             voucher.state = "to_approve"
         return True
 
     def action_approve(self):
+        self._vpk_validate_posted_bills()
         self.write({"state": "approved"})
         return True
+
+    def action_confirm_voucher_payments(self):
+        """ยืนยันรายการจ่ายจากใบสำคัญจ่าย (รองรับทั้งใบเดียวและรวมหลายใบตั้งเจ้าหนี้) → ส่งเข้า Dashboard รอบันทึกบัญชี."""
+        self.ensure_one()
+        self._vpk_validate_posted_bills()
+        if self.state != "approved":
+            raise UserError(_("กรุณาอนุมัติใบสำคัญจ่ายก่อนกดยืนยันรายการจ่าย"))
+
+        Payment = self.env["account.payment"].sudo()
+        created_payments = Payment.browse()
+        for line in self.line_ids:
+            bill = line.move_id.sudo()
+            if not bill or bill.state != "posted" or bill.payment_state in ("paid", "in_payment"):
+                continue
+            existing = Payment.search(
+                [
+                    ("vpk_source_bill_ids", "in", [bill.id]),
+                    ("state", "=", "draft"),
+                    ("payment_type", "=", "outbound"),
+                ],
+                limit=1,
+            )
+            if existing:
+                if line.cheque_no and hasattr(existing, "cheque_reference") and not existing.cheque_reference:
+                    existing.write({"cheque_reference": line.cheque_no})
+                created_payments |= existing
+                continue
+
+            register_action = bill.action_register_payment()
+            ctx = dict(register_action.get("context") or {})
+            req = bill.payment_request_id if "payment_request_id" in bill._fields else False
+            ctx.update(
+                {
+                    "vpk_finance_draft_voucher": True,
+                    "vpk_finance_silent_create": True,
+                    "vpk_payment_request_id": req.id if req else False,
+                }
+            )
+            wiz_vals = {}
+            if self.journal_id:
+                wiz_vals["journal_id"] = self.journal_id.id
+            wizard = self.env["account.payment.register"].sudo().with_context(**ctx).create(wiz_vals)
+            wizard.action_create_payments()
+
+            pay = Payment.search(
+                [
+                    ("vpk_source_bill_ids", "in", [bill.id]),
+                    ("state", "=", "draft"),
+                    ("payment_type", "=", "outbound"),
+                ],
+                order="id desc",
+                limit=1,
+            )
+            if pay:
+                update_vals = {}
+                if line.cheque_no and "cheque_reference" in pay._fields:
+                    update_vals["cheque_reference"] = line.cheque_no
+                if not pay.vpk_ref_bill_number:
+                    update_vals["vpk_ref_bill_number"] = bill.name or ""
+                if update_vals:
+                    pay.write(update_vals)
+                created_payments |= pay
+
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("ยืนยันรายการจ่ายแล้ว"),
+                "message": _(
+                    "สร้างรายการชำระเงินฉบับร่างจำนวน %s รายการ ส่งให้แผนกบัญชีบันทึกที่ "
+                    "เมนู รายการจ่ายชำระ รอบันทึกบัญชี เรียบร้อยแล้ว"
+                )
+                % len(created_payments),
+                "type": "success",
+                "sticky": False,
+            },
+        }
 
     def action_draft(self):
         self.write({"state": "draft"})
@@ -492,21 +786,38 @@ class VpkPaymentVoucher(models.Model):
         self.write({"state": "cancel"})
         return True
 
-    def _vpk_payment_voucher_template(self):
-        """หาแบบฟอร์ม Document Studio ของใบสำคัญจ่ายเท่านั้น (ไม่ใช้แบบอนุมัติขอซื้อ)."""
+    def _vpk_payment_voucher_template(self, voucher_type=None):
+        """หาแบบฟอร์ม Document Studio ตามรูปแบบใบสำคัญจ่าย (standard หรือ hospital_cheque)."""
         self.ensure_one()
+        target_type = voucher_type or self.voucher_type or "standard"
         Template = self.env["vpk.document.studio.template"].sudo()
-        # Prefer explicit code installed for this module
+        code = (
+            "vpk_payment_voucher_hospital_cheque"
+            if target_type == "hospital_cheque"
+            else "vpk_payment_voucher"
+        )
         template = Template.search(
             [
                 ("active", "=", True),
                 ("company_id", "in", [False, self.company_id.id]),
-                ("code", "=", "vpk_payment_voucher"),
+                ("code", "=", code),
                 ("source_model_id.model", "=", "vpk.payment.voucher"),
             ],
             order="company_id desc, id desc",
             limit=1,
         )
+        if not template and target_type == "hospital_cheque":
+            Template._vpk_install_payment_voucher_template()
+            template = Template.search(
+                [
+                    ("active", "=", True),
+                    ("company_id", "in", [False, self.company_id.id]),
+                    ("code", "=", code),
+                    ("source_model_id.model", "=", "vpk.payment.voucher"),
+                ],
+                order="company_id desc, id desc",
+                limit=1,
+            )
         if template:
             return template
         return Template.search(
@@ -546,9 +857,9 @@ class VpkPaymentVoucher(models.Model):
             }
         )
 
-    def _vpk_find_studio_memo_document(self):
+    def _vpk_find_studio_memo_document(self, voucher_type=None):
         self.ensure_one()
-        template = self._vpk_payment_voucher_template()
+        template = self._vpk_payment_voucher_template(voucher_type=voucher_type)
         domain = [
             ("payment_voucher_id", "=", self.id),
             ("state", "not in", ("cancelled",)),
@@ -568,7 +879,7 @@ class VpkPaymentVoucher(models.Model):
         if not document.template_id:
             return document
         values = document._values_from_record(document.template_id, self)
-        document.write(
+        document.with_context(skip_validation_check=True).write(
             {
                 "value_json": values,
                 "source_ref": "%s,%d" % (self._name, self.id),
@@ -578,14 +889,18 @@ class VpkPaymentVoucher(models.Model):
         )
         return document
 
-    def _ensure_studio_memo_document(self):
+    def _ensure_studio_memo_document(self, voucher_type=None):
         """สร้าง/อัปเดตเอกสารจากแบบฟอร์ม Document Studio ใบสำคัญจ่าย."""
         self.ensure_one()
         if not self.line_ids:
             raise UserError(_("กรุณาเพิ่มรายการในใบสำคัญจ่ายก่อนพิมพ์"))
 
+        target_type = voucher_type or self.voucher_type or "standard"
+        if voucher_type and self.voucher_type != voucher_type:
+            self.voucher_type = voucher_type
+
         Document = self.env["vpk.document.studio.document"].sudo()
-        template = self._vpk_payment_voucher_template()
+        template = self._vpk_payment_voucher_template(voucher_type=target_type)
         if not template:
             raise UserError(
                 _(
@@ -596,7 +911,7 @@ class VpkPaymentVoucher(models.Model):
             )
 
         doc_type = template.document_type_id or self._vpk_payment_voucher_document_type()
-        document = self._vpk_find_studio_memo_document()
+        document = self._vpk_find_studio_memo_document(voucher_type=target_type)
         if not document:
             document = Document.create(
                 {
@@ -626,11 +941,41 @@ class VpkPaymentVoucher(models.Model):
         self._vpk_reload_studio_document_from_voucher(document)
         return document
 
+    def _vpk_generate_studio_pdf(self, document):
+        """สร้าง/อัปเดตไฟล์ PDF ของเอกสารใบสำคัญจ่าย และคืน action เปิด PDF."""
+        import base64 as _b64
+
+        document = document.sudo().with_context(skip_validation_check=True)
+        try:
+            return document.action_generate_pdf()
+        except UserError:
+            pdf_content = document._render_pdf_bytes()
+            filename = "%s.pdf" % document._safe_basename()
+            document.write(
+                {
+                    "pdf_file": _b64.b64encode(pdf_content),
+                    "pdf_filename": filename,
+                }
+            )
+            return document.action_open_pdf()
+
     def action_print_voucher(self):
-        """พิมพ์จากแบบฟอร์ม Document Studio ใบสำคัญจ่าย และเก็บไฟล์ในแท็บเอกสาร."""
+        """พิมพ์จากแบบฟอร์ม Document Studio ตามรูปแบบใบสำคัญจ่ายที่เลือก."""
         self.ensure_one()
-        document = self._ensure_studio_memo_document()
-        return document.action_generate_pdf()
+        document = self._ensure_studio_memo_document(self.voucher_type)
+        return self._vpk_generate_studio_pdf(document)
+
+    def action_print_voucher_standard(self):
+        """พิมพ์ใบสำคัญจ่ายแบบทั่วไป (บริษัท / บิลเลขที่)."""
+        self.ensure_one()
+        document = self._ensure_studio_memo_document("standard")
+        return self._vpk_generate_studio_pdf(document)
+
+    def action_print_voucher_hospital_cheque(self):
+        """พิมพ์ใบสำคัญจ่ายแบบรวมหลายผู้ขาย / โรงพยาบาล (เช็คเลขที่)."""
+        self.ensure_one()
+        document = self._ensure_studio_memo_document("hospital_cheque")
+        return self._vpk_generate_studio_pdf(document)
 
     def action_view_studio_documents(self):
         self.ensure_one()
@@ -674,9 +1019,9 @@ class VpkPaymentVoucher(models.Model):
     def _vpk_net_cheque_amount(self):
         """คำนวณยอดเงินสุทธิสำหรับสั่งจ่ายเช็ค (ยอดรวมใบสำคัญจ่าย หักภาษี ณ ที่จ่าย ถ้ามี)."""
         self.ensure_one()
-        gross = self.amount_total or 0.0
-        wht_amt = 0.0
-        if "wht_cert_4235_ids" in self._fields:
+        gross = self.amount_gross or sum(self.line_ids.mapped("amount")) or 0.0
+        wht_amt = self.wht_deduction_amount or 0.0
+        if not wht_amt and "wht_cert_4235_ids" in self._fields:
             certs = self.wht_cert_4235_ids.filtered(lambda c: c.state != "cancel")
             if certs:
                 wht_amt = sum(certs.mapped("wht_tax_amount"))
@@ -844,9 +1189,10 @@ class VpkPaymentVoucherLine(models.Model):
         index=True,
     )
     sequence = fields.Integer(string="ลำดับ", default=10)
-    partner_id = fields.Many2one(comodel_name="res.partner", string="บริษัท")
-    partner_name = fields.Char(string="ชื่อบริษัท", required=True)
-    bill_ref = fields.Char(string="บิลเลขที่", required=True)
+    partner_id = fields.Many2one(comodel_name="res.partner", string="ผู้ขาย / โรงพยาบาล")
+    partner_name = fields.Char(string="ชื่อบริษัท / โรงพยาบาล", required=True)
+    cheque_no = fields.Char(string="เช็คเลขที่")
+    bill_ref = fields.Char(string="บิลเลขที่")
     amount = fields.Monetary(
         string="จำนวนเงิน",
         required=True,
@@ -875,6 +1221,95 @@ class VpkPaymentVoucherLine(models.Model):
         self.bill_ref = bill.name if bill.name != "/" else (bill.ref or "")
         self.amount = bill.amount_residual or bill.amount_total
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        Move = self.env["account.move"].sudo()
+        for vals in vals_list:
+            if vals.get("move_id"):
+                bill = Move.browse(vals["move_id"])
+                if bill.exists():
+                    vals.setdefault("partner_id", bill.partner_id.id)
+                    if not vals.get("partner_name"):
+                        vals["partner_name"] = bill.partner_id.name or ""
+                    if not vals.get("bill_ref"):
+                        vals["bill_ref"] = (
+                            bill.name
+                            if bill.name and bill.name != "/"
+                            else (bill.ref or "")
+                        )
+                    if not vals.get("amount"):
+                        vals["amount"] = bill.amount_residual or bill.amount_total
+        return super().create(vals_list)
+
+    def action_print_line_cheque(self):
+        """พิมพ์เช็คของบรรทัดนี้โดยตรง แล้วนำเลขที่เช็คมาใส่ในช่อง เช็คเลขที่ ของบรรทัด."""
+        self.ensure_one()
+        voucher = self.voucher_id
+        Book = self.env["vpk.bank.cheque.book"].sudo()
+        Leaf = self.env["vpk.bank.cheque.leaf"].sudo()
+        Wizard = self.env["vpk.bank.cheque.print.wizard"]
+
+        acc_num = (
+            voucher.bank_account_id.acc_number.strip()
+            if voucher.bank_account_id and voucher.bank_account_id.acc_number
+            else ""
+        )
+        book = False
+        if acc_num:
+            book = Book.search([("account_number", "=", acc_num)], limit=1)
+        if not book:
+            book = Book.search([], limit=1)
+        if not book:
+            raise UserError(_("ยังไม่มีสมุดเช็คในระบบ กรุณาสร้างสมุดเช็คก่อนพิมพ์"))
+
+        leaf = False
+        if self.cheque_no and self.cheque_no.strip().isdigit():
+            leaf = Leaf.search(
+                [
+                    ("book_id", "=", book.id),
+                    ("cheque_number", "=", int(self.cheque_no.strip())),
+                ],
+                limit=1,
+            )
+        if not leaf:
+            leaf = Leaf.search(
+                [
+                    ("book_id", "=", book.id),
+                    ("state", "=", "blank"),
+                ],
+                order="cheque_number asc",
+                limit=1,
+            )
+        if not leaf:
+            raise UserError(
+                _("สมุดเช็ค %s ไม่มีใบเช็คว่างเหลืออยู่") % book.display_name
+            )
+
+        wizard = Wizard.create(
+            {
+                "cheque_book_id": book.id,
+                "cheque_leaf_id": leaf.id,
+                "partner_id": self.partner_id.id if self.partner_id else False,
+                "pay_name_line1": self.partner_name or "",
+                "amount": self.amount or 0.0,
+                "currency_id": (voucher.currency_id or self.env.company.currency_id).id,
+                "date": voucher.date or fields.Date.context_today(self),
+                "is_ac_pay": True,
+                "move_id": self.move_id.id if self.move_id else False,
+                "payment_voucher_id": voucher.id,
+                "payment_voucher_line_id": self.id,
+            }
+        )
+        wizard._fill_amount_words()
+        return {
+            "type": "ir.actions.act_window",
+            "name": _("พิมพ์เช็ค (%s)") % (self.partner_name or ""),
+            "res_model": "vpk.bank.cheque.print.wizard",
+            "res_id": wizard.id,
+            "view_mode": "form",
+            "target": "new",
+        }
+
 
 class VpkBankChequeLeaf(models.Model):
     _inherit = "vpk.bank.cheque.leaf"
@@ -894,20 +1329,33 @@ class VpkBankChequePrintWizard(models.TransientModel):
         comodel_name="vpk.payment.voucher",
         string="ใบสำคัญจ่าย",
     )
+    payment_voucher_line_id = fields.Many2one(
+        comodel_name="vpk.payment.voucher.line",
+        string="รายการใบสำคัญจ่าย",
+    )
 
     def _mark_printed(self):
         super()._mark_printed()
         for wizard in self:
             if wizard.payment_voucher_id and wizard.cheque_leaf_id:
+                cheque_no_str = str(wizard.cheque_leaf_id.cheque_number)
                 wizard.cheque_leaf_id.sudo().write(
                     {"payment_voucher_id": wizard.payment_voucher_id.id}
                 )
+                if wizard.payment_voucher_line_id:
+                    wizard.payment_voucher_line_id.sudo().write(
+                        {"cheque_no": cheque_no_str}
+                    )
+                elif len(wizard.payment_voucher_id.line_ids) == 1:
+                    wizard.payment_voucher_id.line_ids.sudo().write(
+                        {"cheque_no": cheque_no_str}
+                    )
                 # ซิงค์เลขที่เช็คเข้าใบรับรองหักภาษี ณ ที่จ่าย (ถ้ามี)
                 voucher = wizard.payment_voucher_id
                 if "wht_cert_4235_ids" in voucher._fields and voucher.wht_cert_4235_ids:
                     voucher.wht_cert_4235_ids.filtered(
                         lambda c: c.state != "cancel"
                     ).sudo().write(
-                        {"wht_cheque_no": str(wizard.cheque_leaf_id.cheque_number)}
+                        {"wht_cheque_no": cheque_no_str}
                     )
 

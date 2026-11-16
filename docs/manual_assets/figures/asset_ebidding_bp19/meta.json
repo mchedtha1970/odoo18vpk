@@ -1,0 +1,58 @@
+{
+  "budget": "DBR/2570/0033",
+  "product": "BP-19",
+  "qty": "1",
+  "unit_price": "1600000",
+  "scenario": "asset_ebidding_bp19_once",
+  "method": "E-bidding",
+  "payment": "once",
+  "pr_name": "PR6911021",
+  "pr_url": "http://127.0.0.1:8069/odoo/action-979/184/purchase.request/184",
+  "pr_id": 184,
+  "egp_id": 87,
+  "egp_name": "EGP/2026/0166",
+  "contract_id": 321,
+  "contract_name": "CTR/2026/0043",
+  "contract_info": [
+    {
+      "id": 321,
+      "name": "CTR/2026/0043",
+      "state": "confirmed",
+      "payment_type": "once",
+      "amount_total": 1600000,
+      "contract_type_id": [
+        2,
+        "สัญญาซื้อขาย"
+      ]
+    }
+  ],
+  "po": {
+    "id": 139,
+    "name": "P00051",
+    "state": "purchase",
+    "vpk_vendor_confirm_state": "confirmed",
+    "partner_id": [
+      9,
+      "Vendor DEMO"
+    ],
+    "amount_total": 1600000,
+    "picking_ids": [
+      230
+    ]
+  },
+  "po_id": 139,
+  "po_vendor": {
+    "id": 139,
+    "name": "P00051",
+    "state": "purchase",
+    "vpk_vendor_confirm_state": "confirmed",
+    "partner_id": [
+      9,
+      "Vendor DEMO"
+    ],
+    "amount_total": 1600000,
+    "picking_ids": [
+      230
+    ]
+  }
+}

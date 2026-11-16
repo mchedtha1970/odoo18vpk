@@ -102,6 +102,31 @@ export class PaymentRequestFinanceDashboard extends Component {
         return row.waiting_days ? `${row.waiting_days} วัน` : "วันนี้";
     }
 
+    async openDisbursementCoverWizard() {
+        await this.actionService.doAction({
+            type: "ir.actions.act_window",
+            name: "ใบปะหน้าการขออนุมัติเบิกจ่ายจาก GFMIS",
+            res_model: "vpk.disbursement.cover.wizard",
+            views: [[false, "form"]],
+            target: "new",
+        });
+    }
+
+    async openCreateMultiVoucherWizard() {
+        await this.actionService.doAction(
+            {
+                type: "ir.actions.act_window",
+                name: "สร้างใบสำคัญจ่าย (รวมหลายใบตั้งหนี้ที่อนุมัติและ POST แล้ว)",
+                res_model: "vpk.payment.voucher.create.wizard",
+                views: [[false, "form"]],
+                target: "new",
+            },
+            {
+                onClose: () => this.loadData(),
+            }
+        );
+    }
+
     async openMemoVoucher(row) {
         if (!row.bill_id && !row.memo_voucher_id) {
             return;

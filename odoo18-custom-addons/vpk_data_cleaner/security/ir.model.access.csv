@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_vpk_data_cleaner_module_system,vpk.data.cleaner.module.system,model_vpk_data_cleaner_module,base.group_system,1,1,1,1
+access_vpk_data_cleaner_model_system,vpk.data.cleaner.model.system,model_vpk_data_cleaner_model,base.group_system,1,1,1,1
+access_vpk_data_cleaner_log_system,vpk.data.cleaner.log.system,model_vpk_data_cleaner_log,base.group_system,1,1,1,1
+access_vpk_data_cleaner_wizard_system,vpk.data.cleaner.wizard.system,model_vpk_data_cleaner_wizard,base.group_system,1,1,1,1
+access_vpk_data_cleaner_wizard_line_system,vpk.data.cleaner.wizard.line.system,model_vpk_data_cleaner_wizard_line,base.group_system,1,1,1,1
+access_vpk_discuss_cleaner_wizard_system,vpk.discuss.cleaner.wizard.system,model_vpk_discuss_cleaner_wizard,base.group_system,1,1,1,1

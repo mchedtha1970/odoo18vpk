@@ -31,17 +31,24 @@
                     <button name="action_approve" type="object" string="อนุมัติ"
                             class="btn-primary" invisible="state != 'to_approve'"
                             groups="account.group_account_manager"/>
+                    <button name="action_confirm_voucher_payments" type="object"
+                            string="ยืนยันรายการจ่าย (ส่งบัญชีบันทึก)" class="btn-primary"
+                            invisible="state != 'approved'"/>
                     <button name="action_draft" type="object" string="ตั้งเป็นร่าง"
                             invisible="state not in ('to_approve', 'approved', 'cancel')"/>
                     <button name="action_cancel" type="object" string="ยกเลิก"
                             invisible="state == 'cancel'"/>
                     <button name="action_print_voucher" type="object"
                             string="พิมพ์บันทึกข้อความ" class="btn-secondary"/>
+                    <button name="action_print_voucher_hospital_cheque" type="object"
+                            string="พิมพ์แบบรวมโรงพยาบาล (เช็คเลขที่)" class="btn-secondary"
+                            invisible="state == 'cancel'"/>
                     <button name="action_open_print_cheque_wizard" type="object"
                             string="พิมพ์เช็ค" class="btn-secondary"
                             invisible="state == 'cancel' or disbursement_type == 'gfmis'"/>
                     <button name="action_add_bills" type="object"
-                            string="เพิ่มใบเรียกเก็บ" invisible="state != 'draft'"/>
+                            string="เลือกใบตั้งเจ้าหนี้ (หลายรายการ)" class="btn-secondary"
+                            invisible="state != 'draft'"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,to_approve,approved"/>
                 </header>
@@ -63,6 +70,7 @@
                     </div>
                     <group>
                         <group string="หัวหนังสือ">
+                            <field name="voucher_type" widget="radio"/>
                             <field name="date"/>
                             <field name="memo_agency"/>
                             <field name="memo_phone"/>
@@ -84,6 +92,10 @@
                                       context="{'default_partner_id': company_partner_id}"/>
                             <field name="bank_display"/>
                             <field name="currency_id" invisible="1"/>
+                            <field name="amount_gross" invisible="not show_wht_deduction or not wht_deduction_amount"/>
+                            <field name="show_wht_deduction"/>
+                            <field name="wht_deduction_label" invisible="not show_wht_deduction"/>
+                            <field name="wht_deduction_amount" invisible="not show_wht_deduction"/>
                             <field name="amount_total"/>
                             <field name="amount_total_text"/>
                             <field name="attachment_count"/>
@@ -97,27 +109,41 @@
                     </group>
                     <notebook>
                         <page string="รายการ" name="lines">
+                            <div class="mb-2 d-flex flex-wrap gap-2 align-items-center" invisible="state != 'draft'">
+                                <button name="action_add_bills" type="object"
+                                        string="เลือกใบตั้งเจ้าหนี้ที่อนุมัติ/POST แล้ว (เลือกได้หลายรายการ)"
+                                        class="btn-outline-primary" icon="fa-plus"/>
+                                <span class="text-muted">
+                                    หลักการ: ต้องเลือกจากใบตั้งเจ้าหนี้ (Bill) ที่ผ่านการอนุมัติและ POST แล้วเท่านั้น
+                                </span>
+                            </div>
                             <field name="line_ids">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
-                                    <field name="partner_id"/>
+                                    <field name="move_id" string="ใบตั้งเจ้าหนี้ (POST แล้ว)" required="1"
+                                           options="{'no_create': True}"/>
+                                    <field name="partner_id" optional="show"/>
                                     <field name="partner_name"/>
-                                    <field name="bill_ref"/>
+                                    <field name="cheque_no" optional="show"/>
+                                    <field name="bill_ref" optional="show"/>
                                     <field name="amount" sum="รวม"/>
-                                    <field name="move_id" optional="show"/>
                                     <field name="note" optional="hide"/>
                                     <field name="currency_id" column_invisible="1"/>
+                                    <button name="action_print_line_cheque" type="object"
+                                            string="พิมพ์เช็ค" icon="fa-money"/>
                                 </list>
                             </field>
                         </page>
-                        <page string="ใบเรียกเก็บอ้างอิง" name="bills">
+                        <page string="ใบตั้งเจ้าหนี้อ้างอิง" name="bills">
                             <field name="bill_ids" readonly="1">
                                 <list>
-                                    <field name="name"/>
-                                    <field name="partner_id"/>
-                                    <field name="amount_total"/>
-                                    <field name="amount_residual"/>
-                                    <field name="state"/>
+                                    <field name="name" string="เลขที่ใบตั้งเจ้าหนี้"/>
+                                    <field name="partner_id" string="ผู้ขาย / โรงพยาบาล"/>
+                                    <field name="invoice_date"/>
+                                    <field name="amount_total" sum="รวมทั้งสิ้น"/>
+                                    <field name="amount_residual" sum="รวมค้างชำระ"/>
+                                    <field name="payment_state" widget="badge"/>
+                                    <field name="state" widget="badge" decoration-success="state == 'posted'"/>
                                 </list>
                             </field>
                         </page>
@@ -162,7 +188,13 @@
                         <page string="เอกสารใบสำคัญจ่าย" name="voucher_studio_documents">
                             <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
                                 <button name="action_print_voucher" type="object"
-                                        string="พิมพ์บันทึกข้อความ" class="btn-primary"
+                                        string="พิมพ์บันทึกข้อความ (ตามรูปแบบที่เลือก)" class="btn-primary"
+                                        invisible="state == 'cancel'"/>
+                                <button name="action_print_voucher_standard" type="object"
+                                        string="พิมพ์แบบทั่วไป (บริษัท / บิลเลขที่)" class="btn-secondary"
+                                        invisible="state == 'cancel'"/>
+                                <button name="action_print_voucher_hospital_cheque" type="object"
+                                        string="พิมพ์แบบรวมโรงพยาบาล (เช็คเลขที่)" class="btn-secondary"
                                         invisible="state == 'cancel'"/>
                                 <span class="text-muted">
                                     พิมพ์จากแบบฟอร์ม Document Studio ใบสำคัญจ่าย ที่ตั้งค่าไว้

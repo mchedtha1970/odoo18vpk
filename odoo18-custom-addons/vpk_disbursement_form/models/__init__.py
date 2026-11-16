@@ -5,3 +5,4 @@ from . import disbursement_form_file
 from . import disbursement_form
 from . import account_move
 from . import studio_document
+from . import ir_actions_report

@@ -2,7 +2,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 {
     "name": "VPK ใบขอเบิกเงิน (ขบ.01) - กรอกข้อมูลลง template Excel",
-    "version": "18.0.1.4.2",
+    "version": "18.0.1.5.0",
     "category": "Accounting",
     "summary": "ฟอร์มกรอกใบขอเบิกเงิน ขบ.01 บันทึกข้อมูลเข้า template Excel อัตโนมัติ และแนบไฟล์เก็บไว้ในเอกสาร",
     "description": """
@@ -35,6 +35,8 @@
         "views/res_company_views.xml",
         "views/disbursement_form_views.xml",
         "views/account_move_views.xml",
+        "wizard/disbursement_cover_wizard_views.xml",
+        "report/disbursement_cover_report.xml",
         "views/menu.xml",
     ],
     "installable": True,

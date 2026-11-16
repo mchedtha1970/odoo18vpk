@@ -585,13 +585,15 @@
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
                 <field name="is_ebidding_method" invisible="1"/>
+                <field name="is_specific_method" invisible="1"/>
+                <field name="requires_procurement_plan" invisible="1"/>
                 <button
                     name="action_create_ebidding_plan"
                     type="object"
                     string="สร้างแผน"
                     icon="fa-calendar-plus-o"
                     class="btn-primary"
-                    invisible="requisition_type != 'egp_procurement' or not is_ebidding_method or ebidding_plan_line_id"
+                    invisible="requisition_type != 'egp_procurement' or not requires_procurement_plan or ebidding_plan_line_id"
                     groups="purchase.group_purchase_user"
                 />
                 <button
@@ -609,17 +611,24 @@
                     type="object"
                     class="oe_stat_button"
                     icon="fa-calendar"
-                    invisible="requisition_type != 'egp_procurement' or (not is_ebidding_method and not ebidding_plan_line_id)"
+                    invisible="requisition_type != 'egp_procurement' or (not requires_procurement_plan and not ebidding_plan_line_id)"
                 >
                     <field name="ebidding_plan_count" widget="statinfo" string="เอกสารแผน"/>
                 </button>
             </xpath>
             <xpath expr="//sheet" position="before">
                 <div class="alert alert-warning mb-0" role="alert"
-                     invisible="requisition_type != 'egp_procurement' or not is_ebidding_method or ebidding_plan_line_id">
+                     invisible="requisition_type != 'egp_procurement' or not requires_procurement_plan or ebidding_plan_line_id or not is_ebidding_method">
                     <i class="fa fa-exclamation-triangle me-1"/>
                     วิธีจัดหาเป็นแบบ <strong>e-Bidding</strong>
                     กรุณาตรวจสอบว่าสร้างแผนในระบบแล้วหรือไม่
+                    — เลือกแผนที่มีอยู่ในช่อง “เอกสารแผน” หรือกดปุ่ม “สร้างแผน”
+                </div>
+                <div class="alert alert-warning mb-0" role="alert"
+                     invisible="requisition_type != 'egp_procurement' or not requires_procurement_plan or ebidding_plan_line_id or not is_specific_method">
+                    <i class="fa fa-exclamation-triangle me-1"/>
+                    วิธีจัดหาเป็นแบบ <strong>เฉพาะเจาะจง</strong> มูลค่ามากกว่า 500,000 บาท
+                    ต้องจัดทำแผนจัดซื้อจัดจ้าง
                     — เลือกแผนที่มีอยู่ในช่อง “เอกสารแผน” หรือกดปุ่ม “สร้างแผน”
                 </div>
             </xpath>
@@ -627,7 +636,7 @@
                 <field
                     name="ebidding_plan_line_id"
                     string="เอกสารแผน"
-                    invisible="not is_ebidding_method and not ebidding_plan_line_id"
+                    invisible="not requires_procurement_plan and not ebidding_plan_line_id"
                     readonly="state in ('done', 'cancel')"
                     domain="[('company_id', '=', company_id), '|', ('egp_requisition_ids', '=', False), ('egp_requisition_ids', 'in', [id])]"
                     options="{'no_create': True}"

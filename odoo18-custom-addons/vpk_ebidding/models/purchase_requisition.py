@@ -2,6 +2,9 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+# วิธีเฉพาะเจาะจงมูลค่าเกินเกณฑ์นี้ต้องจัดทำแผนจัดซื้อจัดจ้างใน ERP
+PROCUREMENT_PLAN_AMOUNT_THRESHOLD = 500000.0
+
 
 class PurchaseRequisition(models.Model):
     _inherit = "purchase.requisition"
@@ -33,6 +36,16 @@ class PurchaseRequisition(models.Model):
     is_ebidding_method = fields.Boolean(
         compute="_compute_is_ebidding_method",
     )
+    is_specific_method = fields.Boolean(
+        compute="_compute_is_specific_method",
+    )
+    requires_procurement_plan = fields.Boolean(
+        compute="_compute_requires_procurement_plan",
+        help=(
+            "ต้องมีแผนจัดซื้อจัดจ้างเมื่อเป็น E-bidding "
+            "หรือวิธีเฉพาะเจาะจงมูลค่ามากกว่า 500,000 บาท"
+        ),
+    )
 
     ebidding_plan_count = fields.Integer(
         compute="_compute_ebidding_plan_count",
@@ -56,6 +69,49 @@ class PurchaseRequisition(models.Model):
                 or "bidding" in (method.name or "").lower()
             )
 
+    @api.depends("procurement_method_id", "procurement_method_id.name")
+    def _compute_is_specific_method(self):
+        specific = self.env.ref(
+            "l10n_th_gov_purchase_request.procurement_specific",
+            raise_if_not_found=False,
+        )
+        for record in self:
+            method = record.procurement_method_id
+            name = (method.name or "").lower() if method else ""
+            record.is_specific_method = bool(method) and (
+                method == specific
+                or "เฉพาะเจาะจง" in (method.name or "")
+                or "specific" in name
+            )
+
+    def _procurement_plan_basis_amount(self):
+        """วงเงินใช้ตัดสินว่าต้องทำแผน — อ่านจากใบขอซื้อก่อน มีแผนแล้วค่อยใช้ยอดแผน"""
+        self.ensure_one()
+        if self.ebidding_plan_line_id:
+            return self.ebidding_plan_line_id.amount_total or 0.0
+        return self.purchase_request_id.estimated_cost or 0.0
+
+    @api.depends(
+        "is_ebidding_method",
+        "is_specific_method",
+        "purchase_request_id",
+        "purchase_request_id.estimated_cost",
+        "ebidding_plan_line_id",
+        "ebidding_plan_line_id.amount_total",
+    )
+    def _compute_requires_procurement_plan(self):
+        for record in self:
+            if record.is_ebidding_method:
+                record.requires_procurement_plan = True
+            elif (
+                record.is_specific_method
+                and record._procurement_plan_basis_amount()
+                > PROCUREMENT_PLAN_AMOUNT_THRESHOLD
+            ):
+                record.requires_procurement_plan = True
+            else:
+                record.requires_procurement_plan = False
+
     def _ebidding_plan_for_fiscal_year(self):
         self.ensure_one()
         Plan = self.env["ebidding.plan"]
@@ -77,8 +133,14 @@ class PurchaseRequisition(models.Model):
         self.ensure_one()
         if self.ebidding_plan_line_id:
             return self.action_open_ebidding_plan_line()
-        if not self.is_ebidding_method:
-            raise UserError(_("สร้างแผนได้เฉพาะวิธีจัดซื้อจัดจ้าง E-bidding"))
+        if not self.requires_procurement_plan:
+            raise UserError(
+                _(
+                    "สร้างแผนได้เมื่อวิธีจัดซื้อจัดจ้างเป็น E-bidding "
+                    "หรือวิธีเฉพาะเจาะจงมูลค่ามากกว่า %(amount)s บาท"
+                )
+                % {"amount": f"{PROCUREMENT_PLAN_AMOUNT_THRESHOLD:,.0f}"}
+            )
         plan = self._ebidding_plan_for_fiscal_year()
         last_line = self.env["ebidding.plan.line"].search(
             [("company_id", "=", self.company_id.id), ("office_code", "!=", False)],
@@ -88,7 +150,7 @@ class PurchaseRequisition(models.Model):
         today = fields.Date.context_today(self)
         return {
             "type": "ir.actions.act_window",
-            "name": _("สร้างแผนจัดซื้อจัดจ้าง (e-bidding)"),
+            "name": _("สร้างแผนจัดซื้อจัดจ้าง"),
             "res_model": "ebidding.plan.line",
             "view_mode": "form",
             "views": [(False, "form")],
@@ -99,7 +161,8 @@ class PurchaseRequisition(models.Model):
                 "default_project_name": self.egp_project_name
                 or self.purchase_request_id.description
                 or False,
-                "default_extra_budget_amount": self.purchase_request_amount_total,
+                "default_extra_budget_amount": self.purchase_request_amount_total
+                or self._procurement_plan_basis_amount(),
                 "default_office_code": last_line.office_code or False,
                 "default_expected_announce_month": fields.Date.to_string(
                     today.replace(day=1)
@@ -136,7 +199,8 @@ class PurchaseRequisition(models.Model):
 
     def _egp_project_budget_amount(self):
         self.ensure_one()
-        if self.ebidding_plan_line_id and self._is_egp_ebidding_method():
+        # เมื่อเชื่อมเอกสารแผนแล้ว ใช้วงเงินจากแผน (E-bidding และเฉพาะเจาะจง > 500,000)
+        if self.ebidding_plan_line_id:
             return self.ebidding_plan_line_id.amount_total or 0.0
         return super()._egp_project_budget_amount()
 

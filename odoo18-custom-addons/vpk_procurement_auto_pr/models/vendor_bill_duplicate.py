@@ -4,6 +4,10 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
+_TRACKED_FOR_UNIQUE_KEY = frozenset(
+    {"ref", "move_type", "state", "partner_id", "company_id"}
+)
+
 
 class AccountMove(models.Model):
     _inherit = "account.move"
@@ -49,14 +53,17 @@ class AccountMove(models.Model):
     ):
         if not unique_key or not commercial_partner:
             return
-        duplicate = self.search([
-            ("id", "not in", exclude_ids or [0]),
-            ("move_type", "=", "in_invoice"),
-            ("state", "!=", "cancel"),
-            ("company_id", "=", company.id),
-            ("commercial_partner_id", "=", commercial_partner.id),
-            ("vendor_bill_unique_key", "=", unique_key),
-        ], limit=1)
+        duplicate = self.search(
+            [
+                ("id", "not in", exclude_ids or [0]),
+                ("move_type", "=", "in_invoice"),
+                ("state", "!=", "cancel"),
+                ("company_id", "=", company.id),
+                ("commercial_partner_id", "=", commercial_partner.id),
+                ("vendor_bill_unique_key", "=", unique_key),
+            ],
+            limit=1,
+        )
         if duplicate:
             raise ValidationError(
                 _(
@@ -67,7 +74,7 @@ class AccountMove(models.Model):
                 )
                 % {
                     "vendor": commercial_partner.display_name,
-                    "reference": reference.strip(),
+                    "reference": (reference or "").strip(),
                     "document": duplicate.display_name,
                 }
             )
@@ -100,6 +107,11 @@ class AccountMove(models.Model):
         return super().create(prepared_vals_list)
 
     def write(self, vals):
+        # อย่าใส่ vendor_bill_unique_key ทุกครั้ง — การดึงรายการทำจ่าย/ลงทะเบียนจ่าย
+        # จะ write ฟิลด์อื่นบนใบที่ลงรายการแล้ว และโดนบล็อกถ้าเขียนคีย์ซ้ำนี้
+        if not vals or not _TRACKED_FOR_UNIQUE_KEY.intersection(vals):
+            return super().write(vals)
+
         for move in self:
             move_type = vals.get("move_type", move.move_type)
             state = vals.get("state", move.state)
@@ -118,10 +130,19 @@ class AccountMove(models.Model):
                 partner,
                 unique_key,
                 reference,
-                exclude_ids=self.ids,
+                exclude_ids=move.ids,
             )
-            move_vals = dict(vals, vendor_bill_unique_key=unique_key)
-            super(AccountMove, move).write(move_vals)
+            move_vals = dict(vals)
+            if move.vendor_bill_unique_key != unique_key:
+                move_vals["vendor_bill_unique_key"] = unique_key
+            # ใบที่เคยลงรายการแล้ว: อนุญาตอัปเดตคีย์เมื่อยกเลิก/แก้ ref ที่เกี่ยวข้อง
+            writer = move
+            if (
+                move.posted_before
+                and "vendor_bill_unique_key" in move_vals
+            ):
+                writer = move.with_context(skip_readonly_check=True)
+            super(AccountMove, writer).write(move_vals)
         return True
 
     @api.depends(
@@ -142,21 +163,22 @@ class AccountMove(models.Model):
                 and move.ref
                 and move.ref.strip()
             ):
-                duplicates = self.search([
-                    ("id", "!=", move._origin.id or 0),
-                    ("move_type", "=", "in_invoice"),
-                    ("state", "!=", "cancel"),
-                    ("company_id", "=", move.company_id.id),
-                    (
-                        "commercial_partner_id",
-                        "=",
-                        move.commercial_partner_id.id,
-                    ),
-                    (
-                        "vendor_bill_unique_key",
-                        "=",
-                        move.ref.strip().casefold(),
-                    ),
-                ])
+                duplicates = self.search(
+                    [
+                        ("id", "!=", move._origin.id or 0),
+                        ("move_type", "=", "in_invoice"),
+                        ("state", "!=", "cancel"),
+                        ("company_id", "=", move.company_id.id),
+                        (
+                            "commercial_partner_id",
+                            "=",
+                            move.commercial_partner_id.id,
+                        ),
+                        (
+                            "vendor_bill_unique_key",
+                            "=",
+                            move.ref.strip().casefold(),
+                        ),
+                    ]
+                )
             move.vendor_bill_duplicate_ids = duplicates
-

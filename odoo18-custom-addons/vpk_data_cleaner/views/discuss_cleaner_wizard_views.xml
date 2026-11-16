@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_discuss_cleaner_wizard_form" model="ir.ui.view">
+        <field name="name">vpk.discuss.cleaner.wizard.form</field>
+        <field name="model">vpk.discuss.cleaner.wizard</field>
+        <field name="arch" type="xml">
+            <form string="ล้างข้อความและการแจ้งเตือนในแชท (Discuss)">
+                <div class="alert alert-info mb-3" role="alert">
+                    <strong>จัดการล้างข้อมูลแอปแชท (Discuss):</strong>
+                    เลือกรายการข้อความ กล่องจดหมายแจ้งเตือน หรือห้องแชทส่วนตัวที่ต้องการล้าง
+                    โดยระบบจะคงห้องแชทหลักขององค์กร (<code>#general</code> และ <code>#Administrators</code>) และรายชื่อสมาชิกในห้องหลักไว้ให้อัตโนมัติ
+                </div>
+
+                <group string="รายการในแอปแชท (Discuss) ที่ต้องการล้าง">
+                    <group>
+                        <field name="clear_channel_messages"/>
+                        <field name="clear_inbox_notifications"/>
+                        <field name="clear_dm_channels"/>
+                        <field name="clear_activities"/>
+                        <field name="clear_outgoing_mails"/>
+                    </group>
+                    <group string="จำนวนข้อมูลปัจจุบันในระบบ">
+                        <field name="channel_message_count" readonly="1"/>
+                        <field name="inbox_notification_count" readonly="1"/>
+                        <field name="dm_channel_count" readonly="1"/>
+                        <field name="activity_count" readonly="1"/>
+                        <field name="outgoing_mail_count" readonly="1"/>
+                    </group>
+                </group>
+
+                <group string="ตัวเลือกเพิ่มเติม (ประวัติบันทึกท้ายเอกสาร)">
+                    <group>
+                        <field name="clear_all_document_chatter"/>
+                    </group>
+                    <group>
+                        <field name="document_chatter_count" readonly="1"/>
+                    </group>
+                </group>
+
+                <group string="การยืนยันความปลอดภัย">
+                    <field name="confirm_text"
+                           placeholder="พิมพ์ CLEAR ตัวพิมพ์ใหญ่เพื่อยืนยันการล้างข้อความ"/>
+                </group>
+
+                <footer>
+                    <button name="action_execute_clear_discuss"
+                            type="object"
+                            string="ยืนยันล้างข้อความ Discuss เดี๋ยวนี้"
+                            class="btn-danger"
+                            icon="fa-comments-o"/>
+                    <button string="ยกเลิก" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vpk_discuss_cleaner_wizard" model="ir.actions.act_window">
+        <field name="name">ล้างข้อความในแชท (Discuss)</field>
+        <field name="res_model">vpk.discuss.cleaner.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

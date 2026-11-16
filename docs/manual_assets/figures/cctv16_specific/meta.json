@@ -1,0 +1,81 @@
+{
+  "pr": "PR6911015",
+  "pr_id": 178,
+  "egp": {
+    "id": 83,
+    "name": "EGP/2026/0158",
+    "state": "done",
+    "ebidding_plan_line_id": false,
+    "egp_award_approved": true
+  },
+  "egp_id": 83,
+  "contract": {
+    "id": 318,
+    "name": "CTR/2026/0040",
+    "state": "confirmed",
+    "quantity_policy": "fixed",
+    "contract_type_id": [
+      2,
+      "สัญญาซื้อขาย"
+    ],
+    "amount_total": 600000,
+    "partner_id": [
+      41,
+      "บริษัท ซิลลิค ฟาร์มา จำกัด"
+    ]
+  },
+  "contract_type": "สัญญาซื้อขาย",
+  "po": {
+    "id": 136,
+    "name": "P00048",
+    "state": "purchase",
+    "partner_id": [
+      41,
+      "บริษัท ซิลลิค ฟาร์มา จำกัด"
+    ],
+    "amount_total": 642000,
+    "picking_ids": [
+      225
+    ],
+    "contract_id": [
+      318,
+      "CTR/2026/0040 — บริษัท ซิลลิค ฟาร์มา จำกัด"
+    ],
+    "origin": "PR6911015, P777777777, EGP/2026/0158, BID-CCTV-16",
+    "wa_count": 1,
+    "qc_count": 0,
+    "wa_accepted": false
+  },
+  "po_id": 136,
+  "wa": "WA/2026/00074",
+  "picking": "WH/IN/00038",
+  "amount": 600000.0,
+  "budget": "DBR/2570/0001",
+  "product": {
+    "id": 2472,
+    "type": "consu",
+    "is_storable": false,
+    "name": "กล้องโทรทัศน์วงจรปิดชนิดเครือข่าย แบบปรับมุมมอง สำหรับใช้ในงานรักษาความปลอดภัยทั่วไปและงานอื่นๆ"
+  },
+  "method": "เฉพาะเจาะจง",
+  "notes": [
+    "ระบบสร้างแผนจัดซื้อจัดจ้างใน ERP ได้เฉพาะวิธี E-bidding — วิธีเฉพาะเจาะจงไม่มีปุ่มสร้างแผน",
+    "สร้าง PO จากแฟ้ม e-GP เดิม (origin มี PR6911015) ไม่เปิด PR ใหม่",
+    "ยืนยัน PO แล้วยังมี WH/IN แต่เส้นทางครุภัณฑ์ใช้ใบตรวจรับ WA + QC"
+  ],
+  "pr_name": "PR6911015",
+  "egp_name": "EGP/2026/0158",
+  "plan": null,
+  "plan_note": "วิธีเฉพาะเจาะจง — ไม่มีปุ่มสร้างแผน (เฉพาะ e-Bidding)",
+  "pickings": [
+    {
+      "id": 225,
+      "name": "WH/IN/00038",
+      "state": "assigned",
+      "picking_type_id": [
+        234,
+        "คลังกลาง: Receipts"
+      ]
+    }
+  ]
+}

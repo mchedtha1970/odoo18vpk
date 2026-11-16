@@ -7,4 +7,12 @@
         action="action_vpk_disbursement_form"
         sequence="5"
         groups="group_disbursement_form_user"/>
+
+    <menuitem
+        id="menu_vpk_disbursement_cover_wizard"
+        name="ใบปะหน้าขออนุมัติเบิกจ่าย (GFMIS)"
+        parent="vpk_finance_flow.menu_vpk_finance_root"
+        action="action_vpk_disbursement_cover_wizard"
+        sequence="6"
+        groups="group_disbursement_form_user,account.group_account_invoice"/>
 </odoo>

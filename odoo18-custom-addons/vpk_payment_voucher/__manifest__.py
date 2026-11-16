@@ -2,7 +2,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 {
     "name": "VPK ใบสำคัญจ่าย (กลุ่มงานการเงิน)",
-    "version": "18.0.1.0.17",
+    "version": "18.0.1.0.20",
     "category": "Accounting/Accounting",
     "summary": "ใบสำคัญจ่าย / บันทึกข้อความขออนุมัติเบิกจ่าย จากใบเรียกเก็บที่ POST แล้ว",
     "description": """

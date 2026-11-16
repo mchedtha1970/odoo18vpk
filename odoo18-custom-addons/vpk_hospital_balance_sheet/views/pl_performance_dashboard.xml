@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_vpk_pl_performance_dashboard" model="ir.actions.client">
+        <field name="name">Dashboard ผลการดำเนินงาน</field>
+        <field name="tag">vpk_pl_performance_dashboard</field>
+        <field name="path">vpk-pl-performance-dashboard</field>
+    </record>
+
+    <menuitem
+        id="menu_vpk_pl_performance_dashboard"
+        name="Dashboard ผลการดำเนินงาน"
+        parent="account.account_reports_legal_statements_menu"
+        action="action_vpk_pl_performance_dashboard"
+        sequence="6"
+        groups="account.group_account_readonly"
+    />
+</odoo>

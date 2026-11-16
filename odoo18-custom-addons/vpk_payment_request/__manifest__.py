@@ -2,7 +2,7 @@
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl-3.0).
 {
     "name": "VPK ขออนุมัติเบิกจ่าย (จัดซื้อ → เจ้าหนี้)",
-    "version": "18.0.1.6.17",
+    "version": "18.0.1.6.19",
     "category": "Purchases",
     "summary": "ขออนุมัติเบิกจ่ายจากใบสั่งซื้อหลังตรวจรับ ลงนามภายใน แล้วส่งต่อเจ้าหนี้ตั้งหนี้",
     "description": """

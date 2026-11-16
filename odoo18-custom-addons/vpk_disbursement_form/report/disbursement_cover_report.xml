@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_disbursement_cover_gfmis" model="report.paperformat">
+        <field name="name">ใบปะหน้าการขออนุมัติเบิกจ่าย GFMIS (A4 Landscape)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">8</field>
+        <field name="margin_bottom">8</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <template id="report_disbursement_cover_gfmis">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="wizard">
+                <style type="text/css" t-out="wizard._get_official_thai_font_css()"/>
+                <t t-set="pages" t-value="wizard.get_paginated_pages()"/>
+                <t t-foreach="pages" t-as="page">
+                    <div class="article" style="page-break-after: always;">
+                        <table class="vpk-gfmis-cover">
+                            <colgroup>
+                                <col style="width: 5.5%;"/>
+                                <col style="width: 7.5%;"/>
+                                <col style="width: 24.0%;"/>
+                                <col style="width: 6.5%;"/>
+                                <col style="width: 9.0%;"/>
+                                <col style="width: 11.5%;"/>
+                                <col style="width: 10.5%;"/>
+                                <col style="width: 8.0%;"/>
+                                <col style="width: 10.5%;"/>
+                                <col style="width: 7.0%;"/>
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th/>
+                                    <th/>
+                                    <th>หน้าที่ <t t-esc="page['page_number']"/></th>
+                                    <th/>
+                                    <th/>
+                                    <th/>
+                                    <th/>
+                                    <th/>
+                                    <th/>
+                                    <th/>
+                                </tr>
+                                <tr>
+                                    <th>ลำดับที่</th>
+                                    <th>วันที่ โอน</th>
+                                    <th>ชื่อบริษัท</th>
+                                    <th>ขบ.</th>
+                                    <th>ฎีกาที่</th>
+                                    <th>เลขที่บิล</th>
+                                    <th>จำนวนเงิน</th>
+                                    <th>ภาษี</th>
+                                    <th>เป็นเงิน</th>
+                                    <th>ผู้อนุมัติ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="page['lines']" t-as="line">
+                                    <tr class="main-row">
+                                        <td class="text-center"><t t-esc="line.seq_no or ''"/></td>
+                                        <td class="text-center"><t t-esc="line.transfer_date or ''"/></td>
+                                        <td class="text-left"><t t-esc="line.partner_name or ''"/></td>
+                                        <td class="text-center"><t t-esc="line.kb_label or ''"/></td>
+                                        <td class="text-center"><t t-esc="line.deeka_no or ''"/></td>
+                                        <td class="text-center"><t t-esc="line.bill_no or ''"/></td>
+                                        <td class="text-right"><t t-esc="wizard.format_money(line.amount_request)"/></td>
+                                        <td class="text-right"><t t-esc="wizard.format_money(line.wht_amount)"/></td>
+                                        <td class="text-right"><t t-esc="wizard.format_money(line.amount_net)"/></td>
+                                        <td class="text-center"><t t-esc="line.approver_note or ''"/></td>
+                                    </tr>
+                                    <tr class="sub-row">
+                                        <td/>
+                                        <td/>
+                                        <td class="text-left"><t t-esc="line.sub_note or ''"/></td>
+                                        <td/>
+                                        <td/>
+                                        <td/>
+                                        <td/>
+                                        <td/>
+                                        <td/>
+                                        <td/>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_disbursement_cover_gfmis" model="ir.actions.report">
+        <field name="name">ใบปะหน้าการขออนุมัติเบิกจ่าย (GFMIS)</field>
+        <field name="model">vpk.disbursement.cover.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">vpk_disbursement_form.report_disbursement_cover_gfmis</field>
+        <field name="report_file">vpk_disbursement_form.report_disbursement_cover_gfmis</field>
+        <field name="print_report_name">'ใบปะหน้าขออนุมัติเบิกจ่าย_GFMIS_หน้า_%s' % (object.page_start or 1)</field>
+        <field name="paperformat_id" ref="paperformat_disbursement_cover_gfmis"/>
+    </record>
+</odoo>

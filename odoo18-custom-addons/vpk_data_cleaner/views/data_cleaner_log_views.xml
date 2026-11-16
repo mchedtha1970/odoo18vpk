@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_vpk_data_cleaner_log_list" model="ir.ui.view">
+        <field name="name">vpk.data.cleaner.log.list</field>
+        <field name="model">vpk.data.cleaner.log</field>
+        <field name="arch" type="xml">
+            <list string="ประวัติการล้างข้อมูล" create="0" edit="0" delete="0">
+                <field name="executed_at"/>
+                <field name="database_name"/>
+                <field name="user_id"/>
+                <field name="name"/>
+                <field name="module_names"/>
+                <field name="model_count"/>
+                <field name="deleted_row_count" sum="รวมแถวที่ลบ"/>
+                <field name="included_master"/>
+                <field name="reset_sequences"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_vpk_data_cleaner_log_form" model="ir.ui.view">
+        <field name="name">vpk.data.cleaner.log.form</field>
+        <field name="model">vpk.data.cleaner.log</field>
+        <field name="arch" type="xml">
+            <form string="รายละเอียดผลการล้างข้อมูล" create="0" edit="0" delete="0">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="executed_at"/>
+                            <field name="database_name"/>
+                            <field name="user_id"/>
+                            <field name="module_names"/>
+                        </group>
+                        <group>
+                            <field name="model_count"/>
+                            <field name="deleted_row_count"/>
+                            <field name="included_master"/>
+                            <field name="reset_sequences"/>
+                        </group>
+                    </group>
+                    <group string="รายละเอียดผลการลบรายโมเดล">
+                        <field name="detail_log" nolabel="1" colspan="2"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_vpk_data_cleaner_logs" model="ir.actions.act_window">
+        <field name="name">ประวัติการล้างข้อมูล (Audit Log)</field>
+        <field name="res_model">vpk.data.cleaner.log</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

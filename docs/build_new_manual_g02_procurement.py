@@ -124,7 +124,8 @@ def cell_text(cell, text, size=11, bold=False, color=SLATE, align="left", fill=N
         paragraph.paragraph_format.space_after = Pt(2)
 
 
-def make_table(doc, headers, rows, col_widths=None, header_fill=HEADER_FILL):
+def make_table(doc, headers, rows, col_widths=None, header_fill=HEADER_FILL, bold_row=None):
+    """bold_row: callable(row) -> bool — ถ้า True ทั้งแถวเป็นตัวหนา (เช่น แถวบทที่ในสารบัญ)"""
     table = doc.add_table(rows=1 + len(rows), cols=len(headers))
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     table.autofit = True
@@ -132,13 +133,252 @@ def make_table(doc, headers, rows, col_widths=None, header_fill=HEADER_FILL):
         cell_text(table.rows[0].cells[i], h, 11, True, WHITE, "center", header_fill)
     for r, row in enumerate(rows, 1):
         fill = "F8FAFC" if r % 2 == 0 else "FFFFFF"
+        is_bold = bool(bold_row(row)) if callable(bold_row) else False
         for c, val in enumerate(row):
-            cell_text(table.rows[r].cells[c], val, 11, False, SLATE, "left", fill)
+            cell_text(table.rows[r].cells[c], val, 11, is_bold, SLATE, "left", fill)
     if col_widths:
         for row in table.rows:
             for i, w in enumerate(col_widths):
                 row.cells[i].width = Cm(w)
     return table
+
+
+_BOOKMARK_ID = 1000
+
+
+def _next_bookmark_id() -> int:
+    global _BOOKMARK_ID
+    _BOOKMARK_ID += 1
+    return _BOOKMARK_ID
+
+
+def bookmark_paragraph(paragraph, name: str) -> None:
+    """ใส่ bookmark ครอบทั้งย่อหน้า — ใช้กับ PAGEREF ในสารบัญ"""
+    bid = str(_next_bookmark_id())
+    start = OxmlElement("w:bookmarkStart")
+    start.set(qn("w:id"), bid)
+    start.set(qn("w:name"), name)
+    end = OxmlElement("w:bookmarkEnd")
+    end.set(qn("w:id"), bid)
+    paragraph._p.insert(0, start)
+    paragraph._p.append(end)
+
+
+def add_pageref_field(paragraph, bookmark_name: str, placeholder: str = "…") -> None:
+    """ใส่ฟิลด์ PAGEREF ในย่อหน้า — Word จะแทนเลขหน้าเมื่ออัปเดตฟิลด์"""
+    run = paragraph.add_run()
+    fld_begin = OxmlElement("w:fldChar")
+    fld_begin.set(qn("w:fldCharType"), "begin")
+    instr = OxmlElement("w:instrText")
+    instr.set(qn("xml:space"), "preserve")
+    instr.text = f" PAGEREF {bookmark_name} \\h "
+    fld_sep = OxmlElement("w:fldChar")
+    fld_sep.set(qn("w:fldCharType"), "separate")
+    run._r.append(fld_begin)
+    run._r.append(instr)
+    run._r.append(fld_sep)
+    result = paragraph.add_run(placeholder)
+    set_run(result, 11, False, SLATE)
+    run_end = paragraph.add_run()
+    fld_end = OxmlElement("w:fldChar")
+    fld_end.set(qn("w:fldCharType"), "end")
+    run_end._r.append(fld_end)
+
+
+def enable_update_fields_on_open(doc) -> None:
+    """ให้ Word ถาม/อัปเดตฟิลด์เมื่อเปิดไฟล์ เพื่อให้เลขหน้าในสารบัญขึ้น"""
+    settings = doc.settings.element
+    existing = settings.find(qn("w:updateFields"))
+    if existing is None:
+        node = OxmlElement("w:updateFields")
+        node.set(qn("w:val"), "true")
+        settings.append(node)
+    else:
+        existing.set(qn("w:val"), "true")
+
+
+def make_toc_table(doc, rows, col_widths=None, header_fill=HEADER_FILL, bold_row=None):
+    """สารบัญ 3 คอลัมน์: หัวข้อ | เนื้อหา | หน้า
+
+    rows: list of (code, title, bookmark_name)
+    คอลัมน์หน้าใส่ข้อความธรรมดา (เติมเลขจริงทีหลังด้วย fill_toc_page_column)
+    ไม่ใช้ PAGEREF / updateFields เพื่อไม่ให้ Word เด้งถามตอนเปิดไฟล์
+    """
+    headers = ["หัวข้อ", "เนื้อหา", "หน้า"]
+    table = doc.add_table(rows=1 + len(rows), cols=3)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    table.autofit = True
+    for i, h in enumerate(headers):
+        cell_text(table.rows[0].cells[i], h, 11, True, WHITE, "center", header_fill)
+    widths = col_widths or [3.2, 11.8, 1.6]
+    for r, (code, title, _bookmark) in enumerate(rows, 1):
+        fill = "F8FAFC" if r % 2 == 0 else "FFFFFF"
+        is_bold = bool(bold_row((code, title))) if callable(bold_row) else False
+        cell_text(table.rows[r].cells[0], code, 11, is_bold, SLATE, "left", fill)
+        cell_text(table.rows[r].cells[1], title, 11, is_bold, SLATE, "left", fill)
+        cell_text(table.rows[r].cells[2], "…", 11, False, SLATE, "center", fill)
+    for row in table.rows:
+        for i, w in enumerate(widths):
+            row.cells[i].width = Cm(w)
+    return table
+
+
+def _toc_step_num(code: str) -> str | None:
+    m = re.match(r"^ขั้นตอนที่\s+(\d+(?:\.\d+)?)$", str(code).strip())
+    return m.group(1) if m else None
+
+
+def _para_style_name(paragraph) -> str:
+    try:
+        return (paragraph.style.name or "") if paragraph.style else ""
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def estimate_bookmark_pages(doc) -> dict[str, int]:
+    """ประมาณเลขหน้าของ bookmark จากความสูงเนื้อหา/ภาพ/page break"""
+    page_h = int(29.7 / 2.54 * 914400)
+    margin = int(4.0 / 2.54 * 914400)
+    usable = page_h - margin
+    line = int(0.55 / 2.54 * 914400)
+    body = doc.element.body
+    y = 0
+    page = 1
+    out: dict[str, int] = {}
+
+    def local(tag: str) -> str:
+        return tag.split("}")[-1] if "}" in tag else tag
+
+    for child in list(body):
+        tag = local(child.tag)
+        if tag == "sectPr":
+            continue
+        if tag == "p":
+            bms = [
+                b.get(qn("w:name"))
+                for b in child.findall(".//" + qn("w:bookmarkStart"))
+            ]
+            bms = [b for b in bms if b and str(b).startswith("toc_")]
+            brs = child.findall(".//" + qn("w:br"))
+            if any(b.get(qn("w:type")) == "page" for b in brs):
+                page += 1
+                y = 0
+            texts = [t.text or "" for t in child.findall(".//" + qn("w:t"))]
+            text = "".join(texts).strip()
+            h = 0
+            for ext in child.findall(
+                ".//{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}extent"
+            ):
+                cy = ext.get("cy")
+                if cy:
+                    h += int(cy)
+            if text:
+                h += max(1, (len(text) + 89) // 90) * line
+            if h == 0:
+                h = line // 4
+            if y + h > usable and y > 0:
+                page += 1
+                y = h
+            else:
+                y += h
+            for bm in bms:
+                out[str(bm)] = page
+        elif tag == "tbl":
+            rows = child.findall(qn("w:tr"))
+            h = len(rows) * line * 1.2
+            for ext in child.findall(
+                ".//{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}extent"
+            ):
+                cy = ext.get("cy")
+                if cy:
+                    h += int(cy)
+            if y + h > usable and y > 0:
+                page += 1
+                y = h % usable if h > usable else h
+                if h > usable:
+                    page += int(h // usable)
+            else:
+                y += h
+    return out
+
+
+def fill_toc_page_column(doc, page_map: dict[str, int]) -> int:
+    """ใส่เลขหน้าประมาณในคอลัมน์ «หน้า» ของตารางสารบัญ (แทนผล PAGEREF)"""
+    filled = 0
+    for table in doc.tables:
+        if len(table.columns) != 3:
+            continue
+        if table.rows[0].cells[0].text.strip() != "หัวข้อ":
+            continue
+        if table.rows[0].cells[2].text.strip() != "หน้า":
+            continue
+        last_page = None
+        for r, row in enumerate(table.rows[1:], 1):
+            # bookmark order toc_001.. matches row order
+            bm = f"toc_{r:03d}"
+            page = page_map.get(bm, last_page)
+            if page is not None:
+                last_page = page
+            cell = row.cells[2]
+            p = cell.paragraphs[0]
+            # ล้างฟิลด์เดิม แล้วใส่เลขหน้าเป็นข้อความ
+            p.clear()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            if page is None:
+                add_text(p, "—", 11, False, MUTED)
+            else:
+                add_text(p, str(page), 11, False, SLATE)
+            filled += 1
+        break
+    return filled
+
+
+def bind_toc_bookmarks(doc, toc_rows) -> int:
+    """ผูก bookmark ตามลำดับสารบัญกับย่อหน้าหัวข้อ/ขั้นตอนในเนื้อหา
+
+    - บทที่ / 1.x ผูกเฉพาะย่อหน้า Heading (กันข้อความปกที่พูดถึงชื่อบท)
+    - ขั้นตอนที่ ผูกย่อหน้าที่ขึ้นต้นด้วย «ขั้นตอนที่ N»
+    คืนจำนวนรายการที่ผูกได้ — ถ้าไม่พบ จะไม่เลื่อน pointer
+    """
+    paras = list(doc.paragraphs)
+    pi = 0
+    bound = 0
+    for code, _title, bookmark in toc_rows:
+        code = str(code).strip()
+        step_num = _toc_step_num(code)
+        start_pi = pi
+        target = None
+        while pi < len(paras):
+            cur = paras[pi]
+            text = (cur.text or "").strip()
+            style = _para_style_name(cur)
+            pi += 1
+            if not text:
+                continue
+            if code.startswith("บทที่") or code.startswith("ภาคผนวก"):
+                if style.startswith("Heading") and text.startswith(code):
+                    target = cur
+                    break
+                continue
+            # หัวข้อย่อยแบบ 1.1 / 2.2 / 3.1 … (Heading) — ไม่จำกัดเฉพาะบทที่ 1
+            if re.match(r"^\d+\.\d+\b", code):
+                if style.startswith("Heading") and (
+                    text.startswith(code) or text.startswith(f"{code} ")
+                ):
+                    target = cur
+                    break
+                continue
+            if step_num is not None:
+                m = re.match(r"^ขั้นตอนที่\s+(\d+(?:\.\d+)?)\b", text)
+                if m and m.group(1) == step_num:
+                    target = cur
+                    break
+        if target is not None:
+            bookmark_paragraph(target, bookmark)
+            bound += 1
+        else:
+            pi = start_pi
+    return bound
 
 
 def add_border_line(paragraph, edge="bottom", color="0B6848", size="12"):
@@ -195,6 +435,13 @@ def bullets(doc, items, numbered=False):
 
 
 _FIG_COUNTER = 0
+_FIG_NUM_RE = re.compile(r"ภาพที่\s+\d+(?:\.\d+)?")
+
+
+def reset_figure_counter(start: int = 0) -> None:
+    """เริ่มนับเลขภาพใหม่จาก start (ปกติเรียกตอนต้น build เป็น 0)"""
+    global _FIG_COUNTER
+    _FIG_COUNTER = start
 
 
 def caption(doc, text):
@@ -204,9 +451,9 @@ def caption(doc, text):
     p.paragraph_format.space_before = Pt(2)
     p.paragraph_format.space_after = Pt(6)
     p.paragraph_format.keep_with_next = False
-    if re.search(r"ภาพที่\s+\d+", text):
+    if _FIG_NUM_RE.search(text):
         _FIG_COUNTER += 1
-        text = re.sub(r"ภาพที่\s+\d+", f"ภาพที่ {_FIG_COUNTER}", text, count=1)
+        text = _FIG_NUM_RE.sub(f"ภาพที่ {_FIG_COUNTER}", text, count=1)
     label = text if text.startswith("▲") else f"▲ {text}"
     add_text(p, label, 10, False, MUTED)
 
@@ -280,26 +527,75 @@ def callout(doc, title, text, tone="info"):
     doc.add_paragraph()
 
 
+def _fill_task_desc_cell(cell, desc, fill=META_FILL):
+    """ใส่รายละเอียดงานในช่อง Task — รองรับ str หรือ list ของ bullet"""
+    if fill:
+        shade_cell(cell, fill)
+    set_cell_border(cell)
+    set_narrow_cell_margin(cell)
+    if isinstance(desc, (list, tuple)):
+        items = [str(x).strip() for x in desc if str(x).strip()]
+    else:
+        raw = str(desc or "").strip()
+        if "\n" in raw:
+            items = [ln.strip(" •-\t") for ln in raw.splitlines() if ln.strip()]
+        else:
+            items = [raw] if raw else []
+    if not items:
+        items = [""]
+    use_bullets = isinstance(desc, (list, tuple)) or ("\n" in str(desc or ""))
+    p0 = cell.paragraphs[0]
+    p0.clear()
+    p0.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    if not use_bullets:
+        add_text(p0, items[0], 11, False, SLATE)
+        p0.paragraph_format.space_before = Pt(2)
+        p0.paragraph_format.space_after = Pt(2)
+        return
+    for i, item in enumerate(items):
+        p = p0 if i == 0 else cell.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p.paragraph_format.space_before = Pt(1 if i else 2)
+        p.paragraph_format.space_after = Pt(1)
+        add_text(p, f"• {item}", 11, False, SLATE)
+
+
 def task_summary_card(doc, code, title, desc, doc_name, menu_path, role, header_fill=HEADER_FILL):
     table = doc.add_table(rows=4, cols=2)
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    rows_data = [
-        ("หัวข้องานตามผังภาพรวม", f"{title} ({code})", True, header_fill, WHITE),
-        ("รายละเอียดงาน (Task)", desc, False, META_FILL, SLATE),
-        ("เอกสารในระบบ (Document)", doc_name, True, "FFFFFF", DARK_NAVY),
-        ("เมนูใช้งาน / ผู้รับผิดชอบ", f"เมนู: {menu_path}   |   ผู้ปฏิบัติงาน: {role}", False, "F8FAFC", SLATE),
-    ]
-    for idx, (k, v, is_bold, bg, fg) in enumerate(rows_data):
+    # แถว 0 หัวข้อ, แถว 1 รายละเอียด (รองรับ bullet), แถว 2–3 เอกสาร/เมนู
+    c0 = table.rows[0].cells[0]
+    c1 = table.rows[0].cells[1]
+    c0.width = Cm(4.8)
+    c1.width = Cm(11.6)
+    cell_text(c0, "หัวข้องานตามผังภาพรวม", 11, True, WHITE, "left", SUBHEADER_FILL)
+    cell_text(c1, f"{title} ({code})", 11.5, True, WHITE, "left", header_fill)
+
+    c0 = table.rows[1].cells[0]
+    c1 = table.rows[1].cells[1]
+    c0.width = Cm(4.8)
+    c1.width = Cm(11.6)
+    cell_text(c0, "รายละเอียดงาน (Task)", 10.5, True, DARK_NAVY, "left", "F1F5F9")
+    _fill_task_desc_cell(c1, desc, META_FILL)
+
+    for idx, (k, v, is_bold, bg) in enumerate(
+        [
+            ("เอกสารในระบบ (Document)", doc_name, True, "FFFFFF"),
+            (
+                "เมนูใช้งาน / ผู้รับผิดชอบ",
+                f"เมนู: {menu_path}   |   ผู้ปฏิบัติงาน: {role}",
+                False,
+                "F8FAFC",
+            ),
+        ],
+        start=2,
+    ):
         c0 = table.rows[idx].cells[0]
         c1 = table.rows[idx].cells[1]
         c0.width = Cm(4.8)
         c1.width = Cm(11.6)
-        if idx == 0:
-            cell_text(c0, k, 11, True, WHITE, "left", SUBHEADER_FILL)
-            cell_text(c1, v, 11.5, True, fg, "left", bg)
-        else:
-            cell_text(c0, k, 10.5, True, DARK_NAVY, "left", "F1F5F9")
-            cell_text(c1, v, 11, is_bold, fg, "left", bg)
+        cell_text(c0, k, 10.5, True, DARK_NAVY, "left", "F1F5F9")
+        cell_text(c1, v, 11, is_bold, DARK_NAVY if is_bold else SLATE, "left", bg)
     doc.add_paragraph()
 
 
@@ -397,9 +693,9 @@ def build():
     sub.paragraph_format.space_after = Pt(10)
     add_text(
         sub,
-        "การสร้าง PR ตามแผน / นอกแผน (2.2) · รับ PR ออกเอกสารส่งอนุมัติ (3.1)\n"
-        "ดำเนินการ e-GP (3.2) · ออกใบสั่งซื้อและบันทึกทะเบียนสัญญา (3.3)\n"
-        "สร้างใบตรวจรับ (WA) และใบรับสินค้าอัตโนมัติ (3.4) · ประเมินผู้ขาย (3.5) · จัดการข้อมูลผู้ขาย (3.6)",
+        "การสร้าง PR ตามแผน / นอกแผน (2.2) · รับใบขอซื้อ (3.1)\n"
+        "ส่ง e-GP (3.2) · สร้าง PO และส่งแอปผู้ขาย (3.3)\n"
+        "การรับมอบงานอยู่ที่คู่มือคลังและคู่มือตรวจรับ (3.4) · ขออนุมัติเบิกจ่ายโครงการ",
         11.0,
         False,
         SLATE,
@@ -410,14 +706,14 @@ def build():
         ("เอกสารอ้างอิงหลัก", "ภาพรวมการทำรายการในระบบ ERP ตามกลุ่มงาน.pdf"),
         (
             "หัวข้อที่ครอบคลุม",
-            "สร้าง PR ตามแผน/นอกแผน (2.2), รับ PR ออกเอกสารส่งอนุมัติ (3.1), ดำเนินการ e-GP (3.2), "
-            "ออกใบสั่งซื้อ บันทึกทะเบียนสัญญา (3.3), สร้างใบตรวจรับ (WA) และใบรับสินค้าอัตโนมัติ (3.4), "
-            "ประเมินผู้ขาย (3.5), การจัดการข้อมูลผู้ขาย (3.6)",
+            "สร้าง PR ตามแผน/นอกแผน (2.2), รับใบขอซื้อ (3.1), ส่ง e-GP (3.2), "
+            "สร้าง PO และส่งแอปผู้ขาย (3.3), การรับมอบงานชี้ไปคู่มือคลังและคู่มือตรวจรับ (3.4), "
+            "ขออนุมัติเบิกจ่ายโครงการ, ประเมินผู้ขาย (3.5), การจัดการข้อมูลผู้ขาย (3.6)",
         ),
         (
             "โมดูลในระบบ",
-            "purchase_request, vpk_official_document, vpk_purchase_agreement_egp, "
-            "purchase, vpk_work_acceptance, vpk_vendor_evaluation, vpk_vendor_api",
+            "purchase_request, vpk_procurement_inbox, vpk_ebidding, vpk_purchase_agreement_egp, "
+            "purchase, vpk_payment_request, vpk_vendor_evaluation, vpk_vendor_api",
         ),
         ("กลุ่มผู้ใช้งาน", "เจ้าหน้าที่หน่วยงานผู้ขอซื้อ, เจ้าหน้าที่พัสดุ/จัดซื้อ, ผู้ขาย (แอปยืนยัน PO)"),
         ("รูปแบบคู่มือ", "Step-by-Step พร้อมภาพหน้าจอประกอบใต้ทุกขั้นตอน"),
@@ -443,8 +739,9 @@ def build():
     body(
         doc,
         "คู่มือฉบับนี้เป็นเล่มที่ 2 ของชุดคู่มือตามผังสรุปภาพรวม ครอบคลุมงานของหน่วยงานผู้ขอซื้อในข้อ 2.2 "
-        "และงานของกลุ่มงานพัสดุทั้งข้อ 3.1 ถึง 3.6 โดยระบุหมายเลขหัวข้ออ้างอิงจากผังภาพรวมไว้ในวงเล็บต่อท้ายชื่อหัวข้อ "
-        "และแสดงภาพหน้าจอประกอบใต้ทุกขั้นตอน",
+        "และงานของกลุ่มงานพัสดุตั้งแต่รับใบขอซื้อ ส่ง e-GP ออกใบสั่งซื้อ จนถึงขออนุมัติเบิกจ่าย "
+        "การรับมอบงานไม่ทำในเล่มนี้ ให้อ่านคู่มือคลังและคู่มือคณะกรรมการตรวจรับ "
+        "หมายเลขในวงเล็บคือรหัสในผังภาพรวม",
     )
     callout(
         doc,
@@ -467,36 +764,42 @@ def build():
             ],
             [
                 "บทที่ 2",
-                "รับ PR ตรวจสอบความถูกต้อง และส่งเข้า e-GP (3.1)",
-                "รับ PR ตรวจสอบความถูกต้อง ส่งกลับแก้ไขหรือยืนยันการตรวจสอบเพื่อส่งเข้า e-GP",
-                "ใบขอซื้อ/จ้าง (PR), แท็บเอกสารราชการที่เกี่ยวข้อง (เรียกดูจาก e-GP)",
+                "รับใบขอซื้อ (3.1)",
+                "รับงานจากกล่องรวมและ Dashboard แล้วมอบหมายงาน จากนั้นตรวจรายการหรือส่งกลับแก้ไข",
+                "ใบขอซื้อ (PR)",
             ],
             [
                 "บทที่ 3",
-                "ดำเนินการ e-GP ส่งอนุมัติ และลงนามเอกสาร (3.2)",
-                "ใส่ชื่อและเลขโครงการ เพิ่มเอกสารแนบไฟล์จาก e-GP กำหนดผู้อนุมัติส่งเข้ากล่องอนุมัติ ลงนามโดยตีกรอบตำแหน่งลายเซ็น บันทึกเปรียบเทียบราคา และเลือกผู้ชนะ",
-                "คำสั่งตั้งกรรมการ, รายงานขออนุมัติ, แบบแสดงความบริสุทธิ์ใจ, รายงานผลพิจารณา, ประกาศผู้ชนะ",
+                "ส่ง e-GP (3.2)",
+                "สร้างแผนจัดซื้อจัดจ้าง แนบเอกสาร e-GP ส่งอนุมัติ บันทึกผู้เสนอราคา เลือกผู้ชนะ และบันทึกสัญญา",
+                "แผนจัดซื้อจัดจ้าง, เอกสาร e-GP, สัญญา",
             ],
             [
                 "บทที่ 4",
-                "ออกใบสั่งซื้อ บันทึกทะเบียนสัญญา (3.3)",
-                "สร้าง PO บันทึกทะเบียนสัญญา ส่ง PO เข้าแอปให้ผู้ขายยืนยัน",
-                "ใบสั่งซื้อ/จ้าง (PO), สัญญาซื้อขาย/จะซื้อจะขาย",
+                "การสร้าง PO (3.3)",
+                "สร้างใบสั่งซื้อ แล้วส่งเข้าแอปผู้ขายเพื่อยืนยัน",
+                "ใบสั่งซื้อ (PO)",
             ],
             [
                 "บทที่ 5",
-                "สร้างใบตรวจรับ (WA) และใบรับสินค้าอัตโนมัติ (3.4)",
-                "สร้างใบตรวจรับพัสดุหลังคลังตรวจคุณภาพผ่านและรับของเข้าคลังแล้ว ใบรับสินค้าถูกสร้างอัตโนมัติให้คลัง",
-                "ใบตรวจรับพัสดุ (WA), ใบรับสินค้า (Auto)",
+                "การรับมอบงาน (3.4)",
+                "ไม่ทำในเล่มนี้ ลำดับงานอยู่ที่คู่มือคลังและคู่มือคณะกรรมการตรวจรับ",
+                "ใบตรวจรับ (WA), ใบรับสินค้า",
             ],
             [
                 "บทที่ 6",
+                "ขออนุมัติเบิกจ่ายโครงการ",
+                "หลังตรวจรับลงนามแล้ว เปิดใบสั่งซื้อเพื่อขออนุมัติเบิกจ่าย แล้วส่งหน่วยงานเจ้าหนี้",
+                "ใบขออนุมัติเบิกจ่าย",
+            ],
+            [
+                "บทที่ 7",
                 "ประเมินผู้ขาย (3.5)",
                 "บันทึกการประเมินผู้ขายเมื่อรับสินค้าแล้ว",
                 "แบบประเมินผู้ขาย",
             ],
             [
-                "บทที่ 7",
+                "บทที่ 8",
                 "การจัดการข้อมูลผู้ขาย (3.6)",
                 "สร้าง ปรับปรุง ข้อมูลที่เกี่ยวข้องกับผู้ขาย",
                 "แฟ้มผู้ขาย, รายการราคาจากผู้ขาย",
@@ -590,15 +893,15 @@ def build():
     step_with_pic(
         doc,
         4,
-        "เลือกประเภทสิ่งที่จะซื้อ หน่วยงานงบประมาณ แหล่งเงิน และหมวดงบประมาณ ให้ตรงงบที่ได้รับอนุมัติ (ในแผนหรือนอกแผน)",
+        "เลือกแหล่งของบประมาณ ซึ่งเป็นรายการแผนที่สร้างไว้แล้ว ระบบจะดึงประเภทสิ่งที่จะซื้อ หน่วยงานที่ขอซื้อ กลุ่มงบประมาณ แหล่งเงิน และหมวดงบประมาณมาให้อัตโนมัติ",
         "Screenshot_PR_budget_keys.png",
         14.0,
-        "ภาพที่ 8  ประเภทสิ่งที่จะซื้อ หน่วยงานงบประมาณ แหล่งเงิน และหมวดงบประมาณ (2.2)",
+        "ภาพที่ 8  ช่องแหล่งของบประมาณ พร้อมประเภทสิ่งที่จะซื้อ หน่วยงาน กลุ่มงบประมาณ แหล่งเงิน และหมวดงบประมาณที่ระบบดึงให้ (2.2)",
     )
     step_with_pic(
         doc,
         5,
-        "ถ้าซื้อวัสดุ ต้องเลือกกลุ่มงบประมาณด้วย เพื่อให้ระบบจับคู่ยอดจัดสรรรายสินค้าได้ถูกต้อง",
+        "ถ้าแผนวัสดุมีกลุ่มงบประมาณมากกว่าหนึ่งกลุ่ม ระบบจะยังไม่ใส่กลุ่มงบประมาณ ให้เลือกกลุ่มที่ตรงรายการนี้",
         "Screenshot_PR_budget_group.png",
         13.5,
         "ภาพที่ 9  เลือกกลุ่มงบประมาณกรณีซื้อวัสดุ (2.2)",
@@ -627,10 +930,12 @@ def build():
             ["ประเภทพัสดุ", "ซื้อ/จ้าง/เช่า", "กำหนดลักษณะงานจัดซื้อ"],
             ["ประเภทการจัดซื้อ", "จัดซื้อจัดจ้างผ่านพัสดุ", "เปิดเส้นทาง e-GP ให้พัสดุรับงานต่อ"],
             ["วิธีการจัดซื้อจัดจ้าง", "E-bidding / เฉพาะเจาะจง", "ต้องตรงวิธีที่หน่วยงานใช้จริง"],
-            ["ประเภทสิ่งที่จะซื้อ", "วัสดุ / ครุภัณฑ์ / โครงการ / ก่อสร้าง", "ใช้จับคู่กับหมวดงบ"],
-            ["หน่วยงานงบประมาณ", "หน่วยงานของตน", "ต้องตรงงบในแผนหรือนอกแผน"],
-            ["แหล่งเงิน", "เงินบำรุง", "ห้ามใช้เงินคนละแหล่ง"],
-            ["หมวดงบประมาณ", "วัสดุ", "ต้องตรงบรรทัดงบที่อนุมัติ"],
+            ["แหล่งของบประมาณ", "รายการแผนที่อนุมัติแล้ว", "จุดที่ดึงข้อมูลงบทั้งชุด"],
+            ["ประเภทสิ่งที่จะซื้อ", "วัสดุ / ครุภัณฑ์ / โครงการ / ก่อสร้าง", "ระบบดึงจากแผน"],
+            ["หน่วยงานที่ขอซื้อ", "หน่วยงานของแผน", "ระบบดึงจากแผน"],
+            ["กลุ่มงบประมาณ", "กลุ่มของแผนวัสดุ", "ระบบดึงให้เมื่อแผนมีกลุ่มเดียว"],
+            ["แหล่งเงิน", "เงินบำรุง", "ระบบดึงจากแผน"],
+            ["หมวดงบประมาณ", "วัสดุ", "ระบบดึงให้เมื่อแผนมีหมวดเดียว"],
             ["ประเภทการรับสินค้า", "คลังยา: Receipts", "เลือกได้เฉพาะ Receipts"],
         ],
         [4.4, 5.2, 6.6],
@@ -685,7 +990,7 @@ def build():
     step_with_pic(
         doc,
         1,
-        "เมื่อใส่รายการสินค้า รายชื่อคณะกรรมการครบถ้วน และแท็บตรวจสอบงบประมาณแสดงสถานะ “งบเพียงพอ” แล้ว ให้กดปุ่ม “ส่งพัสดุ” ที่หัวเอกสาร สถานะใบขอซื้อจะเปลี่ยนเป็น “ส่งพัสดุแล้ว” พร้อมกันงบประมาณอัตโนมัติ เพื่อให้กลุ่มงานพัสดุตรวจสอบความถูกต้องของรายการใบขอซื้อและดำเนินการต่อในระบบ e-GP ตามบทที่ 2",
+        "เมื่อใส่รายการสินค้า รายชื่อคณะกรรมการครบถ้วน และแท็บตรวจสอบงบประมาณแสดงสถานะ “งบเพียงพอ” แล้ว ให้กดปุ่ม “ส่งพัสดุ” ที่หัวเอกสาร สถานะใบขอซื้อจะเปลี่ยนเป็น “ส่งพัสดุแล้ว” พร้อมกันงบประมาณอัตโนมัติ ใบจะเข้ากล่องรวมงานของพัสดุตามบทที่ 2",
         "Screenshot_TAB_44_send_btn.png",
         4.5,
         "ภาพที่ 31  ปุ่มส่งพัสดุที่หัวเอกสาร (แสดงเมื่อตรวจสอบงบประมาณผ่านแล้ว) (2.2)",
@@ -695,22 +1000,52 @@ def build():
     doc.add_page_break()
 
     # ==================== CHAPTER 2 (3.1) ====================
-    heading(doc, "บทที่ 2 การรับ PR ตรวจสอบรายการ และออกเอกสารส่งอนุมัติ (3.1)", 1)
+    heading(doc, "บทที่ 2 การรับใบขอซื้อ (3.1)", 1)
     task_summary_card(
         doc,
         code="3.1",
-        title="รับ PR ตรวจสอบความถูกต้องของรายการ และออกเอกสารส่งอนุมัติ",
-        desc="รับใบขอซื้อที่หน่วยงานส่งมา ตรวจสอบความถูกต้องของรายการใบขอซื้อ (หากต้องแก้ไขกดส่งกลับให้แก้ไขพร้อมระบุเหตุผล) เมื่อถูกต้องกดยืนยันการตรวจสอบ แล้วส่งเข้าระบบ e-GP รวมถึงออกชุดหนังสือขออนุมัติ",
-        doc_name="ใบขอซื้อ (PR), บันทึกขอซื้อ, รายงานขอซื้อ, คำสั่งตั้งกรรมการ",
-        menu_path="ระบบจัดซื้อจัดจ้าง → ข้อมูลใบขอซื้อ → Dashboard พัสดุรับงาน",
-        role="เจ้าหน้าที่พัสดุ / จัดซื้อ",
+        title="รับใบขอซื้อ",
+        desc="ใบที่หน่วยงานกดส่งพัสดุเข้ากล่องรวมงาน หัวหน้าพัสดุมอบหมายงาน จากนั้นผู้รับงานเปิดทำรายการบน Dashboard พัสดุรับงาน",
+        doc_name="ใบขอซื้อ (PR)",
+        menu_path="ระบบจัดซื้อจัดจ้าง → ข้อมูลใบขอซื้อ → กล่องรวมงานใบขอซื้อ / Dashboard พัสดุรับงาน",
+        role="หัวหน้าพัสดุ / เจ้าหน้าที่พัสดุ",
     )
 
-    heading(doc, "2.1 รับงานจาก Dashboard พัสดุ และตรวจสอบความถูกต้องของรายการใบขอซื้อ (3.1)", 2)
+    heading(doc, "2.1 กล่องรวมงานใบขอซื้อ และมอบหมายงาน (3.1)", 2)
+    body(
+        doc,
+        "เมื่อหน่วยงานกดส่งพัสดุ ใบขอซื้อมารวมที่เมนูระบบจัดซื้อจัดจ้าง → ข้อมูลใบขอซื้อ → กล่องรวมงานใบขอซื้อ "
+        "หัวหน้าพัสดุตรวจรายการแล้วมอบหมายให้เจ้าหน้าที่ เจ้าหน้าที่รับงานเองจากกล่องนี้ไม่ได้",
+    )
+    bullets(
+        doc,
+        [
+            "การ์ดแสดงจำนวนทั้งหมด กำลังดำเนินการ รอมอบหมาย มอบหมายแล้ว ของฉัน และค้างเกิน 3 วัน กดการ์ดเพื่อกรอง",
+            "สลับมุมมองได้สามแบบ คือ บอร์ด การ์ด และตาราง และจัดกลุ่มตามหน่วยงาน วิธีการจัดซื้อ ผู้ได้รับมอบหมาย หรืออายุงาน",
+            "รายการที่ยังไม่มีผู้รับ หัวหน้าพัสดุกด “มอบหมายงาน” เลือกเจ้าหน้าที่ ใส่หมายเหตุ แล้วกด “มอบหมายงาน” อีกครั้งเพื่อยืนยัน",
+            "ถ้ารายการมีผู้รับแล้ว ปุ่มเดียวกันเปลี่ยนเป็น “ส่งต่องาน” ใช้เมื่อต้องย้ายงานให้เจ้าหน้าที่คนอื่น",
+            "หัวหน้าพัสดุที่ทำเองกด “รับงานเอง” ผู้รับงานกด “คืนคิว” ได้ถ้าต้องเอางานกลับไปที่รอมอบหมาย",
+            "กด “เปิดทำรายการ” เพื่อเปิดใบขอซื้อใบนั้น",
+        ],
+    )
+    callout(
+        doc,
+        "ใครมอบหมายได้ (3.1)",
+        "ปุ่มมอบหมายงาน ส่งต่องาน และรับงานเอง อยู่ที่หัวหน้าพัสดุ "
+        "ใบที่ยังรอมอบหมายจะขึ้นข้อความให้หัวหน้าตรวจแล้วกดมอบหมาย เจ้าหน้าที่จึงเปิดทำรายการได้",
+        "info",
+    )
+
+    heading(doc, "2.2 กล่องพัสดุรับงานบน Dashboard และมอบหมายงาน (3.1)", 2)
+    body(
+        doc,
+        "Dashboard พัสดุรับงานเป็นอีกจุดที่เห็นใบซึ่งหน่วยงานส่งมาแล้ว "
+        "กดการ์ดตัวเลขเพื่อกรอง แล้วกดรับงานหรือเปิดทำรายการ การมอบหมายใช้ปุ่มชุดเดียวกับกล่องรวมงาน",
+    )
     step_with_pic(
         doc,
         1,
-        "เข้าเมนูระบบจัดซื้อจัดจ้าง → ข้อมูลใบขอซื้อ → Dashboard พัสดุรับงาน เปิดใบขอซื้อที่สถานะ “ส่งพัสดุแล้ว” แล้วกดปุ่ม “รับงาน” หรือ “เปิดทำรายการ”",
+        "เข้าเมนูระบบจัดซื้อจัดจ้าง → ข้อมูลใบขอซื้อ → Dashboard พัสดุรับงาน เปิดใบที่สถานะ “ส่งพัสดุแล้ว” แล้วกด “เปิดทำรายการ”",
         "Screenshot_ch5_dashboard_work.png",
         15.8,
         "ภาพที่ 41  หน้าจอ Dashboard พัสดุรับงาน (3.1)",
@@ -758,7 +1093,7 @@ def build():
         "info",
     )
 
-    heading(doc, "2.2 การส่งรายการเข้าระบบ e-GP และการดูเอกสารราชการที่เกี่ยวข้อง (3.1)", 2)
+    heading(doc, "2.3 ยืนยันการตรวจสอบ แล้วส่งต่อไปบท e-GP (3.1)", 2)
     body(
         doc,
         "เอกสารราชการในขั้นตอนจัดซื้อจัดจ้าง (เช่น คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ, แบบแสดงความบริสุทธิ์ใจ, "
@@ -786,14 +1121,14 @@ def build():
     doc.add_page_break()
 
     # ==================== CHAPTER 3 (3.2) ====================
-    heading(doc, "บทที่ 3 การดำเนินการ e-GP ขั้นตอนการส่งอนุมัติ และขั้นตอนการลงนาม (3.2)", 1)
+    heading(doc, "บทที่ 3 การส่ง e-GP (3.2)", 1)
     task_summary_card(
         doc,
         code="3.2",
-        title="ดำเนินการ e-GP ส่งอนุมัติ และลงนามเอกสาร",
-        desc="ใส่ชื่อและหมายเลขโครงการ กดปุ่มเพิ่มเอกสารและแนบไฟล์เอกสารที่สร้างจากระบบ e-GP กำหนดผู้อนุมัติส่งเข้ากล่องอนุมัติเอกสาร ลงนามโดยกำหนดกรอบตำแหน่งลายเซ็น (Mark ตำแหน่ง) บันทึกเปรียบเทียบราคา และเลือกผู้ชนะ",
-        doc_name="คำสั่งแต่งตั้งกรรมการ, รายงานขออนุมัติ, แบบแสดงความบริสุทธิ์ใจ, รายงานผลพิจารณา, ประกาศผู้ชนะ",
-        menu_path="จัดซื้อ → กระบวนการ eGP / กล่องอนุมัติเอกสาร",
+        title="ส่ง e-GP",
+        desc="สร้างแผนจัดซื้อจัดจ้าง แนบเอกสารจากระบบ e-GP ส่งอนุมัติ บันทึกผู้เสนอราคา เลือกผู้ชนะ แล้วบันทึกสัญญา",
+        doc_name="แผนจัดซื้อจัดจ้าง, เอกสาร e-GP, รายงานผลพิจารณา, ประกาศผู้ชนะ, สัญญา",
+        menu_path="ระบบจัดซื้อจัดจ้าง → กระบวนการ eGP → แผนจัดซื้อจัดจ้าง / รายการโครงการ",
         role="เจ้าหน้าที่พัสดุ / หัวหน้าเจ้าหน้าที่ / เลขานุการ / ผู้อำนวยการ",
     )
     body(
@@ -803,14 +1138,40 @@ def build():
         "และรองรับการส่งอนุมัติและลงนามอิเล็กทรอนิกส์ผ่าน “กล่องอนุมัติเอกสาร” โดยตรง",
     )
 
-    heading(doc, "3.1 ส่งใบขอซื้อเข้ากระบวนการ e-GP (3.2)", 2)
+    heading(doc, "3.1 สร้างแผนจัดซื้อจัดจ้าง (3.2)", 2)
+    body(
+        doc,
+        "แผนในข้อนี้คือทะเบียนที่พัสดุบันทึกจากแผนซึ่งจัดทำและประกาศในระบบ e-GP ของกรมบัญชีกลางแล้ว "
+        "ใช้เป็นตัวอ้างอิงของรายการจัดซื้อใน ERP ไม่ใช่การประกาศแผนใหม่แทนระบบ e-GP",
+    )
+    bullets(
+        doc,
+        [
+            "เข้าเมนูระบบจัดซื้อจัดจ้าง → กระบวนการ eGP → แผนจัดซื้อจัดจ้าง → แผนรวมจัดซื้อจัดจ้าง",
+            "สร้างแผน ใส่ชื่อแผนและปีงบประมาณ สถานะเริ่มที่ร่าง",
+            "แท็บรายการแผน ใส่รายการที่ได้จาก e-GP ถ้ามีไฟล์ Excel ของแผน กด “นำเข้า Excel”",
+            "แท็บแนบเอกสาร e-GP กด “เพิ่มเอกสาร” เลือกประเภทเอกสาร ใส่เลขอ้างอิง e-GP เลขที่เอกสาร วันที่ แล้วแนบไฟล์ PDF",
+            "ตรวจครบแล้วกด “ยืนยันการบันทึก” สถานะเปลี่ยนเป็นบันทึกแล้ว ถ้าต้องแก้กด “กลับเป็นร่าง”",
+            "เมื่อรายการแผนเผยแพร่แล้ว กด “บันทึกรหัสเผยแพร่แผน”",
+            "จากรายการแผนที่บันทึกแล้ว กด “สร้างกระบวนการ E-GP” เพื่อเปิดแฟ้มโครงการของรายการนั้น หรือกด “เปิดกระบวนการ E-GP” ถ้ารายการมีแฟ้มอยู่แล้ว",
+        ],
+    )
+    callout(
+        doc,
+        "แผนกับใบขอซื้อคนละจุด (3.2)",
+        "แผนรวมเป็นทะเบียนทั้งปี ใบขอซื้อรายงานยังส่งเข้าแฟ้ม e-GP จากปุ่ม “ส่งรายการเข้าระบบ e-GP” บนใบขอซื้อตามข้อ 3.2 ถัดไป",
+        "info",
+    )
+
+    heading(doc, "3.2 แนบเอกสาร e-GP ที่เกี่ยวข้อง (3.2)", 2)
+    body(doc, "เปิดแฟ้มโครงการจากใบขอซื้อที่พัสดุยืนยันการตรวจสอบแล้ว แล้วแนบไฟล์ที่ได้จากระบบ e-GP")
     step_with_pic(doc, 1, "เปิดใบขอซื้อที่พัสดุตรวจสอบความถูกต้องของรายการเรียบร้อยแล้ว", "Screenshot_ch7_approved_pr.png", 15.8, "ภาพที่ 48  ใบขอซื้อที่พร้อมส่งเข้าระบบ e-GP (3.2)")
     step_with_pic(doc, 2, "กดปุ่ม “ส่งรายการเข้าระบบ e-GP” ที่หัวใบขอซื้อ", "Screenshot_ch7_send_egp_header.png", 5.0, "ภาพที่ 49  ปุ่มส่งรายการเข้าระบบ e-GP (3.2)")
     step_with_pic(doc, 3, "ตรวจรายการสินค้าในหน้าต่างกระบวนการ eGP ว่าครบตามใบขอซื้อ", "Screenshot_ch7_egp_wizard_lines.png", 15.8, "ภาพที่ 50  หน้าต่างกระบวนการ eGP แสดงรายการสินค้าจากใบขอซื้อ (3.2)")
     step_with_pic(doc, 4, "กดปุ่ม “กระบวนการ eGP” ระบบจะสร้างเอกสารกระบวนการ e-GP จากใบขอซื้อที่อนุมัติแล้ว", "Screenshot_ch7_egp_wizard_confirm.png", 5.5, "ภาพที่ 51  ปุ่มยืนยันสร้างเอกสารกระบวนการ e-GP (3.2)")
     step_with_pic(doc, 5, "เปิดเอกสารที่สร้างได้จากปุ่มสถิติกระบวนการ e-GP บนใบขอซื้อ หรือจากเมนูจัดซื้อ → กระบวนการ eGP", "Screenshot_ch7_egp_stat_btn.png", 15.8, "ภาพที่ 52  ปุ่มสถิติกระบวนการ e-GP บนใบขอซื้อ (3.2)")
 
-    heading(doc, "3.2 บันทึกข้อมูลโครงการและกดปุ่มเพิ่มเอกสารแนบไฟล์จากระบบ e-GP (3.2)", 2)
+    body(doc, "ในแฟ้มโครงการ บันทึกเลขที่และชื่อโครงการ แล้วแนบไฟล์ในแท็บเอกสารที่เปิดในระบบ e-GP")
     step_with_pic(doc, 1, "บันทึกเลขที่โครงการ และชื่อโครงการที่ได้จากระบบ e-GP จริง", "Screenshot_ch7_project_fields.png", 15.8, "ภาพที่ 53  ช่องเลขที่โครงการและชื่อโครงการ e-GP (3.2)")
     step_with_pic(
         doc,
@@ -850,7 +1211,7 @@ def build():
         "info",
     )
 
-    heading(doc, "3.3 ขั้นตอนการส่งอนุมัติเอกสาร (กำหนดผู้อนุมัติและส่งเข้ากล่องอนุมัติเอกสาร) (3.2)", 2)
+    heading(doc, "3.3 ส่งอนุมัติ (3.2)", 2)
     body(
         doc,
         "เมื่อเจ้าหน้าที่พัสดุแนบไฟล์ PDF ของเอกสารราชการในแท็บ “เอกสารที่เปิดในระบบ e-GP” เรียบร้อยแล้ว "
@@ -892,7 +1253,7 @@ def build():
         [5.5, 10.5],
     )
 
-    heading(doc, "3.4 ขั้นตอนการลงนามเอกสาร และการตรวจสอบรายการที่อนุมัติแล้วในกล่องอนุมัติเอกสาร (3.2)", 2)
+    body(doc, "เมื่อเอกสารเข้ากล่องอนุมัติแล้ว ผู้ลงนามเปิด PDF กำหนดกรอบลายเซ็น แล้วกดลงนามตามลำดับ")
     body(
         doc,
         "ผู้มีอำนาจตรวจสอบและลงนาม (เช่น เจ้าหน้าที่พัสดุ, หัวหน้าเจ้าหน้าที่พัสดุ, เลขานุการ, ผู้อำนวยการ หรือคณะกรรมการ) "
@@ -956,7 +1317,7 @@ def build():
         "ภาพที่ 55.10  หน้าจอ “สถานะการอนุมัติ” แสดงความคืบหน้าการลงนามรายลำดับของเอกสารแต่ละฉบับ (3.2)",
     )
 
-    heading(doc, "3.5 บันทึกเปรียบเทียบราคา เลือกผู้ชนะ และแนบรายงานผลการพิจารณา / ประกาศผู้ชนะจากระบบ e-GP (3.2)", 2)
+    heading(doc, "3.4 บันทึกผู้เสนอราคา เลือกผู้ชนะ และบันทึกสัญญา (3.2)", 2)
     step_with_pic(doc, 1, "เข้าแท็บ “เปรียบเทียบราคา” กดเพิ่มรายการเพื่อบันทึกข้อมูลผู้เสนอราคา เลขอ้างอิงใบเสนอราคา e-GP วันที่เสนอราคา และราคาที่เสนอ", "Screenshot_ch7_compare_prices.png", 14.5, "ภาพที่ 57  แท็บเปรียบเทียบราคา (3.2)")
     step_with_pic(doc, 2, "เลือกผู้ชนะโดยติ๊กช่อง “ผู้ชนะ” ในรายการของผู้เสนอราคาที่ได้รับการคัดเลือก (เลือกได้ทีละ 1 ราย)", "Screenshot_ch7_pick_winner_clean.png", 14.5, "ภาพที่ 58  การติ๊กเลือกผู้ชนะในแท็บเปรียบเทียบราคา (3.2)")
     callout(
@@ -976,10 +1337,10 @@ def build():
     step_with_pic(
         doc,
         4,
-        "ดำเนินการส่งอนุมัติและลงนามสำหรับบรรทัดเอกสาร “รายงานผลการพิจารณา” และ “ประกาศผู้ชนะ” ด้วยขั้นตอนเดียวกับหัวข้อ 3.3 และ 3.4 คือ กดปุ่ม “เพิ่มผู้อนุมัติ” → ตรวจสอบลำดับผู้อนุมัติในหน้าต่างกำหนดผู้อนุมัติเอกสาร → กดปุ่ม “บันทึกและส่งเข้ากล่องผู้อนุมัติ” → กดยืนยัน “ส่งเอกสาร” เพื่อให้ผู้มีอำนาจเปิดเอกสารจากเมนู “กล่องอนุมัติเอกสาร” กำหนดกรอบตำแหน่งลายเซ็น (Mark ตำแหน่ง) และกดลงนามตามลำดับ",
+        "ส่งอนุมัติรายงานผลการพิจารณาและประกาศผู้ชนะด้วยขั้นตอนเดียวกับข้อ 3.3 คือ กด “เพิ่มผู้อนุมัติ” แล้วส่งเข้ากล่องอนุมัติ จากนั้นผู้มีอำนาจกำหนดกรอบลายเซ็นและกดลงนาม",
         "Screenshot_egp_approver_modal.png",
         11.8,
-        "ภาพที่ 60  การกำหนดผู้อนุมัติและส่งเอกสารเข้ากล่องอนุมัติเอกสาร (ใช้ Flow การส่งอนุมัติและลงนามเดียวกับหัวข้อ 3.3 และ 3.4) (3.2)",
+        "ภาพที่ 60  การกำหนดผู้อนุมัติและส่งเอกสารเข้ากล่องอนุมัติเอกสาร (3.2)",
     )
     make_table(
         doc,
@@ -991,17 +1352,65 @@ def build():
         [5.5, 10.5],
     )
 
+    body(
+        doc,
+        "งานที่ต้องทำสัญญากับผู้ชนะ เช่น งานจ้าง งานเช่า หรือซื้อเป็นงวด ให้บันทึกสัญญาทันทีหลังเลือกผู้ชนะ "
+        "โดยเปิดจากเอกสารกระบวนการ e-GP ระบบดึงคู่ค้า มูลค่า และเลขที่โครงการมาให้ "
+        "สัญญาที่ยืนยันแล้วใช้ตรวจวงเงินเมื่องวดถัดไปเปิดใบขอซื้อหรือใบสั่งซื้อ",
+    )
+    callout(
+        doc,
+        "ใครบันทึกสัญญาได้ (3.2)",
+        "ปุ่มเปิดทะเบียนสัญญาและปุ่มยืนยันสัญญาอยู่ที่ผู้จัดการจัดซื้อ และต้องเลือกผู้ชนะในกระบวนการ e-GP แล้ว",
+        "info",
+    )
+    step_with_pic(doc, 5, "เปิดเอกสารกระบวนการ e-GP ที่เลือกผู้ชนะแล้ว กดปุ่มเปิดทะเบียนสัญญาที่แถบปุ่มหัวเอกสาร", "Screenshot_ch8_ctr_egp_btn.png", 15.8, "ภาพที่ 79  ปุ่มเปิดทะเบียนสัญญาที่หัวเอกสาร e-GP (3.2)")
+    step_with_pic(
+        doc,
+        6,
+        "ระบบสร้างสัญญาสถานะแบบร่าง พร้อมรหัสสัญญา CTR/ปี/เลขวิ่ง คู่ค้าคือผู้ชนะ มูลค่าคือยอดเสนอราคาของผู้ชนะ และอ้างอิงเอกสาร e-GP ให้อัตโนมัติ",
+        "Screenshot_ch8_ctr_form_draft.png",
+        15.8,
+        "ภาพที่ 80  ทะเบียนสัญญาแบบร่างที่สร้างจากเอกสาร e-GP (3.2)",
+    )
+    step_with_pic(
+        doc,
+        7,
+        "ถ้าสัญญาแบ่งจ่ายเป็นงวด เปิดแท็บเงื่อนไขแบ่งงวด กดสร้างรายการงวดงาน เลือกจำนวนงวดและวิธีแบ่ง แล้วแก้ชื่องวดกับมูลค่า ให้ผลรวมเท่ากับมูลค่ารวมสัญญา",
+        "Screenshot_ch8_ctr_wizard.png",
+        12.0,
+        "ภาพที่ 81  หน้าต่างสร้างรายการงวดงาน (3.2)",
+    )
+    picture(doc, "Screenshot_ch8_ctr_installments.png", 15.8, "ภาพที่ 82  รายการงวดงานของสัญญา (3.2)")
+    step_with_pic(doc, 8, "แท็บเอกสารสัญญา แนบสัญญาที่ลงนามแล้ว TOR และเอกสารประกอบ แท็บหลักประกันใส่หนังสือค้ำประกันถ้ามี", "Screenshot_ch8_ctr_docs.png", 15.8, "ภาพที่ 83  แท็บเอกสารสัญญา (3.2)")
+    step_with_pic(
+        doc,
+        9,
+        "ตรวจข้อมูลครบแล้วกดยืนยันสัญญา สถานะเปลี่ยนจากแบบร่างเป็นมีผลบังคับใช้ ระบบบันทึกวันที่ยืนยันและคำนวณวันสิ้นสุดสัญญาให้ถ้าเว้นว่างไว้",
+        "Screenshot_ch8_ctr_confirmed.png",
+        15.8,
+        "ภาพที่ 84  สัญญาสถานะมีผลบังคับใช้ (3.2)",
+    )
+    picture(doc, "Screenshot_ch8_ctr_stat_btn.png", 15.8, "ภาพที่ 85  ปุ่มสัญญาในเมนูเพิ่มเติมของเอกสาร e-GP (3.2)")
+    callout(
+        doc,
+        "แก้ไขหลังยืนยันสัญญา (3.2)",
+        "สัญญาที่มีผลบังคับใช้แก้ข้อมูลหัวสัญญาไม่ได้ ถ้าต้องแก้ ให้กดยกเลิกแล้วตั้งเป็นแบบร่าง "
+        "สัญญาที่ยังมีใบขอซื้อหรือใบสั่งซื้อใช้งานอยู่ยกเลิกไม่ได้ เมื่อสัญญาสิ้นสุดแล้วกดปิดสัญญา",
+        "warn",
+    )
+
     doc.add_page_break()
 
     # ==================== CHAPTER 4 (3.3) ====================
-    heading(doc, "บทที่ 4 การออกใบสั่งซื้อและบันทึกทะเบียนสัญญา (3.3)", 1)
+    heading(doc, "บทที่ 4 การสร้าง PO (3.3)", 1)
     task_summary_card(
         doc,
         code="3.3",
-        title="ออกใบสั่งซื้อ บันทึกทะเบียนสัญญา",
-        desc="สร้าง PO บันทึกทะเบียนสัญญา (แนบไฟล์สัญญา) ส่ง PO เข้าแอปให้ผู้ขายยืนยัน",
-        doc_name="ใบสั่งซื้อ/จ้าง (PO), สัญญาซื้อขาย/จะซื้อจะขาย",
-        menu_path="จัดซื้อ → ใบสั่งซื้อ / จัดการสั่งซื้อ → ทะเบียนสัญญา",
+        title="การสร้าง PO",
+        desc="สร้างใบสั่งซื้อจากแฟ้ม e-GP ที่ผู้ชนะลงนามครบแล้ว แล้วส่งเข้าแอปผู้ขายเพื่อยืนยัน",
+        doc_name="ใบสั่งซื้อ (PO)",
+        menu_path="ระบบจัดซื้อจัดจ้าง → กระบวนการ eGP → รายการโครงการ / ใบสั่งซื้อ",
         role="เจ้าหน้าที่พัสดุ / จัดซื้อ",
     )
 
@@ -1055,154 +1464,89 @@ def build():
         "ภาพที่ 77  ยืนยันและลงนามใบสั่งซื้อสำเร็จ (3.3)",
     )
     picture(doc, "Screenshot_ch8_po_confirmed.png", 8.0, "ภาพที่ 78  สถานะใบสั่งซื้อเป็นผู้ขายยืนยันแล้ว และระบบสร้างใบรอรับสินค้าอัตโนมัติ (3.3)")
-
-    heading(doc, "4.3 บันทึกทะเบียนสัญญาจากกระบวนการ e-GP (3.3)", 2)
-    body(
-        doc,
-        "งานที่ต้องทำสัญญากับผู้ชนะ เช่น งานจ้าง งานเช่า หรือซื้อเป็นงวด พัสดุบันทึกสัญญาในทะเบียนสัญญา "
-        "โดยเริ่มจากเอกสารกระบวนการ e-GP ของงานนั้น ระบบดึงคู่ค้า มูลค่า และเลขที่โครงการ e-GP มาให้ "
-        "สัญญาที่ยืนยันแล้วใช้เป็นฐานตรวจวงเงินเมื่อเปิดใบขอซื้อและใบสั่งซื้อในงวดถัดไป",
-    )
     callout(
         doc,
-        "ใครทำได้ (3.3)",
-        "ปุ่มเปิดทะเบียนสัญญา และยืนยันสัญญา แสดงเฉพาะผู้ใช้สิทธิ์ผู้จัดการจัดซื้อ "
-        "และต้องเลือกผู้ชนะในกระบวนการ e-GP แล้ว จึงจะได้คู่ค้าและมูลค่าตามผู้ชนะ",
+        "ใบรับสินค้าถูกสร้างตอนนี้ (3.3)",
+        "เมื่อผู้ขายยืนยันใบสั่งซื้อ ระบบสร้างใบรับสินค้าสถานะพร้อมให้คลัง "
+        "คลังยังไม่กดรับเข้าจนกว่าจะตรวจคุณภาพผ่านและกรรมการตรวจรับลงนาม ตามบทที่ 5",
         "info",
-    )
-    step_with_pic(doc, 1, "เปิดเอกสารกระบวนการ e-GP ที่เลือกผู้ชนะแล้ว กดปุ่มเปิดทะเบียนสัญญาที่แถบปุ่มหัวเอกสาร", "Screenshot_ch8_ctr_egp_btn.png", 15.8, "ภาพที่ 79  ปุ่มเปิดทะเบียนสัญญาที่หัวเอกสาร e-GP (3.3)")
-    step_with_pic(
-        doc,
-        2,
-        "ระบบสร้างสัญญาสถานะแบบร่าง พร้อมรหัสสัญญา CTR/ปี/เลขวิ่ง คู่ค้าคือผู้ชนะ มูลค่าคือยอดเสนอราคาของผู้ชนะ และอ้างอิงเอกสาร e-GP ให้อัตโนมัติ",
-        "Screenshot_ch8_ctr_form_draft.png",
-        15.8,
-        "ภาพที่ 80  ทะเบียนสัญญาแบบร่างที่สร้างจากเอกสาร e-GP (3.3)",
-    )
-    step_with_pic(
-        doc,
-        3,
-        "ถ้าสัญญาแบ่งจ่ายเป็นงวด เปิดแท็บเงื่อนไขแบ่งงวด กดสร้างรายการงวดงาน เลือกจำนวนงวดและวิธีแบ่ง แล้วแก้ชื่องวด มูลค่า ให้ผลรวมเท่ากับมูลค่ารวมสัญญา",
-        "Screenshot_ch8_ctr_wizard.png",
-        12.0,
-        "ภาพที่ 81  หน้าต่างสร้างรายการงวดงาน (3.3)",
-    )
-    picture(doc, "Screenshot_ch8_ctr_installments.png", 15.8, "ภาพที่ 82  รายการงวดงานของสัญญา (3.3)")
-    step_with_pic(doc, 4, "แท็บเอกสารสัญญา แนบสัญญาที่ลงนามแล้ว TOR และเอกสารประกอบ แท็บหลักประกันใส่หนังสือค้ำประกันถ้ามี", "Screenshot_ch8_ctr_docs.png", 15.8, "ภาพที่ 83  แท็บเอกสารสัญญา (3.3)")
-    step_with_pic(
-        doc,
-        5,
-        "ตรวจข้อมูลครบแล้วกดยืนยันสัญญา สถานะเปลี่ยนจากแบบร่างเป็นมีผลบังคับใช้ ระบบบันทึกวันที่ยืนยันและคำนวณวันสิ้นสุดสัญญาให้ถ้าเว้นว่างไว้",
-        "Screenshot_ch8_ctr_confirmed.png",
-        15.8,
-        "ภาพที่ 84  สัญญาสถานะมีผลบังคับใช้ (3.3)",
-    )
-    picture(doc, "Screenshot_ch8_ctr_stat_btn.png", 15.8, "ภาพที่ 85  ปุ่มสัญญาในเมนูเพิ่มเติมของเอกสาร e-GP (3.3)")
-    callout(
-        doc,
-        "แก้ไขหลังยืนยัน (3.3)",
-        "สัญญาที่มีผลบังคับใช้แก้ข้อมูลหัวสัญญาไม่ได้ ถ้าต้องแก้ ให้กดยกเลิก แล้วตั้งเป็นแบบร่าง "
-        "สัญญาที่ยังมี PR หรือ PO ใช้งานอยู่ยกเลิกไม่ได้ เมื่อสัญญาสิ้นสุดแล้วกดปิดสัญญา",
-        "warn",
     )
 
     doc.add_page_break()
 
     # ==================== CHAPTER 5 (3.4) ====================
-    heading(doc, "บทที่ 5 การสร้างใบตรวจรับ (WA) และใบรับสินค้าอัตโนมัติ (3.4)", 1)
+    heading(doc, "บทที่ 5 การรับมอบงาน (3.4)", 1)
     task_summary_card(
         doc,
         code="3.4",
-        title="สร้างใบตรวจรับ (WA) และใบรับสินค้า (Auto) รอให้คลัง",
-        desc="สร้างใบตรวจรับพัสดุ (WA) หลังจากคลังตรวจคุณภาพ (QC) ผ่านและรับของเข้าคลังแล้ว ใบรับสินค้าถูกสร้างอัตโนมัติให้คลังเมื่อผู้ขายยืนยันใบสั่งซื้อ",
-        doc_name="ใบตรวจรับพัสดุ (WA), ใบรับสินค้า (Auto)",
-        menu_path="จัดซื้อ → ใบสั่งซื้อ (ปุ่มสร้างใบตรวจรับ) / จัดซื้อ → บันทึกรับมอบงาน",
-        role="เจ้าหน้าที่พัสดุ / คณะกรรมการตรวจรับ",
+        title="การรับมอบงาน",
+        desc="พัสดุไม่ตรวจรับและไม่กดรับของเข้าคลังในบทนี้ งานนี้อยู่ในคู่มือคลังและคู่มือคณะกรรมการตรวจรับ",
+        doc_name="ใบตรวจคุณภาพ, ใบตรวจรับ (WA), ใบรับสินค้า",
+        menu_path="ดูคู่มือกลุ่มงานคลัง (UM-ERP-VPK-G03) และคู่มือคณะกรรมการตรวจรับ (UM-ERP-VPK-G04)",
+        role="คลัง / คณะกรรมการตรวจรับ",
     )
     body(
         doc,
-        "เมื่อผู้ขายยืนยันใบสั่งซื้อจากแอป ระบบสร้างใบรับสินค้าให้อัตโนมัติให้คลังตามข้อ 5 ของผังภาพรวม "
-        "คลังตรวจคุณภาพ (QC) และรับของเข้าคลังตามข้อ 5.2–5.3 ก่อน "
-        "จากนั้นพัสดุจึงสร้างใบตรวจรับพัสดุ (Work Acceptance) จากใบสั่งซื้อที่ยืนยันแล้ว แล้วส่งให้คณะกรรมการตรวจรับบันทึกผลและลงนาม "
-        "รายละเอียดการลงนามของกรรมการอยู่ในงานของกลุ่มที่ 4 (คณะกรรมการตรวจรับ) ข้อ 4.1–4.3",
+        "หลังผู้ขายยืนยันใบสั่งซื้อ ระบบสร้างใบรับสินค้าไว้ให้คลังแล้ว ลำดับรับมอบงานต่อจากนี้คือ",
     )
-
-    heading(doc, "5.1 สร้างใบตรวจรับจากใบสั่งซื้อ (3.4)", 2)
-    callout(
-        doc,
-        "ทำต่อเมื่อคลังรับของแล้ว (3.4)",
-        "รายการนี้ทำต่อจากกระบวนการของคลัง เมื่อตรวจคุณภาพ (QC) ผ่าน และรับของเข้าคลังแล้วเท่านั้น "
-        "อย่าสร้างใบตรวจรับขณะของยังอยู่พื้นที่รับของ หรือใบตรวจคุณภาพยังไม่ผ่าน "
-        "ขั้นตอนตรวจคุณภาพและกดรับเข้าคลังอยู่ในคู่มือระบบสินค้าคงคลัง บทที่ 4 ข้อ 4.5 (ข้อ 5.2–5.3 ของผังภาพรวม)",
-        "info",
-    )
-    body(
-        doc,
-        "ลำดับงานจริงคือ ผู้ขายยืนยันใบสั่งซื้อ ระบบสร้างใบรับสินค้าให้อัตโนมัติ → คลังตรวจคุณภาพผ่าน → คลังรับของเข้าคลัง "
-        "→ พัสดุจึงเปิดใบสั่งซื้อแล้วกดสร้างใบตรวจรับ ให้คณะกรรมการบันทึกผลและลงนาม",
-    )
-    step_with_pic(
-        doc,
-        1,
-        "ตรวจก่อนว่าคลังตรวจคุณภาพผ่านและรับของเข้าคลังแล้ว จากนั้นเปิดใบสั่งซื้อที่เป็นคำสั่งซื้อ (ผู้ขายยืนยันแล้ว) "
-        "กดปุ่มสร้างใบตรวจรับ ระบบเปิดบันทึกรับมอบงานฉบับร่าง ออกเลขที่ให้ และดึงรายการสินค้าจากใบสั่งซื้อพร้อมรายชื่อกรรมการจากคำสั่งแต่งตั้ง",
-        "Screenshot_ch9_create_inspection_btn.png",
-        15.8,
-        "ภาพที่ 86  ปุ่มสร้างใบตรวจรับบนใบสั่งซื้อ (3.4)",
-    )
-    callout(
-        doc,
-        "สร้างซ้ำไม่ได้ (3.4)",
-        "ใบสั่งซื้อที่มีใบตรวจรับแล้วยังคงเปิดใบเดิมได้ แต่ปุ่มสร้างใบตรวจรับจะไม่แสดงซ้ำ",
-        "warn",
-    )
-
-    heading(doc, "5.2 กรอกผลการตรวจรับ (3.4)", 2)
-    body(doc, "กรอกขณะสถานะยังเป็น Draft หลังกดตรวจรับแล้วช่องเหล่านี้จะแก้ไม่ได้ ต้องกดกลับเป็นร่างก่อนจึงจะแก้ได้")
-    make_table(
-        doc,
-        ["ช่อง", "ใส่อะไร"],
-        [
-            ["ผลการตรวจรับ", "ตรวจรับครบถ้วน หรือตรวจรับบางส่วนถ้าของส่งไม่ครบ"],
-            ["วันที่ตรวจรับ", "วันที่คณะกรรมการตรวจรับ"],
-            ["วันที่ส่งมอบงาน", "วันที่ผู้ขายส่งของจริง"],
-            ["วันครบกำหนดตามสัญญา", "วันสิ้นสุดตามสัญญา ถ้าว่างระบบจะไม่คิดว่าส่งช้า"],
-            ["ค่าปรับ", "ใส่เมื่อส่งมอบช้าและมีค่าปรับ"],
-            ["คณะกรรมการตรวจรับ", "ตรวจชื่อ บทบาทประธาน กรรมการ และเลขานุการ ที่ดึงจากคำสั่งแต่งตั้ง"],
-        ],
-        [5.2, 11.0],
-    )
-    picture(doc, "Screenshot_ch10_form.png", 15.8, "ภาพที่ 87  บันทึกรับมอบงานหลังตรวจรับ (3.4)")
-    picture(doc, "Screenshot_ch10_committee.png", 15.8, "ภาพที่ 88  แท็บคณะกรรมการตรวจรับ ดึงชื่อจากคำสั่งแต่งตั้ง (3.4)")
-    callout(
-        doc,
-        "ส่งมอบช้า (3.4)",
-        "ถ้าวันที่ส่งมอบงานหลังวันครบกำหนดตามสัญญา ระบบขึ้นแถบส่งมอบงานล่าช้าและแสดงจำนวนวัน ให้ตรวจค่าปรับก่อนกดตรวจรับ",
-        "warn",
-    )
-
-    heading(doc, "5.3 กดตรวจรับ (3.4)", 2)
     bullets(
         doc,
         [
-            "กดตรวจรับ แล้วเลือกวันตรวจรับในหน้าต่างที่ยืนยัน",
-            "สถานะเปลี่ยนจาก Draft เป็น Accepted",
-            "ขั้นตอนนี้เป็นการบันทึกผลการตรวจรับของคณะกรรมการ ไม่ใช่การรับของเข้าคลัง ของเข้าคลังไปแล้วตั้งแต่คลังกดตรวจสอบหลัง QC ผ่าน ตามข้อ 5.1",
-            "ถ้าผู้ขอซื้อมีอีเมล ระบบเข้าคิวส่งอีเมลแจ้งผู้ขอ",
+            "คลังตรวจคุณภาพให้ผ่านก่อน คู่มือกลุ่มงานคลัง UM-ERP-VPK-G03 บทที่ 2",
+            "คณะกรรมการบันทึกผลและลงนามใบตรวจรับ หลัง QC ผ่าน และก่อนคลังกดรับเข้าคลัง คู่มือคณะกรรมการตรวจรับ UM-ERP-VPK-G04",
+            "คลังบันทึกล็อตแล้วกดตรวจสอบเพื่อรับของเข้าคลัง คู่มือกลุ่มงานคลัง บทที่ 3",
+        ],
+    )
+    callout(
+        doc,
+        "พัสดุไม่กดปุ่มชุดนี้ (3.4)",
+        "อย่าใช้บทนี้แทนขั้นตอนตรวจรับหรือขั้นตอนรับเข้าคลัง "
+        "ปุ่มตรวจรับอยู่ที่ใบตรวจรับของกรรมการ และปุ่มตรวจสอบอยู่ที่ใบรับสินค้าของคลัง",
+        "info",
+    )
+
+    doc.add_page_break()
+
+    # ==================== CHAPTER 6 payment request ====================
+    heading(doc, "บทที่ 6 การขออนุมัติเบิกจ่ายโครงการ", 1)
+    task_summary_card(
+        doc,
+        code="ต่อจาก 3.4",
+        title="ขออนุมัติเบิกจ่ายโครงการ",
+        desc="ทำเมื่อใบตรวจรับลงนามแล้ว เปิดใบสั่งซื้อเพื่อสร้างใบขออนุมัติเบิกจ่าย ส่งลงนาม แล้วส่งหน่วยงานเจ้าหนี้",
+        doc_name="ใบขออนุมัติเบิกจ่าย",
+        menu_path="ระบบจัดซื้อจัดจ้าง → ใบสั่งซื้อ → ปุ่มขออนุมัติเบิกจ่าย",
+        role="เจ้าหน้าที่พัสดุ / ผู้อนุมัติฝั่งจัดซื้อ",
+    )
+    body(
+        doc,
+        "ปุ่มขออนุมัติเบิกจ่ายขึ้นเมื่อใบสั่งซื้อยืนยันแล้ว และมีใบตรวจรับสถานะตรวจรับแล้วที่ยังไม่ถูกใช้ตั้งหนี้ "
+        "ใบตรวจรับหนึ่งใบใช้ขอเบิกจ่ายได้ครั้งเดียว",
+    )
+    bullets(
+        doc,
+        [
+            "เปิดใบสั่งซื้อที่ยืนยันแล้ว กด “ขออนุมัติเบิกจ่าย”",
+            "ในหน้าต่าง เลือกใบตรวจรับ ระบบใส่จำนวนเงินที่ขอเบิกจ่ายจากใบตรวจรับนั้น",
+            "เลือกวิธีเพิ่มเอกสาร เป็น “สร้างจากแบบฟอร์มขออนุมัติเบิกจ่าย” หรือ “แนบไฟล์เอกสารที่จัดทำแล้ว” ถ้าแนบไฟล์ต้องเลือกไฟล์",
+            "ใส่หมายเหตุถ้ามี แล้วกด “สร้างเอกสารขออนุมัติเบิกจ่าย”",
+            "ในเอกสารที่สร้าง เพิ่มผู้อนุมัติแล้วส่งลงนามในกล่องอนุมัติเอกสาร เช่นเดียวกับเอกสาร e-GP",
+            "เมื่อลงนามครบ กด “ส่งหน่วยงานเจ้าหนี้” ที่เอกสารหรือที่ใบสั่งซื้อ เจ้าหนี้จึงดึงรายการไปตั้งหนี้",
         ],
         numbered=True,
     )
     callout(
         doc,
-        "ผลไม่ผ่าน (3.4)",
-        "ถ้าเลือกผลการตรวจรับเป็นไม่ผ่านการตรวจรับ ปุ่มตรวจรับจะกดไม่ผ่าน ให้บันทึกเหตุผลในแท็บหมายเหตุ อย่ากดตรวจรับเพื่อปิดงาน",
-        "danger",
+        "ยังขอไม่ได้ถ้าตรวจรับไม่จบ",
+        "ถ้ายังไม่มีใบตรวจรับที่ยืนยัน ระบบไม่เปิดให้ขออนุมัติเบิกจ่าย "
+        "ถ้าใบตรวจรับทุกใบมีใบขออยู่แล้วหรือถูกตั้งหนี้แล้ว ให้ยกเลิกใบขอเดิมก่อนจึงจะขอใหม่ได้",
+        "warn",
     )
 
     doc.add_page_break()
 
-    # ==================== CHAPTER 6 (3.5) ====================
-    heading(doc, "บทที่ 6 การประเมินผู้ขาย (3.5)", 1)
+    # ==================== CHAPTER 7 (3.5) ====================
+    heading(doc, "บทที่ 7 การประเมินผู้ขาย (3.5)", 1)
     task_summary_card(
         doc,
         code="3.5",
@@ -1213,7 +1557,7 @@ def build():
         role="เจ้าหน้าที่พัสดุ / จัดซื้อ",
     )
 
-    heading(doc, "6.1 เกณฑ์ประเมินมาตรฐาน 5 ด้าน (3.5)", 2)
+    heading(doc, "7.1 เกณฑ์ประเมินมาตรฐาน 5 ด้าน (3.5)", 2)
     body(
         doc,
         "ระบบกำหนดเกณฑ์ประเมินผู้จำหน่ายมาตรฐาน 5 ด้าน น้ำหนักรวม 100% แต่ละด้านให้คะแนนเต็ม 5 "
@@ -1245,7 +1589,7 @@ def build():
         [4.4, 3.6, 8.2],
     )
 
-    heading(doc, "6.2 ขั้นตอนบันทึกใบประเมินผู้ขาย (3.5)", 2)
+    heading(doc, "7.2 ขั้นตอนบันทึกใบประเมินผู้ขาย (3.5)", 2)
     step_with_pic(
         doc,
         1,
@@ -1282,14 +1626,14 @@ def build():
         doc,
         "เมื่อไรควรประเมิน (3.5)",
         "ประเมินเมื่อรับสินค้าหรือตรวจรับงานแล้ว โดยผูกกับใบสั่งซื้อใบนั้น "
-        "เกรดล่าสุดและคะแนนเฉลี่ยจะไปแสดงบนแฟ้มผู้ขายตามบทที่ 7 เพื่อใช้ประกอบการคัดเลือกผู้ขายครั้งถัดไป",
+        "เกรดล่าสุดและคะแนนเฉลี่ยจะไปแสดงบนแฟ้มผู้ขายตามบทที่ 8 เพื่อใช้ประกอบการคัดเลือกผู้ขายครั้งถัดไป",
         "ok",
     )
 
     doc.add_page_break()
 
     # ==================== CHAPTER 7 (3.6) ====================
-    heading(doc, "บทที่ 7 การจัดการข้อมูลผู้ขาย (3.6)", 1)
+    heading(doc, "บทที่ 8 การจัดการข้อมูลผู้ขาย (3.6)", 1)
     task_summary_card(
         doc,
         code="3.6",
@@ -1300,7 +1644,7 @@ def build():
         role="เจ้าหน้าที่พัสดุ / จัดซื้อ",
     )
 
-    heading(doc, "7.1 สร้างและปรับปรุงแฟ้มผู้ขาย (3.6)", 2)
+    heading(doc, "8.1 สร้างและปรับปรุงแฟ้มผู้ขาย (3.6)", 2)
     step_with_pic(
         doc,
         1,
@@ -1333,7 +1677,7 @@ def build():
         "info",
     )
 
-    heading(doc, "7.2 รายการราคาจากผู้ขาย (3.6)", 2)
+    heading(doc, "8.2 รายการราคาจากผู้ขาย (3.6)", 2)
     step_with_pic(
         doc,
         1,
@@ -1366,7 +1710,8 @@ def build():
             ["ประกาศผู้ชนะ", "ประกาศผลการคัดเลือก", "WIN-EGP/ปี/เลขวิ่ง"],
             ["ใบสั่งซื้อ / PO", "คำสั่งซื้อที่ยืนยันกับผู้ขาย", "ข้อ 3.3"],
             ["ทะเบียนสัญญา", "สัญญาซื้อขาย/จะซื้อจะขาย", "CTR/ปี/เลขวิ่ง"],
-            ["บันทึกรับมอบงาน / WA", "ใบตรวจรับพัสดุ", "ข้อ 3.4"],
+            ["บันทึกรับมอบงาน / WA", "ใบตรวจรับพัสดุ", "ทำในคู่มือคณะกรรมการตรวจรับ ไม่ใช่เล่มนี้"],
+            ["ขออนุมัติเบิกจ่าย", "ใบขอเบิกหลังตรวจรับลงนาม", "บทที่ 6 แล้วส่งเจ้าหนี้"],
             ["ใบรับสินค้า (Auto)", "ใบรอรับที่สร้างเมื่อผู้ขายยืนยัน PO", "ส่งต่อคลังข้อ 5"],
             ["ใบประเมินผู้จำหน่าย", "แบบประเมินผู้ขาย 5 ด้าน", "ข้อ 3.5"],
             ["ขอเลขจากระบบสารบรรณ", "ปุ่มออกเลขหนังสือที่ฟอร์มเอกสารที่เกี่ยวข้องแต่ละฉบับ", "ไม่กดจากฟอร์มใบขอซื้อ"],
@@ -1374,19 +1719,6 @@ def build():
         ],
         [5.0, 5.6, 5.6],
     )
-
-    heading(doc, "ภาคผนวก ข  ช่องทางสอบถาม", 1)
-    bullets(
-        doc,
-        [
-            "ติดขัดเรื่องสิทธิ์หรือเข้าสู่ระบบไม่ได้: งานเทคโนโลยีสารสนเทศ",
-            "ติดขัดเรื่องวงเงิน แหล่งเงิน หมวดงบ และการขอตั้งงบนอกแผน: งานงบประมาณ (ดูคู่มือ UM-ERP-VPK-G01)",
-            "ติดขัดเรื่องใบขอซื้อ กระบวนการ e-GP ผู้ขาย ใบสั่งซื้อ และใบตรวจรับ: งานพัสดุ",
-            "ติดขัดเรื่องรับสินค้าเข้าคลัง: งานคลัง",
-            "ติดขัดเรื่องใบตั้งเจ้าหนี้และการลงบัญชี: งานการเงิน",
-        ],
-    )
-
     p_end = doc.add_paragraph()
     p_end.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_end.paragraph_format.space_before = Pt(18)

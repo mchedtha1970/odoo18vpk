@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="vpk_hospital_balance_sheet.PlPerformanceDashboard">
+        <div t-att-class="props.className" class="o_vpk_pl_action">
+            <Layout display="display">
+                <div class="o_vpk_pl">
+                    <t t-if="!state.ready">
+                        <div class="o_vpk_pl_loading">กำลังโหลดข้อมูล...</div>
+                    </t>
+                    <t t-else="">
+                        <div class="o_vpk_pl_shell">
+                            <div class="o_vpk_pl_titleblock">
+                                <div class="o_vpk_pl_pills">
+                                    <span class="pill muted">Dashboard</span>
+                                    <span class="pill info">เทียบปี · รายเดือน · หน่วยงาน</span>
+                                </div>
+                                <h1>งบแสดงผลการดำเนินงานทางการเงิน</h1>
+                                <p>
+                                    <t t-esc="state.data.company_name"/> · ปีงบประมาณ
+                                    <t t-esc="state.data.fiscal_year_be"/>
+                                    (<t t-esc="state.data.fiscal_year"/>)
+                                    <t t-if="state.data.compare">
+                                        vs <t t-esc="state.data.compare_year_be"/>
+                                    </t>
+                                    · <t t-esc="state.data.period_label"/> · <t t-esc="state.data.as_of_label"/>
+                                </p>
+                            </div>
+
+                            <div class="o_vpk_pl_toolbar">
+                                <div class="o_vpk_pl_tabs">
+                                    <button t-att-class="state.tab === 'overview' ? 'active' : ''" t-on-click="() => this.setTab('overview')">ภาพรวม</button>
+                                    <button t-att-class="state.tab === 'yoy' ? 'active' : ''" t-on-click="() => this.setTab('yoy')">เทียบปี</button>
+                                    <button t-att-class="state.tab === 'monthly' ? 'active' : ''" t-on-click="() => this.setTab('monthly')">รายเดือน</button>
+                                    <button t-att-class="state.tab === 'dept' ? 'active' : ''" t-on-click="() => this.setTab('dept')">แยกหน่วยงาน</button>
+                                </div>
+                                <div class="o_vpk_pl_actions">
+                                    <label>
+                                        ปีงบประมาณ
+                                        <select class="form-select form-select-sm" t-on-change="onYearChange">
+                                            <t t-foreach="state.data.year_option_labels" t-as="year" t-key="year.value">
+                                                <option t-att-value="year.value" t-att-selected="year.value === state.data.fiscal_year">
+                                                    <t t-esc="year.label"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        หน่วยงาน
+                                        <select class="form-select form-select-sm o_vpk_pl_dept" t-on-change="onAnalyticChange">
+                                            <t t-foreach="state.data.analytics" t-as="item" t-key="item.id">
+                                                <option t-att-value="item.id" t-att-selected="item.id === state.data.analytic_id">
+                                                    <t t-esc="item.name"/>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </label>
+                                    <label class="o_vpk_pl_compare">
+                                        <input type="checkbox" t-att-checked="state.compare" t-on-change="onCompareToggle"/>
+                                        เปรียบเทียบปีก่อน
+                                    </label>
+                                    <button class="btn o_vpk_pl_btn" t-on-click="openFullReport">เปิดงบเต็ม</button>
+                                </div>
+                            </div>
+
+                            <t t-if="state.data.unposted_count">
+                                <div class="o_vpk_pl_alert">
+                                    <strong>รายการยังไม่ผ่านรายการ</strong>
+                                    มีรายการสมุดรายวันที่ยังไม่ได้ผ่านรายการก่อนหน้าหรือรวมอยู่ในช่วงนี้
+                                    (<t t-esc="state.data.unposted_count"/> รายการ)
+                                </div>
+                            </t>
+
+                            <div class="o_vpk_pl_kpis">
+                                <article class="tone-info">
+                                    <strong><t t-esc="formatMillion(state.data.kpis.revenue)"/> ลบ.</strong>
+                                    <span>
+                                        รวมรายได้
+                                        <t t-if="state.data.compare"> · YoY <t t-esc="formatPct(state.data.kpis.yoy_revenue_pct)"/></t>
+                                    </span>
+                                </article>
+                                <article class="tone-warn">
+                                    <strong><t t-esc="formatMillion(state.data.kpis.expense)"/> ลบ.</strong>
+                                    <span>
+                                        รวมค่าใช้จ่าย
+                                        <t t-if="state.data.compare"> · YoY <t t-esc="formatPct(state.data.kpis.yoy_expense_pct)"/></t>
+                                    </span>
+                                </article>
+                                <article class="tone-ok">
+                                    <strong><t t-esc="formatMillion(state.data.kpis.net)"/> ลบ.</strong>
+                                    <span>
+                                        ผลสุทธิ
+                                        <t t-if="state.data.compare"> · YoY <t t-esc="formatPct(state.data.kpis.yoy_net_pct)"/></t>
+                                    </span>
+                                </article>
+                                <article class="tone-ok">
+                                    <strong><t t-esc="state.data.kpis.margin_pct"/>%</strong>
+                                    <span>อัตราส่วนผลสุทธิ / รายได้</span>
+                                </article>
+                            </div>
+
+                            <t t-if="state.tab === 'overview'">
+                                <div class="o_vpk_pl_grid">
+                                    <section class="o_vpk_pl_card">
+                                        <header>
+                                            <h2>โครงสร้างรายได้ ปีงบ <t t-esc="state.data.fiscal_year_be"/></h2>
+                                            <small>โฮเวอร์ดูรายละเอียด · คลิก legend เพื่อซ่อน/แสดง</small>
+                                        </header>
+                                        <PlChart type="'doughnut'" labels="revenueDonutLabels" datasets="revenueDonutDatasets"
+                                                 centerText="revenueDonutCenter" height="260"/>
+                                    </section>
+                                    <section class="o_vpk_pl_card">
+                                        <header>
+                                            <h2>โครงสร้างค่าใช้จ่าย ปีงบ <t t-esc="state.data.fiscal_year_be"/></h2>
+                                            <small>โฮเวอร์ดูรายละเอียด · คลิก legend เพื่อซ่อน/แสดง</small>
+                                        </header>
+                                        <PlChart type="'doughnut'" labels="expenseDonutLabels" datasets="expenseDonutDatasets"
+                                                 centerText="expenseDonutCenter" height="260"/>
+                                    </section>
+                                </div>
+
+                                <section class="o_vpk_pl_card">
+                                    <header>
+                                        <h2>แนวโน้มรายเดือน</h2>
+                                        <small>คลิกแท็บรายเดือนเพื่อดูเต็ม · หน่วย: ล้านบาท</small>
+                                    </header>
+                                    <PlChart type="'line'" labels="monthLabels" datasets="monthlyLineDatasets" height="240"/>
+                                </section>
+
+                                <section class="o_vpk_pl_card">
+                                    <header>
+                                        <h2>สรุปรายการตามงบ</h2>
+                                        <small>เชื่อมรหัส PL_* จากงบแสดงผลการดำเนินงาน</small>
+                                    </header>
+                                    <table class="o_vpk_pl_table">
+                                        <thead>
+                                            <tr>
+                                                <th>รายการ</th>
+                                                <th>รหัส</th>
+                                                <th class="num">จำนวนเงิน (บาท)</th>
+                                                <th class="num">%</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="state.data.lines" t-as="line" t-key="line.code">
+                                                <tr t-att-class="lineKindClass(line.kind)">
+                                                    <td><t t-esc="line.name"/></td>
+                                                    <td><t t-esc="line.code"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(line.amount)"/></td>
+                                                    <td class="num"><t t-esc="line.pct"/>%</td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </section>
+                            </t>
+
+                            <t t-if="state.tab === 'yoy'">
+                                <t t-if="!state.data.compare">
+                                    <div class="o_vpk_pl_empty">เปิด “เปรียบเทียบปีก่อน” เพื่อดูการเปรียบเทียบ</div>
+                                </t>
+                                <t t-else="">
+                                    <section class="o_vpk_pl_card">
+                                        <header>
+                                            <h2>รายได้ vs ค่าใช้จ่าย vs ผลสุทธิ</h2>
+                                            <small>ล้านบาท · ปีงบ <t t-esc="state.data.compare_year_be"/> vs <t t-esc="state.data.fiscal_year_be"/></small>
+                                        </header>
+                                        <PlChart type="'bar'" labels="yoySummaryLabels" datasets="yoySummaryDatasets" height="280"/>
+                                    </section>
+                                    <section class="o_vpk_pl_card">
+                                        <header>
+                                            <h2>เทียบหมวดรายได้ / ค่าใช้จ่าย</h2>
+                                            <small>ล้านบาท · คลิก legend เพื่อซ่อน/แสดงซีรีส์</small>
+                                        </header>
+                                        <PlChart type="'bar'" labels="yoyCategoryLabels" datasets="yoyCategoryDatasets" height="300"/>
+                                    </section>
+                                    <section class="o_vpk_pl_card">
+                                        <header>
+                                            <h2>ตารางเทียบปี</h2>
+                                        </header>
+                                        <table class="o_vpk_pl_table">
+                                            <thead>
+                                                <tr>
+                                                    <th>รายการ</th>
+                                                    <th class="num">ปีงบ <t t-esc="state.data.compare_year_be"/></th>
+                                                    <th class="num">ปีงบ <t t-esc="state.data.fiscal_year_be"/></th>
+                                                    <th class="num">เปลี่ยนแปลง</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>รวมรายได้</td>
+                                                    <td class="num"><t t-esc="formatBaht(state.data.kpis.prev_revenue)"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(state.data.kpis.revenue)"/></td>
+                                                    <td class="num" t-att-class="yoyClass(state.data.kpis.yoy_revenue_pct)">
+                                                        <t t-esc="formatPct(state.data.kpis.yoy_revenue_pct)"/>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>รวมค่าใช้จ่าย</td>
+                                                    <td class="num"><t t-esc="formatBaht(state.data.kpis.prev_expense)"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(state.data.kpis.expense)"/></td>
+                                                    <td class="num" t-att-class="yoyClass(state.data.kpis.yoy_expense_pct)">
+                                                        <t t-esc="formatPct(state.data.kpis.yoy_expense_pct)"/>
+                                                    </td>
+                                                </tr>
+                                                <tr class="is-result">
+                                                    <td>ผลสุทธิ</td>
+                                                    <td class="num"><t t-esc="formatBaht(state.data.kpis.prev_net)"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(state.data.kpis.net)"/></td>
+                                                    <td class="num" t-att-class="yoyClass(state.data.kpis.yoy_net_pct)">
+                                                        <t t-esc="formatPct(state.data.kpis.yoy_net_pct)"/>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </section>
+                                </t>
+                            </t>
+
+                            <t t-if="state.tab === 'monthly'">
+                                <section class="o_vpk_pl_card">
+                                    <header>
+                                        <h2>รายได้และค่าใช้จ่ายรายเดือน</h2>
+                                        <small>ล้านบาท · โฮเวอร์จุดบนเส้นเพื่อดูค่า</small>
+                                    </header>
+                                    <PlChart type="'line'" labels="monthLabels" datasets="monthlyLineDatasets" height="300"/>
+                                </section>
+                                <section class="o_vpk_pl_card">
+                                    <header>
+                                        <h2>ผลสุทธิรายเดือน</h2>
+                                        <small>ล้านบาท</small>
+                                    </header>
+                                    <PlChart type="'bar'" labels="monthLabels" datasets="netBarDatasets" height="240"/>
+                                </section>
+                                <section class="o_vpk_pl_card">
+                                    <header>
+                                        <h2>ตารางรายเดือน</h2>
+                                    </header>
+                                    <table class="o_vpk_pl_table">
+                                        <thead>
+                                            <tr>
+                                                <th>เดือน</th>
+                                                <th class="num">รายได้</th>
+                                                <th class="num">ค่าใช้จ่าย</th>
+                                                <th class="num">ผลสุทธิ</th>
+                                                <t t-if="state.data.compare">
+                                                    <th class="num">สุทธิปีก่อน</th>
+                                                </t>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="state.data.months" t-as="month" t-key="'tbl-' + month.key">
+                                                <tr>
+                                                    <td><t t-esc="month.label"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(month.revenue)"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(month.expense)"/></td>
+                                                    <td class="num" t-att-class="month.net >= 0 ? 'pos' : 'neg'">
+                                                        <t t-esc="formatBaht(month.net)"/>
+                                                    </td>
+                                                    <t t-if="state.data.compare">
+                                                        <td class="num">
+                                                            <t t-esc="formatBaht((state.data.months_prev[month_index] || {}).net || 0)"/>
+                                                        </td>
+                                                    </t>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </section>
+                            </t>
+
+                            <t t-if="state.tab === 'dept'">
+                                <section class="o_vpk_pl_card">
+                                    <header>
+                                        <h2>รายได้ vs ค่าใช้จ่ายตามหน่วยงาน</h2>
+                                        <small>คลิกแท่งกราฟเพื่อกรองหน่วยงาน · หน่วย: ล้านบาท</small>
+                                    </header>
+                                    <t t-if="state.data.departments.length">
+                                        <PlChart type="'bar'" horizontal="true"
+                                                 labels="departmentLabels" datasets="departmentDatasets"
+                                                 height="Math.max(280, state.data.departments.length * 48)"
+                                                 onClickItem.bind="onDepartmentChartClick"/>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="o_vpk_pl_empty">ไม่พบข้อมูลแยกหน่วยงานในช่วงนี้</div>
+                                    </t>
+                                </section>
+                                <section class="o_vpk_pl_card">
+                                    <header>
+                                        <h2>ตารางหน่วยงาน</h2>
+                                    </header>
+                                    <table class="o_vpk_pl_table">
+                                        <thead>
+                                            <tr>
+                                                <th>หน่วยงาน</th>
+                                                <th class="num">รายได้</th>
+                                                <th class="num">ค่าใช้จ่าย</th>
+                                                <th class="num">ผลสุทธิ</th>
+                                                <th class="num">% รายได้</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="state.data.departments" t-as="dept" t-key="'t-' + dept.id + '-' + dept.name">
+                                                <tr t-att-class="dept.net >= 0 ? 'is-result' : ''" class="o_vpk_pl_clickrow" t-on-click="() => this.filterByDepartment(dept.id)">
+                                                    <td><t t-esc="dept.name"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(dept.revenue)"/></td>
+                                                    <td class="num"><t t-esc="formatBaht(dept.expense)"/></td>
+                                                    <td class="num" t-att-class="dept.net >= 0 ? 'pos' : 'neg'">
+                                                        <t t-esc="formatBaht(dept.net)"/>
+                                                    </td>
+                                                    <td class="num"><t t-esc="dept.pct"/>%</td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </section>
+                            </t>
+                        </div>
+                    </t>
+                </div>
+            </Layout>
+        </div>
+    </t>
+
+</templates>

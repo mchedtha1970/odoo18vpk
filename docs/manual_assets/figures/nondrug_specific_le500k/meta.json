@@ -1,0 +1,66 @@
+{
+  "pr_name": "PR6911019",
+  "pr_url": "http://127.0.0.1:8069/odoo/action-979/182/purchase.request/182",
+  "pr_id": 182,
+  "egp_id": 85,
+  "egp_name": "EGP/2026/0162",
+  "pos": [],
+  "vendor": {
+    "id": 9,
+    "name": "Vendor DEMO"
+  },
+  "po": {
+    "id": 137,
+    "name": "P00049",
+    "state": "purchase",
+    "partner_id": [
+      9,
+      "Vendor DEMO"
+    ],
+    "amount_total": 60000,
+    "picking_ids": [
+      227
+    ],
+    "origin": "PR6911019, EGP/2026/0162, BID-NONDRUG-GAUZE",
+    "requisition_id": [
+      85,
+      "EGP/2026/0162"
+    ]
+  },
+  "picking": {
+    "id": 227,
+    "name": "WH/IN/00039",
+    "state": "assigned",
+    "picking_type_id": [
+      234,
+      "คลังกลาง: Receipts"
+    ]
+  },
+  "egp": null,
+  "po_vendor": {
+    "id": 137,
+    "name": "P00049",
+    "state": "purchase",
+    "vpk_vendor_confirm_state": "confirmed",
+    "partner_id": [
+      9,
+      "Vendor DEMO"
+    ],
+    "amount_total": 60000,
+    "picking_ids": [
+      227,
+      228
+    ],
+    "vpk_po_sent_on": "2026-11-07 17:22:28"
+  },
+  "picking_after_sign": {
+    "id": 228,
+    "name": "WH/IN/00040",
+    "state": "assigned",
+    "picking_type_id": [
+      234,
+      "คลังกลาง: Receipts"
+    ],
+    "origin": "P00049"
+  }
+}

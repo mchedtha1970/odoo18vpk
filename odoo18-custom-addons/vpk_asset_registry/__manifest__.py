@@ -1,8 +1,8 @@
 {
     "name": "VPK Asset Registry and Purchase Traceability",
-    "version": "18.0.1.3.0",
+    "version": "18.0.1.4.0",
     "category": "Accounting/Assets",
-    "summary": "ทะเบียนสินทรัพย์และติดตามแหล่งที่มาจาก PO ใบแจ้งหนี้ GFMIS และงบประมาณ",
+    "summary": "ทะเบียนสินทรัพย์ ติดตามแหล่งที่มาจาก PO/ใบแจ้งหนี้/GFMIS และรายงานค่าเสื่อมประจำปี (Excel)",
     "depends": [
         "account_asset_management",
         "account_asset_number",
@@ -19,6 +19,7 @@
         "views/asset_related_contract_views.xml",
         "views/account_asset_registry_views.xml",
         "views/account_asset_set_views.xml",
+        "views/asset_depreciation_report_wizard_views.xml",
     ],
     "installable": True,
     "application": False,

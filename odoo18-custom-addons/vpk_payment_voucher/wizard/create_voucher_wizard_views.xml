@@ -4,26 +4,28 @@
         <field name="name">vpk.payment.voucher.create.wizard.form</field>
         <field name="model">vpk.payment.voucher.create.wizard</field>
         <field name="arch" type="xml">
-            <form string="สร้างใบสำคัญจ่าย">
+            <form string="สร้างใบสำคัญจ่ายจากใบตั้งเจ้าหนี้">
                 <group>
                     <field name="voucher_id" invisible="1"/>
                     <field name="company_id" invisible="1"/>
                     <field name="company_partner_id" invisible="1"/>
                     <field name="available_bank_account_ids" invisible="1"/>
+                    <field name="voucher_type" widget="radio" invisible="voucher_id"/>
                     <field name="memo_subject"/>
                     <field name="journal_id" options="{'no_create': True}"
-                              placeholder="เลือก Bank Journal / แหล่งเงิน"/>
+                           placeholder="เลือก Bank Journal / แหล่งเงิน"/>
                     <field name="bank_account_id" options="{'no_create': True}"/>
                 </group>
-                <group string="ใบเรียกเก็บที่ POST แล้ว">
+                <group string="เลือกใบตั้งเจ้าหนี้ที่ผ่านการอนุมัติและ POST แล้ว (เลือกได้หลายรายการ)">
                     <field name="bill_ids" nolabel="1" colspan="2">
                         <list>
-                            <field name="name"/>
-                            <field name="partner_id"/>
+                            <field name="name" string="เลขที่ใบตั้งเจ้าหนี้"/>
+                            <field name="partner_id" string="ผู้ขาย / โรงพยาบาล"/>
+                            <field name="ref" string="อ้างอิง"/>
                             <field name="invoice_date"/>
-                            <field name="amount_residual"/>
-                            <field name="amount_total"/>
-                            <field name="state"/>
+                            <field name="amount_residual" sum="รวมค้างชำระ"/>
+                            <field name="amount_total" sum="รวมทั้งสิ้น"/>
+                            <field name="state" widget="badge" decoration-success="state == 'posted'"/>
                         </list>
                     </field>
                 </group>
@@ -37,7 +39,7 @@
     </record>
 
     <record id="action_vpk_payment_voucher_create_wizard" model="ir.actions.act_window">
-        <field name="name">สร้างใบสำคัญจ่ายจากใบเรียกเก็บ</field>
+        <field name="name">สร้างใบสำคัญจ่ายจากใบตั้งเจ้าหนี้ (เลือกได้หลายรายการ)</field>
         <field name="res_model">vpk.payment.voucher.create.wizard</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>

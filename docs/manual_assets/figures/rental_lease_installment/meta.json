@@ -1,0 +1,139 @@
+{
+  "budget": "DBR/2570/0043",
+  "product": "RENT-FX-WC",
+  "qty": "12",
+  "unit_price": "24610",
+  "scenario": "rental_lease_installment_fuji_xerox",
+  "pr_name": "PR6911020",
+  "pr_url": "http://127.0.0.1:8069/odoo/action-979/183/purchase.request/183",
+  "pr_id": 183,
+  "egp_id": 86,
+  "vendor": "Vendor DEMO",
+  "contract_id": 320,
+  "contract_name": "CTR/2026/0042",
+  "contract_info": [
+    {
+      "id": 320,
+      "name": "CTR/2026/0042",
+      "state": "draft",
+      "payment_type": "installment",
+      "amount_total": 295320,
+      "installment_ids": [
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100
+      ]
+    }
+  ],
+  "pos": [],
+  "installments": [
+    {
+      "id": 89,
+      "name": "งวดที่ 1",
+      "amount": 24610,
+      "date_planned": false
+    },
+    {
+      "id": 90,
+      "name": "งวดที่ 2",
+      "amount": 24610,
+      "date_planned": false
+    },
+    {
+      "id": 91,
+      "name": "งวดที่ 3",
+      "amount": 24610,
+      "date_planned": false
+    },
+    {
+      "id": 92,
+      "name": "งวดที่ 4",
+      "amount": 24610,
+      "date_planned": false
+    },
+    {
+      "id": 93,
+      "name": "งวดที่ 5",
+      "amount": 24610,
+      "date_planned": false
+    },
+    {
+      "id": 94,
+      "name": "งวดที่ 6",
+      "amount": 24610,
+      "date_planned": false
+    },
+    {
+      "id": 95,
+      "name": "งวดที่ 7",
+      "amount": 24610,
+      "date_planned": false
+    },
+    {
+      "id": 96,
+      "name": "งวดที่ 8",
+      "amount": 24610,
+      "date_planned": false
+    },
+    {
+      "id": 97,
+      "name": "งวดที่ 9",
+      "amount": 24610,
+      "date_planned": false
+    },
+    {
+      "id": 98,
+      "name": "งวดที่ 10",
+      "amount": 24610,
+      "date_planned": false
+    },
+    {
+      "id": 99,
+      "name": "งวดที่ 11",
+      "amount": 24610,
+      "date_planned": false
+    },
+    {
+      "id": 100,
+      "name": "งวดที่ 12",
+      "amount": 24610,
+      "date_planned": false
+    }
+  ],
+  "contract_state": "confirmed",
+  "egp_name": "EGP/2026/0164",
+  "po": {
+    "id": 138,
+    "name": "P00050",
+    "state": "purchase",
+    "vpk_vendor_confirm_state": "confirmed",
+    "partner_id": [
+      9,
+      "Vendor DEMO"
+    ],
+    "amount_total": 295320,
+    "picking_ids": []
+  },
+  "po_id": 138,
+  "po_vendor": {
+    "id": 138,
+    "name": "P00050",
+    "state": "purchase",
+    "vpk_vendor_confirm_state": "confirmed",
+    "partner_id": [
+      9,
+      "Vendor DEMO"
+    ],
+    "amount_total": 295320,
+    "picking_ids": []
+  }
+}

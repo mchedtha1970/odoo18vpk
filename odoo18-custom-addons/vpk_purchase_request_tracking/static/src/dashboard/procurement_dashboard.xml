@@ -183,6 +183,7 @@
                                             <th>เลข PO</th>
                                             <th>เลขคุมสัญญา</th>
                                             <th>เลขใบตรวจรับงาน</th>
+                                            <th>อนุมัติเบิกจ่าย</th>
                                             <th>ผู้ขาย</th>
                                             <th>หน่วยงาน</th>
                                             <th>วิธีจัดหา</th>
@@ -215,6 +216,12 @@
                                                     <t t-if="!(project.contracts or []).length">—</t>
                                                 </td>
                                                 <td><t t-esc="project.wa_name"/></td>
+                                                <td>
+                                                    <span t-if="project.payment_approval and project.payment_approval.tone !== 'na'"
+                                                          t-att-class="'o_vpk_proc_pay pay_' + project.payment_approval.tone"
+                                                          t-esc="project.payment_approval.label"/>
+                                                    <t t-else="">—</t>
+                                                </td>
                                                 <td><t t-esc="project.vendor"/></td>
                                                 <td><t t-esc="project.department"/></td>
                                                 <td><t t-esc="project.method"/></td>
@@ -232,7 +239,7 @@
                                             </tr>
                                         </t>
                                         <tr t-if="!visibleProjects.length">
-                                            <td colspan="12">ไม่พบโครงการที่จองงบประมาณตามเงื่อนไขนี้</td>
+                                            <td colspan="13">ไม่พบโครงการที่จองงบประมาณตามเงื่อนไขนี้</td>
                                         </tr>
                                     </tbody>
                                 </table>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="vpk_hospital_balance_sheet.PlChart">
+        <div t-att-class="'o_vpk_pl_chartjs ' + (props.className || '')" t-att-style="'height:' + (props.height || 260) + 'px'">
+            <canvas t-ref="canvas"/>
+        </div>
+    </t>
+</templates>

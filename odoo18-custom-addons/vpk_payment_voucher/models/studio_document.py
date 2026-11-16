@@ -159,3 +159,15 @@ class DocumentStudioDocument(models.Model):
             "views": [(False, "form")],
             "target": "current",
         }
+
+
+class DocumentStudioField(models.Model):
+    _inherit = "vpk.document.studio.field"
+
+    def _relation_rows(self, value, wanted=()):
+        rows = super()._relation_rows(value, wanted=wanted)
+        record = self._record_from_value(value)
+        if record and hasattr(record, "_vpk_studio_extra_table_rows"):
+            rows.extend(record._vpk_studio_extra_table_rows(self.code))
+        return rows
+

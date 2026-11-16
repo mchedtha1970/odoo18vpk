@@ -58,8 +58,8 @@
                     <thead>
                         <tr>
                             <th class="col-no">ลำดับที่</th>
-                            <th class="col-partner">บริษัท</th>
-                            <th class="col-bill">บิลเลขที่</th>
+                            <th class="col-partner" t-esc="'โรงพยาบาล' if doc.voucher_type == 'hospital_cheque' else 'บริษัท'"/>
+                            <th class="col-bill" t-esc="'เช็คเลขที่' if doc.voucher_type == 'hospital_cheque' else 'บิลเลขที่'"/>
                             <th class="col-amount">จำนวนเงิน บาท</th>
                         </tr>
                     </thead>
@@ -68,10 +68,16 @@
                             <tr>
                                 <td class="col-no" t-esc="doc._thai_digits(line_index + 1)"/>
                                 <td class="col-partner" t-esc="line.partner_name"/>
-                                <td class="col-bill" t-esc="line.bill_ref"/>
+                                <td class="col-bill" t-esc="(line.cheque_no or line.bill_ref) if doc.voucher_type == 'hospital_cheque' else (line.bill_ref or line.cheque_no)"/>
                                 <td class="col-amount" t-esc="doc._format_amount(line.amount)"/>
                             </tr>
                         </t>
+                        <tr t-if="doc.show_wht_deduction and doc.wht_deduction_amount">
+                            <td class="col-no"/>
+                            <td class="col-partner" t-esc="doc.wht_deduction_label or 'ภาษี ณ ที่จ่าย'"/>
+                            <td class="col-bill"/>
+                            <td class="col-amount" t-esc="doc._format_amount(doc.wht_deduction_amount)"/>
+                        </tr>
                         <tr class="row-total">
                             <td colspan="3" style="text-align:center;">รวมเป็นเงิน</td>
                             <td class="col-amount" t-esc="doc._format_amount(doc.amount_total)"/>
