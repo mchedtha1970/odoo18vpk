@@ -5,7 +5,7 @@
     right: 0;
     bottom: 0;
     left: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: rgba(15, 23, 42, 0.3);
     z-index: 2000;
     display: flex;
     justify-content: flex-end;
@@ -17,7 +17,8 @@
     max-width: 920px;
     height: 100vh;
     background: #fff;
-    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+    border-left: 1px solid var(--vpk-border);
+    box-shadow: -8px 0 24px rgba(15, 23, 42, 0.08);
     display: flex;
     flex-direction: column;
     animation: o_vpk_slide_in 0.25s ease;
@@ -37,15 +38,15 @@
     height: 36px;
     border: none;
     border-radius: 50%;
-    background: #f0f2f5;
-    color: #555;
+    background: #f1f5f9;
+    color: var(--vpk-text-muted);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
 
     &:hover {
-        background: #e2e6ea;
+        background: var(--vpk-border);
     }
 }
 
@@ -67,7 +68,14 @@
         font-weight: 700;
         padding: 0 20px 16px;
         margin: 0;
-        color: #1a5f6b;
+        color: var(--vpk-primary);
+    }
+
+    .o_vpk_theme_scope_note {
+        font-size: 12px;
+        color: #6c757d;
+        padding: 0 20px 12px;
+        margin: -10px 0 0;
     }
 }
 
@@ -85,11 +93,11 @@
         transition: background 0.15s, color 0.15s;
 
         &:hover {
-            background: rgba(26, 95, 107, 0.08);
+            background: var(--vpk-primary-soft);
         }
 
         &.active {
-            background: #1a5f6b;
+            background: var(--vpk-primary);
             color: #fff;
             font-weight: 600;
         }
@@ -100,8 +108,17 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
     overflow: hidden;
-    padding: 24px 28px 0;
+    padding: 24px 0 0 28px;
+}
+
+.o_vpk_theme_scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 28px;
+    padding-bottom: 16px;
 }
 
 .o_vpk_theme_loading {
@@ -158,37 +175,59 @@
     .o_vpk_preview_box {
         width: 80px;
         height: 56px;
-        background: #f0f2f5;
+        background: #f1f5f9;
         border: 1px solid #ced4da;
         border-radius: 6px;
     }
 
     &.selected {
-        border-color: #1a5f6b;
-        box-shadow: 0 0 0 1px #1a5f6b;
-        color: #1a5f6b;
+        border-color: var(--vpk-primary);
+        box-shadow: 0 0 0 1px var(--vpk-primary);
+        color: var(--vpk-primary);
         font-weight: 600;
     }
 
     &:hover {
-        border-color: #1a5f6b;
+        border-color: var(--vpk-primary);
     }
 }
 
 // Preview wireframes
 .vpk_preview_style_rounded .o_vpk_preview_box { border-radius: 12px; }
 .vpk_preview_style_square .o_vpk_preview_box { border-radius: 0; }
+.o_vpk_preview_badge {
+    display: inline-flex;
+    align-items: center;
+    margin: 16px 0;
+    padding: 0.2em 0.75em;
+    font-size: 12px;
+    font-weight: 500;
+    color: #047857;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+}
+.vpk_preview_badge_pill .o_vpk_preview_badge { border-radius: 9999px; }
+.vpk_preview_badge_rounded .o_vpk_preview_badge { border-radius: 6px; }
+.vpk_preview_badge_square .o_vpk_preview_badge { border-radius: 0; }
+.o_vpk_preview_box.o_vpk_preview_sidebar_light {
+    background: linear-gradient(90deg, #ffffff 30%, #e2e8f0 30%, #e2e8f0 calc(30% + 1px), #f1f5f9 calc(30% + 1px));
+}
+.o_vpk_preview_box.o_vpk_preview_sidebar_gradient {
+    background:
+        linear-gradient(180deg, var(--vpk-preview-top), var(--vpk-preview-bottom)) left / 30% 100% no-repeat,
+        #f1f5f9;
+}
 .vpk_preview_menu_vertical .o_vpk_preview_box {
-    background: linear-gradient(90deg, #1a5f6b 30%, #f0f2f5 30%);
+    background: linear-gradient(90deg, var(--vpk-primary) 30%, #f1f5f9 30%);
 }
 .vpk_preview_menu_horizontal .o_vpk_preview_box {
-    background: linear-gradient(180deg, #1a5f6b 25%, #f0f2f5 25%);
+    background: linear-gradient(180deg, var(--vpk-primary) 25%, #f1f5f9 25%);
 }
 .vpk_preview_chatter_right .o_vpk_preview_box {
-    background: linear-gradient(90deg, #f0f2f5 65%, #dee2e6 65%);
+    background: linear-gradient(90deg, #f1f5f9 65%, #dee2e6 65%);
 }
 .vpk_preview_chatter_bottom .o_vpk_preview_box {
-    background: linear-gradient(180deg, #f0f2f5 65%, #dee2e6 65%);
+    background: linear-gradient(180deg, #f1f5f9 65%, #dee2e6 65%);
 }
 .vpk_preview_density_compact .o_vpk_preview_box {
     background: repeating-linear-gradient(180deg, #dee2e6 0 4px, #f8f9fa 4px 14px);
@@ -207,7 +246,7 @@
     }
 
     &.selected .o_vpk_preset_px {
-        color: #1a5f6b;
+        color: var(--vpk-primary);
     }
 }
 
@@ -223,25 +262,25 @@
 }
 
 .o_vpk_preview_width_compact {
-    background: linear-gradient(90deg, #1a5f6b 22%, #f0f2f5 22%);
+    background: linear-gradient(90deg, var(--vpk-primary) 22%, #f1f5f9 22%);
 }
 .o_vpk_preview_width_default {
-    background: linear-gradient(90deg, #1a5f6b 32%, #f0f2f5 32%);
+    background: linear-gradient(90deg, var(--vpk-primary) 32%, #f1f5f9 32%);
 }
 .o_vpk_preview_width_wide {
-    background: linear-gradient(90deg, #1a5f6b 42%, #f0f2f5 42%);
+    background: linear-gradient(90deg, var(--vpk-primary) 42%, #f1f5f9 42%);
 }
 .o_vpk_preview_width_extra {
-    background: linear-gradient(90deg, #1a5f6b 52%, #f0f2f5 52%);
+    background: linear-gradient(90deg, var(--vpk-primary) 52%, #f1f5f9 52%);
 }
 .o_vpk_preview_collapsed_narrow {
-    background: linear-gradient(90deg, #1a5f6b 10%, #f0f2f5 10%);
+    background: linear-gradient(90deg, var(--vpk-primary) 10%, #f1f5f9 10%);
 }
 .o_vpk_preview_collapsed_default {
-    background: linear-gradient(90deg, #1a5f6b 16%, #f0f2f5 16%);
+    background: linear-gradient(90deg, var(--vpk-primary) 16%, #f1f5f9 16%);
 }
 .o_vpk_preview_collapsed_wide {
-    background: linear-gradient(90deg, #1a5f6b 24%, #f0f2f5 24%);
+    background: linear-gradient(90deg, var(--vpk-primary) 24%, #f1f5f9 24%);
 }
 
 .o_vpk_range_value {
@@ -264,7 +303,7 @@
         input {
             width: 40px;
             height: 22px;
-            accent-color: var(--vpk-sidebar-bg-start);
+            accent-color: var(--vpk-primary);
         }
     }
 }
@@ -310,11 +349,14 @@
     input[type="range"] {
         flex: 1;
         max-width: 300px;
-        accent-color: var(--vpk-sidebar-bg-start);
+        accent-color: var(--vpk-primary);
     }
 }
 
 .o_vpk_font_preview_kanit { font-family: 'Kanit', sans-serif; }
+.o_vpk_font_preview_inter { font-family: 'Inter', 'Noto Sans Thai', sans-serif; }
+.o_vpk_font_preview_ibm_plex_thai { font-family: 'IBM Plex Sans Thai', sans-serif; }
+.o_vpk_font_preview_anuphan { font-family: 'Anuphan', sans-serif; }
 .o_vpk_font_preview_sarabun { font-family: 'Sarabun', sans-serif; }
 .o_vpk_font_preview_prompt { font-family: 'Prompt', sans-serif; }
 .o_vpk_font_preview_roboto { font-family: 'Roboto', sans-serif; }
@@ -322,47 +364,50 @@
 .o_vpk_theme_actions {
     display: flex;
     gap: 12px;
-    padding: 20px 0 24px;
+    flex-shrink: 0;
+    padding: 16px 28px 20px 0;
     margin-top: auto;
     border-top: 1px solid #e9ecef;
+    background: #fff;
 
     .o_vpk_btn_apply {
-        background: var(--vpk-sidebar-bg-gradient) !important;
-        border-color: var(--vpk-sidebar-bg-end) !important;
-        color: var(--vpk-sidebar-text) !important;
-        padding: 10px 32px;
-        font-weight: 600;
+        background: var(--vpk-primary) !important;
+        border-color: var(--vpk-primary-hover) !important;
+        color: var(--vpk-on-primary) !important;
+        padding: 8px 28px;
+        font-weight: 500;
 
         &:hover {
-            filter: brightness(1.06);
-            border-color: var(--vpk-sidebar-bg-end) !important;
+            background: var(--vpk-primary-hover) !important;
+            border-color: var(--vpk-primary-hover) !important;
         }
     }
 
     .o_vpk_btn_discard {
-        background: #e9ecef;
-        border-color: #e9ecef;
-        color: #495057;
-        padding: 10px 32px;
-        font-weight: 600;
+        background: var(--vpk-surface);
+        border: 1px solid var(--vpk-border);
+        color: var(--vpk-text-secondary);
+        padding: 8px 28px;
+        font-weight: 500;
 
         &:hover {
-            background: #dee2e6;
+            background: var(--vpk-surface-muted);
+            color: var(--vpk-text);
         }
     }
 
     .o_vpk_btn_defaults {
         margin-left: auto;
-        padding: 10px 24px;
-        font-weight: 600;
-        color: #1a5f6b;
-        border-color: #1a5f6b;
+        padding: 8px 20px;
+        font-weight: 500;
+        color: var(--vpk-primary);
+        border-color: var(--vpk-primary);
 
         &:hover,
         &.active {
-            background: rgba(26, 95, 107, 0.08);
-            color: #1a5f6b;
-            border-color: #1a5f6b;
+            background: var(--vpk-primary-soft);
+            color: var(--vpk-primary);
+            border-color: var(--vpk-primary);
         }
     }
 }
@@ -378,14 +423,13 @@
     }
 
     &.selected .o_vpk_preset_px {
-        color: #1a5f6b;
+        color: var(--vpk-primary);
     }
 }
 
 // Theme effect classes
 body.o_vpk_sidebar_menu {
     &.vpk_theme_rounded {
-        .o_vpk_sidebar_primary,
         .o_vpk_option_card {
             border-radius: 8px;
         }
@@ -412,9 +456,9 @@ body.o_vpk_sidebar_menu {
     }
 
     // Font sizes — scale list header row so text is not clipped
-    &.vpk_font_size_small { font-size: 10px; }
-    &.vpk_font_size_medium { font-size: 12px; }
-    &.vpk_font_size_large { font-size: 15px; }
+    &.vpk_font_size_small { font-size: 12px; }
+    &.vpk_font_size_medium { font-size: 13px; }
+    &.vpk_font_size_large { font-size: 14px; }
 
     // Odoo pulls x2many lists up with negative margin — keep inside notebook box
     .o_notebook > .o_notebook_content > .tab-pane > :first-child,
@@ -427,6 +471,9 @@ body.o_vpk_sidebar_menu {
         }
     }
 
+    &.vpk_font_inter { font-family: var(--vpk-font-family, 'Inter', 'Noto Sans Thai', sans-serif); }
+    &.vpk_font_ibm_plex_thai { font-family: var(--vpk-font-family, 'IBM Plex Sans Thai', sans-serif); }
+    &.vpk_font_anuphan { font-family: var(--vpk-font-family, 'Anuphan', sans-serif); }
     &.vpk_font_kanit { font-family: var(--vpk-font-family, 'Kanit', sans-serif); }
     &.vpk_font_sarabun { font-family: var(--vpk-font-family, 'Sarabun', sans-serif); }
     &.vpk_font_prompt { font-family: var(--vpk-font-family, 'Prompt', sans-serif); }

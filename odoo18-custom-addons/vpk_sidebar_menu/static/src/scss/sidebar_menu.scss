@@ -1,18 +1,45 @@
-// VPK Sidebar Menu - Variables
+// VPK Design Tokens (Modern SaaS / slate palette)
+// Primary colors and sizes are overridden at runtime by applyThemeConfig().
 :root {
-    --vpk-sidebar-width: 288px;
-    --vpk-sidebar-width-collapsed: 72px;
-    --vpk-sidebar-bg-start: #00a884;
-    --vpk-sidebar-bg-end: #063a32;
-    --vpk-sidebar-bg-gradient: linear-gradient(135deg, #00a884 0%, #063a32 100%);
-    --vpk-sidebar-bg: #063a32;
-    --vpk-sidebar-bg-active: rgba(255, 255, 255, 0.12);
-    --vpk-sidebar-bg-hover: rgba(255, 255, 255, 0.08);
-    --vpk-sidebar-bg-submenu: rgba(255, 255, 255, 0.06);
-    --vpk-sidebar-text: #ffffff;
-    --vpk-sidebar-text-muted: rgba(255, 255, 255, 0.7);
-    --vpk-primary-color: #00a884;
-    --vpk-primary-color-dark: #063a32;
+    // Brand
+    --vpk-primary: #2563eb;
+    --vpk-primary-hover: #1d4ed8;
+    --vpk-on-primary: #ffffff;
+    --vpk-primary-soft: color-mix(in srgb, var(--vpk-primary) 8%, #ffffff);
+    --vpk-primary-ring: color-mix(in srgb, var(--vpk-primary) 25%, transparent);
+
+    // Surfaces and borders (slate)
+    --vpk-app-bg: #f8fafc;
+    --vpk-surface: #ffffff;
+    --vpk-surface-muted: #f8fafc;
+    --vpk-hover-bg: #f1f5f9;
+    --vpk-border: #e2e8f0;
+    --vpk-border-subtle: #f1f5f9;
+    --vpk-input-bg: #ffffff;
+
+    // Text (slate)
+    --vpk-text: #0f172a;
+    --vpk-text-secondary: #475569;
+    --vpk-text-muted: #64748b;
+    --vpk-text-faint: #94a3b8;
+
+    // Elevation
+    --vpk-shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --vpk-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+
+    // Sidebar
+    --vpk-sidebar-width: 256px;
+    --vpk-sidebar-width-collapsed: 80px;
+
+    // Legacy aliases (used by other vpk_* modules)
+    --vpk-sidebar-bg-start: var(--vpk-primary);
+    --vpk-sidebar-bg-end: var(--vpk-primary-hover);
+    --vpk-sidebar-bg-gradient: var(--vpk-primary);
+    --vpk-sidebar-bg: var(--vpk-primary);
+    --vpk-sidebar-text: var(--vpk-on-primary);
+    --vpk-sidebar-text-muted: var(--vpk-text-muted);
+    --vpk-primary-color: var(--vpk-primary);
+    --vpk-primary-color-dark: var(--vpk-primary-hover);
 }
 
 // ============================================================================
@@ -25,7 +52,9 @@ html:has(> body.o_vpk_sidebar_menu) {
 }
 
 body.o_web_client.o_vpk_sidebar_menu {
-    font-size: var(--vpk-font-size, 12px);
+    font-size: var(--vpk-font-size, 13px);
+    color: var(--vpk-text);
+    background-color: var(--vpk-app-bg);
     overflow-x: clip !important;
     width: 100%;
     max-width: 100%;
@@ -78,7 +107,7 @@ body.o_web_client.o_vpk_sidebar_menu {
 }
 
 // ============================================================================
-// Primary sidebar
+// Primary sidebar (white, bordered)
 // ============================================================================
 .o_vpk_sidebar_primary {
     position: fixed;
@@ -87,15 +116,48 @@ body.o_web_client.o_vpk_sidebar_menu {
     width: var(--vpk-sidebar-width);
     max-width: var(--vpk-sidebar-width);
     height: 100vh;
-    background: var(--vpk-sidebar-bg-gradient);
-    color: var(--vpk-sidebar-text);
+    background: var(--vpk-surface);
+    color: var(--vpk-text);
+    border-right: 1px solid var(--vpk-border);
     display: flex;
     flex-direction: column;
     overflow-x: hidden;
     overflow-y: hidden;
-    transition: width 0.25s ease;
+    transition: width 0.2s ease, box-shadow 0.2s ease;
     z-index: 1001;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+
+    // Collapsed sidebar opened temporarily on hover: overlays the page instead of pushing it
+    &.o_vpk_sidebar_hover_open {
+        box-shadow: 8px 0 24px rgba(15, 23, 42, 0.12);
+    }
+
+    // Gradient background: re-map the slate tokens to white-on-color inside the sidebar only
+    // (dropdowns open in the overlay container and keep the light tokens)
+    body.vpk_sidebar_gradient & {
+        --vpk-text: #ffffff;
+        --vpk-text-secondary: rgba(255, 255, 255, 0.88);
+        --vpk-text-muted: rgba(255, 255, 255, 0.72);
+        --vpk-text-faint: rgba(255, 255, 255, 0.55);
+        --vpk-border: rgba(255, 255, 255, 0.16);
+        --vpk-border-subtle: rgba(255, 255, 255, 0.1);
+        --vpk-hover-bg: rgba(255, 255, 255, 0.1);
+        --vpk-surface: rgba(255, 255, 255, 0.14);
+        --vpk-surface-muted: rgba(255, 255, 255, 0.08);
+        --vpk-primary: #ffffff;
+        --vpk-primary-soft: rgba(255, 255, 255, 0.18);
+        --vpk-primary-ring: rgba(255, 255, 255, 0.4);
+        --vpk-on-primary: var(--vpk-sidebar-bg-bottom);
+
+        background: linear-gradient(180deg, var(--vpk-sidebar-bg-top), var(--vpk-sidebar-bg-bottom));
+        border-right-color: transparent;
+
+        .o_vpk_logo_full,
+        .o_vpk_logo_icon {
+            padding: 4px;
+            background: #ffffff;
+            border-radius: var(--vpk-border-radius-md, 6px);
+        }
+    }
 
     &.o_vpk_sidebar_collapsed {
         width: var(--vpk-sidebar-width-collapsed);
@@ -106,7 +168,9 @@ body.o_web_client.o_vpk_sidebar_menu {
         .o_vpk_app_name,
         .o_vpk_app_arrow,
         .o_vpk_app_children,
-        .o_vpk_sidebar_systray {
+        .o_vpk_sidebar_systray,
+        .o_vpk_sidebar_search_label,
+        .o_vpk_sidebar_search_kbd {
             display: none !important;
         }
 
@@ -114,62 +178,63 @@ body.o_web_client.o_vpk_sidebar_menu {
             display: block !important;
         }
 
-        .o_vpk_sidebar_user {
+        .o_vpk_sidebar_user .o_vpk_user_dropdown_toggle {
             justify-content: center;
-            padding: 8px;
+            padding: 6px;
+        }
+
+        .o_vpk_sidebar_search {
+            justify-content: center;
+            margin: 8px auto;
+            width: 40px;
+            padding: 0;
         }
 
         .o_vpk_app_link {
             justify-content: center;
-            padding: 10px 0;
+            padding: 8px 0;
+
+            .o_vpk_app_icon {
+                margin-right: 0;
+            }
         }
     }
 }
 
-// Logo
+// Logo (h-14 header strip)
 .o_vpk_sidebar_logo {
-    padding: 16px 20px 12px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--vpk-border);
     flex-shrink: 0;
 
     .o_vpk_logo_full {
-        max-height: 48px;
+        max-height: 40px;
         max-width: 100%;
         object-fit: contain;
-        background: #fff;
-        border-radius: 0;
-        padding: 4px 8px;
     }
 
     .o_vpk_logo_icon {
         display: none;
-        max-height: 36px;
-        max-width: 36px;
+        max-height: 32px;
+        max-width: 32px;
         object-fit: contain;
-        background: #fff;
-        border-radius: 0;
-        padding: 2px;
     }
 
     .o_vpk_logo_text {
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 600;
-        color: var(--vpk-sidebar-text);
+        color: var(--vpk-text);
     }
 }
 
-// User profile (Spiffy user-image-style) + dropdown menu
+// User profile row + dropdown menu
 .o_vpk_sidebar_user {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     width: 100%;
-    max-width: 100%;
-    margin: auto auto 10px;
-    padding: 0;
-    border-radius: 8px;
-    transition: 0.3s;
+    padding: 8px 12px 0;
     flex-shrink: 0;
 
     .o-dropdown {
@@ -178,34 +243,34 @@ body.o_web_client.o_vpk_sidebar_menu {
 
     .o_vpk_user_dropdown_toggle {
         display: flex;
-        flex-direction: column;
         align-items: center;
+        gap: 10px;
         width: 100%;
         margin: 0;
-        padding: 10px 15px;
+        padding: 8px;
         border: none;
-        border-radius: 8px;
+        border-radius: var(--vpk-border-radius-md, 6px);
         background: transparent;
         color: inherit;
+        text-align: left;
         cursor: pointer;
-        transition: 0.3s;
+        transition: background-color 0.15s ease;
 
         &:hover,
         &:focus,
         &.show {
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+            background: var(--vpk-hover-bg);
             color: inherit;
         }
     }
 
     .o_vpk_user_avatar_wrap {
-        width: 50px;
-        height: 50px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         overflow: hidden;
-        margin-bottom: 5px;
         flex-shrink: 0;
+        box-shadow: 0 0 0 1px var(--vpk-border);
     }
 
     .o_vpk_user_avatar {
@@ -218,73 +283,131 @@ body.o_web_client.o_vpk_sidebar_menu {
     }
 
     .o_vpk_user_info {
-        text-align: center;
+        min-width: 0;
 
         .o_vpk_user_name {
             display: block;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
-            color: var(--vpk-sidebar-text);
+            color: var(--vpk-text);
             line-height: 1.3;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .o_vpk_user_greeting {
             display: block;
-            font-size: 10px;
-            color: var(--vpk-sidebar-text-muted);
-            margin-top: 2px;
+            font-size: 11px;
+            color: var(--vpk-text-muted);
+            margin-top: 1px;
         }
     }
 }
 
 .o_vpk_user_dropdown_menu {
-    min-width: 18rem !important;
-    width: 18rem;
-    padding: 0 0 12px !important;
-    border: 0 !important;
-    border-radius: 8px !important;
+    min-width: 16rem !important;
+    width: 16rem;
+    padding: 4px 0 8px !important;
+    border: 1px solid var(--vpk-border) !important;
+    border-radius: var(--vpk-border-radius-md, 6px) !important;
     overflow: hidden;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
+    box-shadow: var(--vpk-shadow-md) !important;
 
     .o_vpk_user_menu_header {
-        background: var(--vpk-sidebar-bg-gradient);
-        color: var(--vpk-sidebar-text);
-        font-size: 13px;
-        font-weight: 600;
-        padding: 10px 16px;
+        color: var(--vpk-text-muted);
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 8px 16px 6px;
         margin: 0 0 4px;
+        border-bottom: 1px solid var(--vpk-border-subtle);
     }
 
     .dropdown-item {
-        padding: 8px 16px !important;
+        padding: 6px 16px !important;
         font-size: 13px;
-        transition: color 0.2s;
+        color: var(--vpk-text-secondary);
 
         &:hover,
         &:focus {
-            background: transparent !important;
-            color: var(--vpk-sidebar-bg) !important;
+            background: var(--vpk-hover-bg) !important;
+            color: var(--vpk-text) !important;
         }
     }
 
     .dropdown-divider {
-        margin: 6px 0;
+        margin: 4px 0;
+        border-color: var(--vpk-border-subtle);
     }
 }
 
-// App list (Spiffy: o_navbar_apps_menu padding 0 30px, font inherits body size)
+// Command palette trigger (⌘K)
+.o_vpk_sidebar_search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: calc(100% - 24px);
+    height: 34px;
+    margin: 8px 12px;
+    padding: 0 8px 0 10px;
+    flex-shrink: 0;
+    background: var(--vpk-surface-muted);
+    border: 1px solid var(--vpk-border);
+    border-radius: var(--vpk-border-radius-md, 6px);
+    color: var(--vpk-text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+
+    &:hover {
+        background: var(--vpk-surface);
+        border-color: #cbd5e1;
+        color: var(--vpk-text-secondary);
+    }
+
+    &:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--vpk-primary-ring);
+        border-color: var(--vpk-primary);
+    }
+
+    .vpk-li {
+        font-size: 16px;
+    }
+
+    .o_vpk_sidebar_search_label {
+        flex: 1;
+        text-align: left;
+    }
+
+    .o_vpk_sidebar_search_kbd {
+        padding: 1px 6px;
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--vpk-text-muted);
+        background: var(--vpk-surface);
+        border: 1px solid var(--vpk-border);
+        border-radius: 4px;
+        box-shadow: none;
+    }
+}
+
+// Navigation list
 .o_vpk_sidebar_apps {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 0 30px 15px;
+    padding: 4px 12px 12px;
 
     &::-webkit-scrollbar {
         width: 4px;
     }
 
     &::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
+        background: var(--vpk-border);
         border-radius: 2px;
     }
 }
@@ -292,32 +415,30 @@ body.o_web_client.o_vpk_sidebar_menu {
 .o_vpk_apps_list {
     .o_vpk_app_item {
         &.active > .o_vpk_app_link {
-            background: var(--vpk-sidebar-bg-active);
-        }
-
-        &.expanded > .o_vpk_app_link {
-            background: var(--vpk-sidebar-bg-active);
+            background: var(--vpk-primary-soft);
+            color: var(--vpk-primary);
+            font-weight: 500;
         }
     }
 
     .o_vpk_app_link {
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 10px;
         width: 100%;
-        padding: 0.75rem 1rem;
-        margin: 0.1rem 0;
-        color: var(--vpk-sidebar-text);
+        padding: 7px 10px;
+        margin: 1px 0;
+        color: var(--vpk-text-secondary);
         text-decoration: none;
         font-size: inherit;
-        line-height: inherit;
-        border-radius: 8px;
-        transition: background 0.3s ease;
+        line-height: 1.4;
+        border-radius: var(--vpk-border-radius-md, 6px);
+        transition: background-color 0.15s ease, color 0.15s ease;
         cursor: pointer;
 
         &:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--vpk-sidebar-text);
+            background: var(--vpk-hover-bg);
+            color: var(--vpk-text);
             text-decoration: none;
         }
 
@@ -328,19 +449,9 @@ body.o_web_client.o_vpk_sidebar_menu {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 5px;
 
-            img {
-                max-width: 20px;
-                width: 20px;
-                height: 20px;
-                object-fit: contain;
-                border-radius: 4px;
-            }
-
-            .oi {
-                font-size: 20px;
-                vertical-align: middle;
+            .vpk-li {
+                font-size: 18px;
             }
         }
 
@@ -354,19 +465,19 @@ body.o_web_client.o_vpk_sidebar_menu {
         .o_vpk_app_arrow {
             flex-shrink: 0;
             margin-left: auto;
-            font-size: inherit;
+            font-size: 16px;
             line-height: 1;
-            color: var(--vpk-sidebar-text);
-            opacity: 0.9;
+            color: var(--vpk-text-faint);
         }
     }
 }
 
-// Nested sub-menus under root app (Spiffy: child_menus padding 0.5rem 1rem, font-size inherit)
+// Nested sub-menus: tree guide line on the left
 .o_vpk_app_children {
-    background: transparent;
-    padding-left: 15px;
     list-style: none;
+    margin: 2px 0 6px 19px !important;
+    padding-left: 8px;
+    border-left: 1px solid var(--vpk-border);
 
     .o_vpk_sub_item {
         .o_vpk_sub_link {
@@ -374,43 +485,45 @@ body.o_web_client.o_vpk_sidebar_menu {
             align-items: center;
             justify-content: space-between;
             width: 100%;
-            padding: 0.5rem 1rem;
-            margin: 0.1rem 0;
-            color: var(--vpk-sidebar-text);
+            padding: 5px 10px;
+            margin: 1px 0;
+            color: var(--vpk-text-muted);
             text-decoration: none;
             font-size: inherit;
-            line-height: inherit;
-            border-radius: 8px;
-            transition: background 0.3s ease;
+            line-height: 1.4;
+            border-radius: var(--vpk-border-radius-md, 6px);
+            transition: background-color 0.15s ease, color 0.15s ease;
             cursor: pointer;
 
             &:hover {
-                background: rgba(255, 255, 255, 0.1);
-                color: var(--vpk-sidebar-text);
+                background: var(--vpk-hover-bg);
+                color: var(--vpk-text);
                 text-decoration: none;
             }
 
             .o_vpk_sub_arrow {
                 flex-shrink: 0;
                 margin-left: auto;
-                font-size: inherit;
+                font-size: 15px;
                 line-height: 1;
-                color: var(--vpk-sidebar-text);
-                opacity: 0.9;
+                color: var(--vpk-text-faint);
             }
         }
 
         &.has-children > .o_vpk_sub_link {
-            font-weight: 600;
+            font-weight: 500;
+            color: var(--vpk-text-secondary);
         }
 
         &.expanded > .o_vpk_sub_link {
-            background: rgba(255, 255, 255, 0.1);
+            color: var(--vpk-text);
         }
     }
 
     .o_vpk_sub_children {
-        padding-left: 15px;
+        margin-left: 10px;
+        padding-left: 8px;
+        border-left: 1px solid var(--vpk-border-subtle);
 
         .o_vpk_sub_link {
             font-weight: 400;
@@ -424,16 +537,22 @@ body.o_web_client.o_vpk_sidebar_menu {
     align-items: center;
     justify-content: center;
     width: 100%;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.15);
+    height: 40px;
+    background: transparent;
     border: none;
-    color: var(--vpk-sidebar-text);
+    border-top: 1px solid var(--vpk-border);
+    color: var(--vpk-text-muted);
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
     flex-shrink: 0;
 
     &:hover {
-        background: rgba(0, 0, 0, 0.25);
+        background: var(--vpk-hover-bg);
+        color: var(--vpk-text);
+    }
+
+    .vpk-li {
+        font-size: 16px;
     }
 }
 
@@ -445,21 +564,23 @@ body.o_web_client.o_vpk_sidebar_menu {
     top: 8px;
     left: 8px;
     z-index: 1002;
-    color: var(--vpk-sidebar-bg);
-    font-size: 20px;
+    color: var(--vpk-text-secondary);
+    font-size: 18px;
     padding: 6px 10px;
-    background: #fff;
-    border-radius: 4px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    background: var(--vpk-surface);
+    border: 1px solid var(--vpk-border);
+    border-radius: var(--vpk-border-radius-md, 6px);
+    box-shadow: var(--vpk-shadow-sm);
 }
 
 @media (max-width: 767.98px) {
     .o_vpk_sidebar_primary {
         transform: translateX(-100%);
-        transition: transform 0.25s ease;
+        transition: transform 0.2s ease;
 
         &.o_vpk_sidebar_open {
             transform: translateX(0);
+            box-shadow: var(--vpk-shadow-md);
         }
     }
 
@@ -469,7 +590,7 @@ body.o_web_client.o_vpk_sidebar_menu {
         right: 0;
         bottom: 0;
         left: 0;
-        background: rgba(0, 0, 0, 0.4);
+        background: rgba(15, 23, 42, 0.3);
         z-index: 1000;
     }
 }

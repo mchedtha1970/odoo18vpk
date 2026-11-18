@@ -3,7 +3,7 @@
 body.o_web_client.o_vpk_sidebar_menu {
     .o-form-buttonbox,
     .oe_button_box {
-        --o-input-border-color: #dee2e6;
+        --o-input-border-color: var(--vpk-border);
         border-bottom: 1px solid var(--o-input-border-color) !important;
 
         .btn.oe_stat_button {
@@ -31,17 +31,27 @@ body.o_web_client.o_vpk_sidebar_menu {
             }
 
             .o_button_icon {
-                color: var(--vpk-sidebar-bg-start);
+                color: var(--vpk-text-faint);
                 line-height: unset;
             }
 
             .o_stat_value {
-                color: unset !important;
+                color: var(--vpk-text) !important;
+                font-weight: 600;
+                font-variant-numeric: tabular-nums;
+            }
+
+            .o_stat_text {
+                color: var(--vpk-text-muted);
+            }
+
+            &:hover {
+                background: var(--vpk-surface-muted) !important;
             }
         }
 
         &.o_not_full {
-            box-shadow: inset 0 -1px 0 #efefef;
+            box-shadow: inset 0 -1px 0 var(--vpk-border-subtle);
             border-top-right-radius: var(--vpk-border-radius-lg, 6px);
         }
     }
@@ -61,7 +71,7 @@ body.o_web_client.o_vpk_sidebar_menu {
             }
 
             &:focus {
-                border-color: var(--vpk-sidebar-bg-start) !important;
+                border-color: var(--vpk-primary) !important;
             }
         }
 
@@ -78,14 +88,14 @@ body.o_web_client.o_vpk_sidebar_menu {
             overflow-y: auto !important;
         }
 
-        .o_form_label.o_required_modifier {
-            color: var(--vpk-sidebar-bg-start) !important;
+        .o_form_label {
+            color: var(--vpk-text-secondary);
+            font-weight: 500;
         }
 
-        .o_required_modifier.o_input,
-        .o_required_modifier .o_input {
-            border-color: var(--vpk-sidebar-bg-start) !important;
-            background-color: transparent !important;
+        .o_form_label.o_required_modifier {
+            color: var(--vpk-text) !important;
+            font-weight: 600 !important;
         }
 
         .o_td_label {
@@ -93,21 +103,21 @@ body.o_web_client.o_vpk_sidebar_menu {
             vertical-align: middle !important;
 
             .o_form_label {
-                font-weight: normal !important;
+                font-weight: 500 !important;
             }
         }
 
         .o_form_sheet_bg {
-            background: var(--vpk-form-body-bg, #f9f9f9) !important;
+            background: var(--vpk-form-body-bg, #f8fafc) !important;
             border-bottom: 0 !important;
 
             .o_form_statusbar {
                 padding-left: 10px;
                 padding-right: 10px;
                 background-color: var(--vpk-form-surface-bg, #fff) !important;
-                box-shadow: var(--vpk-box-shadow-common, 0 4px 10px rgba(0, 0, 0, 0.03)) !important;
-                border: 0;
-                border-radius: var(--vpk-border-radius-lg, 6px);
+                box-shadow: var(--vpk-shadow-sm) !important;
+                border: 1px solid var(--vpk-border);
+                border-radius: var(--vpk-border-radius-lg, 12px);
 
                 @include media-breakpoint-down(sm) {
                     padding-left: 5px;
@@ -121,9 +131,9 @@ body.o_web_client.o_vpk_sidebar_menu {
 
             .o_form_sheet {
                 background-color: var(--vpk-form-surface-bg, #fff) !important;
-                box-shadow: var(--vpk-box-shadow-common, 0 4px 10px rgba(0, 0, 0, 0.03)) !important;
-                border: 0;
-                border-radius: var(--vpk-border-radius-lg, 6px);
+                box-shadow: var(--vpk-shadow-sm) !important;
+                border: 1px solid var(--vpk-border);
+                border-radius: var(--vpk-border-radius-lg, 12px);
                 max-width: 100%;
                 margin-left: auto;
                 margin-right: auto;
@@ -133,7 +143,10 @@ body.o_web_client.o_vpk_sidebar_menu {
                 }
 
                 .oe_title h1 {
-                    font-size: 20px !important;
+                    font-size: var(--vpk-font-size-xl, 20px) !important;
+                    font-weight: 600;
+                    letter-spacing: -0.01em;
+                    color: var(--vpk-text);
                 }
             }
         }
@@ -160,61 +173,47 @@ body.o_web_client.o_vpk_sidebar_menu {
         .o_inner_group .o_field_widget.o_field_copy {
             align-items: center;
             display: flex;
-            border-color: var(--vpk-sidebar-bg-start) !important;
+            border-color: var(--vpk-border) !important;
             background-color: transparent !important;
             min-height: var(--vpk-field-height, 36px) !important;
             border-radius: var(--vpk-border-radius-md, 4px) !important;
             padding: 0 4px !important;
         }
 
-        // Spiffy separator_style_1 — accent underline
+        // Section heading: small uppercase label over a hairline
         .o_horizontal_separator {
             background-color: transparent !important;
-            color: var(--vpk-sidebar-bg-start) !important;
-            position: relative;
-            padding: 10px 0 !important;
-
-            &::before {
-                content: "";
-                position: absolute;
-                left: 0;
-                bottom: 1px;
-                height: 3px;
-                z-index: 2;
-                width: 55px;
-                background-color: var(--vpk-sidebar-bg-start);
-            }
-
-            &::after {
-                content: "";
-                position: absolute;
-                left: 0;
-                bottom: 1px;
-                height: 1px;
-                width: 95%;
-                background-color: #d8d8d8;
-            }
+            color: var(--vpk-text-muted) !important;
+            font-size: var(--vpk-font-size-sm, 11px) !important;
+            font-weight: 600 !important;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 8px 0 6px !important;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--vpk-border);
         }
 
         .o_field_x2many_list_row_add a {
-            color: var(--vpk-sidebar-bg-start) !important;
+            color: var(--vpk-primary) !important;
+            font-weight: 500;
         }
 
         .o_form_image_controls {
-            background-color: var(--vpk-sidebar-bg-start) !important;
+            background-color: var(--vpk-text) !important;
         }
     }
 
     // Chatter card (Odoo 18 mail)
     .o-mail-Form-chatter,
     .o-mail-ChatterContainer {
-        background-color: var(--vpk-form-body-bg, #f9f9f9) !important;
+        background-color: var(--vpk-form-body-bg, #f8fafc) !important;
         padding: 0;
 
         .o-mail-Chatter {
             background-color: var(--vpk-form-surface-bg, #fff) !important;
-            border-radius: var(--vpk-border-radius-lg, 6px);
-            box-shadow: var(--vpk-box-shadow-common, 0 4px 10px rgba(0, 0, 0, 0.03)) !important;
+            border: 1px solid var(--vpk-border);
+            border-radius: var(--vpk-border-radius-lg, 12px);
+            box-shadow: var(--vpk-shadow-sm) !important;
             margin: 15px 0;
         }
     }
@@ -260,6 +259,7 @@ body.o_web_client.o_vpk_sidebar_menu {
 
         .o_form_sheet_bg > .o_form_sheet {
             box-shadow: unset !important;
+            border: 0 !important;
             padding-bottom: 0 !important;
         }
     }

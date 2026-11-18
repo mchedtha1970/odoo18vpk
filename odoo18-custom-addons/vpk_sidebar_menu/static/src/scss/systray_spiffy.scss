@@ -2,8 +2,8 @@
 body.o_web_client.o_vpk_sidebar_menu .o_vpk_sidebar_systray {
     --vpk-systray-icon-size: 18px;
     --vpk-systray-item-size: 30px;
-    --vpk-systray-columns: 5;
-    --vpk-systray-gap: 6px;
+    --vpk-systray-columns: 7;
+    --vpk-systray-gap: 2px;
 
     display: grid !important;
     grid-template-columns: repeat(var(--vpk-systray-columns), var(--vpk-systray-item-size)) !important;
@@ -12,9 +12,9 @@ body.o_web_client.o_vpk_sidebar_menu .o_vpk_sidebar_systray {
     align-items: center;
     column-gap: var(--vpk-systray-gap) !important;
     row-gap: var(--vpk-systray-gap) !important;
-    margin-bottom: 30px;
-    padding: 0 12px !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 8px;
+    padding: 0 12px 8px !important;
+    border-bottom: 1px solid var(--vpk-border);
     flex-shrink: 0;
 
     .o_menu_systray {
@@ -78,57 +78,51 @@ body.o_web_client.o_vpk_sidebar_menu .o_vpk_sidebar_systray {
             --NavBar-entry-padding-right: 0 !important;
             border: none !important;
             background: transparent !important;
-            color: var(--vpk-sidebar-text) !important;
+            color: var(--vpk-text-muted) !important;
+            border-radius: var(--vpk-border-radius-md, 6px) !important;
             box-shadow: none !important;
             text-decoration: none;
             cursor: pointer;
+            transition: background-color 0.15s ease, color 0.15s ease;
 
             &:hover,
             &:focus,
             &:active {
-                background: rgba(255, 255, 255, 0.05) !important;
-                color: var(--vpk-sidebar-text) !important;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03) !important;
+                background: var(--vpk-hover-bg) !important;
+                color: var(--vpk-text) !important;
+                box-shadow: none !important;
             }
 
-            .ri {
+            .ri,
+            .fa,
+            .vpk-li {
                 font-size: var(--vpk-systray-icon-size);
-                color: var(--vpk-sidebar-text);
-                vertical-align: middle;
-            }
-
-            .fa {
-                font-size: var(--vpk-systray-icon-size);
-                color: var(--vpk-sidebar-text);
+                color: inherit;
                 vertical-align: middle;
             }
         }
     }
 
-    // Remix icons for standard Odoo FA systray glyphs (Spiffy font_icons)
-    .fa.fa-bug {
-        font-family: "remixicon" !important;
+    // Line icons for FA glyphs rendered by standard Odoo systray components
+    .fa.fa-bug,
+    .fa.fa-comments,
+    .fa.fa-clock-o,
+    .fa.fa-pencil-square-o {
+        width: var(--vpk-systray-icon-size);
+        height: var(--vpk-systray-icon-size);
+        background-color: currentColor;
+        -webkit-mask: var(--vpk-li-img) center / contain no-repeat;
+        mask: var(--vpk-li-img) center / contain no-repeat;
 
         &::before {
-            content: "\eb07" !important;
+            content: none !important;
         }
     }
 
-    .fa.fa-comments {
-        font-family: "remixicon" !important;
-
-        &::before {
-            content: "\eb51" !important;
-        }
-    }
-
-    .fa.fa-clock-o {
-        font-family: "remixicon" !important;
-
-        &::before {
-            content: "\f215" !important;
-        }
-    }
+    .fa.fa-bug { --vpk-li-img: var(--vpk-li-code-xml); }
+    .fa.fa-comments { --vpk-li-img: var(--vpk-li-message-circle); }
+    .fa.fa-clock-o { --vpk-li-img: var(--vpk-li-clock); }
+    .fa.fa-pencil-square-o { --vpk-li-img: var(--vpk-li-file-check); }
 
     // Company switcher
     .o_switch_company_menu {
@@ -154,9 +148,9 @@ body.o_web_client.o_vpk_sidebar_menu .o_vpk_sidebar_systray {
             right: auto !important;
             transform: translateX(-50%) !important;
             min-width: max-content;
-            border: 0 !important;
-            border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--vpk-border) !important;
+            border-radius: var(--vpk-border-radius-md, 6px);
+            box-shadow: var(--vpk-shadow-md);
         }
     }
 
@@ -166,10 +160,10 @@ body.o_web_client.o_vpk_sidebar_menu .o_vpk_sidebar_systray {
             left: 50% !important;
             right: auto !important;
             transform: translateX(-50%) !important;
-            top: 30px;
-            border: 0 !important;
-            border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            top: 32px;
+            border: 1px solid var(--vpk-border) !important;
+            border-radius: var(--vpk-border-radius-md, 6px);
+            box-shadow: var(--vpk-shadow-md);
         }
     }
 
@@ -181,33 +175,34 @@ body.o_web_client.o_vpk_sidebar_menu .o_vpk_sidebar_systray {
             left: 50% !important;
             right: auto !important;
             transform: translateX(-50%) !important;
-            top: 30px;
-            border: 0 !important;
-            border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            top: 32px;
+            border: 1px solid var(--vpk-border) !important;
+            border-radius: var(--vpk-border-radius-md, 6px);
+            box-shadow: var(--vpk-shadow-md);
         }
     }
 
-    // White notification badges (Spiffy style)
+    // Notification counters: small primary pills
     .o-mail-MessagingMenu-counter,
     .o-mail-ActivityMenu-counter,
     .o_notification_counter,
     .badge.rounded-pill {
         position: absolute !important;
-        top: -4px !important;
-        right: -8px !important;
+        top: -3px !important;
+        right: -6px !important;
         left: auto !important;
         transform: none !important;
         margin: 0 !important;
-        min-width: 20px;
+        min-width: 18px;
         padding: 1px 5px !important;
-        border-radius: 2px !important;
-        background: #ffffff !important;
-        color: var(--vpk-sidebar-bg) !important;
+        border-radius: 9999px !important;
+        background: var(--vpk-primary) !important;
+        color: var(--vpk-on-primary) !important;
         font-size: 10px !important;
-        font-weight: 700 !important;
+        font-weight: 600 !important;
         line-height: 14px !important;
-        border: none !important;
+        font-variant-numeric: tabular-nums;
+        border: 2px solid var(--vpk-surface) !important;
         box-shadow: none !important;
     }
 
@@ -223,10 +218,6 @@ body.o_web_client.o_vpk_sidebar_menu .o_vpk_sidebar_systray {
         > * {
             pointer-events: none;
         }
-
-        &.pinned .ri-lock-unlock-line::before {
-            content: "\eece";
-        }
     }
 
     .theme_selector,
@@ -236,7 +227,11 @@ body.o_web_client.o_vpk_sidebar_menu .o_vpk_sidebar_systray {
     .header_to_do_list,
     .o_vpk_systray_tips {
         a {
-            color: var(--vpk-sidebar-text) !important;
+            color: var(--vpk-text-muted) !important;
         }
     }
+}
+
+body.o_web_client.o_vpk_sidebar_menu .o_vpk_sidebar_primary.o_vpk_sidebar_collapsed .o_vpk_sidebar_systray {
+    display: none !important;
 }

@@ -84,6 +84,8 @@ html body.o_web_client.o_vpk_sidebar_menu {
     }
 
     // Theme text font must not replace icon fonts on ::before glyphs
+    &.vpk_font_ibm_plex_thai,
+    &.vpk_font_anuphan,
     &.vpk_font_kanit,
     &.vpk_font_sarabun,
     &.vpk_font_prompt,

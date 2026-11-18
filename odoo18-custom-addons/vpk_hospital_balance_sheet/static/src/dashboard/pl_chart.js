@@ -69,6 +69,8 @@ export class PlChart extends Component {
         }
         const config = this.getConfig();
         this.chart = new Chart(canvas, config);
+        // Canvas text does not re-render when the web font finishes loading
+        document.fonts.ready.then(() => this.chart?.update("none"));
     }
 
     getConfig() {
@@ -86,6 +88,7 @@ export class PlChart extends Component {
 
         const self = this;
         const isDonut = type === "doughnut" || type === "pie";
+        const family = getComputedStyle(this.canvasRef.el).fontFamily || "sans-serif";
 
         const plugins = {
             legend: {
@@ -97,15 +100,15 @@ export class PlChart extends Component {
                     usePointStyle: true,
                     pointStyle: "rectRounded",
                     padding: 14,
-                    font: { size: 12, family: "Prompt, Sarabun, sans-serif" },
+                    font: { size: 12, family },
                     color: "#5b6b65",
                 },
             },
             tooltip: {
                 enabled: true,
                 backgroundColor: "#1a2e28",
-                titleFont: { size: 12, family: "Prompt, Sarabun, sans-serif" },
-                bodyFont: { size: 12, family: "Prompt, Sarabun, sans-serif" },
+                titleFont: { size: 12, family },
+                bodyFont: { size: 12, family },
                 padding: 10,
                 cornerRadius: 8,
                 callbacks: {
@@ -143,7 +146,7 @@ export class PlChart extends Component {
                       grid: { display: !this.props.horizontal, color: "#eef2f0" },
                       ticks: {
                           color: "#6b7a74",
-                          font: { size: 11, family: "Prompt, Sarabun, sans-serif" },
+                          font: { size: 11, family },
                       },
                   },
                   y: {
@@ -152,7 +155,7 @@ export class PlChart extends Component {
                       grid: { color: "#eef2f0" },
                       ticks: {
                           color: "#6b7a74",
-                          font: { size: 11, family: "Prompt, Sarabun, sans-serif" },
+                          font: { size: 11, family },
                           callback(value) {
                               return new Intl.NumberFormat("th-TH", {
                                   maximumFractionDigits: 1,
@@ -229,13 +232,13 @@ export class PlChart extends Component {
                               ctx.textAlign = "center";
                               ctx.textBaseline = "middle";
                               ctx.fillStyle = "#1a2e28";
-                              ctx.font = "700 16px Prompt, Sarabun, sans-serif";
+                              ctx.font = `700 16px ${getComputedStyle(chart.canvas).fontFamily}`;
                               const lines = String(text).split("\n");
                               lines.forEach((line, i) => {
                                   const y = cy + (i - (lines.length - 1) / 2) * 18;
                                   if (i === lines.length - 1 && lines.length > 1) {
                                       ctx.fillStyle = "#6b7a74";
-                                      ctx.font = "12px Prompt, Sarabun, sans-serif";
+                                      ctx.font = `12px ${getComputedStyle(chart.canvas).fontFamily}`;
                                   }
                                   ctx.fillText(line, cx, y);
                               });

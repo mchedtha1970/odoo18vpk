@@ -12,10 +12,10 @@
     overflow: hidden;
     background: #f3f1ee;
     color: #1c2430;
-    font-family: "Prompt", sans-serif !important;
+    font-family: var(--vpk-font-family, var(--bs-body-font-family, sans-serif)) !important;
 
     *:not(.fa):not(.oi) {
-        font-family: "Prompt", sans-serif !important;
+        font-family: var(--vpk-font-family, var(--bs-body-font-family, sans-serif)) !important;
     }
 
     .fa {

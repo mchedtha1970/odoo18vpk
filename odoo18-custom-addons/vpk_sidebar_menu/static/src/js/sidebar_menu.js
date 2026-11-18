@@ -4,9 +4,11 @@ import { patch } from "@web/core/utils/patch";
 import { NavBar } from "@web/webclient/navbar/navbar";
 import { WebClient } from "@web/webclient/webclient";
 import { registry } from "@web/core/registry";
+import { browser } from "@web/core/browser/browser";
 import { useService } from "@web/core/utils/hooks";
 import { user } from "@web/core/user";
 import { imageUrl } from "@web/core/utils/urls";
+import { isMacOS } from "@web/core/browser/feature_detection";
 import { rpc } from "@web/core/network/rpc";
 import { _t } from "@web/core/l10n/translation";
 import { onMounted, onWillUnmount, useEffect, useState } from "@odoo/owl";
@@ -15,6 +17,7 @@ import { DropdownItem } from "@web/core/dropdown/dropdown_item";
 import { CheckBox } from "@web/core/checkbox/checkbox";
 import { ThemeConfigPanel } from "./theme_config_panel";
 import { applyThemeConfig, DEFAULT_THEME_CONFIG } from "./theme_utils";
+import { getAppLineIcon } from "./line_icons";
 import { bindVpkViewportLayout, syncVpkViewportLayout, bindVpkWizardResize } from "./layout_utils";
 import "@vpk_sidebar_menu/js/text_field_patch";
 import "@vpk_sidebar_menu/js/form_layout_patch";
@@ -23,6 +26,9 @@ import "@vpk_sidebar_menu/js/form_dropdown_patch";
 const userMenuRegistry = registry.category("user_menuitems");
 
 const BODY_CLASS = "o_vpk_sidebar_menu";
+const SIDEBAR_COLLAPSED_KEY = "vpk_sidebar_collapsed";
+const SIDEBAR_HOVER_OPEN_DELAY = 150;
+const SIDEBAR_HOVER_CLOSE_DELAY = 250;
 const HIDDEN_SYSTRAY_KEYS = new Set(["web.user_menu", "burger_menu"]);
 
 const SECONDARY_SYSTRAY_KEYS = [
@@ -89,17 +95,22 @@ patch(NavBar.prototype, {
         this.companyService = useService("company");
         this.sidebarState = useState({
             mobileOpen: false,
-            collapsed: false,
+            collapsed: browser.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1",
+            hoverOpen: false,
             expandedMenus: {},
             themePanelOpen: false,
             themePanelTab: "general",
         });
+        this.canEditTheme = user.isSystem;
+        this.commandService = useService("command");
+        this.commandPaletteShortcut = isMacOS() ? "⌘K" : "Ctrl K";
         this.userName = user.name;
         const { partnerId, writeDate } = user;
         this.userAvatar = imageUrl("res.partner", partnerId, "avatar_128", {
             unique: writeDate,
         });
         this.greeting = getGreeting();
+        onWillUnmount(() => browser.clearTimeout(this.sidebarHoverTimer));
 
         useEffect(
             () => {
@@ -186,7 +197,7 @@ patch(NavBar.prototype, {
             const item = this.getSystrayItemByKey(key);
             if (item) {
                 slots.push(item);
-            } else if (key === "web.debug_mode_menu") {
+            } else if (key === "web.debug_mode_menu" && this.canEditTheme) {
                 slots.push({ key: "vpk.debug_placeholder", empty: true });
             }
         }
@@ -201,6 +212,10 @@ patch(NavBar.prototype, {
     appHasSubMenus(app) {
         const tree = this.menuService.getMenuAsTree(app.id);
         return tree.childrenTree && tree.childrenTree.length > 0;
+    },
+
+    getAppLineIcon(app) {
+        return getAppLineIcon(app);
     },
 
     getAppChildren(app) {
@@ -269,6 +284,29 @@ patch(NavBar.prototype, {
             ev.preventDefault();
         }
         this.sidebarState.collapsed = !this.sidebarState.collapsed;
+        this.sidebarState.hoverOpen = false;
+        browser.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, this.sidebarState.collapsed ? "1" : "0");
+    },
+
+    onSidebarMouseEnter() {
+        browser.clearTimeout(this.sidebarHoverTimer);
+        if (!this.sidebarState.collapsed || this.ui.isSmall) {
+            return;
+        }
+        this.sidebarHoverTimer = browser.setTimeout(() => {
+            this.sidebarState.hoverOpen = true;
+        }, SIDEBAR_HOVER_OPEN_DELAY);
+    },
+
+    onSidebarMouseLeave(ev) {
+        browser.clearTimeout(this.sidebarHoverTimer);
+        // Leaving into a dropdown opened from the sidebar (rendered in the overlay container)
+        if (ev.relatedTarget?.closest?.(".o-overlay-container")) {
+            return;
+        }
+        this.sidebarHoverTimer = browser.setTimeout(() => {
+            this.sidebarState.hoverOpen = false;
+        }, SIDEBAR_HOVER_CLOSE_DELAY);
     },
 
     toggleMobileSidebar(ev) {
@@ -280,9 +318,17 @@ patch(NavBar.prototype, {
         this.sidebarState.mobileOpen = false;
     },
 
+    openCommandPalette() {
+        this.sidebarState.mobileOpen = false;
+        this.commandService.openMainPalette({ searchValue: "/" });
+    },
+
     openThemePanel(ev, tabId = "general") {
         if (ev) {
             ev.preventDefault();
+        }
+        if (!this.canEditTheme) {
+            return;
         }
         this.sidebarState.themePanelTab = tabId || "general";
         this.sidebarState.themePanelOpen = true;

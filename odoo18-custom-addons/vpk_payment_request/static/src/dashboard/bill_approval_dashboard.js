@@ -6,27 +6,12 @@ import { useService } from "@web/core/utils/hooks";
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 
 const MODEL = "account.move";
-const PROMPT_FONT_ID = "vpk-flow-prompt-font";
-const PROMPT_FONT_URL =
-    "https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap";
-
-function ensurePromptFont() {
-    if (document.getElementById(PROMPT_FONT_ID)) {
-        return;
-    }
-    const link = document.createElement("link");
-    link.id = PROMPT_FONT_ID;
-    link.rel = "stylesheet";
-    link.href = PROMPT_FONT_URL;
-    document.head.appendChild(link);
-}
 
 export class BillApprovalDashboard extends Component {
     static template = "vpk_payment_request.BillApprovalDashboard";
     static props = ["*"];
 
     setup() {
-        ensurePromptFont();
         this.orm = useService("orm");
         this.actionService = useService("action");
         this.notification = useService("notification");

@@ -14,7 +14,9 @@
                 </button>
 
                 <aside
-                    t-attf-class="o_vpk_sidebar_primary {{ sidebarState.mobileOpen ? 'o_vpk_sidebar_open' : '' }} {{ sidebarState.collapsed ? 'o_vpk_sidebar_collapsed' : '' }}"
+                    t-attf-class="o_vpk_sidebar_primary {{ sidebarState.mobileOpen ? 'o_vpk_sidebar_open' : '' }} {{ sidebarState.collapsed and !sidebarState.hoverOpen ? 'o_vpk_sidebar_collapsed' : '' }} {{ sidebarState.collapsed and sidebarState.hoverOpen ? 'o_vpk_sidebar_hover_open' : '' }}"
+                    t-on-mouseenter="onSidebarMouseEnter"
+                    t-on-mouseleave="onSidebarMouseLeave"
                 >
                     <div class="o_vpk_sidebar_logo">
                         <img
@@ -73,6 +75,12 @@
                         </Dropdown>
                     </div>
 
+                    <button type="button" class="o_vpk_sidebar_search" title="Search menus" t-on-click="openCommandPalette">
+                        <i class="vpk-li vpk-li-search"/>
+                        <span class="o_vpk_sidebar_search_label">Search…</span>
+                        <kbd class="o_vpk_sidebar_search_kbd" t-esc="commandPaletteShortcut"/>
+                    </button>
+
                     <div class="o_vpk_sidebar_systray">
                         <div class="o_menu_systray o_vpk_systray_primary" role="menu">
                             <t t-set="companyItem" t-value="getSystrayItemByKey('SwitchCompanyMenu')"/>
@@ -83,34 +91,34 @@
                             </div>
                             <div t-if="env.debug" class="o_vpk_systray_item debug_activator">
                                 <a class="activate_debug toggle" href="#" title="Debug" role="button" t-on-click.prevent="onQuickDebug">
-                                    <span class="ri ri-code-box-line"/>
+                                    <span class="vpk-li vpk-li-code-xml"/>
                                 </a>
                             </div>
-                            <div class="o_vpk_systray_item theme_selector list-unstyled">
+                            <div t-if="canEditTheme" class="o_vpk_systray_item theme_selector list-unstyled">
                                 <a class="theme-edit" href="#" title="Theme Setting" role="button" t-on-click.prevent="openThemePanel">
-                                    <span class="ri ri-paint-brush-line" aria-label="Themes Configuration"/>
+                                    <span class="vpk-li vpk-li-palette" aria-label="Themes Configuration"/>
                                 </a>
                             </div>
-                            <div class="o_vpk_systray_item sidebar_size_selector list-unstyled">
+                            <div t-if="canEditTheme" class="o_vpk_systray_item sidebar_size_selector list-unstyled">
                                 <a class="sidebar-size-edit" href="#" title="Sidebar Size" role="button" t-on-click.prevent="openSidebarSizePanel">
-                                    <span class="ri ri-side-bar-line" aria-label="Sidebar Size"/>
+                                    <span class="vpk-li vpk-li-panel-left" aria-label="Sidebar Size"/>
                                 </a>
                             </div>
                             <div class="o_vpk_systray_item vertical_sidemenu_behaviour">
                                 <a class="pin_sidebar" href="#" title="Pin Sidebar" role="button"
                                     t-att-class="{ 'pinned': !sidebarState.collapsed }"
                                     t-on-click.prevent="toggleSidebarCollapse">
-                                    <span class="ri ri-lock-unlock-line"/>
+                                    <span t-attf-class="vpk-li {{ sidebarState.collapsed ? 'vpk-li-lock-open' : 'vpk-li-lock' }}"/>
                                 </a>
                             </div>
                             <div class="o_vpk_systray_item header_to_do_list">
                                 <a href="#" title="Notes" role="button" t-on-click.prevent="onQuickNotes">
-                                    <span class="ri ri-sticky-note-line"/>
+                                    <span class="vpk-li vpk-li-sticky-note"/>
                                 </a>
                             </div>
-                            <div class="o_vpk_systray_item o_vpk_systray_tips">
+                            <div t-if="canEditTheme" class="o_vpk_systray_item o_vpk_systray_tips">
                                 <a href="#" title="Tips" role="button" t-on-click.prevent="openThemePanel">
-                                    <span class="ri ri-lightbulb-flash-line"/>
+                                    <span class="vpk-li vpk-li-lightbulb"/>
                                 </a>
                             </div>
                         </div>
@@ -119,7 +127,7 @@
                                 <div t-if="slot.empty" class="o_vpk_systray_item o_vpk_systray_placeholder" aria-hidden="true"/>
                                 <div t-elif="slot.isEdit" class="o_vpk_systray_item o_vpk_systray_edit">
                                     <a href="#" title="My Profile" role="button" t-on-click.prevent="onQuickEdit">
-                                        <span class="ri ri-edit-box-line"/>
+                                        <span class="vpk-li vpk-li-square-pen"/>
                                     </a>
                                 </div>
                                 <div t-else="" class="o_vpk_systray_item" t-att-data-systray-key="slot.key">
@@ -147,7 +155,7 @@
                         t-on-click="toggleSidebarCollapse"
                         title="Collapse sidebar"
                     >
-                        <i t-attf-class="fa {{ sidebarState.collapsed ? 'fa-angle-double-right' : 'fa-angle-double-left' }}"/>
+                        <i t-attf-class="vpk-li {{ sidebarState.collapsed ? 'vpk-li-chevrons-right' : 'vpk-li-chevrons-left' }}"/>
                     </button>
                 </aside>
 
@@ -158,7 +166,7 @@
                 />
 
                 <ThemeConfigPanel
-                    t-if="sidebarState.themePanelOpen"
+                    t-if="canEditTheme and sidebarState.themePanelOpen"
                     close.bind="closeThemePanel"
                     initialTab="sidebarState.themePanelTab"
                 />
@@ -181,13 +189,12 @@
                 t-on-click="(ev) => this.onRootAppClick(app, ev)"
             >
                 <span class="o_vpk_app_icon">
-                    <img t-if="app.webIconData" t-att-src="app.webIconData" alt=""/>
-                    <i t-else="" class="oi oi-apps"/>
+                    <span t-attf-class="vpk-li vpk-li-{{ getAppLineIcon(app) }}"/>
                 </span>
                 <span class="o_vpk_app_name" t-esc="app.name"/>
                 <i
                     t-if="appHasSubMenus(app)"
-                    t-attf-class="ri o_vpk_app_arrow {{ isMenuExpanded(app.id) ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line' }}"
+                    t-attf-class="vpk-li o_vpk_app_arrow {{ isMenuExpanded(app.id) ? 'vpk-li-chevron-down' : 'vpk-li-chevron-right' }}"
                 />
             </a>
             <ul
@@ -218,7 +225,7 @@
                 >
                     <span t-esc="menu.name"/>
                     <i
-                        t-attf-class="ri o_vpk_sub_arrow {{ isMenuExpanded(menu.id) ? 'ri-arrow-down-s-line' : 'ri-arrow-right-s-line' }}"
+                        t-attf-class="vpk-li o_vpk_sub_arrow {{ isMenuExpanded(menu.id) ? 'vpk-li-chevron-down' : 'vpk-li-chevron-right' }}"
                     />
                 </a>
                 <ul

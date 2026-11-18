@@ -11,6 +11,7 @@
                 <div class="o_vpk_theme_layout">
                     <aside class="o_vpk_theme_sidebar">
                         <h3 class="o_vpk_theme_title">Theme Settings</h3>
+                        <p class="o_vpk_theme_scope_note">Applies to all users</p>
                         <ul class="o_vpk_theme_tabs list-unstyled mb-0">
                             <t t-foreach="tabs" t-as="tab" t-key="tab.id">
                                 <li>
@@ -26,6 +27,7 @@
                     </aside>
 
                     <main class="o_vpk_theme_content">
+                        <div class="o_vpk_theme_scroll">
                         <t t-if="state.loading">
                             <div class="o_vpk_theme_loading">Loading...</div>
                         </t>
@@ -46,6 +48,23 @@
                                                 t-att-checked="state.draft.theme_style === opt[0]"
                                                 t-on-change="() => this.setDraftValue('theme_style', opt[0])"/>
                                             <span class="o_vpk_preview_box"/>
+                                            <span t-esc="opt[1]"/>
+                                        </label>
+                                    </t>
+                                </div>
+
+                                <h5 class="o_vpk_field_label">Badge Style</h5>
+                                <div class="o_vpk_option_row">
+                                    <t t-foreach="[
+                                        ['pill', 'Pill'],
+                                        ['rounded', 'Rounded'],
+                                        ['square', 'Square']
+                                    ]" t-as="opt" t-key="opt[0]">
+                                        <label t-attf-class="o_vpk_option_card vpk_preview_badge_{{ opt[0] }} {{ state.draft.badge_style === opt[0] ? 'selected' : '' }}">
+                                            <input type="radio" name="badge_style" t-att-value="opt[0]"
+                                                t-att-checked="state.draft.badge_style === opt[0]"
+                                                t-on-change="() => this.setDraftValue('badge_style', opt[0])"/>
+                                            <span class="o_vpk_preview_badge">ปกติ</span>
                                             <span t-esc="opt[1]"/>
                                         </label>
                                     </t>
@@ -124,7 +143,7 @@
                             <t t-if="state.activeTab === 'colors'">
                                 <h4 class="o_vpk_section_title">Colors</h4>
                                 <div class="o_vpk_color_field">
-                                    <label>Gradient Start (Top-Left)</label>
+                                    <label>Primary Color (buttons, links, active menu)</label>
                                     <input type="color"
                                         t-att-value="state.draft.sidebar_color"
                                         t-on-change="(ev) => this.setDraftValue('sidebar_color', ev.target.value)"/>
@@ -133,7 +152,7 @@
                                         t-on-change="(ev) => this.setDraftValue('sidebar_color', ev.target.value)"/>
                                 </div>
                                 <div class="o_vpk_color_field">
-                                    <label>Gradient End (Bottom-Right)</label>
+                                    <label>Primary Hover Color</label>
                                     <input type="color"
                                         t-att-value="state.draft.sidebar_active_color"
                                         t-on-change="(ev) => this.setDraftValue('sidebar_active_color', ev.target.value)"/>
@@ -142,7 +161,7 @@
                                         t-on-change="(ev) => this.setDraftValue('sidebar_active_color', ev.target.value)"/>
                                 </div>
                                 <div class="o_vpk_color_field">
-                                    <label>Sidebar Text Color</label>
+                                    <label>Text on Primary</label>
                                     <input type="color"
                                         t-att-value="state.draft.sidebar_text_color"
                                         t-on-change="(ev) => this.setDraftValue('sidebar_text_color', ev.target.value)"/>
@@ -150,6 +169,45 @@
                                         t-att-value="state.draft.sidebar_text_color"
                                         t-on-change="(ev) => this.setDraftValue('sidebar_text_color', ev.target.value)"/>
                                 </div>
+
+                                <h5 class="o_vpk_field_label">Sidebar Background</h5>
+                                <div class="o_vpk_option_row">
+                                    <label t-attf-class="o_vpk_option_card {{ state.draft.sidebar_bg_style === 'light' ? 'selected' : '' }}">
+                                        <input type="radio" name="sidebar_bg_style" value="light"
+                                            t-att-checked="state.draft.sidebar_bg_style === 'light'"
+                                            t-on-change="() => this.setDraftValue('sidebar_bg_style', 'light')"/>
+                                        <span class="o_vpk_preview_box o_vpk_preview_sidebar_light"/>
+                                        <span>Light</span>
+                                    </label>
+                                    <label t-attf-class="o_vpk_option_card {{ state.draft.sidebar_bg_style === 'gradient' ? 'selected' : '' }}">
+                                        <input type="radio" name="sidebar_bg_style" value="gradient"
+                                            t-att-checked="state.draft.sidebar_bg_style === 'gradient'"
+                                            t-on-change="() => this.setDraftValue('sidebar_bg_style', 'gradient')"/>
+                                        <span class="o_vpk_preview_box o_vpk_preview_sidebar_gradient"
+                                            t-attf-style="--vpk-preview-top: {{ state.draft.sidebar_bg_top }}; --vpk-preview-bottom: {{ state.draft.sidebar_bg_bottom }};"/>
+                                        <span>Gradient</span>
+                                    </label>
+                                </div>
+                                <t t-if="state.draft.sidebar_bg_style === 'gradient'">
+                                    <div class="o_vpk_color_field">
+                                        <label>Gradient Top</label>
+                                        <input type="color"
+                                            t-att-value="state.draft.sidebar_bg_top"
+                                            t-on-change="(ev) => this.setDraftValue('sidebar_bg_top', ev.target.value)"/>
+                                        <input type="text" class="form-control form-control-sm"
+                                            t-att-value="state.draft.sidebar_bg_top"
+                                            t-on-change="(ev) => this.setDraftValue('sidebar_bg_top', ev.target.value)"/>
+                                    </div>
+                                    <div class="o_vpk_color_field">
+                                        <label>Gradient Bottom</label>
+                                        <input type="color"
+                                            t-att-value="state.draft.sidebar_bg_bottom"
+                                            t-on-change="(ev) => this.setDraftValue('sidebar_bg_bottom', ev.target.value)"/>
+                                        <input type="text" class="form-control form-control-sm"
+                                            t-att-value="state.draft.sidebar_bg_bottom"
+                                            t-on-change="(ev) => this.setDraftValue('sidebar_bg_bottom', ev.target.value)"/>
+                                    </div>
+                                </t>
                             </t>
 
                             <!-- Sidebar Size -->
@@ -166,7 +224,7 @@
                                     >
                                         <span class="o_vpk_preview_box o_vpk_preview_width_default"/>
                                         <span>Default</span>
-                                        <span class="o_vpk_preset_px">288 / 72 px</span>
+                                        <span class="o_vpk_preset_px">256 / 80 px</span>
                                     </button>
                                 </div>
 
@@ -219,6 +277,9 @@
                                 <div class="o_vpk_option_row o_vpk_option_row_vertical">
                                     <t t-foreach="[
                                         ['default', 'Default'],
+                                        ['inter', 'Inter'],
+                                        ['ibm_plex_thai', 'IBM Plex Sans Thai'],
+                                        ['anuphan', 'Anuphan'],
                                         ['kanit', 'Kanit'],
                                         ['sarabun', 'Sarabun'],
                                         ['prompt', 'Prompt'],
@@ -272,6 +333,7 @@
                                 </div>
                             </t>
                         </t>
+                        </div>
 
                         <div class="o_vpk_theme_actions">
                             <button type="button" class="btn btn-primary o_vpk_btn_apply" t-on-click="onApply">

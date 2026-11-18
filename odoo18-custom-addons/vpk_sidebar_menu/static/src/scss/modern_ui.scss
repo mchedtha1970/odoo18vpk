@@ -1,0 +1,416 @@
+// Modern SaaS layer (Linear / Stripe style): control panel, data tables,
+// status pills, kanban cards, dialogs and dropdowns. Loaded last (ir.asset 120).
+html body.o_web_client.o_vpk_sidebar_menu {
+    // ------------------------------------------------------------------
+    // Numbers line up vertically in every table and figure
+    // ------------------------------------------------------------------
+    .o_list_renderer,
+    .o_field_monetary,
+    .o_field_float,
+    .o_field_integer,
+    .o_field_date,
+    .o_field_datetime,
+    .o_stat_value,
+    .o_pager_counter,
+    .oe_subtotal_footer,
+    .o_kanban_counter,
+    .o_vpk_tabular {
+        font-variant-numeric: tabular-nums;
+    }
+
+    // ------------------------------------------------------------------
+    // Control panel (breadcrumb, actions, search)
+    // ------------------------------------------------------------------
+    .o_control_panel {
+        background: var(--vpk-surface);
+        border-bottom: 1px solid var(--vpk-border) !important;
+        box-shadow: none;
+
+        .o_breadcrumb {
+            .breadcrumb-item {
+                color: var(--vpk-text-muted);
+
+                a {
+                    color: var(--vpk-text-muted) !important;
+
+                    &:hover {
+                        color: var(--vpk-text) !important;
+                    }
+                }
+
+                &.active,
+                &.o_last_breadcrumb_item {
+                    color: var(--vpk-text);
+                    font-weight: 600;
+                }
+            }
+
+            .breadcrumb-item + .breadcrumb-item::before {
+                color: var(--vpk-text-faint);
+            }
+        }
+
+        .o_searchview {
+            background: var(--vpk-surface-muted);
+            border: 1px solid var(--vpk-border) !important;
+            border-radius: var(--vpk-border-radius-md, 6px) !important;
+            box-shadow: none;
+            transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+
+            &:hover {
+                border-color: var(--vpk-field-border-hover, #cbd5e1) !important;
+            }
+
+            &:focus-within {
+                background: var(--vpk-surface);
+                border-color: var(--vpk-primary) !important;
+                box-shadow: 0 0 0 1px var(--vpk-primary);
+            }
+
+            .o_searchview_icon,
+            .o_searchview_dropdown_toggler {
+                color: var(--vpk-text-faint);
+            }
+
+            .o_searchview_facet {
+                background: var(--vpk-surface);
+                border: 1px solid var(--vpk-border);
+                border-radius: var(--vpk-border-radius-sm, 4px);
+
+                .o_searchview_facet_label {
+                    background: var(--vpk-primary-soft) !important;
+                    color: var(--vpk-primary) !important;
+                }
+            }
+        }
+
+        .o_pager {
+            color: var(--vpk-text-muted);
+        }
+
+        .o_switch_view {
+            color: var(--vpk-text-muted);
+
+            &.active {
+                color: var(--vpk-primary) !important;
+                background: var(--vpk-primary-soft) !important;
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Data tables (list views and one2many lists)
+    // ------------------------------------------------------------------
+    .o_list_renderer {
+        --ListRenderer-thead-bg-color: var(--vpk-surface-muted);
+        --ListRenderer-thead-border-end-color: transparent;
+
+        .o_list_table {
+            --bs-table-bg: var(--vpk-surface);
+            --bs-table-striped-bg: transparent;
+            --bs-table-hover-bg: var(--vpk-surface-muted);
+            --bs-table-border-color: var(--vpk-border-subtle);
+            --table-striped-bg: transparent;
+            color: var(--vpk-text);
+
+            thead > tr > th {
+                font-size: var(--vpk-font-size-sm, 11px);
+                font-weight: 500 !important;
+                color: var(--vpk-text-muted) !important;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                background-color: var(--vpk-surface-muted) !important;
+                border-bottom: 1px solid var(--vpk-border) !important;
+                border-top: 0 !important;
+            }
+
+            thead > tr > th.o_column_sortable:hover {
+                color: var(--vpk-text) !important;
+            }
+
+            tbody > tr.o_data_row > td {
+                border-top: 1px solid var(--vpk-border-subtle);
+                border-bottom: 0;
+                vertical-align: middle;
+            }
+
+            tbody > tr.o_data_row:hover > td {
+                background-color: var(--vpk-surface-muted);
+            }
+
+            tbody > tr.o_data_row.o_data_row_selected > td,
+            tbody > tr.o_data_row.table-info > td {
+                background-color: var(--vpk-primary-soft) !important;
+            }
+
+            td.o_list_number,
+            th.o_list_number_th {
+                text-align: right;
+            }
+
+            tbody > tr.o_group_header > th,
+            tbody > tr.o_group_header > td {
+                background-color: var(--vpk-surface-muted);
+                color: var(--vpk-text-secondary);
+                font-weight: 600;
+                border-top: 1px solid var(--vpk-border);
+            }
+
+            tfoot > tr > td {
+                background-color: var(--vpk-surface-muted);
+                border-top: 1px solid var(--vpk-border);
+                color: var(--vpk-text);
+                font-weight: 600;
+            }
+        }
+    }
+
+    // Secondary row actions only appear on row hover / keyboard focus
+    @media (hover: hover) {
+        .o_list_renderer .o_list_table tbody > tr.o_data_row {
+            > td.o_list_record_remove > button,
+            > td.o_list_record_open_form_view > button {
+                opacity: 0;
+                transition: opacity 0.15s ease;
+            }
+
+            &:hover,
+            &:focus-within {
+                > td.o_list_record_remove > button,
+                > td.o_list_record_open_form_view > button {
+                    opacity: 1;
+                }
+            }
+        }
+    }
+
+    .o_list_renderer .o_list_record_remove button {
+        color: var(--vpk-text-faint);
+
+        &:hover {
+            color: #be123c;
+        }
+    }
+
+    // Main list view: table sits in a bordered card on the slate-50 canvas
+    .o_view_controller.o_list_view > .o_content {
+        background: var(--vpk-app-bg);
+        padding: 16px;
+
+        > .o_list_renderer {
+            background: var(--vpk-surface);
+            border: 1px solid var(--vpk-border);
+            border-radius: var(--vpk-border-radius-lg, 12px);
+            box-shadow: var(--vpk-shadow-sm);
+            flex-grow: 0 !important;
+            height: auto;
+            max-height: 100%;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Status pills (badge widget / decoration-*)
+    // ------------------------------------------------------------------
+    .o_action_manager,
+    .modal {
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0;
+            border: 1px solid transparent;
+            border-radius: var(--vpk-badge-radius, 9999px) !important;
+        }
+
+        .badge.rounded-pill,
+        .o_field_badge .badge {
+            padding: 0.2em 0.65em;
+        }
+
+        .badge.text-bg-success,
+        .badge.bg-success {
+            background-color: #ecfdf5 !important;
+            color: #047857 !important;
+            border-color: #a7f3d0 !important;
+        }
+
+        .badge.text-bg-warning,
+        .badge.bg-warning {
+            background-color: #fffbeb !important;
+            color: #b45309 !important;
+            border-color: #fde68a !important;
+        }
+
+        .badge.text-bg-danger,
+        .badge.bg-danger {
+            background-color: #fff1f2 !important;
+            color: #be123c !important;
+            border-color: #fecdd3 !important;
+        }
+
+        .badge.text-bg-info,
+        .badge.bg-info {
+            background-color: #eff6ff !important;
+            color: #1d4ed8 !important;
+            border-color: #bfdbfe !important;
+        }
+
+        .badge.text-bg-primary,
+        .badge.bg-primary,
+        .badge-primary {
+            background-color: var(--vpk-primary-soft) !important;
+            color: var(--vpk-primary) !important;
+            border-color: color-mix(in srgb, var(--vpk-primary) 25%, #ffffff) !important;
+        }
+
+        .badge.text-bg-secondary,
+        .badge.bg-secondary,
+        .badge.text-bg-light,
+        .badge.text-bg-muted {
+            background-color: var(--vpk-hover-bg) !important;
+            color: var(--vpk-text-secondary) !important;
+            border-color: var(--vpk-border) !important;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Kanban cards
+    // ------------------------------------------------------------------
+    .o_kanban_renderer {
+        background: var(--vpk-app-bg);
+
+        .o_kanban_record:not(.o_kanban_ghost):not(.o_kanban_quick_create) {
+            background: var(--vpk-surface);
+            border: 1px solid var(--vpk-border) !important;
+            border-radius: var(--vpk-border-radius-lg, 12px);
+            box-shadow: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+            &:hover {
+                border-color: var(--vpk-field-border-hover, #cbd5e1) !important;
+                box-shadow: var(--vpk-shadow-sm);
+            }
+        }
+
+        .o_kanban_group {
+            background: transparent;
+
+            .o_kanban_header_title {
+                color: var(--vpk-text);
+                font-weight: 600;
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Dialogs and dropdowns
+    // ------------------------------------------------------------------
+    .modal-content {
+        border: 1px solid var(--vpk-border);
+        border-radius: var(--vpk-border-radius-lg, 12px);
+        box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -4px rgba(15, 23, 42, 0.1);
+        overflow: hidden;
+
+        .modal-header {
+            background: var(--vpk-surface);
+            border-bottom: 1px solid var(--vpk-border);
+
+            .modal-title {
+                color: var(--vpk-text);
+                font-weight: 600;
+            }
+        }
+
+        .modal-footer {
+            background: var(--vpk-surface-muted);
+            border-top: 1px solid var(--vpk-border);
+        }
+    }
+
+    .modal-backdrop.show {
+        background-color: #0f172a;
+        opacity: 0.3;
+    }
+
+    .dropdown-menu,
+    .o-dropdown--menu {
+        border: 1px solid var(--vpk-border);
+        border-radius: var(--vpk-border-radius-md, 6px);
+        box-shadow: var(--vpk-shadow-md);
+
+        .dropdown-item {
+            color: var(--vpk-text-secondary);
+
+            &:hover,
+            &:focus,
+            &.focus {
+                background-color: var(--vpk-hover-bg);
+                color: var(--vpk-text);
+            }
+
+            &.active,
+            &.selected {
+                background-color: var(--vpk-primary-soft);
+                color: var(--vpk-primary);
+            }
+        }
+
+        .dropdown-header {
+            color: var(--vpk-text-muted);
+            font-size: var(--vpk-font-size-sm, 11px);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    }
+
+    // Accounting report line drill-down menu (account_reports caret options)
+    .btn_dropdown .fa-ellipsis-v {
+        width: 14px;
+        height: 14px;
+        vertical-align: middle;
+        background-color: currentColor;
+        -webkit-mask: var(--vpk-li-chevron-down) center / contain no-repeat;
+        mask: var(--vpk-li-chevron-down) center / contain no-repeat;
+
+        &::before {
+            content: none !important;
+        }
+    }
+
+    // Command palette (⌘K)
+    .o_command_palette {
+        .o_command_palette_search {
+            border-bottom: 1px solid var(--vpk-border);
+
+            .form-control:focus {
+                box-shadow: none !important;
+            }
+        }
+
+        .o_command a {
+            color: var(--vpk-text-secondary) !important;
+        }
+
+        .o_command .o_app_icon:has(> .vpk-li) {
+            width: 20px;
+            height: 20px;
+            background: none !important;
+
+            .vpk-li {
+                font-size: 18px;
+                color: var(--vpk-text-muted) !important;
+            }
+        }
+
+        .o_command.focused {
+            background: var(--vpk-primary-soft);
+
+            a {
+                color: var(--vpk-text) !important;
+            }
+
+            .o_app_icon .vpk-li {
+                color: var(--vpk-primary) !important;
+            }
+        }
+    }
+}

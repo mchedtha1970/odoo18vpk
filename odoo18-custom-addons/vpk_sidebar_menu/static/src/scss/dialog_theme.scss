@@ -68,8 +68,8 @@ body.o_web_client.o_vpk_sidebar_menu {
                 pointer-events: auto;
                 cursor: nwse-resize;
                 background:
-                    linear-gradient(135deg, transparent 50%, var(--vpk-sidebar-bg-start, #0b6848) 50%) no-repeat 100% 100% / 6px 6px,
-                    linear-gradient(135deg, transparent 50%, var(--vpk-sidebar-bg-start, #0b6848) 50%) no-repeat calc(100% - 4px) calc(100% - 4px) / 6px 6px;
+                    linear-gradient(135deg, transparent 50%, var(--vpk-text-faint, #94a3b8) 50%) no-repeat 100% 100% / 6px 6px,
+                    linear-gradient(135deg, transparent 50%, var(--vpk-text-faint, #94a3b8) 50%) no-repeat calc(100% - 4px) calc(100% - 4px) / 6px 6px;
                 opacity: 0.55;
             }
         }

@@ -7,6 +7,18 @@ body,
     font-size: var(--vpk-font-size-md, inherit);
 }
 
+#wrapwrap.vpk_font_inter {
+    --vpk-font-family: 'Inter', 'Noto Sans Thai', sans-serif;
+}
+
+#wrapwrap.vpk_font_ibm_plex_thai {
+    --vpk-font-family: 'IBM Plex Sans Thai', sans-serif;
+}
+
+#wrapwrap.vpk_font_anuphan {
+    --vpk-font-family: 'Anuphan', sans-serif;
+}
+
 #wrapwrap.vpk_font_kanit {
     --vpk-font-family: 'Kanit', sans-serif;
 }

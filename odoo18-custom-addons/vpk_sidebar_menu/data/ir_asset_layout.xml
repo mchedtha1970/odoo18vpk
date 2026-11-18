@@ -64,4 +64,11 @@
         <field name="directive">append</field>
         <field name="sequence">113</field>
     </record>
+    <record id="ir_asset_vpk_modern_ui" model="ir.asset">
+        <field name="name">VPK Modern UI (tables, badges, control panel)</field>
+        <field name="bundle">web.assets_backend</field>
+        <field name="path">vpk_sidebar_menu/static/src/scss/modern_ui.scss</field>
+        <field name="directive">append</field>
+        <field name="sequence">120</field>
+    </record>
 </odoo>

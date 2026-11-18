@@ -5,15 +5,15 @@ import { rpc } from "@web/core/network/rpc";
 import { applyThemeConfig, DEFAULT_THEME_CONFIG } from "./theme_utils";
 
 export const SIDEBAR_WIDTH_PRESETS = [
-    { id: "compact", label: "Compact", width: 220 },
-    { id: "default", label: "Default", width: 288 },
-    { id: "wide", label: "Wide", width: 340 },
-    { id: "extra", label: "Extra Wide", width: 400 },
+    { id: "compact", label: "Compact", width: 224 },
+    { id: "default", label: "Default", width: 256 },
+    { id: "wide", label: "Wide", width: 300 },
+    { id: "extra", label: "Extra Wide", width: 360 },
 ];
 
 export const SIDEBAR_COLLAPSED_WIDTH_PRESETS = [
-    { id: "narrow", label: "Narrow", width: 56 },
-    { id: "default", label: "Default", width: 72 },
+    { id: "narrow", label: "Narrow", width: 64 },
+    { id: "default", label: "Default", width: 80 },
     { id: "wide", label: "Wide", width: 96 },
 ];
 

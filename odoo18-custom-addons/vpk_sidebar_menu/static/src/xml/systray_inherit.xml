@@ -9,7 +9,7 @@
             <attribute name="class" add="o_vpk_company_toggle" separator=" "/>
         </xpath>
         <xpath expr="//span[hasclass('oe_topbar_name')]" position="replace">
-            <span class="ri ri-building-2-line o_vpk_company_icon"/>
+            <span class="vpk-li vpk-li-building-2 o_vpk_company_icon"/>
         </xpath>
         <xpath expr="//i[hasclass('fa-building')]" position="replace"/>
     </t>

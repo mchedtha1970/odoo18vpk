@@ -54,7 +54,7 @@ body.o_web_client.o_vpk_sidebar_menu {
                     max-width: 100% !important;
                     height: var(--vpk-field-height, 36px) !important;
                     min-height: var(--vpk-field-height, 36px) !important;
-                    border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                    border: 1px solid var(--vpk-field-border-color, var(--vpk-border)) !important;
                     border-radius: var(--vpk-border-radius-md, 4px) !important;
                     background-color: #fff !important;
                     box-sizing: border-box !important;
@@ -71,9 +71,13 @@ body.o_web_client.o_vpk_sidebar_menu {
                         line-height: calc(var(--vpk-field-height, 36px) - 2px) !important;
                     }
 
-                    &:hover,
+                    &:hover {
+                        border-color: var(--vpk-field-border-hover, #cbd5e1) !important;
+                    }
+
                     &:focus-within {
-                        border-color: var(--vpk-sidebar-bg-end) !important;
+                        border-color: var(--vpk-primary) !important;
+                        box-shadow: 0 0 0 1px var(--vpk-primary) !important;
                     }
                 }
             }
@@ -84,14 +88,14 @@ body.o_web_client.o_vpk_sidebar_menu {
                 input.o_input:not(:hover):not(:focus),
                 textarea.o_input:not(:hover):not(:focus),
                 select.o_input:not(:hover):not(:focus) {
-                    --o-input-border-color: var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                    --o-input-border-color: var(--vpk-field-border-color, var(--vpk-border)) !important;
                 }
             }
         }
 
         .o_wrap_input > .o_field_widget:not(.o_readonly_modifier):not(.o_field_boolean):not(.o_field_boolean_toggle):not(.o_field_radio):not(.o_field_image):not(.o_field_image_url):not(.o_field_priority):not(.o_field_statusbar):not(.o_field_statusbar_duration):not(.o_field_many2many_tags):not(.o_field_text) {
-            --o-input-border-color: var(--vpk-field-border-color, var(--vpk-sidebar-bg-start));
-            --o-caret-color: var(--vpk-field-border-color, var(--vpk-sidebar-bg-start));
+            --o-input-border-color: var(--vpk-field-border-color, var(--vpk-border));
+            --o-caret-color: var(--vpk-field-border-color, var(--vpk-border));
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box;
@@ -104,7 +108,7 @@ body.o_web_client.o_vpk_sidebar_menu {
                 height: var(--vpk-field-height, 36px) !important;
                 min-height: var(--vpk-field-height, 36px) !important;
                 max-height: var(--vpk-field-height, 36px) !important;
-                border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                border: 1px solid var(--vpk-field-border-color, var(--vpk-border)) !important;
                 border-radius: var(--vpk-border-radius-md, 4px) !important;
                 padding: 0 8px !important;
                 line-height: calc(var(--vpk-field-height, 36px) - 2px) !important;
@@ -113,11 +117,15 @@ body.o_web_client.o_vpk_sidebar_menu {
             }
 
             input.o_input:hover,
+            select.o_input:hover {
+                border-color: var(--vpk-field-border-hover, #cbd5e1) !important;
+                outline: none !important;
+            }
+
             input.o_input:focus,
-            select.o_input:hover,
             select.o_input:focus {
-                border-color: var(--vpk-sidebar-bg-end) !important;
-                box-shadow: none !important;
+                border-color: var(--vpk-primary) !important;
+                box-shadow: 0 0 0 1px var(--vpk-primary) !important;
                 outline: none !important;
             }
 
@@ -132,7 +140,7 @@ body.o_web_client.o_vpk_sidebar_menu {
                 max-width: 100% !important;
                 min-height: 80px !important;
                 max-height: none !important;
-                border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                border: 1px solid var(--vpk-field-border-color, var(--vpk-border)) !important;
                 border-radius: var(--vpk-border-radius-md, 4px) !important;
                 padding: 8px !important;
                 line-height: 1.45 !important;
@@ -140,10 +148,14 @@ body.o_web_client.o_vpk_sidebar_menu {
                 box-sizing: border-box !important;
                 resize: vertical;
 
-                &:hover,
+                &:hover {
+                    border-color: var(--vpk-field-border-hover, #cbd5e1) !important;
+                    outline: none !important;
+                }
+
                 &:focus {
-                    border-color: var(--vpk-sidebar-bg-end) !important;
-                    box-shadow: none !important;
+                    border-color: var(--vpk-primary) !important;
+                    box-shadow: 0 0 0 1px var(--vpk-primary) !important;
                     outline: none !important;
                 }
             }
@@ -157,7 +169,7 @@ body.o_web_client.o_vpk_sidebar_menu {
                     max-width: 100% !important;
                     height: var(--vpk-field-height, 36px) !important;
                     min-height: var(--vpk-field-height, 36px) !important;
-                    border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                    border: 1px solid var(--vpk-field-border-color, var(--vpk-border)) !important;
                     border-radius: var(--vpk-border-radius-md, 4px) !important;
                     background-color: #fff !important;
                     box-sizing: border-box !important;
@@ -179,9 +191,13 @@ body.o_web_client.o_vpk_sidebar_menu {
                         padding: 0 !important;
                     }
 
-                    &:hover,
+                    &:hover {
+                        border-color: var(--vpk-field-border-hover, #cbd5e1) !important;
+                    }
+
                     &:focus-within {
-                        border-color: var(--vpk-sidebar-bg-end) !important;
+                        border-color: var(--vpk-primary) !important;
+                        box-shadow: 0 0 0 1px var(--vpk-primary) !important;
                     }
                 }
             }
@@ -193,7 +209,7 @@ body.o_web_client.o_vpk_sidebar_menu {
                 height: var(--vpk-field-height, 36px) !important;
                 min-height: var(--vpk-field-height, 36px) !important;
                 max-height: var(--vpk-field-height, 36px) !important;
-                border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                border: 1px solid var(--vpk-field-border-color, var(--vpk-border)) !important;
                 border-radius: var(--vpk-border-radius-md, 4px) !important;
                 background-color: #fff !important;
                 box-sizing: border-box !important;
@@ -223,9 +239,13 @@ body.o_web_client.o_vpk_sidebar_menu {
                     right: 8px !important;
                 }
 
-                &:hover,
+                &:hover {
+                    border-color: var(--vpk-field-border-hover, #cbd5e1) !important;
+                }
+
                 &:focus-within {
-                    border-color: var(--vpk-sidebar-bg-end) !important;
+                    border-color: var(--vpk-primary) !important;
+                    box-shadow: 0 0 0 1px var(--vpk-primary) !important;
                 }
             }
 
@@ -239,7 +259,7 @@ body.o_web_client.o_vpk_sidebar_menu {
                     height: var(--vpk-field-height, 36px) !important;
                     min-height: var(--vpk-field-height, 36px) !important;
                     max-height: var(--vpk-field-height, 36px) !important;
-                    border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                    border: 1px solid var(--vpk-field-border-color, var(--vpk-border)) !important;
                     border-radius: var(--vpk-border-radius-md, 4px) !important;
                     background-color: #fff !important;
                     box-sizing: border-box !important;
@@ -270,14 +290,18 @@ body.o_web_client.o_vpk_sidebar_menu {
                         margin: 0 !important;
                         padding: 0 8px !important;
                         border: none !important;
-                        border-left: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                        border-left: 1px solid var(--vpk-field-border-color, var(--vpk-border)) !important;
                         border-radius: 0 !important;
                         background: transparent !important;
                     }
 
-                    &:hover,
+                    &:hover {
+                        border-color: var(--vpk-field-border-hover, #cbd5e1) !important;
+                    }
+
                     &:focus-within {
-                        border-color: var(--vpk-sidebar-bg-end) !important;
+                        border-color: var(--vpk-primary) !important;
+                        box-shadow: 0 0 0 1px var(--vpk-primary) !important;
                     }
                 }
             }
@@ -318,7 +342,7 @@ body.o_web_client.o_vpk_sidebar_menu {
                     max-width: 100% !important;
                     height: var(--vpk-field-height, 36px) !important;
                     min-height: var(--vpk-field-height, 36px) !important;
-                    border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                    border: 1px solid var(--vpk-field-border-color, var(--vpk-border)) !important;
                     border-radius: var(--vpk-border-radius-md, 4px) !important;
                     background-color: #fff !important;
                     box-sizing: border-box !important;
@@ -339,9 +363,13 @@ body.o_web_client.o_vpk_sidebar_menu {
                         padding: 0 !important;
                     }
 
-                    &:hover,
+                    &:hover {
+                        border-color: var(--vpk-field-border-hover, #cbd5e1) !important;
+                    }
+
                     &:focus-within {
-                        border-color: var(--vpk-sidebar-bg-end) !important;
+                        border-color: var(--vpk-primary) !important;
+                        box-shadow: 0 0 0 1px var(--vpk-primary) !important;
                     }
                 }
             }
@@ -366,8 +394,8 @@ body.o_web_client.o_vpk_sidebar_menu {
         }
 
         .ui-menu-item > a.ui-state-active {
-            background-color: var(--vpk-sidebar-bg-start) !important;
-            color: var(--vpk-sidebar-text, #fff) !important;
+            background-color: var(--vpk-primary-soft) !important;
+            color: var(--vpk-primary) !important;
         }
     }
 
@@ -404,17 +432,21 @@ body.o_web_client.o_vpk_sidebar_menu {
                 max-height: none !important;
                 resize: vertical !important;
                 overflow-y: auto !important;
-                border: 1px solid var(--vpk-field-border-color, var(--vpk-sidebar-bg-start)) !important;
+                border: 1px solid var(--vpk-field-border-color, var(--vpk-border)) !important;
                 border-radius: var(--vpk-border-radius-md, 4px) !important;
                 padding: 8px !important;
                 line-height: 1.45 !important;
                 background-color: #fff !important;
                 box-sizing: border-box !important;
 
-                &:hover,
+                &:hover {
+                    border-color: var(--vpk-field-border-hover, #cbd5e1) !important;
+                    outline: none !important;
+                }
+
                 &:focus {
-                    border-color: var(--vpk-sidebar-bg-end) !important;
-                    box-shadow: none !important;
+                    border-color: var(--vpk-primary) !important;
+                    box-shadow: 0 0 0 1px var(--vpk-primary) !important;
                     outline: none !important;
                 }
             }

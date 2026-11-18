@@ -16,7 +16,7 @@
         background: #fff;
 
         h2 {
-            font-family: "Prompt", sans-serif !important;
+            font-family: var(--vpk-font-family, var(--bs-body-font-family, sans-serif)) !important;
             font-size: 1.15rem;
             font-weight: 600;
             margin: 0;
@@ -182,7 +182,7 @@
         padding: 12px 14px;
 
         h3 {
-            font-family: "Prompt", sans-serif !important;
+            font-family: var(--vpk-font-family, var(--bs-body-font-family, sans-serif)) !important;
             font-size: 0.82rem;
             font-weight: 700;
             color: #334155;

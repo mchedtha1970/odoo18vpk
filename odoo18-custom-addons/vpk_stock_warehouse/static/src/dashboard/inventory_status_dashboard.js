@@ -5,27 +5,12 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
 const PREF_KEY = "vpk_inventory_status_dashboard";
-const PROMPT_FONT_ID = "vpk-ops-prompt-font";
-const PROMPT_FONT_URL =
-    "https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap";
-
-function ensurePromptFont() {
-    if (document.getElementById(PROMPT_FONT_ID)) {
-        return;
-    }
-    const link = document.createElement("link");
-    link.id = PROMPT_FONT_ID;
-    link.rel = "stylesheet";
-    link.href = PROMPT_FONT_URL;
-    document.head.appendChild(link);
-}
 
 export class InventoryStatusDashboard extends Component {
     static template = "vpk_stock_warehouse.InventoryStatusDashboard";
     static props = ["*"];
 
     setup() {
-        ensurePromptFont();
         this.orm = useService("orm");
         this.actionService = useService("action");
         this.notification = useService("notification");

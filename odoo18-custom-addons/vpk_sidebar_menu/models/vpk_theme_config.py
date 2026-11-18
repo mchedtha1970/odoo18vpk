@@ -3,6 +3,9 @@ from odoo import api, fields, models
 
 FONT_FAMILY_CSS = {
     "default": "",
+    "inter": "'Inter', 'Noto Sans Thai', sans-serif",
+    "ibm_plex_thai": "'IBM Plex Sans Thai', sans-serif",
+    "anuphan": "'Anuphan', sans-serif",
     "kanit": "'Kanit', sans-serif",
     "sarabun": "'Sarabun', sans-serif",
     "prompt": "'Prompt', sans-serif",
@@ -10,13 +13,17 @@ FONT_FAMILY_CSS = {
 }
 
 FONT_SIZE_MD = {
-    "small": "10px",
-    "medium": "12px",
-    "large": "15px",
+    "small": "12px",
+    "medium": "13px",
+    "large": "14px",
 }
 
 GOOGLE_FONTS_URL = (
     "https://fonts.googleapis.com/css2?"
+    "family=Inter:wght@400;500;600;700&"
+    "family=Noto+Sans+Thai:wght@400;500;600;700&"
+    "family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&"
+    "family=Anuphan:wght@300;400;500;600;700&"
     "family=Kanit:wght@300;400;500;600;700&"
     "family=Prompt:wght@300;400;500;600;700&"
     "family=Roboto:wght@300;400;500;700&"
@@ -27,7 +34,7 @@ GOOGLE_FONTS_URL = (
 
 class VpkThemeConfig(models.Model):
     _name = "vpk.theme.config"
-    _description = "VPK Sidebar Theme Configuration"
+    _description = "VPK Global Theme Configuration"
 
     name = fields.Char(default="Theme Config")
 
@@ -67,19 +74,32 @@ class VpkThemeConfig(models.Model):
     )
     list_view_sticky_header = fields.Boolean(default=False)
 
-    sidebar_color = fields.Char(default="#00a884")
-    sidebar_active_color = fields.Char(default="#063a32")
-    sidebar_text_color = fields.Char(default="#ffffff")
+    sidebar_color = fields.Char(string="Primary Color", default="#2563eb")
+    sidebar_active_color = fields.Char(string="Primary Hover Color", default="#1d4ed8")
+    sidebar_text_color = fields.Char(string="Text on Primary", default="#ffffff")
+    sidebar_bg_style = fields.Selection(
+        selection=[
+            ("light", "Light"),
+            ("gradient", "Gradient"),
+        ],
+        default="light",
+        required=True,
+    )
+    sidebar_bg_top = fields.Char(string="Sidebar Gradient Top", default="#15803d")
+    sidebar_bg_bottom = fields.Char(string="Sidebar Gradient Bottom", default="#14532d")
 
     font_family = fields.Selection(
         selection=[
             ("default", "Default"),
+            ("inter", "Inter"),
+            ("ibm_plex_thai", "IBM Plex Sans Thai"),
+            ("anuphan", "Anuphan"),
             ("kanit", "Kanit"),
             ("sarabun", "Sarabun"),
             ("prompt", "Prompt"),
             ("roboto", "Roboto"),
         ],
-        default="default",
+        default="inter",
         required=True,
     )
     font_size = fields.Selection(
@@ -100,16 +120,25 @@ class VpkThemeConfig(models.Model):
         default="default",
         required=True,
     )
-    sidebar_width = fields.Integer(default=288)
-    sidebar_collapsed_width = fields.Integer(default=72)
+    badge_style = fields.Selection(
+        selection=[
+            ("pill", "Pill"),
+            ("rounded", "Rounded"),
+            ("square", "Square"),
+        ],
+        default="pill",
+        required=True,
+    )
+    sidebar_width = fields.Integer(default=256)
+    sidebar_collapsed_width = fields.Integer(default=80)
 
     @staticmethod
     def _clamp_sidebar_vals(vals):
         if "sidebar_width" in vals:
-            vals["sidebar_width"] = min(420, max(200, int(vals["sidebar_width"] or 288)))
+            vals["sidebar_width"] = min(420, max(200, int(vals["sidebar_width"] or 256)))
         if "sidebar_collapsed_width" in vals:
             vals["sidebar_collapsed_width"] = min(
-                120, max(56, int(vals["sidebar_collapsed_width"] or 72))
+                120, max(56, int(vals["sidebar_collapsed_width"] or 80))
             )
         return vals
 
@@ -121,11 +150,19 @@ class VpkThemeConfig(models.Model):
 
     def write(self, vals):
         self._clamp_sidebar_vals(vals)
-        res = super().write(vals)
-        if any(key in vals for key in ("font_family", "font_size")):
-            for config in self:
-                config._sync_portal_font_params()
-        return res
+        return super().write(vals)
+
+    @api.model
+    def _get_global_config(self):
+        """The single theme shared by every user; only System Admin may write it."""
+        config = self.env.ref(
+            "vpk_sidebar_menu.vpk_theme_config_global", raise_if_not_found=False
+        )
+        if not config:
+            config = self.sudo().search([], order="id", limit=1) or self.sudo().create(
+                {"name": "Global Theme"}
+            )
+        return config
 
     def _to_dict(self):
         self.ensure_one()
@@ -139,34 +176,23 @@ class VpkThemeConfig(models.Model):
             "sidebar_color": self.sidebar_color,
             "sidebar_active_color": self.sidebar_active_color,
             "sidebar_text_color": self.sidebar_text_color,
+            "sidebar_bg_style": self.sidebar_bg_style,
+            "sidebar_bg_top": self.sidebar_bg_top,
+            "sidebar_bg_bottom": self.sidebar_bg_bottom,
             "font_family": self.font_family,
             "font_size": self.font_size,
             "loader_style": self.loader_style,
+            "badge_style": self.badge_style,
             "sidebar_width": self.sidebar_width,
             "sidebar_collapsed_width": self.sidebar_collapsed_width,
         }
 
-    def _sync_portal_font_params(self):
-        """Keep portal font in sync with the saved backend theme font."""
-        self.ensure_one()
-        ICP = self.env["ir.config_parameter"].sudo()
-        ICP.set_param("vpk.portal.font_family", self.font_family or "default")
-        ICP.set_param("vpk.portal.font_size", self.font_size or "medium")
-
     @api.model
     def _get_portal_font_settings(self):
         """Font settings for portal / login pages (same as backend theme)."""
-        ICP = self.env["ir.config_parameter"].sudo()
-        font_family = ICP.get_param("vpk.portal.font_family")
-        font_size = ICP.get_param("vpk.portal.font_size")
-        if not font_family or not font_size:
-            config = self.sudo().search([], order="write_date desc", limit=1)
-            if config:
-                font_family = font_family or config.font_family
-                font_size = font_size or config.font_size
-                config._sync_portal_font_params()
-        font_family = font_family or "default"
-        font_size = font_size or "medium"
+        config = self.sudo()._get_global_config()
+        font_family = config.font_family or "default"
+        font_size = config.font_size or "medium"
         font_css = FONT_FAMILY_CSS.get(font_family) or ""
         return {
             "font_family": font_family,

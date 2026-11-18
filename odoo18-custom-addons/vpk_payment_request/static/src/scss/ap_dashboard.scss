@@ -4,10 +4,10 @@
     min-height: 100%;
     overflow: auto;
     background: #f5f7fa;
-    font-family: "Prompt", sans-serif !important;
+    font-family: var(--vpk-font-family, var(--bs-body-font-family, sans-serif)) !important;
 
     *:not(.fa):not(.oi) {
-        font-family: "Prompt", sans-serif !important;
+        font-family: var(--vpk-font-family, var(--bs-body-font-family, sans-serif)) !important;
     }
     .fa {
         font-family: FontAwesome !important;

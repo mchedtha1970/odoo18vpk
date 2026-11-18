@@ -20,7 +20,7 @@
     min-height: 100%;
     padding: 0 0 32px;
     color: var(--ink);
-    font-family: "Prompt", "Sarabun", sans-serif;
+    font-family: var(--vpk-font-family, var(--bs-body-font-family, sans-serif));
 
     h1, h2, h3, p, span, small, strong, button, input, select, td, th {
         font-family: inherit !important;

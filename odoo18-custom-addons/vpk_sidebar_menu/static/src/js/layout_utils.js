@@ -16,6 +16,10 @@ function getViewportWidth() {
 
 function measureSidebarWidth(collapsed) {
     const el = document.querySelector(".o_vpk_sidebar_primary");
+    if (el?.classList.contains("o_vpk_sidebar_hover_open")) {
+        const rootStyle = getComputedStyle(document.documentElement);
+        return parsePx(rootStyle.getPropertyValue("--vpk-sidebar-width-collapsed"), 80);
+    }
     if (el) {
         return Math.round(el.getBoundingClientRect().width);
     }

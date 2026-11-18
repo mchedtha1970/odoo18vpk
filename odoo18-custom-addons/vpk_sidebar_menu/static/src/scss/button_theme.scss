@@ -1,33 +1,56 @@
+// Buttons, links, tabs and focus states — flat solid primary, slate secondary
 @mixin vpk-themed-primary-btn {
-    background: var(--vpk-sidebar-bg-gradient) !important;
-    border-color: var(--vpk-sidebar-bg-end) !important;
-    color: var(--vpk-sidebar-text) !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    background: var(--vpk-primary) !important;
+    border-color: var(--vpk-primary) !important;
+    color: var(--vpk-on-primary) !important;
+    border-radius: var(--vpk-border-radius-md, 6px);
+    box-shadow: var(--vpk-shadow-sm);
+    font-weight: 500;
 
     &:hover,
     &:focus,
     &:active,
     &.active,
     &.show {
-        background: var(--vpk-sidebar-bg-gradient) !important;
-        border-color: var(--vpk-sidebar-bg-end) !important;
-        color: var(--vpk-sidebar-text) !important;
-        filter: brightness(1.06);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        background: var(--vpk-primary-hover) !important;
+        border-color: var(--vpk-primary-hover) !important;
+        color: var(--vpk-on-primary) !important;
+        box-shadow: var(--vpk-shadow-sm);
+    }
+
+    &:focus-visible {
+        box-shadow: 0 0 0 2px var(--vpk-surface), 0 0 0 4px var(--vpk-primary-ring) !important;
     }
 
     &:disabled,
     &.disabled {
-        background: var(--vpk-sidebar-bg-gradient) !important;
-        border-color: var(--vpk-sidebar-bg-end) !important;
-        color: var(--vpk-sidebar-text) !important;
-        opacity: 0.65;
-        filter: none;
+        background: var(--vpk-primary) !important;
+        border-color: var(--vpk-primary) !important;
+        color: var(--vpk-on-primary) !important;
+        opacity: 0.5;
         box-shadow: none;
     }
 }
 
-// Primary buttons aligned with sidebar gradient theme
+@mixin vpk-secondary-btn {
+    background: var(--vpk-surface) !important;
+    border: 1px solid var(--vpk-border) !important;
+    color: var(--vpk-text-secondary) !important;
+    border-radius: var(--vpk-border-radius-md, 6px);
+    box-shadow: var(--vpk-shadow-sm);
+    font-weight: 500;
+
+    &:hover,
+    &:focus,
+    &:active,
+    &.active,
+    &.show {
+        background: var(--vpk-surface-muted) !important;
+        border-color: #cbd5e1 !important;
+        color: var(--vpk-text) !important;
+    }
+}
+
 body.o_web_client.o_vpk_sidebar_menu {
     // Page must not scroll horizontally; sidebar stays fixed width
     overflow-x: hidden !important;
@@ -57,24 +80,29 @@ body.o_web_client.o_vpk_sidebar_menu {
     .o_action_manager,
     .modal-dialog {
         a:not(.btn):not(.dropdown-item):not(.nav-link):not(.o_app):not(.oe_stat_button):not(.o_vpk_app_link):not(.o_vpk_sub_link) {
-            color: var(--vpk-sidebar-bg-start);
+            color: var(--vpk-primary);
 
             &:hover {
-                color: var(--vpk-sidebar-bg-end);
+                color: var(--vpk-primary-hover);
             }
         }
 
         .btn-link,
         .btn.btn-link,
         .btn.text-action {
-            color: var(--vpk-sidebar-bg-start) !important;
+            color: var(--vpk-primary) !important;
 
             &:hover,
             &:focus,
             &:active {
-                color: var(--vpk-sidebar-bg-end) !important;
+                color: var(--vpk-primary-hover) !important;
             }
         }
+    }
+
+    .btn {
+        border-radius: var(--vpk-border-radius-md, 6px);
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
     }
 
     // Global primary buttons (form, list, modal, chatter, control panel)
@@ -83,20 +111,31 @@ body.o_web_client.o_vpk_sidebar_menu {
         @include vpk-themed-primary-btn;
     }
 
+    // Secondary buttons: white with slate border
+    .o_action_manager,
+    .modal-dialog {
+        .btn.btn-secondary:not(.o_arrow_button),
+        .btn.btn-light,
+        .btn-outline-secondary {
+            @include vpk-secondary-btn;
+        }
+    }
+
     .btn-outline-primary {
-        color: var(--vpk-sidebar-bg-end) !important;
-        border-color: var(--vpk-sidebar-bg-start) !important;
-        background: transparent !important;
+        color: var(--vpk-primary) !important;
+        border-color: var(--vpk-primary) !important;
+        background: var(--vpk-surface) !important;
 
         &:hover,
         &:focus,
         &:active,
         &.active {
-            @include vpk-themed-primary-btn;
+            background: var(--vpk-primary-soft) !important;
+            color: var(--vpk-primary-hover) !important;
+            border-color: var(--vpk-primary-hover) !important;
         }
     }
 
-    // Form view header action buttons (Confirm, Approve, etc.)
     .o_form_view {
         .o_form_statusbar {
             .o_statusbar_buttons .btn.btn-primary {
@@ -104,55 +143,67 @@ body.o_web_client.o_vpk_sidebar_menu {
             }
         }
 
-        // Statusbar workflow chevrons (Draft / Approved / Done)
+        // Statusbar workflow steps (Draft / Approved / Done)
         .o_field_statusbar > .o_statusbar_status {
-            --o-statusbar-background-active: var(--vpk-sidebar-bg-start);
-            --o-statusbar-border-active: var(--vpk-sidebar-bg-end);
-            --o-statusbar-background-hover: rgba(0, 168, 132, 0.12);
+            --o-statusbar-background-active: var(--vpk-primary-soft);
+            --o-statusbar-border-active: var(--vpk-border);
+            --o-statusbar-background-hover: var(--vpk-hover-bg);
 
             > .o_arrow_button.btn.btn-secondary {
+                color: var(--vpk-text-muted);
+                font-weight: 500;
+
                 &.o_arrow_button_current,
                 &:active:not(.o_last) {
-                    background-color: var(--vpk-sidebar-bg-start) !important;
-                    color: var(--vpk-sidebar-text) !important;
+                    background-color: var(--vpk-primary-soft) !important;
+                    color: var(--vpk-primary) !important;
+                    font-weight: 600;
                 }
             }
         }
 
-        .o_form_uri,
-        .oe_title {
-            color: var(--vpk-sidebar-bg-start) !important;
+        .o_form_uri {
+            color: var(--vpk-primary) !important;
         }
 
-        // Form notebook tabs (สินค้า, คณะกรรมการ, etc.)
+        .oe_title {
+            color: var(--vpk-text) !important;
+        }
+
+        // Notebook tabs: underline style
         .o_notebook {
-            --notebook-link-border-color-active-accent: var(--vpk-sidebar-bg-start);
+            --notebook-link-border-color-active-accent: var(--vpk-primary);
+
+            .o_notebook_headers .nav-tabs {
+                border-bottom: 1px solid var(--vpk-border) !important;
+                gap: 4px;
+            }
 
             .nav-link {
                 font-family: var(--vpk-font-family, inherit) !important;
                 font-size: var(--vpk-font-size-md, inherit);
-                color: var(--vpk-sidebar-bg-start) !important;
+                font-weight: 500;
+                color: var(--vpk-text-muted) !important;
                 background: transparent !important;
-                transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+                border: none !important;
+                border-bottom: 2px solid transparent !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                margin-bottom: -1px;
+                transition: color 0.15s ease, border-color 0.15s ease;
 
                 &:hover,
                 &:focus {
-                    color: var(--vpk-sidebar-bg-end) !important;
-                    border-color: var(--vpk-sidebar-bg-hover) !important;
+                    color: var(--vpk-text) !important;
+                    border-bottom-color: var(--vpk-border) !important;
                 }
 
                 &.active {
-                    background: var(--vpk-sidebar-bg-gradient) !important;
-                    color: var(--vpk-sidebar-text) !important;
-                    font-weight: 600;
-                    border-color: var(--vpk-sidebar-bg-end) !important;
-                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-
                     &, &:hover, &:focus, &:active {
-                        background: var(--vpk-sidebar-bg-gradient) !important;
-                        color: var(--vpk-sidebar-text) !important;
-                        border-top-color: var(--vpk-sidebar-bg-start) !important;
-                        border-bottom-color: #fff !important;
+                        background: transparent !important;
+                        color: var(--vpk-primary) !important;
+                        border-bottom-color: var(--vpk-primary) !important;
+                        font-weight: 600;
                     }
                 }
             }
@@ -167,28 +218,29 @@ body.o_web_client.o_vpk_sidebar_menu {
 
     // Tabs outside form sheet (settings, dialogs, etc.)
     .o_action_manager .nav.nav-tabs:not(.o_vpk_theme_tabs) {
+        border-bottom: 1px solid var(--vpk-border);
+
         .nav-item .nav-link {
-            color: var(--vpk-sidebar-bg-start) !important;
+            color: var(--vpk-text-muted) !important;
+            font-weight: 500;
             background: transparent !important;
-            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+            border: none !important;
+            border-bottom: 2px solid transparent !important;
+            border-radius: 0 !important;
+            margin-bottom: -1px;
+            transition: color 0.15s ease, border-color 0.15s ease;
 
             &:hover,
             &:focus {
-                color: var(--vpk-sidebar-bg-end) !important;
+                color: var(--vpk-text) !important;
             }
 
             &.active {
-                background: var(--vpk-sidebar-bg-gradient) !important;
-                color: var(--vpk-sidebar-text) !important;
-                font-weight: 600;
-                border-color: var(--vpk-sidebar-bg-end) !important;
-                border-top-color: var(--vpk-sidebar-bg-start) !important;
-                border-bottom-color: #fff !important;
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-
                 &, &:hover, &:focus, &:active {
-                    background: var(--vpk-sidebar-bg-gradient) !important;
-                    color: var(--vpk-sidebar-text) !important;
+                    background: transparent !important;
+                    color: var(--vpk-primary) !important;
+                    border-bottom-color: var(--vpk-primary) !important;
+                    font-weight: 600;
                 }
             }
         }
@@ -222,53 +274,28 @@ body.o_web_client.o_vpk_sidebar_menu {
 
     .text-primary,
     .text-action {
-        color: var(--vpk-sidebar-bg-start) !important;
-    }
-
-    .o_vpk_sidebar_primary {
-        .o_vpk_app_link,
-        .o_vpk_sub_link,
-        .o_vpk_app_name {
-            color: var(--vpk-sidebar-text) !important;
-
-            &:hover,
-            &:focus,
-            &:active {
-                color: var(--vpk-sidebar-text) !important;
-            }
-        }
-
-        .o_vpk_app_arrow,
-        .o_vpk_sub_arrow {
-            color: var(--vpk-sidebar-text) !important;
-            opacity: 0.9;
-        }
-    }
-
-    .badge.text-bg-primary,
-    .badge-primary {
-        background: var(--vpk-sidebar-bg-start) !important;
-        color: var(--vpk-sidebar-text) !important;
+        color: var(--vpk-primary) !important;
     }
 
     .form-check-input:checked {
-        background-color: var(--vpk-sidebar-bg-start) !important;
-        border-color: var(--vpk-sidebar-bg-start) !important;
+        background-color: var(--vpk-primary) !important;
+        border-color: var(--vpk-primary) !important;
     }
 
+    .form-check-input:focus,
     .form-control:focus,
     .form-select:focus {
-        border-color: var(--vpk-sidebar-bg-start);
-        box-shadow: 0 0 0 0.2rem rgba(0, 168, 132, 0.2);
+        border-color: var(--vpk-primary);
+        box-shadow: 0 0 0 1px var(--vpk-primary);
     }
 
     input[type="range"] {
-        accent-color: var(--vpk-sidebar-bg-start);
+        accent-color: var(--vpk-primary);
     }
 
     .o_field_widget .o_input_dropdown .o_dropdown_button::after,
     .o_field_widget .o_datepicker_button::after {
-        color: var(--vpk-sidebar-bg-start);
+        color: var(--vpk-text-faint);
     }
 
     // Form field name labels use selected theme font
