@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
+# VPK customized fork companion for account_reports (technical name unchanged).
 {
-    'name' : 'Cash Basis Accounting Reports',
-    'summary': 'Add cash basis functionality for reports',
+    'name': 'VPK Cash Basis Accounting Reports',
+    'summary': 'VPK cash basis functionality for accounting reports',
     'category': 'Accounting/Accounting',
+    'version': '18.0.1.0.2',
+    'author': 'VPK',
     'description': """
-Cash Basis for Accounting Reports
+VPK Cash Basis Accounting Reports
 =================================
+Customized fork maintained for VPK ERP.
+Technical module name remains ``account_reports_cash_basis``.
     """,
     'depends': ['account_reports'],
     'data': [
@@ -19,5 +23,5 @@ Cash Basis for Accounting Reports
         ],
     },
     'installable': True,
-    'license': 'OEEL-1',
+    'license': 'LGPL-3',
 }

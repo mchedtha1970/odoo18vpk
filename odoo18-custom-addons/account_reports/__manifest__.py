@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
+# VPK customized fork of Odoo Accounting Reports (technical name unchanged).
 {
-    'name' : 'Accounting Reports',
-    'summary': 'View and create reports',
+    'name': 'VPK Accounting Reports',
+    'summary': 'VPK customized accounting reports (view and create reports)',
     'category': 'Accounting/Accounting',
+    'version': '18.0.1.0.2',
+    'author': 'VPK',
     'description': """
-Accounting Reports
-==================
+VPK Accounting Reports
+======================
+Customized fork maintained for VPK ERP (based on Odoo Accounting Reports).
+Technical module name remains ``account_reports``.
     """,
     'depends': ['account', 'accountant', 'base_accounting_kit'],
     'data': [
@@ -53,7 +57,7 @@ Accounting Reports
     ],
     'auto_install': False,
     'installable': True,
-    'license': 'OEEL-1',
+    'license': 'LGPL-3',
     'post_init_hook': 'set_periodicity_journal_on_companies',
     'assets': {
         'account_reports.assets_pdf_export': [
